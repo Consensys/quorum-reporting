@@ -2,7 +2,17 @@ package database
 
 import (
 	"github.com/ethereum/go-ethereum/common"
+
+	"quorumengineering/quorum-report/types"
 )
+
+type Database interface {
+	EventDB
+	TransactionDB
+	StorageDB
+	BlockDB
+	PersistentIndexDB
+}
 
 // TODO: EventDB stores all event logs for a contract
 type EventDB interface {
@@ -24,8 +34,9 @@ type StorageDB interface {
 
 // TODO: BlockDB stores the block details for all blocks
 type BlockDB interface {
-	WriteBlock()
-	ReadBlock()
+	WriteBlock(*types.Block) error
+	ReadBlock(uint64) (*types.Block, error)
+	GetLastPersistedBlockNumber() uint64
 }
 
 // TODO: PersistentIndexDB stores the last block number a contract has all the required data for reporting
