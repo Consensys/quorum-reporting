@@ -43,3 +43,29 @@ go build
 ```
 ./quorum-report
 ```
+
+## Roadmap
+
+#### Phase 0: Sine Qua Non
+
+- Complete the base code architecture
+- Sync blocks & Store blocks in a memory database
+- Filter events by registered addresses
+- Filter transactions by registered addresses
+- Expose basic RPC endpoints to serve queries
+
+#### Phase 1: Sitzfleisch
+
+- Integrate persistent database
+- Expose well defined RPC endpoints for to retrieve data from database
+- Handle restart & recover from fail-stop scenarios
+
+#### Phase 2: Herculean
+
+- Filter contract detailed storage by registered addresses
+- Resolve internal calls (incoming/ outgoing) for transactions of registered addresses
+
+#### Phase 3: Sapience
+
+- Integrate UI for visualization
+- Full functional reporting tool
