@@ -2,7 +2,6 @@ package client
 
 import (
 	"context"
-	"log"
 
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/machinebox/graphql"
@@ -28,8 +27,6 @@ func (qc *QuorumClient) ExecuteGraphQLQuery(ctx context.Context, query string) (
 	req := graphql.NewRequest(query)
 
 	// run it and capture the response
-	if err = client.Run(ctx, req, &respData); err != nil {
-		log.Fatal(err)
-	}
+	err = client.Run(ctx, req, &respData)
 	return
 }

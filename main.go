@@ -44,7 +44,6 @@ func main() {
 		Addresses:        addressList,
 	}
 
-	var err error
 	monitorBackend, err := monitor.New(flags)
 	if err != nil {
 		log.Fatalf("exiting... err: %v.\n", err)

@@ -45,20 +45,20 @@ func (b *Backend) Start() {
 	// Start monitor service.
 	go b.monitor.Start()
 	// Start local RPC service.
-	listener, err := b.rpc.Start()
+	err := b.rpc.Start()
 	if err != nil {
 		log.Fatalf("rpc service failed to start: %v", err)
 		return
 	}
 
+	defer func() {
+		// cleaning...
+		b.rpc.Stop()
+	}()
+
 	// keep process alive before killed
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 	<-sigs
-	fmt.Println("exiting")
-
-	defer func() {
-		listener.Close()
-		fmt.Printf("HTTP endpoint closed: http://%s", b.rpc.httpEndpoint)
-	}()
+	fmt.Println("Process stopped by SIGINT or SIGTERM.")
 }
