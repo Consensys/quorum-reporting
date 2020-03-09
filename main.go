@@ -1,32 +1,39 @@
 package main
 
 import (
+	"flag"
 	"fmt"
-	"github.com/ethereum/go-ethereum/common"
 	"os"
 	"os/signal"
-	"quorumengineering/quorum-report/monitor"
+	"strings"
 	"syscall"
-)
 
-// hardcoded parameters should be converted into flags after integrating with github.com/urfave/cli/v2
-var (
-	quorumWSURL      = "ws://localhost:23000"
-	quorumGraphQLURL = "http://localhost:8547/graphql"
-	addresses        = []common.Address{
-		common.HexToAddress("0x1932c48b2bf8102ba33b4a6b545c32236e342f34"),
-	}
+	"github.com/ethereum/go-ethereum/common"
+
+	"quorumengineering/quorum-report/monitor"
 )
 
 func main() {
+	// define flags with default value
+	quorumWSURL := flag.String("quorumWSURL", "ws://localhost:23000", "websocket url to quorum node")
+	quorumGraphQLURL := flag.String("quorumGraphQLURL", "http://localhost:8547/graphql", "graphql url to quorum node")
+	addresses := flag.String("addresses", "", "common separated hex contract addresses")
+	// once all flags are declared, call flag.Parse() to execute the command-line parsing.
+	flag.Parse()
+
+	addressList := []common.Address{}
+	for _, a := range strings.Split(*addresses, ",") {
+		addressList = append(addressList, common.HexToAddress(a))
+	}
+
 	var err error
-	backend, err := monitor.New(quorumWSURL, quorumGraphQLURL, addresses)
+	monitorBackend, err := monitor.New(*quorumWSURL, *quorumGraphQLURL, addressList)
 	if err != nil {
 		fmt.Printf("exiting... err: %v.\n", err)
 		return
 	}
 
-	backend.Start()
+	monitorBackend.Start()
 
 	// keep process alive before killed
 	sigs := make(chan os.Signal, 1)

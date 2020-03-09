@@ -28,4 +28,18 @@ Number | Area | Requirement
     * *yet to finalize on storage schema and database*
 * User interface 
     * Dashboard and configuration options to be added current Cakeshop UI for the first version
-        
+
+## Up and Running
+
+* After clone the repo, build `quorum-report` tool
+```bash
+go build
+```
+* See usage of `quorum-report`
+```bash
+./quorum-report --help
+```
+* Start `quorum-report` tool with default params
+```
+./quorum-report
+```
