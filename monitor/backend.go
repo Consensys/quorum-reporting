@@ -37,14 +37,14 @@ func New(flags *types.Flags) (*Backend, error) {
 
 	return &Backend{
 		monitor: NewMonitorService(db, quorumClient, flags.Addresses),
-		rpc:     NewRPCService(flags.RPCAddress, flags.RPCVHOSTS, flags.RPCCORS, apis), // Crudely expose all database API endpoints for now...
+		rpc:     NewRPCService(flags.RPCAddress, flags.RPCVHOSTS, flags.RPCCORS, apis), // TODO: Crudely expose all database API endpoints for now... Need enhance
 	}, nil
 }
 
 func (b *Backend) Start() {
-	// Start monitor service.
+	// start monitor service
 	go b.monitor.Start()
-	// Start local RPC service.
+	// start local RPC service
 	err := b.rpc.Start()
 	if err != nil {
 		log.Fatalf("rpc service failed to start: %v", err)

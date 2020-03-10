@@ -19,4 +19,4 @@ type Block struct {
 	ExtraData   []byte      `json:"extraData"`
 }
 
-// TODO: Define event type, transaction type, storage type
+// TODO: define event type, transaction type, storage type

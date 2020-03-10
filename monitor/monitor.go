@@ -8,9 +8,9 @@ import (
 	"quorumengineering/quorum-report/filter"
 )
 
-// TODO: MonitorService start all filters and listens to them, it pulls data from Quorum node and update the database.
+// MonitorService starts all filters and listens to them, it pulls data from Quorum node and update the database.
 type MonitorService struct {
-	db           database.BlockDB // TODO: db will change to database.Database after all interfaces are implemented.
+	db           database.BlockDB // TODO: `db` will change to database.Database after all interfaces are implemented.
 	quorumClient *client.QuorumClient
 	address      []common.Address
 	blockFilter  *filter.BlockFilter
@@ -26,8 +26,9 @@ func NewMonitorService(db database.BlockDB, quorumClient *client.QuorumClient, a
 }
 
 func (m *MonitorService) Start() {
-	// Start block syncing.
-	// Pulling historical blocks since the last persisted while continuously listening to ChainHeadEvent.
-	// For every block received, pull transactions/ events related to the registered contracts.
-	m.blockFilter.Start()
+	// start block syncing
+	go m.blockFilter.Start()
+	// start transaction monitoring based on block received
+	// start event filtering based on transaction receipts received
+	// start storage details reporting at each block
 }

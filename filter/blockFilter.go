@@ -31,6 +31,9 @@ func NewBlockFilter(db database.BlockDB, quorumClient *client.QuorumClient) *Blo
 }
 
 func (bf *BlockFilter) Start() {
+	// Pulling historical blocks since the last persisted while continuously listening to ChainHeadEvent.
+	// For every block received, pull transactions/ events related to the registered contracts.
+
 	fmt.Println("Start to sync blocks...")
 	// listen to ChainHeadEvent
 	go bf.listenToChainHead()
@@ -48,11 +51,13 @@ func (bf *BlockFilter) listenToChainHead() {
 	headers := make(chan *ethType.Header)
 	sub, err := bf.quorumClient.SubscribeNewHead(context.Background(), headers)
 	if err != nil {
+		// TODO: should gracefully handle error (if quorum node is down, reconnect?)
 		log.Fatalf("subscribe to chain head event failed: %v.\n", err)
 	}
 	for {
 		select {
 		case err := <-sub.Err():
+			// TODO: should gracefully handle error (if quorum node is down, reconnect?)
 			log.Fatalf("chain head event subscription error: %v.\n", err)
 		case header := <-headers:
 			if !isClosed(bf.syncStart) {
@@ -68,6 +73,7 @@ func (bf *BlockFilter) syncBlocks(start, end uint64) {
 	for i := start + 1; i < end; i++ {
 		header, err := bf.quorumClient.HeaderByNumber(context.Background(), big.NewInt(int64(i)))
 		if err != nil {
+			// TODO: should gracefully handle error (if quorum node is down, reconnect?)
 			log.Fatalf("fetch block %v failed: %v.\n", i, err)
 		}
 		bf.db.WriteBlock(createBlock(header))
