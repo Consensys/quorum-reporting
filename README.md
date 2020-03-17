@@ -48,11 +48,13 @@ go build
 
 #### Phase 0: Sine Qua Non
 
-- Complete the base code architecture
-- Sync blocks & Store blocks in a memory database
-- Filter events by registered addresses
+- Complete the base code architecture **(Done)**
+- Sync blocks & Store blocks in a memory database **(Done)**
+- Expose basic RPC endpoints to serve queries **(Done)**
 - Filter transactions by registered addresses
-- Expose basic RPC endpoints to serve queries
+- Filter events by registered addresses
+- Unit tests & CI/CD
+- urfave/cli integration
 
 #### Phase 1: Sitzfleisch
 
@@ -62,7 +64,7 @@ go build
 
 #### Phase 2: Herculean
 
-- Filter contract detailed storage by registered addresses
+- Filter contract detailed storage by registered addresses (with dumpAccount available on geth side)
 - Resolve internal calls (incoming/ outgoing) for transactions of registered addresses
 
 #### Phase 3: Sapience
