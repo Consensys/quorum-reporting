@@ -6,28 +6,32 @@ import (
 	"log"
 	"math/big"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	ethType "github.com/ethereum/go-ethereum/core/types"
 
 	"quorumengineering/quorum-report/client"
 	"quorumengineering/quorum-report/database"
+	"quorumengineering/quorum-report/types"
 )
 
 // TODO: BlockFilter subscribes to new blocks and pull historical blocks.
 
 type BlockFilter struct {
-	db            database.BlockDB
-	quorumClient  *client.QuorumClient
-	lastPersisted uint64
-	syncStart     chan uint64
+	db                database.Database
+	quorumClient      *client.QuorumClient
+	lastPersisted     uint64
+	syncStart         chan uint64
+	transactionFilter *TransactionFilter
 }
 
-func NewBlockFilter(db database.BlockDB, quorumClient *client.QuorumClient) *BlockFilter {
+func NewBlockFilter(db database.Database, quorumClient *client.QuorumClient, addresses []common.Address) *BlockFilter {
 	return &BlockFilter{
 		db,
 		quorumClient,
 		db.GetLastPersistedBlockNumber(),
 		make(chan uint64),
+		NewTransactionFilter(db, quorumClient, addresses),
 	}
 }
 
@@ -38,15 +42,15 @@ func (bf *BlockFilter) Start() {
 	fmt.Println("Start to sync blocks...")
 
 	// 1. Fetch the current block height
-	currentHead, err := bf.getCurrentHead()
+	currentBlockNumber, err := bf.currentBlockNumber()
 	if err != nil {
 		// TODO: should gracefully handle error (if quorum node is down, reconnect?)
 		log.Fatalf("get current head error: %v.\n", err)
 	}
-	fmt.Println("Current block head is: %v", currentHead)
+	fmt.Printf("Current block head is: %v\n", currentBlockNumber)
 
 	// 2. Sync from last persisted to current block height
-	go bf.syncBlocks(bf.lastPersisted, currentHead)
+	go bf.syncBlocks(bf.lastPersisted, currentBlockNumber)
 
 	// 3. Listen to ChainHeadEvent and sync
 	go bf.listenToChainHead()
@@ -54,10 +58,10 @@ func (bf *BlockFilter) Start() {
 	close(bf.syncStart)
 
 	// 4. Sync from current block height + 1 to the first ChainHeadEvent if there is any gap
-	go bf.syncBlocks(currentHead, latestChainHead)
+	go bf.syncBlocks(currentBlockNumber, latestChainHead-1)
 }
 
-func (bf *BlockFilter) getCurrentHead() (uint64, error) {
+func (bf *BlockFilter) currentBlockNumber() (uint64, error) {
 	query := `
 		query {
 			block {
@@ -89,19 +93,33 @@ func (bf *BlockFilter) listenToChainHead() {
 			if !isClosed(bf.syncStart) {
 				bf.syncStart <- header.Number.Uint64()
 			}
-			bf.db.WriteBlock(createBlock(header))
+			blockOrigin, err := bf.quorumClient.BlockByHash(context.Background(), header.Hash())
+			if err != nil {
+				// TODO: should gracefully handle error (if quorum node is down, reconnect?)
+				log.Fatalf("get block %v error: %v.\n", header.Hash(), err)
+			}
+			block := createBlock(blockOrigin)
+			bf.process(block)
 		}
 	}
 }
 
 func (bf *BlockFilter) syncBlocks(start, end uint64) {
 	fmt.Printf("Start to sync historic block from %v to %v. \n", start, end)
-	for i := start + 1; i < end; i++ {
-		header, err := bf.quorumClient.HeaderByNumber(context.Background(), big.NewInt(int64(i)))
+	for i := start + 1; i <= end; i++ {
+		blockOrigin, err := bf.quorumClient.BlockByNumber(context.Background(), big.NewInt(int64(i)))
 		if err != nil {
 			// TODO: should gracefully handle error (if quorum node is down, reconnect?)
 			log.Fatalf("fetch block %v failed: %v.\n", i, err)
 		}
-		bf.db.WriteBlock(createBlock(header))
+		bf.process(createBlock(blockOrigin))
 	}
+}
+
+func (bf *BlockFilter) process(block *types.Block) {
+	// Use transaction filter to filter all transactions
+	bf.transactionFilter.FilterBlock(block)
+
+	// Write block to DB
+	bf.db.WriteBlock(block)
 }

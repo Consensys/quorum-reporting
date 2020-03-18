@@ -13,8 +13,7 @@ import (
 // A sample in memory database
 type MemoryDB struct {
 	blockDB                  map[uint64]*types.Block
-	transactionDB	map[common.Address]*types.Transaction
-	eventDB map[common.Address]*types.Event
+	transactionDB            map[common.Hash]*types.Transaction
 	lastPersistedBlockNumber uint64
 	sync.RWMutex
 }
@@ -30,7 +29,7 @@ func (db *MemoryDB) WriteBlock(block *types.Block) error {
 	db.Lock()
 	defer db.Unlock()
 	if block != nil {
-		blockNumber := block.Number
+		blockNumber := block.NumberU64()
 		db.blockDB[blockNumber] = block
 		// update last persisted
 		if blockNumber == db.lastPersistedBlockNumber+1 {
@@ -44,7 +43,7 @@ func (db *MemoryDB) WriteBlock(block *types.Block) error {
 			db.lastPersistedBlockNumber = blockNumber
 		}
 		// Debug printing
-		fmt.Printf("Block stored: number = %v, hash = %v.\n", block.Number, block.Hash.Hex())
+		fmt.Printf("Block stored: number = %v, hash = %v.\n", block.Number, block.Hash().Hex())
 		fmt.Printf("Last persisted block: %v.\n", db.lastPersistedBlockNumber)
 		return nil
 	}
@@ -64,4 +63,25 @@ func (db *MemoryDB) GetLastPersistedBlockNumber() uint64 {
 	db.RLock()
 	defer db.RUnlock()
 	return db.lastPersistedBlockNumber
+}
+
+func (db *MemoryDB) WriteTransaction(transaction *types.Transaction) error {
+	db.Lock()
+	defer db.Unlock()
+	if transaction != nil {
+		db.transactionDB[transaction.Hash()] = transaction
+		// Debug printing
+		fmt.Printf("Transaction stored: hash = %v.\n", transaction.Hash().Hex())
+		return nil
+	}
+	return errors.New("transaction is nil")
+}
+
+func (db *MemoryDB) ReadTransaction(hash common.Hash) (*types.Transaction, error) {
+	db.RLock()
+	defer db.RUnlock()
+	if tx, ok := db.transactionDB[hash]; ok {
+		return tx, nil
+	}
+	return nil, errors.New("transaction does not exist")
 }

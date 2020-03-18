@@ -7,23 +7,23 @@ import (
 )
 
 type Database interface {
-	EventDB
-	TransactionDB
-	StorageDB
 	BlockDB
-	PersistentIndexDB
+	TransactionDB
+	//StorageDB
+	//IndexerDB
 }
 
-// TODO: EventDB stores all event logs for a contract
-type EventDB interface {
-	WriteEvent()
-	ReadEvent()
+// BlockDB stores the block details for all blocks
+type BlockDB interface {
+	WriteBlock(*types.Block) error
+	ReadBlock(uint64) (*types.Block, error)
+	GetLastPersistedBlockNumber() uint64
 }
 
-// TODO: TransactionDB stores all transactions change a contract's state
+// TransactionDB stores all transactions change a contract's state
 type TransactionDB interface {
-	WriteTransaction()
-	ReadTransaction()
+	WriteTransaction(*types.Transaction) error
+	ReadTransaction(common.Hash) (*types.Transaction, error)
 }
 
 // TODO: StorageDB stores the storage trie key value pairs at all block for a contract
@@ -32,15 +32,8 @@ type StorageDB interface {
 	ReadStorage()
 }
 
-// TODO: BlockDB stores the block details for all blocks
-type BlockDB interface {
-	WriteBlock(*types.Block) error
-	ReadBlock(uint64) (*types.Block, error)
-	GetLastPersistedBlockNumber() uint64
-}
-
-// TODO: PersistentIndexDB stores the last block number a contract has all the required data for reporting
-type PersistentIndexDB interface {
-	WritePersistentIndex(common.Address, uint64) error
-	ReadPersistentIndex(common.Address) (uint64, error)
+// TODO: IndexerDB stores the location to find all transactions/ events for a contract
+type IndexerDB interface {
+	IndexTransaction()
+	IndexEvent()
 }
