@@ -6,6 +6,7 @@ import (
 	"log"
 	"math/big"
 
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	ethType "github.com/ethereum/go-ethereum/core/types"
 
 	"quorumengineering/quorum-report/client"
@@ -35,16 +36,41 @@ func (bf *BlockFilter) Start() {
 	// For every block received, pull transactions/ events related to the registered contracts.
 
 	fmt.Println("Start to sync blocks...")
-	// listen to ChainHeadEvent
-	go bf.listenToChainHead()
 
-	// sync old blocks
+	// 1. Fetch the current block height
+	currentHead, err := bf.getCurrentHead()
+	if err != nil {
+		// TODO: should gracefully handle error (if quorum node is down, reconnect?)
+		log.Fatalf("get current head error: %v.\n", err)
+	}
+	fmt.Println("Current block head is: %v", currentHead)
+
+	// 2. Sync from last persisted to current block height
+	go bf.syncBlocks(bf.lastPersisted, currentHead)
+
+	// 3. Listen to ChainHeadEvent and sync
+	go bf.listenToChainHead()
 	latestChainHead := <-bf.syncStart
 	close(bf.syncStart)
 
-	if latestChainHead > bf.lastPersisted+1 {
-		bf.syncBlocks(bf.lastPersisted, latestChainHead)
+	// 4. Sync from current block height + 1 to the first ChainHeadEvent if there is any gap
+	go bf.syncBlocks(currentHead, latestChainHead)
+}
+
+func (bf *BlockFilter) getCurrentHead() (uint64, error) {
+	query := `
+		query {
+			block {
+				number
+			}
+		}
+	`
+	var resp map[string]interface{}
+	resp, err := bf.quorumClient.ExecuteGraphQLQuery(context.Background(), query)
+	if err != nil {
+		return 0, err
 	}
+	return hexutil.DecodeUint64(resp["block"].(map[string]interface{})["number"].(string))
 }
 
 func (bf *BlockFilter) listenToChainHead() {
