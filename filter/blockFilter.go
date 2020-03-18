@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"math/big"
+	"quorumengineering/quorum-report/graphql"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -62,15 +63,8 @@ func (bf *BlockFilter) Start() {
 }
 
 func (bf *BlockFilter) currentBlockNumber() (uint64, error) {
-	query := `
-		query {
-			block {
-				number
-			}
-		}
-	`
 	var resp map[string]interface{}
-	resp, err := bf.quorumClient.ExecuteGraphQLQuery(context.Background(), query)
+	resp, err := bf.quorumClient.ExecuteGraphQLQuery(context.Background(), graphql.CurrentBlockQuery())
 	if err != nil {
 		return 0, err
 	}

@@ -18,20 +18,13 @@ func main() {
 	}
 
 	// test with graphql
-	query := `
-		query {
-			block {
-				number
-			}
-		}
-	`
 
 	var resp map[string]interface{}
-	resp, err = quorumClient.ExecuteGraphQLQuery(context.Background(), query)
+	resp, err = quorumClient.ExecuteGraphQLQuery(context.Background(), graphql.CurrentBlockQuery())
 
 	fmt.Println(resp["block"].(map[string]interface{})["number"])
 
-	resp, err = quorumClient.ExecuteGraphQLQuery(context.Background(), graphql.GetTransactionDetailQuery(common.HexToHash("0xde70fc6431cbde6f2b6d92d77745fdc5aa1521d2e81a8969a72e3a9997e8ae0d")))
+	resp, err = quorumClient.ExecuteGraphQLQuery(context.Background(), graphql.TransactionDetailQuery(common.HexToHash("0xde70fc6431cbde6f2b6d92d77745fdc5aa1521d2e81a8969a72e3a9997e8ae0d")))
 
 	fmt.Println(resp["transaction"].(map[string]interface{}))
 

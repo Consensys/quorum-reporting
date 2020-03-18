@@ -2,8 +2,19 @@ package graphql
 
 import "github.com/ethereum/go-ethereum/common"
 
-// TODO: Templates for GraphQL queries
-func GetTransactionDetailQuery(hash common.Hash) string {
+// Templates for GraphQL queries
+
+func CurrentBlockQuery() string {
+	return `
+		query {
+			block {
+				number
+			}
+		}
+	`
+}
+
+func TransactionDetailQuery(hash common.Hash) string {
 	return `query { transaction(hash:"` + hash.Hex() + `") {
         hash
         nonce

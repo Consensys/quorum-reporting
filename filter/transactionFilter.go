@@ -24,12 +24,13 @@ func NewTransactionFilter(db database.Database, quorumClient *client.QuorumClien
 	}
 }
 
-// Write transactions to DB
-// Index transactions related to registered contract address
-
 func (tf *TransactionFilter) FilterBlock(block *types.Block) {
 	fmt.Printf("Filter block %v\n", block.NumberU64())
 	for _, tx := range block.Transactions() {
 		fmt.Printf("Get TX %v\n", tx.Hash().Hex())
 	}
+	// Use GraphQL to get isPrivate & privateInputData
+	// Write transactions to DB
+	// Index transactions related to registered contract addresses
+	// Index events related to registered contract addresses
 }
