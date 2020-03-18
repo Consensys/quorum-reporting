@@ -66,6 +66,7 @@ go build
 
 - Filter contract detailed storage by registered addresses (with dumpAccount available on geth side)
 - Resolve internal calls (incoming/ outgoing) for transactions of registered addresses
+- Docker file & make file support
 
 #### Phase 3: Sapience
 

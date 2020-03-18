@@ -5,12 +5,16 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/ethereum/go-ethereum/common"
+
 	"quorumengineering/quorum-report/types"
 )
 
 // A sample in memory database
 type MemoryDB struct {
 	blockDB                  map[uint64]*types.Block
+	transactionDB	map[common.Address]*types.Transaction
+	eventDB map[common.Address]*types.Event
 	lastPersistedBlockNumber uint64
 	sync.RWMutex
 }
@@ -26,7 +30,7 @@ func (db *MemoryDB) WriteBlock(block *types.Block) error {
 	db.Lock()
 	defer db.Unlock()
 	if block != nil {
-		blockNumber := block.Number.Uint64()
+		blockNumber := block.Number
 		db.blockDB[blockNumber] = block
 		// update last persisted
 		if blockNumber == db.lastPersistedBlockNumber+1 {

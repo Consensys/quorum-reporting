@@ -13,7 +13,7 @@ func createBlock(header *ethType.Header) *types.Block {
 		StateRoot:   header.Root,
 		TxRoot:      header.TxHash,
 		ReceiptRoot: header.ReceiptHash,
-		Number:      header.Number,
+		Number:      header.Number.Uint64(),
 		GasLimit:    header.GasLimit,
 		GasUsed:     header.GasUsed,
 		Timestamp:   header.Time,
