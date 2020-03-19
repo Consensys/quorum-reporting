@@ -46,29 +46,27 @@ go build
 
 ## Roadmap
 
-#### Phase 0: Sine Qua Non
+#### Phase 0
 
-- Complete the base code architecture **(Done)**
-- Sync blocks & Store blocks in a memory database **(Done)**
-- Expose basic RPC endpoints to serve queries **(Done)**
+- Complete the base code architecture
+- Sync blocks & Store blocks in a memory database
 - Filter transactions by registered addresses
 - Filter events by registered addresses
+- Expose basic RPC endpoints to serve queries
 - Unit tests & CI/CD
-- urfave/cli integration
 
-#### Phase 1: Sitzfleisch
+#### Phase 1
 
 - Integrate persistent database
-- Expose well defined RPC endpoints for to retrieve data from database
 - Handle restart & recover from fail-stop scenarios
 
-#### Phase 2: Herculean
+#### Phase 2
 
 - Filter contract detailed storage by registered addresses (with dumpAccount available on geth side)
 - Resolve internal calls (incoming/ outgoing) for transactions of registered addresses
 - Docker file & make file support
 
-#### Phase 3: Sapience
+#### Phase 3
 
 - Integrate UI for visualization
-- Full functional reporting tool
+- Fully functional reporting tool
