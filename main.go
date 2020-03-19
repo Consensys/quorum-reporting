@@ -18,7 +18,7 @@ func main() {
 	addresses := flag.String("addresses", "", "Common separated hex contract addresses")
 	rpcAddr := flag.String("rpcaddr", "localhost:6666", "HTTP-RPC server listening interface")
 	rpccors := flag.String("rpccors", "localhost", "Comma separated list of virtual hostnames from which to accept requests (server enforced). Accepts '*' wildcard.")
-	rpcvhosts := flag.String("rpcvhosts", "", "Common separated hex contract addresses")
+	rpcvhosts := flag.String("rpcvhosts", "localhost", "Common separated hex contract addresses")
 	// once all flags are declared, call flag.Parse() to execute the command-line parsing.
 	flag.Parse()
 

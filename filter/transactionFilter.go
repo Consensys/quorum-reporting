@@ -32,18 +32,23 @@ func NewTransactionFilter(db database.Database, quorumClient *client.QuorumClien
 func (tf *TransactionFilter) FilterBlock(block *types.Block) {
 	fmt.Printf("Filter block %v\n", block.Number)
 
-	// 1. Query transaction details by graphql
 	for _, txHash := range block.Transactions {
+		// 1. Query transaction details by graphql
 		tx, err := tf.createTransaction(txHash)
 		if err != nil {
 			// TODO: should gracefully handle error (if quorum node is down, reconnect?)
 			log.Fatalf("get transaction details error: %v.\n", err)
 		}
 		fmt.Println(tx.Hash.Hex())
+		// 2. Write transactions to DB
+		err = tf.db.WriteTransaction(tx)
+		if err != nil {
+			// TODO: should gracefully handle error (if quorum node is down, reconnect?)
+			log.Fatalf("write transaction error: %v.\n", err)
+		}
+		// TODO: 3. Index transactions related to registered contract addresses
+		// TODO: 4. Index events related to registered contract addresses
 	}
-	// 2. Write transactions to DB
-	// 3. Index transactions related to registered contract addresses
-	// 4. Index events related to registered contract addresses
 }
 
 func (tf *TransactionFilter) createTransaction(hash common.Hash) (*types.Transaction, error) {

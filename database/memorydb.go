@@ -21,6 +21,7 @@ type MemoryDB struct {
 func NewMemoryDB() *MemoryDB {
 	return &MemoryDB{
 		blockDB:                  make(map[uint64]*types.Block),
+		transactionDB:            make(map[common.Hash]*types.Transaction),
 		lastPersistedBlockNumber: 0,
 	}
 }
