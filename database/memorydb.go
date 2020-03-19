@@ -29,7 +29,7 @@ func (db *MemoryDB) WriteBlock(block *types.Block) error {
 	db.Lock()
 	defer db.Unlock()
 	if block != nil {
-		blockNumber := block.NumberU64()
+		blockNumber := block.Number
 		db.blockDB[blockNumber] = block
 		// update last persisted
 		if blockNumber == db.lastPersistedBlockNumber+1 {
@@ -43,7 +43,7 @@ func (db *MemoryDB) WriteBlock(block *types.Block) error {
 			db.lastPersistedBlockNumber = blockNumber
 		}
 		// Debug printing
-		fmt.Printf("Block stored: number = %v, hash = %v.\n", block.Number, block.Hash().Hex())
+		fmt.Printf("Block stored: number = %v, hash = %v.\n", block.Number, block.Hash.Hex())
 		fmt.Printf("Last persisted block: %v.\n", db.lastPersistedBlockNumber)
 		return nil
 	}
@@ -69,9 +69,9 @@ func (db *MemoryDB) WriteTransaction(transaction *types.Transaction) error {
 	db.Lock()
 	defer db.Unlock()
 	if transaction != nil {
-		db.transactionDB[transaction.Hash()] = transaction
+		db.transactionDB[transaction.Hash] = transaction
 		// Debug printing
-		fmt.Printf("Transaction stored: hash = %v.\n", transaction.Hash().Hex())
+		fmt.Printf("Transaction stored: hash = %v.\n", transaction.Hash.Hex())
 		return nil
 	}
 	return errors.New("transaction is nil")

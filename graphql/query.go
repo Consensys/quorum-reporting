@@ -17,21 +17,26 @@ func CurrentBlockQuery() string {
 func TransactionDetailQuery(hash common.Hash) string {
 	return `query { transaction(hash:"` + hash.Hex() + `") {
         hash
+        status
+		block { number }
+		index
         nonce
-        index
         from { address }
         to { address }
         value
         gasPrice
         gas
-        inputData
-        block { number }
-        status
         gasUsed
         cumulativeGasUsed
         createdContract { address }
-        logs { topics }
-		isPrivate
+		inputData
 		privateInputData
+		isPrivate
+		logs {
+			index
+			account { address }
+			topics
+			data
+		}
     } }`
 }
