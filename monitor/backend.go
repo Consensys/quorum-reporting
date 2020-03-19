@@ -26,18 +26,20 @@ func New(flags *types.Flags) (*Backend, error) {
 		return nil, err
 	}
 	db := database.NewMemoryDB()
+	rpcAPIs := &RPCAPIs{
+		db,
+	}
 	apis := []rpc.API{
 		{
 			"reporting",
 			"1.0",
-			db,
+			rpcAPIs,
 			true,
 		},
 	}
-
 	return &Backend{
 		monitor: NewMonitorService(db, quorumClient, flags.Addresses),
-		rpc:     NewRPCService(flags.RPCAddress, flags.RPCVHOSTS, flags.RPCCORS, apis), // TODO: Crudely expose all database API endpoints for now... Need enhance
+		rpc:     NewRPCService(flags.RPCAddress, flags.RPCVHOSTS, flags.RPCCORS, apis),
 	}, nil
 }
 

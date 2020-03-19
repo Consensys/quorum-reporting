@@ -103,8 +103,8 @@ func (tf *TransactionFilter) createTransaction(hash common.Hash) (*types.Transac
 		Gas:               gas,
 		GasUsed:           gasUsed,
 		CumulativeGasUsed: cumulativeGasUsed,
-		Data:              []byte(txOrigin.InputData),
-		PrivateData:       []byte(txOrigin.PrivateInputData),
+		Data:              hexutil.MustDecode(txOrigin.InputData),
+		PrivateData:       hexutil.MustDecode(txOrigin.PrivateInputData),
 		IsPrivate:         txOrigin.IsPrivate,
 	}
 	events := []*types.Event{}
@@ -117,7 +117,7 @@ func (tf *TransactionFilter) createTransaction(hash common.Hash) (*types.Transac
 			Index:           l.Index,
 			Address:         common.HexToAddress(l.Account.Address),
 			Topics:          topics,
-			Data:            []byte(l.Data),
+			Data:            hexutil.MustDecode(l.Data),
 			BlockNumber:     tx.BlockNumber,
 			TransactionHash: tx.Hash,
 		}

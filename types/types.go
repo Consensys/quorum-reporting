@@ -2,6 +2,7 @@ package types
 
 import (
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 )
 
 type Block struct {
@@ -14,7 +15,7 @@ type Block struct {
 	GasLimit     uint64        `json:"gasLimit"`
 	GasUsed      uint64        `json:"gasUsed"`
 	Timestamp    uint64        `json:"timestamp"`
-	ExtraData    []byte        `json:"extraData"`
+	ExtraData    hexutil.Bytes `json:"extraData"`
 	Transactions []common.Hash `json:"transactions"`
 }
 
@@ -31,8 +32,8 @@ type Transaction struct {
 	GasUsed           uint64         `json:"gasUsed"`
 	CumulativeGasUsed uint64         `json:"cumulativeGasUsed"`
 	CreatedContract   common.Address `json:"createdContract"`
-	Data              []byte         `json:"data"`
-	PrivateData       []byte         `json:"privateData"`
+	Data              hexutil.Bytes  `json:"data"`
+	PrivateData       hexutil.Bytes  `json:"privateData"`
 	IsPrivate         bool           `json:"isPrivate"`
 	Events            []*Event       `json:"events"`
 }
@@ -41,7 +42,7 @@ type Event struct {
 	Index           uint64
 	Address         common.Address `json:"address"`
 	Topics          []common.Hash  `json:"topics"`
-	Data            []byte         `json:"data"`
+	Data            hexutil.Bytes  `json:"data"`
 	BlockNumber     uint64         `json:"blockNumber"`
 	TransactionHash common.Hash    `json:"transactionHash"`
 }
