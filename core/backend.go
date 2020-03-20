@@ -1,4 +1,4 @@
-package monitor
+package core
 
 import (
 	"fmt"
@@ -6,17 +6,17 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/ethereum/go-ethereum/rpc"
-
 	"quorumengineering/quorum-report/client"
+	"quorumengineering/quorum-report/core/monitor"
+	"quorumengineering/quorum-report/core/rpc"
 	"quorumengineering/quorum-report/database"
 	"quorumengineering/quorum-report/types"
 )
 
 // Backend wraps MonitorService and QuorumClient, controls the start/stop of the reporting tool.
 type Backend struct {
-	monitor *MonitorService
-	rpc     *RPCService
+	monitor *monitor.MonitorService
+	rpc     *rpc.RPCService
 }
 
 func New(flags *types.Flags) (*Backend, error) {
@@ -25,26 +25,17 @@ func New(flags *types.Flags) (*Backend, error) {
 		return nil, err
 	}
 	db := database.NewMemoryDB()
-	rpcAPIs := &RPCAPIs{
-		db,
-	}
-	apis := []rpc.API{
-		{
-			"reporting",
-			"1.0",
-			rpcAPIs,
-			true,
-		},
-	}
 	return &Backend{
-		monitor: NewMonitorService(db, quorumClient, flags.Addresses),
-		rpc:     NewRPCService(flags.RPCAddress, flags.RPCVHOSTS, flags.RPCCORS, apis),
+		monitor: monitor.NewMonitorService(db, quorumClient),
+		//filter: filter(db, quorumClient, flags.Addresses),
+		rpc: rpc.NewRPCService(db, flags.RPCAddress, flags.RPCVHOSTS, flags.RPCCORS),
 	}, nil
 }
 
 func (b *Backend) Start() {
 	// start monitor service
 	go b.monitor.Start()
+	// TODO: start filter service
 	// start local RPC service
 	go b.rpc.Start()
 

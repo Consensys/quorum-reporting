@@ -1,13 +1,20 @@
-package monitor
+package rpc
 
 import (
 	"github.com/ethereum/go-ethereum/common"
+
 	"quorumengineering/quorum-report/database"
 	"quorumengineering/quorum-report/types"
 )
 
 type RPCAPIs struct {
 	db database.Database
+}
+
+func NewRPCAPIs(db database.Database) *RPCAPIs {
+	return &RPCAPIs{
+		db,
+	}
 }
 
 func (r *RPCAPIs) GetLastPersistedBlockNumber() uint64 {

@@ -69,7 +69,7 @@ Quorum <---------- [ Block Syncer ] ----------> Database <---------- Visualizati
    |                       |                       | 
    |                       |                       |
    |                       V                       |
-   +------- [ Transaction/ Storage Syncer ] -------+
+   +----------- [ Transaction Syncer ] ------------+
 ```
 
 ## Roadmap
@@ -77,7 +77,7 @@ Quorum <---------- [ Block Syncer ] ----------> Database <---------- Visualizati
 #### Phase 0
 
 - Complete the base code architecture
-- Sync blocks & Store blocks in a memory database
+- Sync blocks & Store blocks/ transactions in a memory database
 - Filter transactions by registered addresses
 - Filter events by registered addresses
 - Expose basic RPC endpoints to serve queries

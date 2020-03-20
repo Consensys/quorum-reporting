@@ -34,6 +34,8 @@ type StorageDB interface {
 
 // TODO: IndexerDB stores the location to find all transactions/ events for a contract
 type IndexerDB interface {
-	IndexTransaction()
-	IndexEvent()
+	IndexTransaction([]common.Address, *types.Transaction) error
+	GetAllTransactionsByAddress(common.Address) []common.Hash
+	IndexEvent(common.Address, *types.Event) error
+	GetAllEventsByAddress(common.Address) []*types.Event
 }

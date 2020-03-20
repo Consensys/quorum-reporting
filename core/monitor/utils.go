@@ -1,4 +1,4 @@
-package filter
+package monitor
 
 func isClosed(ch <-chan uint64) bool {
 	select {

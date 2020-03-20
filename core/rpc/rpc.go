@@ -1,4 +1,4 @@
-package monitor
+package rpc
 
 import (
 	"fmt"
@@ -6,10 +6,12 @@ import (
 	"net"
 	"time"
 
-	"github.com/ethereum/go-ethereum/rpc"
+	ethRPC "github.com/ethereum/go-ethereum/rpc"
+
+	"quorumengineering/quorum-report/database"
 )
 
-var defaultHTTPTimeouts = rpc.HTTPTimeouts{
+var defaultHTTPTimeouts = ethRPC.HTTPTimeouts{
 	ReadTimeout:  30 * time.Second,
 	WriteTimeout: 30 * time.Second,
 	IdleTimeout:  120 * time.Second,
@@ -19,11 +21,19 @@ type RPCService struct {
 	httpEndpoint string
 	vhosts       []string
 	cors         []string
-	apis         []rpc.API
+	apis         []ethRPC.API
 	listener     net.Listener
 }
 
-func NewRPCService(httpEndpoint string, vhosts []string, cors []string, apis []rpc.API) *RPCService {
+func NewRPCService(db database.Database, httpEndpoint string, vhosts []string, cors []string) *RPCService {
+	apis := []ethRPC.API{
+		{
+			"reporting",
+			"1.0",
+			NewRPCAPIs(db),
+			true,
+		},
+	}
 	return &RPCService{
 		httpEndpoint: httpEndpoint,
 		vhosts:       vhosts,
@@ -37,7 +47,7 @@ func (r *RPCService) Start() {
 	for _, apis := range r.apis {
 		modules = append(modules, apis.Namespace)
 	}
-	listener, _, err := rpc.StartHTTPEndpoint(r.httpEndpoint, r.apis, modules, r.cors, r.vhosts, defaultHTTPTimeouts)
+	listener, _, err := ethRPC.StartHTTPEndpoint(r.httpEndpoint, r.apis, modules, r.cors, r.vhosts, defaultHTTPTimeouts)
 	if err != nil {
 		// TODO: should gracefully handle error
 		log.Fatalf("rpc service failed to start: %v", err)

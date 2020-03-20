@@ -7,7 +7,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 
-	"quorumengineering/quorum-report/monitor"
+	"quorumengineering/quorum-report/core"
 	"quorumengineering/quorum-report/types"
 )
 
@@ -44,11 +44,11 @@ func main() {
 		Addresses:        addressList,
 	}
 
-	monitorBackend, err := monitor.New(flags)
+	backend, err := core.New(flags)
 	if err != nil {
 		log.Fatalf("exiting... err: %v.\n", err)
 		return
 	}
 
-	monitorBackend.Start()
+	backend.Start()
 }

@@ -1,4 +1,4 @@
-package filter
+package monitor
 
 import (
 	"context"
@@ -15,22 +15,20 @@ import (
 	"quorumengineering/quorum-report/types"
 )
 
-type TransactionFilter struct {
+type TransactionMonitor struct {
 	db           database.Database
 	quorumClient *client.QuorumClient
-	addresses    []common.Address
 }
 
-func NewTransactionFilter(db database.Database, quorumClient *client.QuorumClient, addresses []common.Address) *TransactionFilter {
-	return &TransactionFilter{
+func NewTransactionMonitor(db database.Database, quorumClient *client.QuorumClient) *TransactionMonitor {
+	return &TransactionMonitor{
 		db,
 		quorumClient,
-		addresses,
 	}
 }
 
-func (tf *TransactionFilter) FilterBlock(block *types.Block) {
-	fmt.Printf("Filter block %v\n", block.Number)
+func (tf *TransactionMonitor) PullTransactions(block *types.Block) {
+	fmt.Printf("Pull all transactions for block %v\n", block.Number)
 
 	for _, txHash := range block.Transactions {
 		// 1. Query transaction details by graphql
@@ -46,12 +44,10 @@ func (tf *TransactionFilter) FilterBlock(block *types.Block) {
 			// TODO: should gracefully handle error (if quorum node is down, reconnect?)
 			log.Fatalf("write transaction error: %v.\n", err)
 		}
-		// TODO: 3. Index transactions related to registered contract addresses
-		// TODO: 4. Index events related to registered contract addresses
 	}
 }
 
-func (tf *TransactionFilter) createTransaction(hash common.Hash) (*types.Transaction, error) {
+func (tf *TransactionMonitor) createTransaction(hash common.Hash) (*types.Transaction, error) {
 	var (
 		resp     map[string]interface{}
 		txOrigin graphql.Transaction

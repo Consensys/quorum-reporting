@@ -1,4 +1,4 @@
-package filter
+package monitor
 
 import (
 	"context"
@@ -17,27 +17,25 @@ import (
 	"quorumengineering/quorum-report/types"
 )
 
-// TODO: BlockFilter subscribes to new blocks and pull historical blocks.
-
-type BlockFilter struct {
-	db                database.Database
-	quorumClient      *client.QuorumClient
-	lastPersisted     uint64
-	syncStart         chan uint64
-	transactionFilter *TransactionFilter
+type BlockMonitor struct {
+	db                 database.Database
+	quorumClient       *client.QuorumClient
+	lastPersisted      uint64
+	syncStart          chan uint64
+	transactionMonitor *TransactionMonitor
 }
 
-func NewBlockFilter(db database.Database, quorumClient *client.QuorumClient, addresses []common.Address) *BlockFilter {
-	return &BlockFilter{
+func NewBlockMonitor(db database.Database, quorumClient *client.QuorumClient) *BlockMonitor {
+	return &BlockMonitor{
 		db,
 		quorumClient,
 		db.GetLastPersistedBlockNumber(),
 		make(chan uint64),
-		NewTransactionFilter(db, quorumClient, addresses),
+		NewTransactionMonitor(db, quorumClient),
 	}
 }
 
-func (bf *BlockFilter) Start() {
+func (bf *BlockMonitor) Start() {
 	// Pulling historical blocks since the last persisted while continuously listening to ChainHeadEvent.
 	// For every block received, pull transactions/ events related to the registered contracts.
 
@@ -63,7 +61,7 @@ func (bf *BlockFilter) Start() {
 	go bf.syncBlocks(currentBlockNumber, latestChainHead-1)
 }
 
-func (bf *BlockFilter) currentBlockNumber() (uint64, error) {
+func (bf *BlockMonitor) currentBlockNumber() (uint64, error) {
 	var (
 		resp         map[string]interface{}
 		currentBlock graphql.CurrentBlock
@@ -79,7 +77,7 @@ func (bf *BlockFilter) currentBlockNumber() (uint64, error) {
 	return hexutil.DecodeUint64(currentBlock.Number)
 }
 
-func (bf *BlockFilter) listenToChainHead() {
+func (bf *BlockMonitor) listenToChainHead() {
 	headers := make(chan *ethTypes.Header)
 	sub, err := bf.quorumClient.SubscribeNewHead(context.Background(), headers)
 	if err != nil {
@@ -105,7 +103,7 @@ func (bf *BlockFilter) listenToChainHead() {
 	}
 }
 
-func (bf *BlockFilter) syncBlocks(start, end uint64) {
+func (bf *BlockMonitor) syncBlocks(start, end uint64) {
 	fmt.Printf("Start to sync historic block from %v to %v. \n", start, end)
 	for i := start + 1; i <= end; i++ {
 		blockOrigin, err := bf.quorumClient.BlockByNumber(context.Background(), big.NewInt(int64(i)))
@@ -117,9 +115,9 @@ func (bf *BlockFilter) syncBlocks(start, end uint64) {
 	}
 }
 
-func (bf *BlockFilter) process(block *types.Block) {
-	// Use transaction filter to filter all transactions
-	bf.transactionFilter.FilterBlock(block)
+func (bf *BlockMonitor) process(block *types.Block) {
+	// Transaction monitor pulls all transactions for the given block
+	bf.transactionMonitor.PullTransactions(block)
 
 	// Write block to DB
 	bf.db.WriteBlock(block)
