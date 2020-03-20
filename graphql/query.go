@@ -2,7 +2,7 @@ package graphql
 
 import "github.com/ethereum/go-ethereum/common"
 
-// Templates for GraphQL queries
+// templates for GraphQL queries
 
 func CurrentBlockQuery() string {
 	return `

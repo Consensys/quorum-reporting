@@ -31,14 +31,14 @@ func (tf *TransactionMonitor) PullTransactions(block *types.Block) {
 	fmt.Printf("Pull all transactions for block %v\n", block.Number)
 
 	for _, txHash := range block.Transactions {
-		// 1. Query transaction details by graphql
+		// 1. Query transaction details by graphql.
 		tx, err := tf.createTransaction(txHash)
 		if err != nil {
 			// TODO: should gracefully handle error (if quorum node is down, reconnect?)
 			log.Fatalf("get transaction details error: %v.\n", err)
 		}
 		fmt.Println(tx.Hash.Hex())
-		// 2. Write transactions to DB
+		// 2. Write transactions to DB.
 		err = tf.db.WriteTransaction(tx)
 		if err != nil {
 			// TODO: should gracefully handle error (if quorum node is down, reconnect?)
@@ -61,7 +61,7 @@ func (tf *TransactionMonitor) createTransaction(hash common.Hash) (*types.Transa
 		return nil, err
 	}
 
-	// create reporting transaction struct fields
+	// Create reporting transaction struct fields.
 	blockNumber, err := hexutil.DecodeUint64(txOrigin.Block.Number)
 	if err != nil {
 		return nil, err

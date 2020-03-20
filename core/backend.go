@@ -33,10 +33,10 @@ func New(flags *types.Flags) (*Backend, error) {
 }
 
 func (b *Backend) Start() {
-	// start monitor service
+	// Start monitor service.
 	go b.monitor.Start()
-	// TODO: start filter service
-	// start local RPC service
+	// TODO: Start filter service.
+	// Start local RPC service.
 	go b.rpc.Start()
 
 	// cleaning...
@@ -44,7 +44,7 @@ func (b *Backend) Start() {
 		b.rpc.Stop()
 	}()
 
-	// keep process alive before killed
+	// Keep process alive before killed.
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 	<-sigs

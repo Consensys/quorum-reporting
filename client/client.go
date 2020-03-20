@@ -18,15 +18,15 @@ func NewQuorumClient(rawurl, qgurl string) (quorumClient *QuorumClient, err erro
 	return &QuorumClient{rawClient, qgurl}, err
 }
 
-// Execute customized graphql query
+// Execute customized graphql query.
 func (qc *QuorumClient) ExecuteGraphQLQuery(ctx context.Context, query string) (respData map[string]interface{}, err error) {
-	// create a client (safe to share across requests)
+	// Create a client. (safe to share across requests)
 	client := graphql.NewClient(qc.qgurl)
 
-	// make a request
+	// Build a request from query.
 	req := graphql.NewRequest(query)
 
-	// run it and capture the response
+	// Run it and capture the response.
 	err = client.Run(ctx, req, &respData)
 	return
 }

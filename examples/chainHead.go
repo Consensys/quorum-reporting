@@ -29,11 +29,12 @@ func main() {
 		case err := <-sub.Err():
 			log.Fatal(err)
 		case header := <-headers:
-			fmt.Println(header.Number) // print block head
+			// Print block head.
+			fmt.Println(header.Number)
 		}
 	}
 
-	// keep process alive before killed
+	// Keep process alive before killed.
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 	<-sigs

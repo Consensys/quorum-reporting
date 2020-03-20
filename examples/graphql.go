@@ -17,7 +17,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	// test with graphql
+	// graphql test
 
 	var resp map[string]interface{}
 	resp, err = quorumClient.ExecuteGraphQLQuery(context.Background(), graphql.CurrentBlockQuery())

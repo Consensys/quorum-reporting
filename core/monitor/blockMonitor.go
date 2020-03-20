@@ -41,7 +41,7 @@ func (bf *BlockMonitor) Start() {
 
 	fmt.Println("Start to sync blocks...")
 
-	// 1. Fetch the current block height
+	// 1. Fetch the current block height.
 	currentBlockNumber, err := bf.currentBlockNumber()
 	if err != nil {
 		// TODO: should gracefully handle error (if quorum node is down, reconnect?)
@@ -49,15 +49,15 @@ func (bf *BlockMonitor) Start() {
 	}
 	fmt.Printf("Current block head is: %v\n", currentBlockNumber)
 
-	// 2. Sync from last persisted to current block height
+	// 2. Sync from last persisted to current block height.
 	go bf.syncBlocks(bf.lastPersisted, currentBlockNumber)
 
-	// 3. Listen to ChainHeadEvent and sync
+	// 3. Listen to ChainHeadEvent and sync.
 	go bf.listenToChainHead()
 	latestChainHead := <-bf.syncStart
 	close(bf.syncStart)
 
-	// 4. Sync from current block height + 1 to the first ChainHeadEvent if there is any gap
+	// 4. Sync from current block height + 1 to the first ChainHeadEvent if there is any gap.
 	go bf.syncBlocks(currentBlockNumber, latestChainHead-1)
 }
 
@@ -116,10 +116,10 @@ func (bf *BlockMonitor) syncBlocks(start, end uint64) {
 }
 
 func (bf *BlockMonitor) process(block *types.Block) {
-	// Transaction monitor pulls all transactions for the given block
+	// Transaction monitor pulls all transactions for the given block.
 	bf.transactionMonitor.PullTransactions(block)
 
-	// Write block to DB
+	// Write block to DB.
 	bf.db.WriteBlock(block)
 }
 
