@@ -28,3 +28,11 @@ func (r *RPCAPIs) GetBlock(blockNumber uint64) (*types.Block, error) {
 func (r *RPCAPIs) GetTransaction(hash common.Hash) (*types.Transaction, error) {
 	return r.db.ReadTransaction(hash)
 }
+
+func (r *RPCAPIs) GetAllTransactionsByAddress(address common.Address) []common.Hash {
+	return r.db.GetAllTransactionsByAddress(address)
+}
+
+func (r *RPCAPIs) GetAllEventsByAddress(address common.Address) []*types.Event {
+	return r.db.GetAllEventsByAddress(address)
+}
