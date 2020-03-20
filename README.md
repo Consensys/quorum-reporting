@@ -62,14 +62,14 @@ Quorum Reporting -----> [ Backend ] ----------> [ RPC Service ]
    |                       |                    |      |
    |                       |                    |      |
    V                       V                    V      V
-Quorum <---------- [ Block Syncer ] ----------> Database <---------- Visualization (e.g. Cakeshop)
+Quorum <--------- [ Block Monitor ] ----------> Database <---------- Visualization (e.g. Cakeshop)
    ^                       |                       ^
    |                       |                       |
    |                       |                       | 
    |                       |                       | 
    |                       |                       |
    |                       V                       |
-   +----------- [ Transaction Syncer ] ------------+
+   +---------- [ Transaction Monitor ] ------------+
 ```
 
 ## Roadmap
