@@ -2,6 +2,7 @@ package monitor
 
 import (
 	"fmt"
+	"log"
 	"net"
 	"time"
 
@@ -31,18 +32,18 @@ func NewRPCService(httpEndpoint string, vhosts []string, cors []string, apis []r
 	}
 }
 
-func (r *RPCService) Start() error {
+func (r *RPCService) Start() {
 	modules := []string{}
 	for _, apis := range r.apis {
 		modules = append(modules, apis.Namespace)
 	}
 	listener, _, err := rpc.StartHTTPEndpoint(r.httpEndpoint, r.apis, modules, r.cors, r.vhosts, defaultHTTPTimeouts)
 	if err != nil {
-		return err
+		// TODO: should gracefully handle error
+		log.Fatalf("rpc service failed to start: %v", err)
 	}
 	r.listener = listener
 	fmt.Printf("HTTP endpoint opened: http://%s.\n", r.httpEndpoint)
-	return nil
 }
 
 func (r *RPCService) Stop() {

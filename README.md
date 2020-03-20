@@ -44,6 +44,34 @@ go build
 ./quorum-report
 ```
 
+## Architecture & Design
+
+
+```
+Quorum Reporting -----> [ Backend ] ----------> [ RPC Service ]
+                           |   |                       |
+                           |   |                       |
+                           |   +--> [ Filter Service ] |
+                           |             |      |      |
+                           |             |      |      |
+                           V             |      |      |
+                  [ Monitor Service ]    |      |      |
+                           |             |      |      |
+                           |             |      |      |
+   +-----------------------|-------------+      |      |
+   |                       |                    |      |
+   |                       |                    |      |
+   V                       V                    V      V
+Quorum <---------- [ Block Syncer ] ----------> Database <---------- Visualization (e.g. Cakeshop)
+   ^                       |                       ^
+   |                       |                       |
+   |                       |                       | 
+   |                       |                       | 
+   |                       |                       |
+   |                       V                       |
+   +------- [ Transaction/ Storage Syncer ] -------+
+```
+
 ## Roadmap
 
 #### Phase 0

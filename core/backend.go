@@ -2,7 +2,6 @@ package monitor
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"os/signal"
 	"syscall"
@@ -47,14 +46,10 @@ func (b *Backend) Start() {
 	// start monitor service
 	go b.monitor.Start()
 	// start local RPC service
-	err := b.rpc.Start()
-	if err != nil {
-		log.Fatalf("rpc service failed to start: %v", err)
-		return
-	}
+	go b.rpc.Start()
 
+	// cleaning...
 	defer func() {
-		// cleaning...
 		b.rpc.Stop()
 	}()
 
