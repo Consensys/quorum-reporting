@@ -7,9 +7,17 @@ import (
 )
 
 type Database interface {
+	AddressDB
 	BlockDB
 	TransactionDB
 	IndexDB
+}
+
+// AddressDB stores registered addresses
+type AddressDB interface {
+	AddAddresses([]common.Address) error
+	DeleteAddress(common.Address) error
+	GetAddresses() []common.Address
 }
 
 // BlockDB stores the block details for all blocks.
@@ -28,8 +36,6 @@ type TransactionDB interface {
 // TODO: IndexDB stores the location to find all transactions/ events/ storage for a contract.
 type IndexDB interface {
 	IndexBlock(common.Address, *types.Block) error
-	IndexHistory([]common.Address) error
-	RemoveAllIndices(common.Address) error
 	// TODO: IndexStorage stores the storage trie key value pairs at all block for a contract.
 	// IndexStorage(common.Address, uint64, map[bytes32]bytes32) error
 	GetAllTransactionsByAddress(common.Address) ([]common.Hash, error)

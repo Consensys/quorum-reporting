@@ -36,3 +36,15 @@ func (r *RPCAPIs) GetAllTransactionsByAddress(address common.Address) ([]common.
 func (r *RPCAPIs) GetAllEventsByAddress(address common.Address) ([]*types.Event, error) {
 	return r.db.GetAllEventsByAddress(address)
 }
+
+func (r *RPCAPIs) AddAddress(address common.Address) error {
+	return r.db.AddAddresses([]common.Address{address})
+}
+
+func (r *RPCAPIs) DeleteAddress(address common.Address) error {
+	return r.db.DeleteAddress(address)
+}
+
+func (r *RPCAPIs) GetAddresses() []common.Address {
+	return r.db.GetAddresses()
+}

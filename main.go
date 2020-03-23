@@ -24,8 +24,10 @@ func main() {
 
 	// Process all flags to make them into a single `flags` struct.
 	addressList := []common.Address{}
-	for _, a := range strings.Split(*addresses, ",") {
-		addressList = append(addressList, common.HexToAddress(a))
+	if *addresses != "" {
+		for _, a := range strings.Split(*addresses, ",") {
+			addressList = append(addressList, common.HexToAddress(a))
+		}
 	}
 	rpccorsList := []string{}
 	for _, h := range strings.Split(*rpccors, ",") {

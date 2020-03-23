@@ -12,6 +12,7 @@ import (
 
 // MemoryDB is a sample in memory database.
 type MemoryDB struct {
+	addresses                []common.Address
 	blockDB                  map[uint64]*types.Block
 	txDB                     map[common.Hash]*types.Transaction
 	txIndexDB                map[common.Address][]common.Hash
@@ -22,12 +23,67 @@ type MemoryDB struct {
 
 func NewMemoryDB() *MemoryDB {
 	return &MemoryDB{
+		addresses:                []common.Address{},
 		blockDB:                  make(map[uint64]*types.Block),
 		txDB:                     make(map[common.Hash]*types.Transaction),
 		txIndexDB:                make(map[common.Address][]common.Hash),
 		lastPersistedBlockNumber: 0,
 		lastFiltered:             make(map[common.Address]uint64),
 	}
+}
+
+func (db *MemoryDB) AddAddresses(addresses []common.Address) error {
+	db.Lock()
+	defer db.Unlock()
+	if len(addresses) == 0 {
+		return errors.New("no address provided")
+	}
+	newAddresses := []common.Address{}
+	for _, a := range addresses {
+		isExist := false
+		for _, exist := range db.addresses {
+			if a == exist {
+				isExist = true
+				break
+			}
+		}
+		if !isExist {
+			newAddresses = append(newAddresses, a)
+		}
+	}
+	err := db.indexHistory(newAddresses)
+	if err != nil {
+		return err
+	}
+	db.addresses = append(db.addresses, newAddresses...)
+	return nil
+}
+
+func (db *MemoryDB) DeleteAddress(address common.Address) error {
+	db.Lock()
+	defer db.Unlock()
+	index := -1
+	for i, a := range db.addresses {
+		if address == a {
+			index = i
+			break
+		}
+	}
+	if index != -1 {
+		err := db.removeAllIndices(address)
+		if err != nil {
+			return err
+		}
+		db.addresses = append(db.addresses[:index], db.addresses[index+1:]...)
+		return nil
+	}
+	return errors.New("address does not exist")
+}
+
+func (db *MemoryDB) GetAddresses() []common.Address {
+	db.RLock()
+	defer db.RUnlock()
+	return db.addresses
 }
 
 func (db *MemoryDB) WriteBlock(block *types.Block) error {
@@ -94,6 +150,9 @@ func (db *MemoryDB) ReadTransaction(hash common.Hash) (*types.Transaction, error
 func (db *MemoryDB) IndexBlock(address common.Address, block *types.Block) error {
 	db.Lock()
 	defer db.Unlock()
+	if !db.addressIsRegistered(address) {
+		return errors.New("address is not registered")
+	}
 	for _, txHash := range block.Transactions {
 		err := db.indexTransaction(address, db.txDB[txHash])
 		if err != nil {
@@ -104,45 +163,49 @@ func (db *MemoryDB) IndexBlock(address common.Address, block *types.Block) error
 	return nil
 }
 
-func (db *MemoryDB) indexTransaction(address common.Address, tx *types.Transaction) error {
-	// Compare the address with tx.To and tx.CreatedContract to check if the transaction is related.
-	if address == tx.To || address == tx.CreatedContract {
-		// initialize list if nil
-		if len(db.txIndexDB[address]) == 0 {
-			db.txIndexDB[address] = []common.Hash{}
-		}
-		db.txIndexDB[address] = append(db.txIndexDB[address], tx.Hash)
-		fmt.Printf("append tx %v to registered address %v.\n", tx.Hash.Hex(), address.Hex())
-	}
-	return nil
-}
-
 func (db *MemoryDB) GetAllTransactionsByAddress(address common.Address) ([]common.Hash, error) {
 	db.RLock()
 	defer db.RUnlock()
-	if txs, ok := db.txIndexDB[address]; ok {
-		return txs, nil
+	if !db.addressIsRegistered(address) {
+		return nil, errors.New("address is not registered")
 	}
-	return nil, errors.New("address is not registered or no tx is sent yet")
+	return db.txIndexDB[address], nil
 }
 
 func (db *MemoryDB) GetAllEventsByAddress(address common.Address) ([]*types.Event, error) {
 	db.RLock()
 	defer db.RUnlock()
+	if !db.addressIsRegistered(address) {
+		return nil, errors.New("address is not registered")
+	}
+	events := []*types.Event{}
 	if txs, ok := db.txIndexDB[address]; ok {
-		events := []*types.Event{}
 		for _, hash := range txs {
 			tx := db.txDB[hash]
 			events = append(events, tx.Events...)
 		}
-		return events, nil
 	}
-	return nil, errors.New("address is not registered or no tx is sent yet")
+	return events, nil
 }
 
-func (db *MemoryDB) IndexHistory(addresses []common.Address) error {
-	db.Lock()
-	defer db.Unlock()
+func (db *MemoryDB) GetLastFiltered(address common.Address) uint64 {
+	db.RLock()
+	defer db.RUnlock()
+	return db.lastFiltered[address]
+}
+
+// internal functions
+
+func (db *MemoryDB) addressIsRegistered(address common.Address) bool {
+	for _, a := range db.addresses {
+		if address == a {
+			return true
+		}
+	}
+	return false
+}
+
+func (db *MemoryDB) indexHistory(addresses []common.Address) error {
 	last := uint64(0)
 	if len(addresses) > 0 {
 		for _, tx := range db.txDB {
@@ -164,15 +227,20 @@ func (db *MemoryDB) IndexHistory(addresses []common.Address) error {
 	return errors.New("no address is provided")
 }
 
-func (db *MemoryDB) RemoveAllIndices(address common.Address) error {
-	db.Lock()
-	defer db.Unlock()
-	delete(db.txIndexDB, address)
+func (db *MemoryDB) indexTransaction(address common.Address, tx *types.Transaction) error {
+	// Compare the address with tx.To and tx.CreatedContract to check if the transaction is related.
+	if address == tx.To || address == tx.CreatedContract {
+		// initialize list if nil
+		if len(db.txIndexDB[address]) == 0 {
+			db.txIndexDB[address] = []common.Hash{}
+		}
+		db.txIndexDB[address] = append(db.txIndexDB[address], tx.Hash)
+		fmt.Printf("append tx %v to registered address %v.\n", tx.Hash.Hex(), address.Hex())
+	}
 	return nil
 }
 
-func (db *MemoryDB) GetLastFiltered(address common.Address) uint64 {
-	db.RLock()
-	defer db.RUnlock()
-	return db.lastFiltered[address]
+func (db *MemoryDB) removeAllIndices(address common.Address) error {
+	delete(db.txIndexDB, address)
+	return nil
 }

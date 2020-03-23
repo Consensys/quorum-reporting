@@ -16,9 +16,10 @@ import (
 
 // Backend wraps MonitorService and QuorumClient, controls the start/stop of the reporting tool.
 type Backend struct {
-	monitor *monitor.MonitorService
-	filter  *filter.FilterService
-	rpc     *rpc.RPCService
+	lastPersisted uint64
+	monitor       *monitor.MonitorService
+	filter        *filter.FilterService
+	rpc           *rpc.RPCService
 }
 
 func New(flags *types.Flags) (*Backend, error) {
@@ -27,10 +28,18 @@ func New(flags *types.Flags) (*Backend, error) {
 		return nil, err
 	}
 	db := database.NewMemoryDB()
+	lastPersisted := db.GetLastPersistedBlockNumber()
+	if len(flags.Addresses) > 0 {
+		err = db.AddAddresses(flags.Addresses)
+		if err != nil {
+			return nil, err
+		}
+	}
 	return &Backend{
-		monitor: monitor.NewMonitorService(db, quorumClient),
-		filter:  filter.NewFilterService(db, flags.Addresses),
-		rpc:     rpc.NewRPCService(db, flags.RPCAddress, flags.RPCVHOSTS, flags.RPCCORS),
+		lastPersisted: lastPersisted,
+		monitor:       monitor.NewMonitorService(db, quorumClient),
+		filter:        filter.NewFilterService(db),
+		rpc:           rpc.NewRPCService(db, flags.RPCAddress, flags.RPCVHOSTS, flags.RPCCORS),
 	}, nil
 }
 
@@ -38,7 +47,7 @@ func (b *Backend) Start() {
 	// Start monitor service.
 	go b.monitor.Start()
 	// Start filter service.
-	go b.filter.Start()
+	go b.filter.Start(b.lastPersisted)
 	// Start local RPC service.
 	go b.rpc.Start()
 
