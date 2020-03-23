@@ -7,7 +7,7 @@ import (
 
 // MonitorService starts all monitors. It pulls data from Quorum node and update the database.
 type MonitorService struct {
-	db           database.Database // TODO: `db` will change to database.Database after all interfaces are implemented.
+	db           database.Database
 	quorumClient *client.QuorumClient
 	blockMonitor *BlockMonitor
 }

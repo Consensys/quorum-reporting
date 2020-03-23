@@ -27,19 +27,19 @@ func NewTransactionMonitor(db database.Database, quorumClient *client.QuorumClie
 	}
 }
 
-func (tf *TransactionMonitor) PullTransactions(block *types.Block) {
+func (tm *TransactionMonitor) PullTransactions(block *types.Block) {
 	fmt.Printf("Pull all transactions for block %v\n", block.Number)
 
 	for _, txHash := range block.Transactions {
 		// 1. Query transaction details by graphql.
-		tx, err := tf.createTransaction(txHash)
+		tx, err := tm.createTransaction(txHash)
 		if err != nil {
 			// TODO: should gracefully handle error (if quorum node is down, reconnect?)
 			log.Fatalf("get transaction details error: %v.\n", err)
 		}
 		fmt.Println(tx.Hash.Hex())
 		// 2. Write transactions to DB.
-		err = tf.db.WriteTransaction(tx)
+		err = tm.db.WriteTransaction(tx)
 		if err != nil {
 			// TODO: should gracefully handle error (if quorum node is down, reconnect?)
 			log.Fatalf("write transaction error: %v.\n", err)
@@ -47,12 +47,12 @@ func (tf *TransactionMonitor) PullTransactions(block *types.Block) {
 	}
 }
 
-func (tf *TransactionMonitor) createTransaction(hash common.Hash) (*types.Transaction, error) {
+func (tm *TransactionMonitor) createTransaction(hash common.Hash) (*types.Transaction, error) {
 	var (
 		resp     map[string]interface{}
 		txOrigin graphql.Transaction
 	)
-	resp, err := tf.quorumClient.ExecuteGraphQLQuery(context.Background(), graphql.TransactionDetailQuery(hash))
+	resp, err := tm.quorumClient.ExecuteGraphQLQuery(context.Background(), graphql.TransactionDetailQuery(hash))
 	if err != nil {
 		return nil, err
 	}
