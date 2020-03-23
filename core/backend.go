@@ -30,9 +30,10 @@ type ReportInputStruct struct {
 
 // Backend wraps MonitorService and QuorumClient, controls the start/stop of the reporting tool.
 type Backend struct {
-	monitor *monitor.MonitorService
-	filter  *filter.FilterService
-	rpc     *rpc.RPCService
+	lastPersisted uint64
+	monitor       *monitor.MonitorService
+	filter        *filter.FilterService
+	rpc           *rpc.RPCService
 }
 
 func ReadConfig(configFile string) ReportInputStruct {
@@ -54,7 +55,16 @@ func New(config ReportInputStruct) (*Backend, error) {
 		return nil, err
 	}
 	db := database.NewMemoryDB()
+	lastPersisted := db.GetLastPersistedBlockNumber()
+	if len(config.Reporting.Addresses) > 0 {
+		err = db.AddAddresses(config.Reporting.Addresses)
+		if err != nil {
+			return nil, err
+		}
+	}
 	return &Backend{
+		lastPersisted: lastPersisted,
+		rpc:           rpc.NewRPCService(db, config.Reporting.RPCAddr, config.Reporting.RPCVHosts, config.Reporting.RPCCorsList),
 		monitor: monitor.NewMonitorService(db, quorumClient),
 		filter:  filter.NewFilterService(db, config.Reporting.Addresses),
 		rpc:     rpc.NewRPCService(db, config.Reporting.RPCAddr, config.Reporting.RPCVHosts, config.Reporting.RPCCorsList),
@@ -65,7 +75,7 @@ func (b *Backend) Start() {
 	// Start monitor service.
 	go b.monitor.Start()
 	// Start filter service.
-	go b.filter.Start()
+	go b.filter.Start(b.lastPersisted)
 	// Start local RPC service.
 	go b.rpc.Start()
 

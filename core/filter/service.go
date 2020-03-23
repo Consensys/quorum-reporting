@@ -2,7 +2,6 @@ package filter
 
 import (
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -13,16 +12,14 @@ import (
 // FilterService filters transactions and storage based on registered address list.
 type FilterService struct {
 	db                database.Database
-	addresses         []common.Address
 	transactionFilter *TransactionFilter
 	// storageFilter StorageFilter
 	stopChan chan interface{}
 }
 
-func NewFilterService(db database.Database, addresses []common.Address) *FilterService {
+func NewFilterService(db database.Database) *FilterService {
 	return &FilterService{
 		db,
-		addresses,
 		&TransactionFilter{
 			db,
 		},
@@ -30,18 +27,7 @@ func NewFilterService(db database.Database, addresses []common.Address) *FilterS
 	}
 }
 
-func (fs *FilterService) Start() {
-	// Index historical transactions
-	lastPersisted := fs.db.GetLastPersistedBlockNumber()
-
-	fmt.Println("Start to index history.")
-	err := fs.transactionFilter.IndexHistory(fs.addresses)
-	if err != nil {
-		// TODO: should gracefully handle error (if quorum node is down, reconnect?)
-		log.Fatalf("index history failed: %v.\n", err)
-	}
-	// TODO: Index storage
-
+func (fs *FilterService) Start(lastPersisted uint64) {
 	// Filter tick every second to index transactions/ storage
 	ticker := time.NewTicker(time.Second)
 	for {
@@ -51,8 +37,8 @@ func (fs *FilterService) Start() {
 			for current > lastPersisted {
 				err := fs.index(lastPersisted + 1)
 				if err != nil {
-					// TODO: should gracefully handle error (if quorum node is down, reconnect?)
-					log.Fatalf("index block %v failed: %v.\n", lastPersisted+1, err)
+					// TODO: should gracefully handle error
+					//log.Fatalf("index block %v failed: %v.\n", lastPersisted+1, err)
 				}
 				lastPersisted++
 			}
@@ -73,6 +59,10 @@ func (fs *FilterService) index(blockNumber uint64) error {
 	if err != nil {
 		return err
 	}
-	return fs.transactionFilter.IndexBlock(fs.addresses, block)
+	return fs.transactionFilter.IndexBlock(fs.getAddresses(), block)
 	// TODO: Index storage
+}
+
+func (fs *FilterService) getAddresses() []common.Address {
+	return fs.db.GetAddresses()
 }

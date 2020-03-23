@@ -20,7 +20,3 @@ func (tf *TransactionFilter) IndexBlock(addresses []common.Address, block *types
 	}
 	return nil
 }
-
-func (tf *TransactionFilter) IndexHistory(addresses []common.Address) error {
-	return tf.db.IndexHistory(addresses)
-}
