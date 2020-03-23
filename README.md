@@ -80,6 +80,7 @@ Quorum <--------- [ Block Monitor ] ----------> Database <---------- Visualizati
 - Sync blocks & Store blocks/ transactions in a memory database
 - Filter transactions by registered addresses
 - Filter events by registered addresses
+- Dynamically change registered addresses, clean up and refilter
 - Expose basic RPC endpoints to serve queries
 - Unit tests & CI/CD
 

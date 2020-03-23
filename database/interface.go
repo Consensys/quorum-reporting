@@ -9,8 +9,7 @@ import (
 type Database interface {
 	BlockDB
 	TransactionDB
-	//StorageDB
-	IndexerDB
+	IndexDB
 }
 
 // BlockDB stores the block details for all blocks.
@@ -26,15 +25,14 @@ type TransactionDB interface {
 	ReadTransaction(common.Hash) (*types.Transaction, error)
 }
 
-// TODO: StorageDB stores the storage trie key value pairs at all block for a contract.
-type StorageDB interface {
-	WriteStorage()
-	ReadStorage()
-}
-
-// TODO: IndexerDB stores the location to find all transactions/ events for a contract.
-type IndexerDB interface {
-	IndexTransaction([]common.Address, *types.Transaction) error
-	GetAllTransactionsByAddress(common.Address) []common.Hash
-	GetAllEventsByAddress(common.Address) []*types.Event
+// TODO: IndexDB stores the location to find all transactions/ events/ storage for a contract.
+type IndexDB interface {
+	IndexBlock(common.Address, *types.Block) error
+	IndexHistory([]common.Address) error
+	RemoveAllIndices(common.Address) error
+	// TODO: IndexStorage stores the storage trie key value pairs at all block for a contract.
+	// IndexStorage(common.Address, uint64, map[bytes32]bytes32) error
+	GetAllTransactionsByAddress(common.Address) ([]common.Hash, error)
+	GetAllEventsByAddress(common.Address) ([]*types.Event, error)
+	GetLastFiltered(common.Address) uint64
 }

@@ -29,10 +29,10 @@ func (r *RPCAPIs) GetTransaction(hash common.Hash) (*types.Transaction, error) {
 	return r.db.ReadTransaction(hash)
 }
 
-func (r *RPCAPIs) GetAllTransactionsByAddress(address common.Address) []common.Hash {
+func (r *RPCAPIs) GetAllTransactionsByAddress(address common.Address) ([]common.Hash, error) {
 	return r.db.GetAllTransactionsByAddress(address)
 }
 
-func (r *RPCAPIs) GetAllEventsByAddress(address common.Address) []*types.Event {
+func (r *RPCAPIs) GetAllEventsByAddress(address common.Address) ([]*types.Event, error) {
 	return r.db.GetAllEventsByAddress(address)
 }

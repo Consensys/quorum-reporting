@@ -7,15 +7,11 @@ import (
 
 // MonitorService starts all monitors. It pulls data from Quorum node and update the database.
 type MonitorService struct {
-	db           database.Database
-	quorumClient *client.QuorumClient
 	blockMonitor *BlockMonitor
 }
 
 func NewMonitorService(db database.Database, quorumClient *client.QuorumClient) *MonitorService {
 	return &MonitorService{
-		db,
-		quorumClient,
 		NewBlockMonitor(db, quorumClient),
 	}
 }
