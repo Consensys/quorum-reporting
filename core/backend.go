@@ -44,7 +44,7 @@ func ReadConfig(configFile string) ReportInputStruct {
 	defer f.Close()
 	var input ReportInputStruct
 	if err := toml.NewDecoder(f).Decode(&input); err != nil {
-		util.Fatal("unable to open the config file %v", err)
+		util.Fatal("unable to read the config file %v", err)
 	}
 	return input
 }
@@ -64,10 +64,9 @@ func New(config ReportInputStruct) (*Backend, error) {
 	}
 	return &Backend{
 		lastPersisted: lastPersisted,
+		monitor:       monitor.NewMonitorService(db, quorumClient),
+		filter:        filter.NewFilterService(db),
 		rpc:           rpc.NewRPCService(db, config.Reporting.RPCAddr, config.Reporting.RPCVHosts, config.Reporting.RPCCorsList),
-		monitor: monitor.NewMonitorService(db, quorumClient),
-		filter:  filter.NewFilterService(db, config.Reporting.Addresses),
-		rpc:     rpc.NewRPCService(db, config.Reporting.RPCAddr, config.Reporting.RPCVHosts, config.Reporting.RPCCorsList),
 	}, nil
 }
 
