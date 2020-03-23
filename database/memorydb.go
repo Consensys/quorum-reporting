@@ -112,6 +112,7 @@ func (db *MemoryDB) indexTransaction(address common.Address, tx *types.Transacti
 			db.txIndexDB[address] = []common.Hash{}
 		}
 		db.txIndexDB[address] = append(db.txIndexDB[address], tx.Hash)
+		fmt.Printf("append tx %v to registered address %v.\n", tx.Hash.Hex(), address.Hex())
 	}
 	return nil
 }
@@ -122,7 +123,7 @@ func (db *MemoryDB) GetAllTransactionsByAddress(address common.Address) ([]commo
 	if txs, ok := db.txIndexDB[address]; ok {
 		return txs, nil
 	}
-	return nil, errors.New("address is not registered")
+	return nil, errors.New("address is not registered or no tx is sent yet")
 }
 
 func (db *MemoryDB) GetAllEventsByAddress(address common.Address) ([]*types.Event, error) {
@@ -136,7 +137,7 @@ func (db *MemoryDB) GetAllEventsByAddress(address common.Address) ([]*types.Even
 		}
 		return events, nil
 	}
-	return nil, errors.New("address is not registered")
+	return nil, errors.New("address is not registered or no tx is sent yet")
 }
 
 func (db *MemoryDB) IndexHistory(addresses []common.Address) error {
@@ -166,11 +167,8 @@ func (db *MemoryDB) IndexHistory(addresses []common.Address) error {
 func (db *MemoryDB) RemoveAllIndices(address common.Address) error {
 	db.Lock()
 	defer db.Unlock()
-	if _, ok := db.txIndexDB[address]; ok {
-		delete(db.txIndexDB, address)
-		return nil
-	}
-	return errors.New("address is not registered")
+	delete(db.txIndexDB, address)
+	return nil
 }
 
 func (db *MemoryDB) GetLastFiltered(address common.Address) uint64 {

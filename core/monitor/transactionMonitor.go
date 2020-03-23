@@ -99,6 +99,7 @@ func (tm *TransactionMonitor) createTransaction(hash common.Hash) (*types.Transa
 		Gas:               gas,
 		GasUsed:           gasUsed,
 		CumulativeGasUsed: cumulativeGasUsed,
+		CreatedContract:   common.HexToAddress(txOrigin.CreatedContract.Address),
 		Data:              hexutil.MustDecode(txOrigin.InputData),
 		PrivateData:       hexutil.MustDecode(txOrigin.PrivateInputData),
 		IsPrivate:         txOrigin.IsPrivate,
