@@ -2,9 +2,12 @@ package main
 
 import (
 	"flag"
-	"github.com/hpcloud/tail/util"
 	"log"
+
+	"github.com/hpcloud/tail/util"
+
 	"quorumengineering/quorum-report/core"
+	"quorumengineering/quorum-report/types"
 )
 
 func main() {
@@ -19,7 +22,7 @@ func main() {
 	}
 
 	// read the given config file
-	config := core.ReadConfig(configFile)
+	config := types.ReadConfig(configFile)
 
 	// start the back end with given config
 	backend, err := core.New(config)
