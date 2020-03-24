@@ -2,7 +2,6 @@ package rpc
 
 import (
 	"fmt"
-	"log"
 	"net"
 	"time"
 
@@ -43,19 +42,17 @@ func NewRPCService(db database.Database, httpEndpoint string, vhosts []string, c
 }
 
 func (r *RPCService) Start() error {
-	go func() {
-		modules := []string{}
-		for _, apis := range r.apis {
-			modules = append(modules, apis.Namespace)
-		}
-		listener, _, err := ethRPC.StartHTTPEndpoint(r.httpEndpoint, r.apis, modules, r.cors, r.vhosts, defaultHTTPTimeouts)
-		if err != nil {
-			// TODO: should gracefully handle error
-			log.Fatalf("rpc service failed to start: %v", err)
-		}
-		r.listener = listener
-		fmt.Printf("HTTP endpoint opened: http://%s.\n", r.httpEndpoint)
-	}()
+	modules := []string{}
+	for _, apis := range r.apis {
+		modules = append(modules, apis.Namespace)
+	}
+	listener, _, err := ethRPC.StartHTTPEndpoint(r.httpEndpoint, r.apis, modules, r.cors, r.vhosts, defaultHTTPTimeouts)
+	if err != nil {
+		// TODO: should gracefully handle error
+		return err
+	}
+	r.listener = listener
+	fmt.Printf("HTTP endpoint opened: http://%s.\n", r.httpEndpoint)
 	return nil
 }
 

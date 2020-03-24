@@ -33,7 +33,7 @@ func NewBlockMonitor(db database.Database, quorumClient *client.QuorumClient) *B
 	}
 }
 
-func (bm *BlockMonitor) Start() {
+func (bm *BlockMonitor) Start() error {
 	// Pulling historical blocks since the last persisted while continuously listening to ChainHeadEvent.
 	// For every block received, pull transactions/ events related to the registered contracts.
 
@@ -42,21 +42,30 @@ func (bm *BlockMonitor) Start() {
 	// 1. Fetch the current block height.
 	currentBlockNumber, err := bm.currentBlockNumber()
 	if err != nil {
-		// TODO: should gracefully handle error (if quorum node is down, reconnect?)
-		log.Fatalf("get current head error: %v.\n", err)
+		return err
 	}
 	fmt.Printf("Current block head is: %v\n", currentBlockNumber)
 
 	// 2. Sync from last persisted to current block height.
-	bm.syncBlocks(bm.db.GetLastPersistedBlockNumber(), currentBlockNumber)
+	err = bm.syncBlocks(bm.db.GetLastPersistedBlockNumber(), currentBlockNumber)
+	if err != nil {
+		return err
+	}
 
 	// 3. Listen to ChainHeadEvent and sync.
-	go bm.listenToChainHead()
+	err = bm.listenToChainHead()
+	if err != nil {
+		return err
+	}
 	latestChainHead := <-bm.syncStart
 	close(bm.syncStart)
 
 	// 4. Sync from current block height + 1 to the first ChainHeadEvent if there is any gap.
-	bm.syncBlocks(currentBlockNumber, latestChainHead-1)
+	err = bm.syncBlocks(currentBlockNumber, latestChainHead-1)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (bm *BlockMonitor) currentBlockNumber() (uint64, error) {
@@ -75,50 +84,68 @@ func (bm *BlockMonitor) currentBlockNumber() (uint64, error) {
 	return hexutil.DecodeUint64(currentBlock.Number)
 }
 
-func (bm *BlockMonitor) listenToChainHead() {
+func (bm *BlockMonitor) listenToChainHead() error {
 	headers := make(chan *ethTypes.Header)
 	sub, err := bm.quorumClient.SubscribeNewHead(context.Background(), headers)
 	if err != nil {
-		// TODO: should gracefully handle error (if quorum node is down, reconnect?)
-		log.Fatalf("subscribe to chain head event failed: %v.\n", err)
+		return err
 	}
-	for {
-		select {
-		case err := <-sub.Err():
-			// TODO: should gracefully handle error (if quorum node is down, reconnect?)
-			log.Fatalf("chain head event subscription error: %v.\n", err)
-		case header := <-headers:
-			if !isClosed(bm.syncStart) {
-				bm.syncStart <- header.Number.Uint64()
-			}
-			blockOrigin, err := bm.quorumClient.BlockByHash(context.Background(), header.Hash())
-			if err != nil {
+	go func() {
+		for {
+			select {
+			case err := <-sub.Err():
 				// TODO: should gracefully handle error (if quorum node is down, reconnect?)
-				log.Fatalf("get block %v error: %v.\n", header.Hash(), err)
+				log.Fatalf("chain head event subscription error: %v.\n", err)
+			case header := <-headers:
+				if !isClosed(bm.syncStart) {
+					bm.syncStart <- header.Number.Uint64()
+				}
+				// TODO: do we want to change to FIFO queue and push headers to queue instead of direct processing
+				blockOrigin, err := bm.quorumClient.BlockByHash(context.Background(), header.Hash())
+				if err != nil {
+					// TODO: should gracefully handle error (if quorum node is down, reconnect?)
+					log.Fatalf("get block %v error: %v.\n", header.Hash(), err)
+				}
+				err = bm.process(createBlock(blockOrigin))
+				if err != nil {
+					// TODO: should gracefully handle error (if quorum node is down, reconnect?)
+					log.Fatalf("process block %v error: %v.\n", header.Hash(), err)
+				}
 			}
-			bm.process(createBlock(blockOrigin))
 		}
-	}
+	}()
+	return nil
+
 }
 
-func (bm *BlockMonitor) syncBlocks(start, end uint64) {
+func (bm *BlockMonitor) syncBlocks(start, end uint64) error {
 	fmt.Printf("Start to sync historic block from %v to %v. \n", start, end)
 	for i := start + 1; i <= end; i++ {
 		blockOrigin, err := bm.quorumClient.BlockByNumber(context.Background(), big.NewInt(int64(i)))
 		if err != nil {
-			// TODO: should gracefully handle error (if quorum node is down, reconnect?)
-			log.Fatalf("fetch block %v failed: %v.\n", i, err)
+			return err
 		}
-		bm.process(createBlock(blockOrigin))
+		err = bm.process(createBlock(blockOrigin))
+		if err != nil {
+			return err
+		}
 	}
+	return nil
 }
 
-func (bm *BlockMonitor) process(block *types.Block) {
+func (bm *BlockMonitor) process(block *types.Block) error {
 	// Transaction monitor pulls all transactions for the given block.
-	bm.transactionMonitor.PullTransactions(block)
+	err := bm.transactionMonitor.PullTransactions(block)
+	if err != nil {
+		return err
+	}
 
 	// Write block to DB.
-	bm.db.WriteBlock(block)
+	err = bm.db.WriteBlock(block)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func createBlock(block *ethTypes.Block) *types.Block {

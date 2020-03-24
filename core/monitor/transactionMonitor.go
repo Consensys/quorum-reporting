@@ -3,8 +3,6 @@ package monitor
 import (
 	"context"
 	"fmt"
-	"log"
-
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/mitchellh/mapstructure"
@@ -27,24 +25,23 @@ func NewTransactionMonitor(db database.Database, quorumClient *client.QuorumClie
 	}
 }
 
-func (tm *TransactionMonitor) PullTransactions(block *types.Block) {
+func (tm *TransactionMonitor) PullTransactions(block *types.Block) error {
 	fmt.Printf("Pull all transactions for block %v\n", block.Number)
 
 	for _, txHash := range block.Transactions {
 		// 1. Query transaction details by graphql.
 		tx, err := tm.createTransaction(txHash)
 		if err != nil {
-			// TODO: should gracefully handle error (if quorum node is down, reconnect?)
-			log.Fatalf("get transaction details error: %v.\n", err)
+			return err
 		}
 		fmt.Println(tx.Hash.Hex())
 		// 2. Write transactions to DB.
 		err = tm.db.WriteTransaction(tx)
 		if err != nil {
-			// TODO: should gracefully handle error (if quorum node is down, reconnect?)
-			log.Fatalf("write transaction error: %v.\n", err)
+			return err
 		}
 	}
+	return nil
 }
 
 func (tm *TransactionMonitor) createTransaction(hash common.Hash) (*types.Transaction, error) {
