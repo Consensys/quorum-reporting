@@ -143,15 +143,17 @@ func (db *MemoryDB) ReadTransaction(hash common.Hash) (*types.Transaction, error
 	return nil, errors.New("transaction does not exist")
 }
 
-func (db *MemoryDB) IndexBlock(address common.Address, block *types.Block) {
+func (db *MemoryDB) IndexBlock(address common.Address, block *types.Block) error {
 	db.mux.Lock()
 	defer db.mux.Unlock()
-	if db.addressIsRegistered(address) {
-		for _, txHash := range block.Transactions {
-			db.indexTransaction(address, db.txDB[txHash])
-		}
-		db.lastFiltered[address] = db.lastPersistedBlockNumber
+	if !db.addressIsRegistered(address) {
+		return errors.New("address is not registered")
 	}
+	for _, txHash := range block.Transactions {
+		db.indexTransaction(address, db.txDB[txHash])
+	}
+	db.lastFiltered[address] = db.lastPersistedBlockNumber
+	return nil
 }
 
 func (db *MemoryDB) GetAllTransactionsByAddress(address common.Address) ([]common.Hash, error) {

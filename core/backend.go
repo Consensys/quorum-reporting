@@ -31,7 +31,10 @@ func New(config types.ReportInputStruct) (*Backend, error) {
 	lastPersisted := db.GetLastPersistedBlockNumber()
 
 	// add the addresses from config file for
-	_ = db.AddAddresses(config.Reporting.Addresses)
+	err = db.AddAddresses(config.Reporting.Addresses)
+	if err != nil {
+		return nil, err
+	}
 
 	return &Backend{
 		monitor: monitor.NewMonitorService(db, quorumClient),

@@ -58,6 +58,7 @@ func (fs *FilterService) index(blockNumber uint64) error {
 	if err != nil {
 		return err
 	}
+	// TODO: Unhandled error
 	fs.transactionFilter.IndexBlock(fs.getAddresses(), block)
 	return nil
 	// TODO: Index storage

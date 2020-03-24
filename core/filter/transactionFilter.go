@@ -11,8 +11,12 @@ type TransactionFilter struct {
 	db database.Database
 }
 
-func (tf *TransactionFilter) IndexBlock(addresses []common.Address, block *types.Block) {
+func (tf *TransactionFilter) IndexBlock(addresses []common.Address, block *types.Block) error {
 	for _, address := range addresses {
-		tf.db.IndexBlock(address, block)
+		err := tf.db.IndexBlock(address, block)
+		if err != nil {
+			return err
+		}
 	}
+	return nil
 }

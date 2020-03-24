@@ -2,6 +2,7 @@ package rpc
 
 import (
 	"errors"
+
 	"github.com/ethereum/go-ethereum/common"
 
 	"quorumengineering/quorum-report/database"
