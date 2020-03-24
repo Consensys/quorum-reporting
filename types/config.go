@@ -1,10 +1,10 @@
 package types
 
 import (
+	"log"
 	"os"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/hpcloud/tail/util"
 	"github.com/naoina/toml"
 )
 
@@ -23,12 +23,12 @@ type ReportInputStruct struct {
 func ReadConfig(configFile string) ReportInputStruct {
 	f, err := os.Open(configFile)
 	if err != nil {
-		util.Fatal("unable to open the config file %v", err)
+		log.Fatalf("unable to open the config file: %v.\n", err)
 	}
 	defer f.Close()
 	var input ReportInputStruct
 	if err := toml.NewDecoder(f).Decode(&input); err != nil {
-		util.Fatal("unable to read the config file %v", err)
+		log.Fatalf("unable to read the config file: %v.\n", err)
 	}
 	return input
 }

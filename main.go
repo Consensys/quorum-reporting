@@ -4,8 +4,6 @@ import (
 	"flag"
 	"log"
 
-	"github.com/hpcloud/tail/util"
-
 	"quorumengineering/quorum-report/core"
 	"quorumengineering/quorum-report/types"
 )
@@ -18,7 +16,7 @@ func main() {
 	flag.Parse()
 
 	if configFile == "" {
-		util.Fatal("config file path not given. cannot start the service")
+		log.Fatalf("config file path not given. cannot start the service.\n")
 	}
 
 	// read the given config file
