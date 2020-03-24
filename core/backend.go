@@ -2,6 +2,7 @@ package core
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"os/signal"
 	"syscall"
@@ -16,10 +17,9 @@ import (
 
 // Backend wraps MonitorService and QuorumClient, controls the start/stop of the reporting tool.
 type Backend struct {
-	lastPersisted uint64
-	monitor       *monitor.MonitorService
-	filter        *filter.FilterService
-	rpc           *rpc.RPCService
+	monitor *monitor.MonitorService
+	filter  *filter.FilterService
+	rpc     *rpc.RPCService
 }
 
 func New(config types.ReportInputStruct) (*Backend, error) {
@@ -29,28 +29,28 @@ func New(config types.ReportInputStruct) (*Backend, error) {
 	}
 	db := database.NewMemoryDB()
 	lastPersisted := db.GetLastPersistedBlockNumber()
-	if len(config.Reporting.Addresses) > 0 {
-		err = db.AddAddresses(config.Reporting.Addresses)
-		if err != nil {
-			return nil, err
-		}
-	}
+
+	// add the addresses from config file for
+	_ = db.AddAddresses(config.Reporting.Addresses)
+
 	return &Backend{
-		lastPersisted: lastPersisted,
-		monitor:       monitor.NewMonitorService(db, quorumClient),
-		filter:        filter.NewFilterService(db),
-		rpc:           rpc.NewRPCService(db, config.Reporting.RPCAddr, config.Reporting.RPCVHosts, config.Reporting.RPCCorsList),
+		monitor: monitor.NewMonitorService(db, quorumClient),
+		filter:  filter.NewFilterService(db, lastPersisted),
+		rpc:     rpc.NewRPCService(db, config.Reporting.RPCAddr, config.Reporting.RPCVHosts, config.Reporting.RPCCorsList),
 	}, nil
 }
 
 func (b *Backend) Start() {
-	// Start monitor service.
-	go b.monitor.Start()
-	// Start filter service.
-	go b.filter.Start(b.lastPersisted)
-	// Start local RPC service.
-	go b.rpc.Start()
 
+	for _, f := range []func() error{
+		b.monitor.Start, // monitor service
+		b.filter.Start,  // filter service
+		b.rpc.Start,     // RPC service
+	} {
+		if err := f(); err != nil {
+			log.Fatal("start up failed %v", err)
+		}
+	}
 	// cleaning...
 	defer func() {
 		b.rpc.Stop()

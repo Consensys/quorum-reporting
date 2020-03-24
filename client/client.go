@@ -2,7 +2,6 @@ package client
 
 import (
 	"context"
-
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/machinebox/graphql"
 )
@@ -15,6 +14,9 @@ type QuorumClient struct {
 
 func NewQuorumClient(rawurl, qgurl string) (quorumClient *QuorumClient, err error) {
 	rawClient, err := ethclient.Dial(rawurl)
+	if err != nil {
+		return &QuorumClient{}, err
+	}
 	return &QuorumClient{rawClient, qgurl}, err
 }
 

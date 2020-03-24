@@ -16,8 +16,9 @@ func NewMonitorService(db database.Database, quorumClient *client.QuorumClient) 
 	}
 }
 
-func (m *MonitorService) Start() {
+func (m *MonitorService) Start() error {
 	// BlockMonitor will sync all new blocks and historical blocks.
 	// It will invoke TransactionMonitor internally.
-	m.blockMonitor.Start()
+	go m.blockMonitor.Start()
+	return nil
 }

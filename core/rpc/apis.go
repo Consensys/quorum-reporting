@@ -1,6 +1,7 @@
 package rpc
 
 import (
+	"errors"
 	"github.com/ethereum/go-ethereum/common"
 
 	"quorumengineering/quorum-report/database"
@@ -38,6 +39,9 @@ func (r *RPCAPIs) GetAllEventsByAddress(address common.Address) ([]*types.Event,
 }
 
 func (r *RPCAPIs) AddAddress(address common.Address) error {
+	if address == (common.Address{0}) {
+		return errors.New("invalid input")
+	}
 	return r.db.AddAddresses([]common.Address{address})
 }
 

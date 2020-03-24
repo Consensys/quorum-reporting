@@ -18,7 +18,7 @@ type MemoryDB struct {
 	txIndexDB                map[common.Address][]common.Hash
 	lastPersistedBlockNumber uint64
 	lastFiltered             map[common.Address]uint64
-	sync.RWMutex
+	mux                      sync.RWMutex
 }
 
 func NewMemoryDB() *MemoryDB {
@@ -33,35 +33,31 @@ func NewMemoryDB() *MemoryDB {
 }
 
 func (db *MemoryDB) AddAddresses(addresses []common.Address) error {
-	db.Lock()
-	defer db.Unlock()
-	if len(addresses) == 0 {
-		return errors.New("no address provided")
-	}
-	newAddresses := []common.Address{}
-	for _, a := range addresses {
-		isExist := false
-		for _, exist := range db.addresses {
-			if a == exist {
-				isExist = true
-				break
+	db.mux.Lock()
+	defer db.mux.Unlock()
+	if len(addresses) > 0 {
+		newAddresses := []common.Address{}
+		for _, a := range addresses {
+			isExist := false
+			for _, exist := range db.addresses {
+				if a == exist {
+					isExist = true
+					break
+				}
+			}
+			if !isExist {
+				newAddresses = append(newAddresses, a)
 			}
 		}
-		if !isExist {
-			newAddresses = append(newAddresses, a)
-		}
+		db.indexHistory(newAddresses)
+		db.addresses = append(db.addresses, newAddresses...)
 	}
-	err := db.indexHistory(newAddresses)
-	if err != nil {
-		return err
-	}
-	db.addresses = append(db.addresses, newAddresses...)
 	return nil
 }
 
 func (db *MemoryDB) DeleteAddress(address common.Address) error {
-	db.Lock()
-	defer db.Unlock()
+	db.mux.Lock()
+	defer db.mux.Unlock()
 	index := -1
 	for i, a := range db.addresses {
 		if address == a {
@@ -81,14 +77,14 @@ func (db *MemoryDB) DeleteAddress(address common.Address) error {
 }
 
 func (db *MemoryDB) GetAddresses() []common.Address {
-	db.RLock()
-	defer db.RUnlock()
+	db.mux.RLock()
+	defer db.mux.RUnlock()
 	return db.addresses
 }
 
 func (db *MemoryDB) WriteBlock(block *types.Block) error {
-	db.Lock()
-	defer db.Unlock()
+	db.mux.Lock()
+	defer db.mux.Unlock()
 	if block != nil {
 		blockNumber := block.Number
 		db.blockDB[blockNumber] = block
@@ -112,8 +108,8 @@ func (db *MemoryDB) WriteBlock(block *types.Block) error {
 }
 
 func (db *MemoryDB) ReadBlock(blockNumber uint64) (*types.Block, error) {
-	db.RLock()
-	defer db.RUnlock()
+	db.mux.RLock()
+	defer db.mux.RUnlock()
 	if block, ok := db.blockDB[blockNumber]; ok {
 		return block, nil
 	}
@@ -121,14 +117,14 @@ func (db *MemoryDB) ReadBlock(blockNumber uint64) (*types.Block, error) {
 }
 
 func (db *MemoryDB) GetLastPersistedBlockNumber() uint64 {
-	db.RLock()
-	defer db.RUnlock()
+	db.mux.RLock()
+	defer db.mux.RUnlock()
 	return db.lastPersistedBlockNumber
 }
 
 func (db *MemoryDB) WriteTransaction(transaction *types.Transaction) error {
-	db.Lock()
-	defer db.Unlock()
+	db.mux.Lock()
+	defer db.mux.Unlock()
 	if transaction != nil {
 		db.txDB[transaction.Hash] = transaction
 		// debug printing
@@ -139,33 +135,28 @@ func (db *MemoryDB) WriteTransaction(transaction *types.Transaction) error {
 }
 
 func (db *MemoryDB) ReadTransaction(hash common.Hash) (*types.Transaction, error) {
-	db.RLock()
-	defer db.RUnlock()
+	db.mux.RLock()
+	defer db.mux.RUnlock()
 	if tx, ok := db.txDB[hash]; ok {
 		return tx, nil
 	}
 	return nil, errors.New("transaction does not exist")
 }
 
-func (db *MemoryDB) IndexBlock(address common.Address, block *types.Block) error {
-	db.Lock()
-	defer db.Unlock()
-	if !db.addressIsRegistered(address) {
-		return errors.New("address is not registered")
-	}
-	for _, txHash := range block.Transactions {
-		err := db.indexTransaction(address, db.txDB[txHash])
-		if err != nil {
-			return err
+func (db *MemoryDB) IndexBlock(address common.Address, block *types.Block) {
+	db.mux.Lock()
+	defer db.mux.Unlock()
+	if db.addressIsRegistered(address) {
+		for _, txHash := range block.Transactions {
+			db.indexTransaction(address, db.txDB[txHash])
 		}
+		db.lastFiltered[address] = db.lastPersistedBlockNumber
 	}
-	db.lastFiltered[address] = db.lastPersistedBlockNumber
-	return nil
 }
 
 func (db *MemoryDB) GetAllTransactionsByAddress(address common.Address) ([]common.Hash, error) {
-	db.RLock()
-	defer db.RUnlock()
+	db.mux.RLock()
+	defer db.mux.RUnlock()
 	if !db.addressIsRegistered(address) {
 		return nil, errors.New("address is not registered")
 	}
@@ -173,8 +164,8 @@ func (db *MemoryDB) GetAllTransactionsByAddress(address common.Address) ([]commo
 }
 
 func (db *MemoryDB) GetAllEventsByAddress(address common.Address) ([]*types.Event, error) {
-	db.RLock()
-	defer db.RUnlock()
+	db.mux.RLock()
+	defer db.mux.RUnlock()
 	if !db.addressIsRegistered(address) {
 		return nil, errors.New("address is not registered")
 	}
@@ -189,8 +180,8 @@ func (db *MemoryDB) GetAllEventsByAddress(address common.Address) ([]*types.Even
 }
 
 func (db *MemoryDB) GetLastFiltered(address common.Address) uint64 {
-	db.RLock()
-	defer db.RUnlock()
+	db.mux.RLock()
+	defer db.mux.RUnlock()
 	return db.lastFiltered[address]
 }
 
@@ -205,29 +196,24 @@ func (db *MemoryDB) addressIsRegistered(address common.Address) bool {
 	return false
 }
 
-func (db *MemoryDB) indexHistory(addresses []common.Address) error {
+func (db *MemoryDB) indexHistory(addresses []common.Address) {
 	last := uint64(0)
-	if len(addresses) > 0 {
-		for _, tx := range db.txDB {
-			for _, address := range addresses {
-				err := db.indexTransaction(address, tx)
-				if err != nil {
-					return err
-				}
-			}
-			if last < tx.BlockNumber {
-				last = tx.BlockNumber
-			}
-		}
+
+	for _, tx := range db.txDB {
 		for _, address := range addresses {
-			db.lastFiltered[address] = db.lastPersistedBlockNumber
+			db.indexTransaction(address, tx)
 		}
-		return nil
+		if last < tx.BlockNumber {
+			last = tx.BlockNumber
+		}
 	}
-	return errors.New("no address is provided")
+	for _, address := range addresses {
+		db.lastFiltered[address] = db.lastPersistedBlockNumber
+	}
+
 }
 
-func (db *MemoryDB) indexTransaction(address common.Address, tx *types.Transaction) error {
+func (db *MemoryDB) indexTransaction(address common.Address, tx *types.Transaction) {
 	// Compare the address with tx.To and tx.CreatedContract to check if the transaction is related.
 	if address == tx.To || address == tx.CreatedContract {
 		// initialize list if nil
@@ -237,7 +223,6 @@ func (db *MemoryDB) indexTransaction(address common.Address, tx *types.Transacti
 		db.txIndexDB[address] = append(db.txIndexDB[address], tx.Hash)
 		fmt.Printf("append tx %v to registered address %v.\n", tx.Hash.Hex(), address.Hex())
 	}
-	return nil
 }
 
 func (db *MemoryDB) removeAllIndices(address common.Address) error {
