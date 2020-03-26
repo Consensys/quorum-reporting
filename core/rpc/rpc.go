@@ -42,6 +42,8 @@ func NewRPCService(db database.Database, httpEndpoint string, vhosts []string, c
 }
 
 func (r *RPCService) Start() error {
+	fmt.Println("Start rpc service...")
+
 	modules := []string{}
 	for _, apis := range r.apis {
 		modules = append(modules, apis.Namespace)

@@ -23,6 +23,8 @@ func NewFilterService(db database.Database, lastPersisted uint64) *FilterService
 }
 
 func (fs *FilterService) Start() error {
+	fmt.Println("Start filter service...")
+
 	// Filter tick every second to index transactions/ storage
 	ticker := time.NewTicker(time.Second)
 	go func() {
@@ -43,7 +45,6 @@ func (fs *FilterService) Start() error {
 			}
 		}
 	}()
-
 	return nil
 }
 
