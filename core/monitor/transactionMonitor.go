@@ -15,10 +15,10 @@ import (
 
 type TransactionMonitor struct {
 	db           database.Database
-	quorumClient *client.QuorumClient
+	quorumClient client.Client
 }
 
-func NewTransactionMonitor(db database.Database, quorumClient *client.QuorumClient) *TransactionMonitor {
+func NewTransactionMonitor(db database.Database, quorumClient client.Client) *TransactionMonitor {
 	return &TransactionMonitor{
 		db,
 		quorumClient,

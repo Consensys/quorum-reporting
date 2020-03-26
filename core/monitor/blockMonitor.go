@@ -19,12 +19,12 @@ import (
 
 type BlockMonitor struct {
 	db                 database.Database
-	quorumClient       *client.QuorumClient
+	quorumClient       client.Client
 	syncStart          chan uint64
 	transactionMonitor *TransactionMonitor
 }
 
-func NewBlockMonitor(db database.Database, quorumClient *client.QuorumClient) *BlockMonitor {
+func NewBlockMonitor(db database.Database, quorumClient client.Client) *BlockMonitor {
 	return &BlockMonitor{
 		db,
 		quorumClient,
