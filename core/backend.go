@@ -44,13 +44,13 @@ func New(config types.ReportInputStruct) (*Backend, error) {
 
 func (b *Backend) Start() {
 
-	for _, f := range []func() error{
+	for _, f := range [](func() error){
 		b.monitor.Start, // monitor service
 		b.filter.Start,  // filter service
 		b.rpc.Start,     // RPC service
 	} {
 		if err := f(); err != nil {
-			log.Fatal("start up failed %v", err)
+			log.Fatalf("start up failed: %v.\n", err)
 		}
 	}
 

@@ -37,6 +37,8 @@ func NewFilterService(db database.Database, lastPersisted uint64) *FilterService
 }
 
 func (fs *FilterService) Start() error {
+	fmt.Println("Start filter service...")
+
 	stopChan, stopSubscription := fs.subscribeStopEvent()
 	defer stopSubscription.Unsubscribe()
 	// Filter tick every second to index transactions/ storage
@@ -59,7 +61,6 @@ func (fs *FilterService) Start() error {
 			}
 		}
 	}()
-
 	return nil
 }
 

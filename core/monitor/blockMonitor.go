@@ -20,13 +20,13 @@ import (
 
 type BlockMonitor struct {
 	db                 database.Database
-	quorumClient       *client.QuorumClient
+	quorumClient       client.Client
 	syncStart          chan uint64
 	transactionMonitor *TransactionMonitor
 	stopFeed           event.Feed
 }
 
-func NewBlockMonitor(db database.Database, quorumClient *client.QuorumClient) *BlockMonitor {
+func NewBlockMonitor(db database.Database, quorumClient client.Client) *BlockMonitor {
 	return &BlockMonitor{
 		db:                 db,
 		quorumClient:       quorumClient,
@@ -69,14 +69,19 @@ func (bm *BlockMonitor) Start() error {
 	if err != nil {
 		return err
 	}
-	latestChainHead := <-bm.syncStart
-	close(bm.syncStart)
 
 	// 4. Sync from current block height + 1 to the first ChainHeadEvent if there is any gap.
-	err = bm.syncBlocks(currentBlockNumber, latestChainHead-1)
-	if err != nil {
-		return err
-	}
+	// Use a go routine to prevent blocking.
+	go func() {
+		latestChainHead := <-bm.syncStart
+		close(bm.syncStart)
+
+		err = bm.syncBlocks(currentBlockNumber, latestChainHead-1)
+		if err != nil {
+			// TODO: should gracefully handle error (if quorum node is down, reconnect?)
+			log.Fatalf("sync block from %v to %v error: %v.\n", currentBlockNumber, latestChainHead-1, err)
+		}
+	}()
 	return nil
 }
 
