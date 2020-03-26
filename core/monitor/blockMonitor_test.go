@@ -7,6 +7,8 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
 
+	"quorumengineering/quorum-report/client"
+	"quorumengineering/quorum-report/graphql"
 	"quorumengineering/quorum-report/types"
 )
 
@@ -48,9 +50,17 @@ func TestCreateBlock(t *testing.T) {
 }
 
 func TestCurrentBlock(t *testing.T) {
-	// TODO: simulate quorum client
-}
-
-func TestSyncBlocks(t *testing.T) {
-	// TODO: simulate quorum client
+	mockGraphQL := map[string]map[string]interface{}{
+		graphql.CurrentBlockQuery(): {"block": interface{}(map[string]interface{}{"number": "0x10"})},
+	}
+	bm := &BlockMonitor{
+		quorumClient: client.NewStubQuorumClient(nil, mockGraphQL),
+	}
+	currentBlockNumber, err := bm.currentBlockNumber()
+	if err != nil {
+		t.Fatalf("expected no error, but got %v", err)
+	}
+	if currentBlockNumber != 16 {
+		t.Fatalf("expected %v, but got %v", 16, currentBlockNumber)
+	}
 }
