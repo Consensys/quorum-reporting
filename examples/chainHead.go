@@ -1,4 +1,4 @@
-package main
+package examples
 
 import (
 	"context"
@@ -13,7 +13,7 @@ import (
 	"quorumengineering/quorum-report/client"
 )
 
-func main() {
+func chainHeadExample() {
 	quorumClient, err := client.NewQuorumClient("ws://localhost:23000", "http://localhost:8547/graphql")
 	if err != nil {
 		log.Fatal(err)
