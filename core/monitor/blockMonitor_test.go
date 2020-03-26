@@ -46,3 +46,11 @@ func TestCreateBlock(t *testing.T) {
 		}
 	}
 }
+
+func TestCurrentBlock(t *testing.T) {
+	// TODO: simulate quorum client
+}
+
+func TestSyncBlocks(t *testing.T) {
+	// TODO: simulate quorum client
+}

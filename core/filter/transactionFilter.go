@@ -8,7 +8,7 @@ import (
 )
 
 type TransactionFilter struct {
-	db database.Database
+	db database.IndexDB
 }
 
 func (tf *TransactionFilter) IndexBlock(addresses []common.Address, block *types.Block) error {
