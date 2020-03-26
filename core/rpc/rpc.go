@@ -48,7 +48,6 @@ func (r *RPCService) Start() error {
 	}
 	listener, _, err := ethRPC.StartHTTPEndpoint(r.httpEndpoint, r.apis, modules, r.cors, r.vhosts, defaultHTTPTimeouts)
 	if err != nil {
-		// TODO: should gracefully handle error
 		return err
 	}
 	r.listener = listener

@@ -1,7 +1,6 @@
 package core
 
 import (
-	"fmt"
 	"log"
 	"os"
 	"os/signal"
@@ -54,15 +53,26 @@ func (b *Backend) Start() {
 			log.Fatal("start up failed %v", err)
 		}
 	}
-	// cleaning...
-	defer func() {
-		b.rpc.Stop()
-		b.filter.Stop()
-	}()
 
-	// Keep process alive before killed.
-	sigs := make(chan os.Signal, 1)
-	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
-	<-sigs
-	fmt.Println("Process stopped by SIGINT or SIGTERM.")
+	go func() {
+		sigc := make(chan os.Signal, 1)
+		signal.Notify(sigc, syscall.SIGINT, syscall.SIGTERM)
+		defer signal.Stop(sigc)
+		<-sigc
+		log.Println("Got interrupt, shutting down...")
+		go b.Stop()
+		for i := 10; i > 0; i-- {
+			<-sigc
+			if i > 1 {
+				log.Println("Already shutting down, interrupt more to panic.", "times", i-1)
+			}
+		}
+		panic("immediate shutdown")
+	}()
+}
+
+func (b *Backend) Stop() {
+	b.rpc.Stop()
+	b.filter.Stop()
+	b.monitor.Stop()
 }

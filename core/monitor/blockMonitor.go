@@ -3,6 +3,7 @@ package monitor
 import (
 	"context"
 	"fmt"
+	"github.com/ethereum/go-ethereum/event"
 	"log"
 	"math/big"
 
@@ -22,15 +23,26 @@ type BlockMonitor struct {
 	quorumClient       *client.QuorumClient
 	syncStart          chan uint64
 	transactionMonitor *TransactionMonitor
+	stopFeed           event.Feed
 }
 
 func NewBlockMonitor(db database.Database, quorumClient *client.QuorumClient) *BlockMonitor {
 	return &BlockMonitor{
-		db,
-		quorumClient,
-		make(chan uint64),
-		NewTransactionMonitor(db, quorumClient),
+		db:                 db,
+		quorumClient:       quorumClient,
+		syncStart:          make(chan uint64),
+		transactionMonitor: NewTransactionMonitor(db, quorumClient),
 	}
+}
+
+// to signal all watches when service is stopped
+type stopEvent struct {
+}
+
+func (bm *BlockMonitor) subscribeStopEvent() (chan stopEvent, event.Subscription) {
+	c := make(chan stopEvent)
+	s := bm.stopFeed.Subscribe(c)
+	return c, s
 }
 
 func (bm *BlockMonitor) Start() error {
@@ -68,6 +80,11 @@ func (bm *BlockMonitor) Start() error {
 	return nil
 }
 
+func (bm *BlockMonitor) Stop() {
+	bm.stopFeed.Send(stopEvent{})
+	fmt.Println("monitor service stopped.")
+}
+
 func (bm *BlockMonitor) currentBlockNumber() (uint64, error) {
 	var (
 		resp         map[string]interface{}
@@ -85,6 +102,9 @@ func (bm *BlockMonitor) currentBlockNumber() (uint64, error) {
 }
 
 func (bm *BlockMonitor) listenToChainHead() error {
+	stopChan, stopSubscription := bm.subscribeStopEvent()
+	defer stopSubscription.Unsubscribe()
+
 	headers := make(chan *ethTypes.Header)
 	sub, err := bm.quorumClient.SubscribeNewHead(context.Background(), headers)
 	if err != nil {
@@ -111,6 +131,8 @@ func (bm *BlockMonitor) listenToChainHead() error {
 					// TODO: should gracefully handle error (if quorum node is down, reconnect?)
 					log.Fatalf("process block %v error: %v.\n", header.Hash(), err)
 				}
+			case <-stopChan:
+				return
 			}
 		}
 	}()

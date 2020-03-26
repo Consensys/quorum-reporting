@@ -2,6 +2,7 @@ package filter
 
 import (
 	"fmt"
+	"github.com/ethereum/go-ethereum/event"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -15,14 +16,29 @@ type FilterService struct {
 	transactionFilter *TransactionFilter
 	lastPersisted     uint64
 	// storageFilter StorageFilter
-	stopChan chan interface{}
+	stopFeed event.Feed
+}
+
+// to signal all watches when service is stopped
+type stopEvent struct {
+}
+
+func (fs *FilterService) subscribeStopEvent() (chan stopEvent, event.Subscription) {
+	c := make(chan stopEvent)
+	s := fs.stopFeed.Subscribe(c)
+	return c, s
 }
 
 func NewFilterService(db database.Database, lastPersisted uint64) *FilterService {
-	return &FilterService{db, &TransactionFilter{db}, lastPersisted, make(chan interface{})}
+	return &FilterService{
+		db:                db,
+		transactionFilter: &TransactionFilter{db},
+		lastPersisted:     lastPersisted}
 }
 
 func (fs *FilterService) Start() error {
+	stopChan, stopSubscription := fs.subscribeStopEvent()
+	defer stopSubscription.Unsubscribe()
 	// Filter tick every second to index transactions/ storage
 	ticker := time.NewTicker(time.Second)
 	go func() {
@@ -38,7 +54,7 @@ func (fs *FilterService) Start() error {
 					}
 					fs.lastPersisted++
 				}
-			case <-fs.stopChan:
+			case <-stopChan:
 				return
 			}
 		}
@@ -48,7 +64,7 @@ func (fs *FilterService) Start() error {
 }
 
 func (fs *FilterService) Stop() {
-	close(fs.stopChan)
+	fs.stopFeed.Send(stopEvent{})
 	fmt.Println("Filter service stopped.")
 }
 

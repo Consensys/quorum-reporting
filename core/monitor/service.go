@@ -21,3 +21,9 @@ func (m *MonitorService) Start() error {
 	// It will invoke TransactionMonitor internally.
 	return m.blockMonitor.Start()
 }
+
+func (m *MonitorService) Stop() {
+	// BlockMonitor will sync all new blocks and historical blocks.
+	// It will invoke TransactionMonitor internally.
+	m.blockMonitor.Stop()
+}
