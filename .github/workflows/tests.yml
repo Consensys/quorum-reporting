@@ -2,8 +2,9 @@ on: [push, pull_request]
 name: Tests
 jobs:
   unit-tests:
-    name: Unit testing in ${{ matrix.platform }} with go 1.13
+    name: Go 1.13 unit tests in ${{ matrix.platform }}
     strategy:
+      fail-fast: false
       matrix:
         platform: [ubuntu-latest, macos-latest]
     runs-on: ${{ matrix.platform }}
