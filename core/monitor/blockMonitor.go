@@ -4,7 +4,6 @@ import (
 	"context"
 	"log"
 	"math/big"
-	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -24,8 +23,6 @@ type BlockMonitor struct {
 	syncStart          chan uint64
 	transactionMonitor *TransactionMonitor
 	stopFeed           event.Feed
-	syncStarted        bool
-	syncStartHead      uint64
 }
 
 func NewBlockMonitor(db database.Database, quorumClient client.Client) *BlockMonitor {
@@ -34,8 +31,6 @@ func NewBlockMonitor(db database.Database, quorumClient client.Client) *BlockMon
 		quorumClient:       quorumClient,
 		syncStart:          make(chan uint64),
 		transactionMonitor: NewTransactionMonitor(db, quorumClient),
-		syncStarted:        false,
-		syncStartHead:      0,
 	}
 }
 
@@ -53,7 +48,7 @@ func (bm *BlockMonitor) Start() error {
 	log.Printf("Current block head is: %v\n", currentBlockNumber)
 
 	// 2. Sync from last persisted to current block height.
-	go bm.syncBlocks(bm.db.GetLastPersistedBlockNumber(), currentBlockNumber)
+	go bm.sync(bm.db.GetLastPersistedBlockNumber(), currentBlockNumber)
 
 	// 3. Listen to ChainHeadEvent and sync.
 	err = bm.listenToChainHead()
@@ -66,7 +61,6 @@ func (bm *BlockMonitor) Start() error {
 
 func (bm *BlockMonitor) Stop() {
 	bm.stopFeed.Send(types.StopEvent{})
-	log.Println("monitor service stopped.")
 }
 
 func (bm *BlockMonitor) subscribeStopEvent() (chan types.StopEvent, event.Subscription) {
@@ -92,24 +86,24 @@ func (bm *BlockMonitor) currentBlockNumber() (uint64, error) {
 }
 
 func (bm *BlockMonitor) listenToChainHead() error {
-	stopChan, stopSubscription := bm.subscribeStopEvent()
-	defer stopSubscription.Unsubscribe()
-
 	headers := make(chan *ethTypes.Header)
 	sub, err := bm.quorumClient.SubscribeNewHead(context.Background(), headers)
 	if err != nil {
 		return err
 	}
 	go func() {
+		stopChan, stopSubscription := bm.subscribeStopEvent()
+		defer stopSubscription.Unsubscribe()
+		syncStarted := false
 		for {
 			select {
 			case err := <-sub.Err():
 				// TODO: should gracefully handle error (if quorum node is down, reconnect?)
 				log.Fatalf("chain head event subscription error: %v.\n", err)
 			case header := <-headers:
-				if !bm.syncStarted {
-					bm.syncStarted = true
-					bm.syncStartHead = header.Number.Uint64()
+				if !syncStarted {
+					bm.syncStart <- header.Number.Uint64()
+					syncStarted = true
 				}
 				// TODO: do we want to change to FIFO queue and push headers to queue instead of direct processing
 				blockOrigin, err := bm.quorumClient.BlockByHash(context.Background(), header.Hash())
@@ -132,48 +126,40 @@ func (bm *BlockMonitor) listenToChainHead() error {
 }
 
 func (bm *BlockMonitor) syncBlocks(start, end uint64) error {
-	execSync := func(start, end uint64) error {
-		for i := start + 1; i <= end; i++ {
-			blockOrigin, err := bm.quorumClient.BlockByNumber(context.Background(), big.NewInt(int64(i)))
-			if err != nil {
-				return err
-			}
-			err = bm.process(createBlock(blockOrigin))
-			if err != nil {
-				return err
-			}
+	log.Printf("Start to sync historic blocks from %v to %v. \n", start, end)
+	for i := start + 1; i <= end; i++ {
+		blockOrigin, err := bm.quorumClient.BlockByNumber(context.Background(), big.NewInt(int64(i)))
+		if err != nil {
+			return err
 		}
-		return nil
+		err = bm.process(createBlock(blockOrigin))
+		if err != nil {
+			return err
+		}
 	}
+	return nil
+}
 
-	err := execSync(start, end)
-	if err != nil {
-		return err
-	}
+func (bm *BlockMonitor) sync(start, end uint64) {
+	bm.syncBlocks(start, end)
+	// TODO: should gracefully handle error (if quorum node is down, reconnect?)
+
+	// Sync from end + 1 to the first ChainHeadEvent if there is any gap.
+	// Use a go routine to prevent blocking.
 	go func() {
 		stopChan, stopSubscription := bm.subscribeStopEvent()
-		pollingTicker := time.NewTicker(10 * time.Millisecond)
-		defer func(start time.Time) {
+		defer func() {
 			stopSubscription.Unsubscribe()
-			pollingTicker.Stop()
-		}(time.Now())
-		for {
-			select {
-			case <-pollingTicker.C:
-				if bm.syncStarted {
-					lastPersistedBlock := bm.db.GetLastPersistedBlockNumber()
-					if lastPersistedBlock < bm.syncStartHead {
-						_ = execSync(bm.db.GetLastPersistedBlockNumber(), bm.syncStartHead)
-					}
-					return
-				}
-			case <-stopChan:
-				return
-			}
+		}()
+		select {
+		case latestChainHead := <-bm.syncStart:
+			close(bm.syncStart)
+			bm.syncBlocks(end, latestChainHead-1)
+			// TODO: should gracefully handle error (if quorum node is down, reconnect?)
+		case <-stopChan:
+			return
 		}
 	}()
-
-	return nil
 }
 
 func (bm *BlockMonitor) process(block *types.Block) error {
