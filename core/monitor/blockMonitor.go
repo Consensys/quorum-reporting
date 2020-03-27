@@ -2,10 +2,13 @@ package monitor
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/ethereum/go-ethereum/event"
 	"log"
 	"math/big"
+	"sync"
+	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -24,14 +27,22 @@ type BlockMonitor struct {
 	syncStart          chan uint64
 	transactionMonitor *TransactionMonitor
 	stopFeed           event.Feed
+	syncStarted        bool
+	syncStartHead      uint64
+	startWaitGroup     *sync.WaitGroup
 }
 
 func NewBlockMonitor(db database.Database, quorumClient client.Client) *BlockMonitor {
+	wg := &sync.WaitGroup{}
+	wg.Add(1)
 	return &BlockMonitor{
 		db:                 db,
 		quorumClient:       quorumClient,
 		syncStart:          make(chan uint64),
 		transactionMonitor: NewTransactionMonitor(db, quorumClient),
+		syncStarted:        false,
+		syncStartHead:      0,
+		startWaitGroup:     wg,
 	}
 }
 
@@ -59,29 +70,16 @@ func (bm *BlockMonitor) Start() error {
 	fmt.Printf("Current block head is: %v\n", currentBlockNumber)
 
 	// 2. Sync from last persisted to current block height.
-	err = bm.syncBlocks(bm.db.GetLastPersistedBlockNumber(), currentBlockNumber)
-	if err != nil {
-		return err
-	}
+	go bm.syncBlocks(bm.db.GetLastPersistedBlockNumber(), currentBlockNumber)
 
 	// 3. Listen to ChainHeadEvent and sync.
 	err = bm.listenToChainHead()
+	log.Println("git error in Start monitor service")
 	if err != nil {
+		log.Println("git error in Start monitor service 1")
 		return err
 	}
 
-	// 4. Sync from current block height + 1 to the first ChainHeadEvent if there is any gap.
-	// Use a go routine to prevent blocking.
-	go func() {
-		latestChainHead := <-bm.syncStart
-		close(bm.syncStart)
-
-		err = bm.syncBlocks(currentBlockNumber, latestChainHead-1)
-		if err != nil {
-			// TODO: should gracefully handle error (if quorum node is down, reconnect?)
-			log.Fatalf("sync block from %v to %v error: %v.\n", currentBlockNumber, latestChainHead-1, err)
-		}
-	}()
 	return nil
 }
 
@@ -113,6 +111,7 @@ func (bm *BlockMonitor) listenToChainHead() error {
 	headers := make(chan *ethTypes.Header)
 	sub, err := bm.quorumClient.SubscribeNewHead(context.Background(), headers)
 	if err != nil {
+		log.Println("error 3")
 		return err
 	}
 	go func() {
@@ -122,8 +121,9 @@ func (bm *BlockMonitor) listenToChainHead() error {
 				// TODO: should gracefully handle error (if quorum node is down, reconnect?)
 				log.Fatalf("chain head event subscription error: %v.\n", err)
 			case header := <-headers:
-				if !isClosed(bm.syncStart) {
-					bm.syncStart <- header.Number.Uint64()
+				if !bm.syncStarted {
+					bm.syncStarted = true
+					bm.syncStartHead = header.Number.Uint64()
 				}
 				// TODO: do we want to change to FIFO queue and push headers to queue instead of direct processing
 				blockOrigin, err := bm.quorumClient.BlockByHash(context.Background(), header.Hash())
@@ -146,17 +146,49 @@ func (bm *BlockMonitor) listenToChainHead() error {
 }
 
 func (bm *BlockMonitor) syncBlocks(start, end uint64) error {
-	fmt.Printf("Start to sync historic block from %v to %v. \n", start, end)
-	for i := start + 1; i <= end; i++ {
-		blockOrigin, err := bm.quorumClient.BlockByNumber(context.Background(), big.NewInt(int64(i)))
-		if err != nil {
-			return err
+	execSync := func(start, end uint64) error {
+		for i := start + 1; i <= end; i++ {
+			blockOrigin, err := bm.quorumClient.BlockByNumber(context.Background(), big.NewInt(int64(i)))
+			if err != nil {
+				return err
+			}
+			err = bm.process(createBlock(blockOrigin))
+			if err != nil {
+				return err
+			}
 		}
-		err = bm.process(createBlock(blockOrigin))
-		if err != nil {
-			return err
-		}
+		return nil
 	}
+
+	err := execSync(start, end)
+	if err != nil {
+		return errors.New(fmt.Sprintf("sync failed %v\n", err))
+	}
+	bm.startWaitGroup.Add(1)
+	go func(_wg *sync.WaitGroup) {
+		stopChan, stopSubscription := bm.subscribeStopEvent()
+		pollingTicker := time.NewTicker(10 * time.Millisecond)
+		defer func(start time.Time) {
+			stopSubscription.Unsubscribe()
+			pollingTicker.Stop()
+			_wg.Done()
+		}(time.Now())
+		for {
+			select {
+			case <-pollingTicker.C:
+				if bm.syncStarted {
+					lastPersistedBlock := bm.db.GetLastPersistedBlockNumber()
+					if lastPersistedBlock < bm.syncStartHead {
+						_ = execSync(bm.db.GetLastPersistedBlockNumber(), bm.syncStartHead)
+					}
+					return
+				}
+			case <-stopChan:
+				return
+			}
+		}
+	}(bm.startWaitGroup)
+
 	return nil
 }
 
