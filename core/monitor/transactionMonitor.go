@@ -2,7 +2,8 @@ package monitor
 
 import (
 	"context"
-	"fmt"
+	"log"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/mitchellh/mapstructure"
@@ -26,7 +27,7 @@ func NewTransactionMonitor(db database.Database, quorumClient client.Client) *Tr
 }
 
 func (tm *TransactionMonitor) PullTransactions(block *types.Block) error {
-	fmt.Printf("Pull all transactions for block %v\n", block.Number)
+	log.Printf("Pull all transactions for block %v\n", block.Number)
 
 	for _, txHash := range block.Transactions {
 		// 1. Query transaction details by graphql.
@@ -34,7 +35,7 @@ func (tm *TransactionMonitor) PullTransactions(block *types.Block) error {
 		if err != nil {
 			return err
 		}
-		fmt.Println(tx.Hash.Hex())
+		log.Println(tx.Hash.Hex())
 		// 2. Write transactions to DB.
 		err = tm.db.WriteTransaction(tx)
 		if err != nil {

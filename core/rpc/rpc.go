@@ -1,7 +1,7 @@
 package rpc
 
 import (
-	"fmt"
+	"log"
 	"net"
 	"time"
 
@@ -42,7 +42,7 @@ func NewRPCService(db database.Database, httpEndpoint string, vhosts []string, c
 }
 
 func (r *RPCService) Start() error {
-	fmt.Println("Start rpc service...")
+	log.Println("Start rpc service...")
 
 	modules := []string{}
 	for _, apis := range r.apis {
@@ -53,11 +53,11 @@ func (r *RPCService) Start() error {
 		return err
 	}
 	r.listener = listener
-	fmt.Printf("HTTP endpoint opened: http://%s.\n", r.httpEndpoint)
+	log.Printf("HTTP endpoint opened: http://%s.\n", r.httpEndpoint)
 	return nil
 }
 
 func (r *RPCService) Stop() {
 	r.listener.Close()
-	fmt.Printf("HTTP endpoint closed: http://%s.\n", r.httpEndpoint)
+	log.Printf("HTTP endpoint closed: http://%s.\n", r.httpEndpoint)
 }

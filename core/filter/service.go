@@ -1,11 +1,11 @@
 package filter
 
 import (
-	"fmt"
-	"github.com/ethereum/go-ethereum/event"
+	"log"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/event"
 
 	"quorumengineering/quorum-report/database"
 )
@@ -37,7 +37,7 @@ func NewFilterService(db database.Database, lastPersisted uint64) *FilterService
 }
 
 func (fs *FilterService) Start() error {
-	fmt.Println("Start filter service...")
+	log.Println("Start filter service...")
 
 	stopChan, stopSubscription := fs.subscribeStopEvent()
 	defer stopSubscription.Unsubscribe()
@@ -66,11 +66,11 @@ func (fs *FilterService) Start() error {
 
 func (fs *FilterService) Stop() {
 	fs.stopFeed.Send(stopEvent{})
-	fmt.Println("Filter service stopped.")
+	log.Println("Filter service stopped.")
 }
 
 func (fs *FilterService) index(blockNumber uint64) error {
-	fmt.Printf("Start to index block %v.\n", blockNumber)
+	log.Printf("Start to index block %v.\n", blockNumber)
 	block, err := fs.db.ReadBlock(blockNumber)
 	if err != nil {
 		return err

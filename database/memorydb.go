@@ -2,7 +2,7 @@ package database
 
 import (
 	"errors"
-	"fmt"
+	"log"
 	"sync"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -100,8 +100,8 @@ func (db *MemoryDB) WriteBlock(block *types.Block) error {
 			db.lastPersistedBlockNumber = blockNumber
 		}
 		// debug printing
-		fmt.Printf("Block stored: number = %v, hash = %v.\n", block.Number, block.Hash.Hex())
-		fmt.Printf("Last persisted block: %v.\n", db.lastPersistedBlockNumber)
+		log.Printf("Block stored: number = %v, hash = %v.\n", block.Number, block.Hash.Hex())
+		log.Printf("Last persisted block: %v.\n", db.lastPersistedBlockNumber)
 		return nil
 	}
 	return errors.New("block is nil")
@@ -128,7 +128,7 @@ func (db *MemoryDB) WriteTransaction(transaction *types.Transaction) error {
 	if transaction != nil {
 		db.txDB[transaction.Hash] = transaction
 		// debug printing
-		fmt.Printf("Transaction stored: hash = %v.\n", transaction.Hash.Hex())
+		log.Printf("Transaction stored: hash = %v.\n", transaction.Hash.Hex())
 		return nil
 	}
 	return errors.New("transaction is nil")
@@ -223,7 +223,7 @@ func (db *MemoryDB) indexTransaction(address common.Address, tx *types.Transacti
 			db.txIndexDB[address] = []common.Hash{}
 		}
 		db.txIndexDB[address] = append(db.txIndexDB[address], tx.Hash)
-		fmt.Printf("append tx %v to registered address %v.\n", tx.Hash.Hex(), address.Hex())
+		log.Printf("append tx %v to registered address %v.\n", tx.Hash.Hex(), address.Hex())
 	}
 }
 

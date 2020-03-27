@@ -1,7 +1,7 @@
 package monitor
 
 import (
-	"fmt"
+	"log"
 
 	"quorumengineering/quorum-report/client"
 	"quorumengineering/quorum-report/database"
@@ -19,7 +19,7 @@ func NewMonitorService(db database.Database, quorumClient client.Client) *Monito
 }
 
 func (m *MonitorService) Start() error {
-	fmt.Println("Start monitor service...")
+	log.Println("Start monitor service...")
 
 	// BlockMonitor will sync all new blocks and historical blocks.
 	// It will invoke TransactionMonitor internally.

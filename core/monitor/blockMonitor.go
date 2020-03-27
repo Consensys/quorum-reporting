@@ -2,9 +2,6 @@ package monitor
 
 import (
 	"context"
-	"errors"
-	"fmt"
-	"github.com/ethereum/go-ethereum/event"
 	"log"
 	"math/big"
 	"sync"
@@ -13,6 +10,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/event"
 	"github.com/mitchellh/mapstructure"
 
 	"quorumengineering/quorum-report/client"
@@ -60,14 +58,14 @@ func (bm *BlockMonitor) Start() error {
 	// Pulling historical blocks since the last persisted while continuously listening to ChainHeadEvent.
 	// For every block received, pull transactions/ events related to the registered contracts.
 
-	fmt.Println("Start to sync blocks...")
+	log.Println("Start to sync blocks...")
 
 	// 1. Fetch the current block height.
 	currentBlockNumber, err := bm.currentBlockNumber()
 	if err != nil {
 		return err
 	}
-	fmt.Printf("Current block head is: %v\n", currentBlockNumber)
+	log.Printf("Current block head is: %v\n", currentBlockNumber)
 
 	// 2. Sync from last persisted to current block height.
 	go bm.syncBlocks(bm.db.GetLastPersistedBlockNumber(), currentBlockNumber)
@@ -85,7 +83,7 @@ func (bm *BlockMonitor) Start() error {
 
 func (bm *BlockMonitor) Stop() {
 	bm.stopFeed.Send(stopEvent{})
-	fmt.Println("monitor service stopped.")
+	log.Println("monitor service stopped.")
 }
 
 func (bm *BlockMonitor) currentBlockNumber() (uint64, error) {
@@ -162,7 +160,7 @@ func (bm *BlockMonitor) syncBlocks(start, end uint64) error {
 
 	err := execSync(start, end)
 	if err != nil {
-		return errors.New(fmt.Sprintf("sync failed %v\n", err))
+		return err
 	}
 	bm.startWaitGroup.Add(1)
 	go func(_wg *sync.WaitGroup) {
