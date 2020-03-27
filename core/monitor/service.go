@@ -14,7 +14,7 @@ type MonitorService struct {
 
 func NewMonitorService(db database.Database, quorumClient client.Client) *MonitorService {
 	return &MonitorService{
-		NewBlockMonitor(db, quorumClient),
+		blockMonitor: NewBlockMonitor(db, quorumClient),
 	}
 }
 

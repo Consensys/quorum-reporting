@@ -4,7 +4,6 @@ import (
 	"context"
 	"log"
 	"math/big"
-	"sync"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -27,12 +26,9 @@ type BlockMonitor struct {
 	stopFeed           event.Feed
 	syncStarted        bool
 	syncStartHead      uint64
-	startWaitGroup     *sync.WaitGroup
 }
 
 func NewBlockMonitor(db database.Database, quorumClient client.Client) *BlockMonitor {
-	wg := &sync.WaitGroup{}
-	wg.Add(1)
 	return &BlockMonitor{
 		db:                 db,
 		quorumClient:       quorumClient,
@@ -40,18 +36,7 @@ func NewBlockMonitor(db database.Database, quorumClient client.Client) *BlockMon
 		transactionMonitor: NewTransactionMonitor(db, quorumClient),
 		syncStarted:        false,
 		syncStartHead:      0,
-		startWaitGroup:     wg,
 	}
-}
-
-// to signal all watches when service is stopped
-type stopEvent struct {
-}
-
-func (bm *BlockMonitor) subscribeStopEvent() (chan stopEvent, event.Subscription) {
-	c := make(chan stopEvent)
-	s := bm.stopFeed.Subscribe(c)
-	return c, s
 }
 
 func (bm *BlockMonitor) Start() error {
@@ -72,9 +57,7 @@ func (bm *BlockMonitor) Start() error {
 
 	// 3. Listen to ChainHeadEvent and sync.
 	err = bm.listenToChainHead()
-	log.Println("git error in Start monitor service")
 	if err != nil {
-		log.Println("git error in Start monitor service 1")
 		return err
 	}
 
@@ -82,8 +65,14 @@ func (bm *BlockMonitor) Start() error {
 }
 
 func (bm *BlockMonitor) Stop() {
-	bm.stopFeed.Send(stopEvent{})
+	bm.stopFeed.Send(types.StopEvent{})
 	log.Println("monitor service stopped.")
+}
+
+func (bm *BlockMonitor) subscribeStopEvent() (chan types.StopEvent, event.Subscription) {
+	c := make(chan types.StopEvent)
+	s := bm.stopFeed.Subscribe(c)
+	return c, s
 }
 
 func (bm *BlockMonitor) currentBlockNumber() (uint64, error) {
@@ -109,7 +98,6 @@ func (bm *BlockMonitor) listenToChainHead() error {
 	headers := make(chan *ethTypes.Header)
 	sub, err := bm.quorumClient.SubscribeNewHead(context.Background(), headers)
 	if err != nil {
-		log.Println("error 3")
 		return err
 	}
 	go func() {
@@ -162,14 +150,12 @@ func (bm *BlockMonitor) syncBlocks(start, end uint64) error {
 	if err != nil {
 		return err
 	}
-	bm.startWaitGroup.Add(1)
-	go func(_wg *sync.WaitGroup) {
+	go func() {
 		stopChan, stopSubscription := bm.subscribeStopEvent()
 		pollingTicker := time.NewTicker(10 * time.Millisecond)
 		defer func(start time.Time) {
 			stopSubscription.Unsubscribe()
 			pollingTicker.Stop()
-			_wg.Done()
 		}(time.Now())
 		for {
 			select {
@@ -185,7 +171,7 @@ func (bm *BlockMonitor) syncBlocks(start, end uint64) error {
 				return
 			}
 		}
-	}(bm.startWaitGroup)
+	}()
 
 	return nil
 }

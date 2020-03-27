@@ -8,6 +8,7 @@ import (
 	"github.com/ethereum/go-ethereum/event"
 
 	"quorumengineering/quorum-report/database"
+	"quorumengineering/quorum-report/types"
 )
 
 // FilterService filters transactions and storage based on registered address list.
@@ -19,21 +20,12 @@ type FilterService struct {
 	stopFeed event.Feed
 }
 
-// to signal all watches when service is stopped
-type stopEvent struct {
-}
-
-func (fs *FilterService) subscribeStopEvent() (chan stopEvent, event.Subscription) {
-	c := make(chan stopEvent)
-	s := fs.stopFeed.Subscribe(c)
-	return c, s
-}
-
 func NewFilterService(db database.Database, lastPersisted uint64) *FilterService {
 	return &FilterService{
 		db:                db,
 		transactionFilter: &TransactionFilter{db},
-		lastPersisted:     lastPersisted}
+		lastPersisted:     lastPersisted,
+	}
 }
 
 func (fs *FilterService) Start() error {
@@ -65,8 +57,14 @@ func (fs *FilterService) Start() error {
 }
 
 func (fs *FilterService) Stop() {
-	fs.stopFeed.Send(stopEvent{})
+	fs.stopFeed.Send(types.StopEvent{})
 	log.Println("Filter service stopped.")
+}
+
+func (fs *FilterService) subscribeStopEvent() (chan types.StopEvent, event.Subscription) {
+	c := make(chan types.StopEvent)
+	s := fs.stopFeed.Subscribe(c)
+	return c, s
 }
 
 func (fs *FilterService) index(blockNumber uint64) error {
