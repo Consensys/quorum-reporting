@@ -59,12 +59,11 @@ func (b *Backend) Start() {
 	defer signal.Stop(sigc)
 	<-sigc
 	log.Println("Got interrupt, shutting down...")
-	go b.Stop()
 
+	b.Stop()
 }
 
 func (b *Backend) Stop() {
-	log.Println("stopping all services...")
 	b.rpc.Stop()
 	b.filter.Stop()
 	b.monitor.Stop()

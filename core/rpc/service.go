@@ -60,4 +60,5 @@ func (r *RPCService) Start() error {
 func (r *RPCService) Stop() {
 	r.listener.Close()
 	log.Printf("HTTP endpoint closed: http://%s.\n", r.httpEndpoint)
+	log.Println("RPC service stopped.")
 }

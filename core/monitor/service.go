@@ -30,4 +30,5 @@ func (m *MonitorService) Stop() {
 	// BlockMonitor will sync all new blocks and historical blocks.
 	// It will invoke TransactionMonitor internally.
 	m.blockMonitor.Stop()
+	log.Println("Monitor service stopped.")
 }
