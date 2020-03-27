@@ -2,9 +2,6 @@ package core
 
 import (
 	"log"
-	"os"
-	"os/signal"
-	"syscall"
 
 	"quorumengineering/quorum-report/client"
 	"quorumengineering/quorum-report/core/filter"
@@ -29,7 +26,7 @@ func New(config types.ReportInputStruct) (*Backend, error) {
 	db := database.NewMemoryDB()
 	lastPersisted := db.GetLastPersistedBlockNumber()
 
-	// add the addresses from config file for
+	// add addresses from config file as initial registered addresses
 	err = db.AddAddresses(config.Reporting.Addresses)
 	if err != nil {
 		return nil, err
@@ -43,7 +40,6 @@ func New(config types.ReportInputStruct) (*Backend, error) {
 }
 
 func (b *Backend) Start() {
-
 	for _, f := range [](func() error){
 		b.monitor.Start, // monitor service
 		b.filter.Start,  // filter service
@@ -53,14 +49,6 @@ func (b *Backend) Start() {
 			log.Panicf("start up failed: %v.\n", err)
 		}
 	}
-
-	sigc := make(chan os.Signal, 1)
-	signal.Notify(sigc, syscall.SIGINT, syscall.SIGTERM)
-	defer signal.Stop(sigc)
-	<-sigc
-	log.Println("Got interrupted, shutting down...")
-
-	b.Stop()
 }
 
 func (b *Backend) Stop() {

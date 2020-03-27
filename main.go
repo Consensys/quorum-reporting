@@ -3,6 +3,10 @@ package main
 import (
 	"flag"
 	"log"
+	"os"
+	"os/signal"
+	"syscall"
+
 	"quorumengineering/quorum-report/core"
 	"quorumengineering/quorum-report/types"
 )
@@ -30,4 +34,12 @@ func main() {
 	}
 
 	backend.Start()
+
+	sigc := make(chan os.Signal, 1)
+	signal.Notify(sigc, syscall.SIGINT, syscall.SIGTERM)
+	defer signal.Stop(sigc)
+	<-sigc
+	log.Println("Got interrupted, shutting down...")
+
+	backend.Stop()
 }
