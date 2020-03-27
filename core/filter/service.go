@@ -43,8 +43,7 @@ func (fs *FilterService) Start() error {
 				for current > fs.lastPersisted {
 					err := fs.index(fs.lastPersisted + 1)
 					if err != nil {
-						// TODO: should gracefully handle error
-						//log.Fatalf("index block %v failed: %v.\n", lastPersisted+1, err)
+						log.Panicf("index block %v failed: %v", fs.lastPersisted+1, err)
 					}
 					fs.lastPersisted++
 				}
@@ -73,9 +72,7 @@ func (fs *FilterService) index(blockNumber uint64) error {
 	if err != nil {
 		return err
 	}
-	// TODO: Unhandled error
-	fs.transactionFilter.IndexBlock(fs.getAddresses(), block)
-	return nil
+	return fs.transactionFilter.IndexBlock(fs.getAddresses(), block)
 	// TODO: Index storage
 }
 

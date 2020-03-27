@@ -23,12 +23,12 @@ type ReportInputStruct struct {
 func ReadConfig(configFile string) ReportInputStruct {
 	f, err := os.Open(configFile)
 	if err != nil {
-		log.Fatalf("unable to open the config file: %v.\n", err)
+		log.Panicf("unable to open the config file: %v", err)
 	}
 	defer f.Close()
 	var input ReportInputStruct
 	if err := toml.NewDecoder(f).Decode(&input); err != nil {
-		log.Fatalf("unable to read the config file: %v.\n", err)
+		log.Panicf("unable to read the config file: %v", err)
 	}
 	return input
 }

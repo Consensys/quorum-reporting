@@ -50,7 +50,7 @@ func (b *Backend) Start() {
 		b.rpc.Start,     // RPC service
 	} {
 		if err := f(); err != nil {
-			log.Fatalf("start up failed: %v.\n", err)
+			log.Panicf("start up failed: %v.\n", err)
 		}
 	}
 
@@ -58,7 +58,7 @@ func (b *Backend) Start() {
 	signal.Notify(sigc, syscall.SIGINT, syscall.SIGTERM)
 	defer signal.Stop(sigc)
 	<-sigc
-	log.Println("Got interrupt, shutting down...")
+	log.Println("Got interrupted, shutting down...")
 
 	b.Stop()
 }

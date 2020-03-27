@@ -98,8 +98,7 @@ func (bm *BlockMonitor) listenToChainHead() error {
 		for {
 			select {
 			case err := <-sub.Err():
-				// TODO: should gracefully handle error (if quorum node is down, reconnect?)
-				log.Fatalf("chain head event subscription error: %v.\n", err)
+				log.Panicf("chain head event subscription error: %v", err)
 			case header := <-headers:
 				if !syncStarted {
 					bm.syncStart <- header.Number.Uint64()
@@ -108,13 +107,12 @@ func (bm *BlockMonitor) listenToChainHead() error {
 				// TODO: do we want to change to FIFO queue and push headers to queue instead of direct processing
 				blockOrigin, err := bm.quorumClient.BlockByHash(context.Background(), header.Hash())
 				if err != nil {
-					// TODO: should gracefully handle error (if quorum node is down, reconnect?)
-					log.Fatalf("get block %v error: %v.\n", header.Hash(), err)
+					// TODO: if quorum node is down, reconnect?
+					log.Panicf("get block %v error: %v", header.Hash(), err)
 				}
 				err = bm.process(createBlock(blockOrigin))
 				if err != nil {
-					// TODO: should gracefully handle error (if quorum node is down, reconnect?)
-					log.Fatalf("process block %v error: %v.\n", header.Hash(), err)
+					log.Panicf("process block %v error: %v", header.Hash(), err)
 				}
 			case <-stopChan:
 				return
@@ -130,6 +128,7 @@ func (bm *BlockMonitor) syncBlocks(start, end uint64) error {
 	for i := start + 1; i <= end; i++ {
 		blockOrigin, err := bm.quorumClient.BlockByNumber(context.Background(), big.NewInt(int64(i)))
 		if err != nil {
+			// TODO: if quorum node is down, reconnect?
 			return err
 		}
 		err = bm.process(createBlock(blockOrigin))
@@ -141,8 +140,10 @@ func (bm *BlockMonitor) syncBlocks(start, end uint64) error {
 }
 
 func (bm *BlockMonitor) sync(start, end uint64) {
-	bm.syncBlocks(start, end)
-	// TODO: should gracefully handle error (if quorum node is down, reconnect?)
+	err := bm.syncBlocks(start, end)
+	if err != nil {
+		log.Panicf("sync historic blocks from %v to %v failed: %v", start, end, err)
+	}
 
 	// Sync from end + 1 to the first ChainHeadEvent if there is any gap.
 	// Use a go routine to prevent blocking.
@@ -154,8 +155,10 @@ func (bm *BlockMonitor) sync(start, end uint64) {
 		select {
 		case latestChainHead := <-bm.syncStart:
 			close(bm.syncStart)
-			bm.syncBlocks(end, latestChainHead-1)
-			// TODO: should gracefully handle error (if quorum node is down, reconnect?)
+			err := bm.syncBlocks(end, latestChainHead-1)
+			if err != nil {
+				log.Panicf("sync historic blocks from %v to %v failed: %v", end, latestChainHead-1, err)
+			}
 		case <-stopChan:
 			return
 		}

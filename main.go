@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"log"
-
 	"quorumengineering/quorum-report/core"
 	"quorumengineering/quorum-report/types"
 )
@@ -16,7 +15,7 @@ func main() {
 	flag.Parse()
 
 	if configFile == "" {
-		log.Fatalf("config file path not given. cannot start the service.\n")
+		log.Panic("Config file path not given. Cannot start the service.")
 	}
 
 	// read the given config file
@@ -25,7 +24,8 @@ func main() {
 	// start the back end with given config
 	backend, err := core.New(config)
 	if err != nil {
-		log.Fatalf("exiting... err: %v.\n", err)
+		log.Println("Exiting...")
+		log.Panicf("error: %v", err)
 		return
 	}
 

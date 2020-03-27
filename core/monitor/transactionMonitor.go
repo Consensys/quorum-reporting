@@ -52,6 +52,7 @@ func (tm *TransactionMonitor) createTransaction(hash common.Hash) (*types.Transa
 	)
 	resp, err := tm.quorumClient.ExecuteGraphQLQuery(context.Background(), graphql.TransactionDetailQuery(hash))
 	if err != nil {
+		// TODO: if quorum node is down, reconnect?
 		return nil, err
 	}
 	err = mapstructure.Decode(resp["transaction"].(map[string]interface{}), &txOrigin)

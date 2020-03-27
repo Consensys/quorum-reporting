@@ -33,7 +33,7 @@ type TransactionDB interface {
 	ReadTransaction(common.Hash) (*types.Transaction, error)
 }
 
-// TODO: IndexDB stores the location to find all transactions/ events/ storage for a contract.
+// IndexDB stores the location to find all transactions/ events/ storage for a contract.
 type IndexDB interface {
 	IndexBlock(common.Address, *types.Block) error
 	// TODO: IndexStorage stores the storage trie key value pairs at all block for a contract.
