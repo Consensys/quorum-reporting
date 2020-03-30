@@ -2,7 +2,9 @@ package rpc
 
 import (
 	"errors"
+	"strings"
 
+	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 
 	"quorumengineering/quorum-report/database"
@@ -52,4 +54,16 @@ func (r *RPCAPIs) DeleteAddress(address common.Address) error {
 
 func (r *RPCAPIs) GetAddresses() []common.Address {
 	return r.db.GetAddresses()
+}
+
+func (r *RPCAPIs) AddContractABI(address common.Address, data string) error {
+	contractABI, err := abi.JSON(strings.NewReader(data))
+	if err != nil {
+		return err
+	}
+	return r.db.AddContractABI(address, contractABI)
+}
+
+func (r *RPCAPIs) GetContractABI(address common.Address) abi.ABI {
+	return r.db.GetContractABI(address)
 }

@@ -1,17 +1,26 @@
 package database
 
 import (
+	"strings"
 	"testing"
 
+	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 
 	"quorumengineering/quorum-report/types"
 )
 
+const jsondata = `
+[
+	{ "type" : "function", "name" : "balance", "constant" : true },
+	{ "type" : "function", "name" : "send", "constant" : false, "inputs" : [ { "name" : "amount", "type" : "uint256" } ] }
+]`
+
 func TestMemoryDB(t *testing.T) {
 	// setup
 	db := NewMemoryDB()
 	address := common.HexToAddress("0x0000000000000000000000000000000000000001")
+	testABI, _ := abi.JSON(strings.NewReader(jsondata))
 	block := &types.Block{
 		Hash:   common.BytesToHash([]byte("dummy")),
 		Number: 1,
@@ -47,7 +56,11 @@ func TestMemoryDB(t *testing.T) {
 	// Add address
 	testAddAddresses(t, db, []common.Address{address}, false)
 	// Get address
-	testGetAddress(t, db, 1)
+	testGetAddresses(t, db, 1)
+	// Add Contract ABI
+	testAddContractABI(t, db, address, testABI, false)
+	// Get Contract ABI
+	testGetContractABI(t, db, address, testABI)
 	// Write transaction
 	testWriteTransaction(t, db, tx1, false)
 	testWriteTransaction(t, db, tx2, false)
@@ -96,10 +109,30 @@ func testDeleteAddress(t *testing.T, db Database, address common.Address, expect
 	}
 }
 
-func testGetAddress(t *testing.T, db Database, expected int) {
+func testGetAddresses(t *testing.T, db Database, expected int) {
 	actual := db.GetAddresses()
 	if len(actual) != expected {
 		t.Fatalf("expected %v addresses, but got %v", expected, len(actual))
+	}
+}
+
+func testAddContractABI(t *testing.T, db Database, address common.Address, contractABI abi.ABI, expectedErr bool) {
+	err := db.AddContractABI(address, contractABI)
+	if err != nil && !expectedErr {
+		t.Fatalf("expected no error, but got %v", err)
+	}
+	if err == nil && expectedErr {
+		t.Fatalf("expected error but got nil")
+	}
+}
+
+func testGetContractABI(t *testing.T, db Database, address common.Address, expected abi.ABI) {
+	actual := db.GetContractABI(address)
+	if len(actual.Events) != len(expected.Events) {
+		t.Fatalf("expected %v events, but got %v", len(expected.Events), len(actual.Events))
+	}
+	if len(actual.Methods) != len(expected.Methods) {
+		t.Fatalf("expected %v methods, but got %v", len(expected.Methods), len(actual.Methods))
 	}
 }
 

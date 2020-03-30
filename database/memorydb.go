@@ -5,6 +5,7 @@ import (
 	"log"
 	"sync"
 
+	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 
 	"quorumengineering/quorum-report/types"
@@ -12,7 +13,8 @@ import (
 
 // MemoryDB is a sample in memory database.
 type MemoryDB struct {
-	addresses                []common.Address
+	addressDB                []common.Address
+	abiDB                    map[common.Address]abi.ABI
 	blockDB                  map[uint64]*types.Block
 	txDB                     map[common.Hash]*types.Transaction
 	txIndexDB                map[common.Address][]common.Hash
@@ -23,7 +25,8 @@ type MemoryDB struct {
 
 func NewMemoryDB() *MemoryDB {
 	return &MemoryDB{
-		addresses:                []common.Address{},
+		addressDB:                []common.Address{},
+		abiDB:                    make(map[common.Address]abi.ABI),
 		blockDB:                  make(map[uint64]*types.Block),
 		txDB:                     make(map[common.Hash]*types.Transaction),
 		txIndexDB:                make(map[common.Address][]common.Hash),
@@ -39,7 +42,7 @@ func (db *MemoryDB) AddAddresses(addresses []common.Address) error {
 		newAddresses := []common.Address{}
 		for _, a := range addresses {
 			isExist := false
-			for _, exist := range db.addresses {
+			for _, exist := range db.addressDB {
 				if a == exist {
 					isExist = true
 					break
@@ -50,7 +53,7 @@ func (db *MemoryDB) AddAddresses(addresses []common.Address) error {
 			}
 		}
 		db.indexHistory(newAddresses)
-		db.addresses = append(db.addresses, newAddresses...)
+		db.addressDB = append(db.addressDB, newAddresses...)
 	}
 	return nil
 }
@@ -59,7 +62,7 @@ func (db *MemoryDB) DeleteAddress(address common.Address) error {
 	db.mux.Lock()
 	defer db.mux.Unlock()
 	index := -1
-	for i, a := range db.addresses {
+	for i, a := range db.addressDB {
 		if address == a {
 			index = i
 			break
@@ -70,7 +73,7 @@ func (db *MemoryDB) DeleteAddress(address common.Address) error {
 		if err != nil {
 			return err
 		}
-		db.addresses = append(db.addresses[:index], db.addresses[index+1:]...)
+		db.addressDB = append(db.addressDB[:index], db.addressDB[index+1:]...)
 		return nil
 	}
 	return errors.New("address does not exist")
@@ -79,7 +82,20 @@ func (db *MemoryDB) DeleteAddress(address common.Address) error {
 func (db *MemoryDB) GetAddresses() []common.Address {
 	db.mux.RLock()
 	defer db.mux.RUnlock()
-	return db.addresses
+	return db.addressDB
+}
+
+func (db *MemoryDB) AddContractABI(address common.Address, abi abi.ABI) error {
+	db.mux.Lock()
+	defer db.mux.Unlock()
+	db.abiDB[address] = abi
+	return nil
+}
+
+func (db *MemoryDB) GetContractABI(address common.Address) abi.ABI {
+	db.mux.RLock()
+	defer db.mux.RUnlock()
+	return db.abiDB[address]
 }
 
 func (db *MemoryDB) WriteBlock(block *types.Block) error {
@@ -190,7 +206,7 @@ func (db *MemoryDB) GetLastFiltered(address common.Address) uint64 {
 // internal functions
 
 func (db *MemoryDB) addressIsRegistered(address common.Address) bool {
-	for _, a := range db.addresses {
+	for _, a := range db.addressDB {
 		if address == a {
 			return true
 		}
