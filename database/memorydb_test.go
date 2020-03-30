@@ -17,7 +17,7 @@ const jsondata = `
 ]`
 
 func TestMemoryDB(t *testing.T) {
-	// setup
+	// test data
 	db := NewMemoryDB()
 	address := common.HexToAddress("0x0000000000000000000000000000000000000001")
 	testABI, _ := abi.JSON(strings.NewReader(jsondata))
@@ -34,7 +34,7 @@ func TestMemoryDB(t *testing.T) {
 		From:            common.HexToAddress("0x0000000000000000000000000000000000000009"),
 		To:              common.Address{0},
 		Value:           666,
-		CreatedContract: common.HexToAddress("0x0000000000000000000000000000000000000001"),
+		CreatedContract: address,
 	}
 	tx2 := &types.Transaction{
 		Hash:            common.BytesToHash([]byte("tx2")),
@@ -48,48 +48,42 @@ func TestMemoryDB(t *testing.T) {
 		Hash:            common.BytesToHash([]byte("tx3")),
 		BlockNumber:     1,
 		From:            common.HexToAddress("0x0000000000000000000000000000000000000010"),
-		To:              common.HexToAddress("0x0000000000000000000000000000000000000001"),
+		To:              address,
 		Value:           666,
 		CreatedContract: common.Address{0},
 		Events: []*types.Event{
 			{}, // dummy event
-			{Address: common.HexToAddress("0x0000000000000000000000000000000000000001")},
+			{Address: address},
 		},
 	}
-	// Add address
+	// 1. Add an address and get it.
 	testAddAddresses(t, db, []common.Address{address}, false)
-	// Get address
 	testGetAddresses(t, db, 1)
-	// Add Contract ABI
+	// 2. Add Contract ABI and get it.
 	testAddContractABI(t, db, address, &testABI, false)
-	// Get Contract ABI
 	testGetContractABI(t, db, address, &testABI)
-	// Write transaction
+	// 3. Write transaction and get it.
 	testWriteTransaction(t, db, tx1, false)
 	testWriteTransaction(t, db, tx2, false)
 	testWriteTransaction(t, db, tx3, false)
-	// Read transaction
 	testReadTransaction(t, db, tx1.Hash, tx1)
-	// Get last persisted block number
+	// 4. Write block and get it. Check last persisted block number.
 	testGetLastPersistedBlockNumeber(t, db, 0)
-	// Write block
 	testWriteBlock(t, db, block, false)
-	// Read block
 	testReadBlock(t, db, 1, block.Hash)
-	// Get last persisted block number
 	testGetLastPersistedBlockNumeber(t, db, 1)
-	// Get last filtered
+	// 5. Index block and check last filtered. Retrieve all transactions/ events.
 	testGetLastFiltered(t, db, address, 0)
-	// Index block
 	testIndexBlock(t, db, address, block, false)
-	// Get last filtered
 	testGetLastFiltered(t, db, address, 1)
-	// Get all transactions by address
 	testGetAllTransactionsByAddress(t, db, address, 2)
-	// Get all events by address
 	testGetAllEventsByAddress(t, db, address, 1)
-	// Delete address
+	// 6. Delete address and check last filtered
 	testDeleteAddress(t, db, address, false)
+	testGetLastFiltered(t, db, address, 0)
+	// 7. Add an address and check index history
+	testAddAddresses(t, db, []common.Address{address}, false)
+	testGetLastFiltered(t, db, address, 1)
 }
 
 func testAddAddresses(t *testing.T, db Database, addresses []common.Address, expectedErr bool) {

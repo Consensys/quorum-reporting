@@ -252,5 +252,6 @@ func (db *MemoryDB) indexTransaction(address common.Address, tx *types.Transacti
 func (db *MemoryDB) removeAllIndices(address common.Address) error {
 	delete(db.txIndexDB, address)
 	delete(db.eventIndexDB, address)
+	db.lastFiltered[address] = 0
 	return nil
 }
