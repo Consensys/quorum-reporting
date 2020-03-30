@@ -41,7 +41,7 @@ go build
 ```
 * Start `quorum-report` tool with default params
 ```
-./quorum-report
+./quorum-report --config config.toml
 ```
 
 ## Architecture & Design
@@ -72,9 +72,17 @@ Quorum <--------- [ Block Monitor ] ----------> Database <---------- Visualizati
    +---------- [ Transaction Monitor ] ------------+
 ```
 
+#### Items Required in Persistent Database
+
+- All blocks
+- All transactions
+- Storage at each block for registered contract addresses
+- **optional:** Indices (transactions/ events linked to registered contract addresses). While this may be implicitly 
+achieved by database, we may still store the indices result for easier query of transactions/ events.
+
 ## Roadmap
 
-#### Phase 0
+#### Phase 0 (done)
 
 - Complete the base code architecture
 - Sync blocks & Store blocks/ transactions in a memory database
@@ -84,18 +92,15 @@ Quorum <--------- [ Block Monitor ] ----------> Database <---------- Visualizati
 - Expose basic RPC endpoints to serve queries
 - Unit tests & CI/CD
 
-#### Phase 1
+#### Phase 1 (in progress)
 
 - Integrate persistent database
 - Handle restart & recover from fail-stop scenarios
-
-#### Phase 2
-
 - Filter contract detailed storage by registered addresses (with dumpAccount available on geth side)
 - Resolve internal calls (incoming/ outgoing) for transactions of registered addresses
+
+#### Phase 3 (todo)
+
 - Docker file & make file support
-
-#### Phase 3
-
 - Integrate UI for visualization
 - Fully functional reporting tool
