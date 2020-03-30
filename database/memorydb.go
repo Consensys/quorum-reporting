@@ -18,6 +18,7 @@ type MemoryDB struct {
 	blockDB                  map[uint64]*types.Block
 	txDB                     map[common.Hash]*types.Transaction
 	txIndexDB                map[common.Address][]common.Hash
+	eventIndexDB             map[common.Address][]*types.Event
 	lastPersistedBlockNumber uint64
 	lastFiltered             map[common.Address]uint64
 	mux                      sync.RWMutex
@@ -30,6 +31,7 @@ func NewMemoryDB() *MemoryDB {
 		blockDB:                  make(map[uint64]*types.Block),
 		txDB:                     make(map[common.Hash]*types.Transaction),
 		txIndexDB:                make(map[common.Address][]common.Hash),
+		eventIndexDB:             make(map[common.Address][]*types.Event),
 		lastPersistedBlockNumber: 0,
 		lastFiltered:             make(map[common.Address]uint64),
 	}
@@ -187,14 +189,7 @@ func (db *MemoryDB) GetAllEventsByAddress(address common.Address) ([]*types.Even
 	if !db.addressIsRegistered(address) {
 		return nil, errors.New("address is not registered")
 	}
-	events := []*types.Event{}
-	if txs, ok := db.txIndexDB[address]; ok {
-		for _, hash := range txs {
-			tx := db.txDB[hash]
-			events = append(events, tx.Events...)
-		}
-	}
-	return events, nil
+	return db.eventIndexDB[address], nil
 }
 
 func (db *MemoryDB) GetLastFiltered(address common.Address) uint64 {
@@ -241,9 +236,21 @@ func (db *MemoryDB) indexTransaction(address common.Address, tx *types.Transacti
 		db.txIndexDB[address] = append(db.txIndexDB[address], tx.Hash)
 		log.Printf("append tx %v to registered address %v.\n", tx.Hash.Hex(), address.Hex())
 	}
+	// Index events emitted by the given address
+	for _, event := range tx.Events {
+		if event.Address == address {
+			// initialize list if nil
+			if len(db.eventIndexDB[address]) == 0 {
+				db.eventIndexDB[address] = []*types.Event{}
+			}
+			db.eventIndexDB[address] = append(db.eventIndexDB[address], event)
+			log.Printf("append event %v to registered address %v.\n", event, address.Hex())
+		}
+	}
 }
 
 func (db *MemoryDB) removeAllIndices(address common.Address) error {
 	delete(db.txIndexDB, address)
+	delete(db.eventIndexDB, address)
 	return nil
 }

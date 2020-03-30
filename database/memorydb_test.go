@@ -51,7 +51,10 @@ func TestMemoryDB(t *testing.T) {
 		To:              common.HexToAddress("0x0000000000000000000000000000000000000001"),
 		Value:           666,
 		CreatedContract: common.Address{0},
-		Events:          []*types.Event{{}}, // dummy event
+		Events: []*types.Event{
+			{}, // dummy event
+			{Address: common.HexToAddress("0x0000000000000000000000000000000000000001")},
+		},
 	}
 	// Add address
 	testAddAddresses(t, db, []common.Address{address}, false)
