@@ -30,7 +30,19 @@ func (r *RPCAPIs) GetBlock(blockNumber uint64) (*types.Block, error) {
 }
 
 func (r *RPCAPIs) GetTransaction(hash common.Hash) (*types.Transaction, error) {
-	return r.db.ReadTransaction(hash)
+	tx, err := r.db.ReadTransaction(hash)
+	if err != nil {
+		return nil, err
+	}
+	address := tx.To
+	if address == (common.Address{0}) {
+		address = tx.CreatedContract
+	}
+	contractABI := r.db.GetContractABI(address)
+	if contractABI != nil {
+		tx.ParseTransaction(contractABI)
+	}
+	return tx, nil
 }
 
 func (r *RPCAPIs) GetAllTransactionsByAddress(address common.Address) ([]common.Hash, error) {
@@ -38,7 +50,17 @@ func (r *RPCAPIs) GetAllTransactionsByAddress(address common.Address) ([]common.
 }
 
 func (r *RPCAPIs) GetAllEventsByAddress(address common.Address) ([]*types.Event, error) {
-	return r.db.GetAllEventsByAddress(address)
+	events, err := r.db.GetAllEventsByAddress(address)
+	if err != nil {
+		return nil, err
+	}
+	contractABI := r.db.GetContractABI(address)
+	if contractABI != nil {
+		for _, e := range events {
+			e.ParseEvent(contractABI)
+		}
+	}
+	return events, nil
 }
 
 func (r *RPCAPIs) AddAddress(address common.Address) error {
@@ -61,9 +83,9 @@ func (r *RPCAPIs) AddContractABI(address common.Address, data string) error {
 	if err != nil {
 		return err
 	}
-	return r.db.AddContractABI(address, contractABI)
+	return r.db.AddContractABI(address, &contractABI)
 }
 
-func (r *RPCAPIs) GetContractABI(address common.Address) abi.ABI {
+func (r *RPCAPIs) GetContractABI(address common.Address) *abi.ABI {
 	return r.db.GetContractABI(address)
 }

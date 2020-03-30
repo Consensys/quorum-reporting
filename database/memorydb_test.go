@@ -58,9 +58,9 @@ func TestMemoryDB(t *testing.T) {
 	// Get address
 	testGetAddresses(t, db, 1)
 	// Add Contract ABI
-	testAddContractABI(t, db, address, testABI, false)
+	testAddContractABI(t, db, address, &testABI, false)
 	// Get Contract ABI
-	testGetContractABI(t, db, address, testABI)
+	testGetContractABI(t, db, address, &testABI)
 	// Write transaction
 	testWriteTransaction(t, db, tx1, false)
 	testWriteTransaction(t, db, tx2, false)
@@ -116,7 +116,7 @@ func testGetAddresses(t *testing.T, db Database, expected int) {
 	}
 }
 
-func testAddContractABI(t *testing.T, db Database, address common.Address, contractABI abi.ABI, expectedErr bool) {
+func testAddContractABI(t *testing.T, db Database, address common.Address, contractABI *abi.ABI, expectedErr bool) {
 	err := db.AddContractABI(address, contractABI)
 	if err != nil && !expectedErr {
 		t.Fatalf("expected no error, but got %v", err)
@@ -126,7 +126,7 @@ func testAddContractABI(t *testing.T, db Database, address common.Address, contr
 	}
 }
 
-func testGetContractABI(t *testing.T, db Database, address common.Address, expected abi.ABI) {
+func testGetContractABI(t *testing.T, db Database, address common.Address, expected *abi.ABI) {
 	actual := db.GetContractABI(address)
 	if len(actual.Events) != len(expected.Events) {
 		t.Fatalf("expected %v events, but got %v", len(expected.Events), len(actual.Events))

@@ -9,7 +9,7 @@ import (
 
 type Database interface {
 	AddressDB
-	ABIDB
+	ABIDB // not required for persistent db
 	BlockDB
 	TransactionDB
 	IndexDB
@@ -24,8 +24,8 @@ type AddressDB interface {
 
 // ABIDB stores contract ABI of registered address
 type ABIDB interface {
-	AddContractABI(common.Address, abi.ABI) error
-	GetContractABI(common.Address) abi.ABI
+	AddContractABI(common.Address, *abi.ABI) error
+	GetContractABI(common.Address) *abi.ABI
 }
 
 // BlockDB stores the block details for all blocks.

@@ -8,12 +8,6 @@ import (
 	"quorumengineering/quorum-report/database"
 )
 
-const validABI = `
-[
-	{ "type" : "function", "name" : "balance", "constant" : true },
-	{ "type" : "function", "name" : "send", "constant" : false, "inputs" : [ { "name" : "amount", "type" : "uint256" } ] }
-]`
-
 func TestAPIValidation(t *testing.T) {
 	var err error
 	db := database.NewMemoryDB()
@@ -23,6 +17,18 @@ func TestAPIValidation(t *testing.T) {
 	if err.Error() != "invalid input" {
 		t.Fatalf("expected %v, but got %v", "invalid input", err)
 	}
+}
+
+const validABI = `
+[
+	{ "type" : "function", "name" : "balance", "constant" : true },
+	{ "type" : "function", "name" : "send", "constant" : false, "inputs" : [ { "name" : "amount", "type" : "uint256" } ] }
+]`
+
+func TestAPIParsing(t *testing.T) {
+	var err error
+	db := database.NewMemoryDB()
+	apis := NewRPCAPIs(db)
 	// Test AddContractABI string to ABI parsing
 	err = apis.AddContractABI(common.Address{1}, validABI)
 	if err != nil {

@@ -1,6 +1,9 @@
 package types
 
 import (
+	"log"
+
+	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 )
@@ -36,6 +39,32 @@ type Transaction struct {
 	PrivateData       hexutil.Bytes  `json:"privateData"`
 	IsPrivate         bool           `json:"isPrivate"`
 	Events            []*Event       `json:"events"`
+	Parsed            string         `json:"parsedTx"`
+}
+
+func (tx *Transaction) ParseTransaction(abi *abi.ABI) {
+	log.Printf("Parse transaction %v.\n", tx.Hash.Hex())
+	// parse transaction data
+	if tx.To != (common.Address{0}) {
+		var data []byte
+		if len(tx.PrivateData) > 0 {
+			data = tx.PrivateData[:4]
+		} else {
+			data = tx.Data[:4]
+		}
+		for _, method := range abi.Methods {
+			if string(method.ID()) == string(data) {
+				tx.Parsed = method.Sig()
+				break
+			}
+		}
+	} else {
+		tx.Parsed = "contract deployment transaction"
+	}
+	// parse events
+	for _, e := range tx.Events {
+		e.ParseEvent(abi)
+	}
 }
 
 type Event struct {
@@ -45,4 +74,13 @@ type Event struct {
 	Data            hexutil.Bytes  `json:"data"`
 	BlockNumber     uint64         `json:"blockNumber"`
 	TransactionHash common.Hash    `json:"transactionHash"`
+	Parsed          string         `json:"parsedEvent"`
+}
+
+func (e *Event) ParseEvent(abi *abi.ABI) {
+	log.Printf("Parse event %v.\n", e.Topics[0].Hex())
+	eventABI, err := abi.EventByID(e.Topics[0])
+	if err == nil {
+		e.Parsed = eventABI.String()
+	}
 }
