@@ -15,7 +15,7 @@ func main() {
 	// expects one input which the config file
 	// read the config file path
 	var configFile string
-	flag.StringVar(&configFile, "config", "", "config file")
+	flag.StringVar(&configFile, "config", "config.toml", "config file")
 	flag.Parse()
 
 	if configFile == "" {

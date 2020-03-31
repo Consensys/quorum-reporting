@@ -11,7 +11,7 @@ import (
 	"quorumengineering/quorum-report/types"
 )
 
-// MemoryDB is a sample in memory database.
+// MemoryDB is a sample memory database for dev only.
 type MemoryDB struct {
 	addressDB                []common.Address
 	abiDB                    map[common.Address]*abi.ABI
@@ -244,7 +244,7 @@ func (db *MemoryDB) indexTransaction(address common.Address, tx *types.Transacti
 				db.eventIndexDB[address] = []*types.Event{}
 			}
 			db.eventIndexDB[address] = append(db.eventIndexDB[address], event)
-			log.Printf("append event %v to registered address %v.\n", event, address.Hex())
+			log.Printf("append event with topic %v to registered address %v.\n", event.Topics[0].Hex(), address.Hex())
 		}
 	}
 }
