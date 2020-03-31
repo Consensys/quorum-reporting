@@ -22,6 +22,7 @@ type BlockMonitor struct {
 	quorumClient       client.Client
 	syncStart          chan uint64
 	transactionMonitor *TransactionMonitor
+	storageMonitor     *StorageMonitor
 	stopFeed           event.Feed
 }
 
@@ -31,6 +32,7 @@ func NewBlockMonitor(db database.Database, quorumClient client.Client) *BlockMon
 		quorumClient:       quorumClient,
 		syncStart:          make(chan uint64),
 		transactionMonitor: NewTransactionMonitor(db, quorumClient),
+		storageMonitor:     NewStorageMonitor(db, quorumClient),
 	}
 }
 
@@ -74,7 +76,7 @@ func (bm *BlockMonitor) currentBlockNumber() (uint64, error) {
 		resp         map[string]interface{}
 		currentBlock graphql.CurrentBlock
 	)
-	resp, err := bm.quorumClient.ExecuteGraphQLQuery(context.Background(), graphql.CurrentBlockQuery())
+	err := bm.quorumClient.ExecuteGraphQLQuery(context.Background(), &resp, graphql.CurrentBlockQuery())
 	if err != nil {
 		return 0, err
 	}
@@ -168,6 +170,12 @@ func (bm *BlockMonitor) sync(start, end uint64) {
 func (bm *BlockMonitor) process(block *types.Block) error {
 	// Transaction monitor pulls all transactions for the given block.
 	err := bm.transactionMonitor.PullTransactions(block)
+	if err != nil {
+		return err
+	}
+
+	// Storage monitor pulls all account with state for the given block.
+	err = bm.storageMonitor.PullStorage(block)
 	if err != nil {
 		return err
 	}

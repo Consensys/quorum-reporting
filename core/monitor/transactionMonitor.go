@@ -20,10 +20,7 @@ type TransactionMonitor struct {
 }
 
 func NewTransactionMonitor(db database.Database, quorumClient client.Client) *TransactionMonitor {
-	return &TransactionMonitor{
-		db,
-		quorumClient,
-	}
+	return &TransactionMonitor{db, quorumClient}
 }
 
 func (tm *TransactionMonitor) PullTransactions(block *types.Block) error {
@@ -50,7 +47,7 @@ func (tm *TransactionMonitor) createTransaction(hash common.Hash) (*types.Transa
 		resp     map[string]interface{}
 		txOrigin graphql.Transaction
 	)
-	resp, err := tm.quorumClient.ExecuteGraphQLQuery(context.Background(), graphql.TransactionDetailQuery(hash))
+	err := tm.quorumClient.ExecuteGraphQLQuery(context.Background(), &resp, graphql.TransactionDetailQuery(hash))
 	if err != nil {
 		// TODO: if quorum node is down, reconnect?
 		return nil, err

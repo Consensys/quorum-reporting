@@ -43,6 +43,7 @@ go build
 ```
 ./quorum-report
 ```
+**Notes:** In order to avoid missing state for storage fetching, Quorum node should run with `--gcmode archive`
 
 ## Architecture & Design
 
@@ -54,8 +55,8 @@ Quorum Reporting -----> [ Backend ] ----------> [ RPC Service ]
                            |   +--> [ Filter Service ] |
                            |                    |      |
                            |                    |      |
-                           V                    |      |
-                  [ Monitor Service ]           |      |
+                           V                    V      |
+                  [ Monitor Service ] [ Block Filter ] |
                            |                    |      |
                            |                    |      |
                            |                    |      |
