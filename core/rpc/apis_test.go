@@ -1,6 +1,7 @@
 package rpc
 
 import (
+	"math/big"
 	"testing"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -44,6 +45,7 @@ var (
 		BlockNumber:     1,
 		From:            common.HexToAddress("0x0000000000000000000000000000000000000009"),
 		To:              common.Address{0},
+		Data:            hexutil.MustDecode("0x608060405234801561001057600080fd5b506040516020806101a18339810180604052602081101561003057600080fd5b81019080805190602001909291905050508060008190555050610149806100586000396000f3fe608060405234801561001057600080fd5b506004361061005e576000357c0100000000000000000000000000000000000000000000000000000000900480632a1afcd91461006357806360fe47b1146100815780636d4ce63c146100af575b600080fd5b61006b6100cd565b6040518082815260200191505060405180910390f35b6100ad6004803603602081101561009757600080fd5b81019080803590602001909291905050506100d3565b005b6100b7610114565b6040518082815260200191505060405180910390f35b60005481565b806000819055507fefe5cb8d23d632b5d2cdd9f0a151c4b1a84ccb7afa1c57331009aa922d5e4f36816040518082815260200191505060405180910390a150565b6000805490509056fea165627a7a7230582061f6956b053dbf99873b363ab3ba7bca70853ba5efbaff898cd840d71c54fc1d0029000000000000000000000000000000000000000000000000000000000000002a"),
 		CreatedContract: address,
 	}
 	tx2 = &types.Transaction{ // set
@@ -62,7 +64,11 @@ var (
 		PrivateData:     hexutil.MustDecode("0x60fe47b100000000000000000000000000000000000000000000000000000000000003e8"),
 		CreatedContract: common.Address{0},
 		Events: []*types.Event{
-			{Address: address, Topics: []common.Hash{common.HexToHash("0xefe5cb8d23d632b5d2cdd9f0a151c4b1a84ccb7afa1c57331009aa922d5e4f36")}},
+			{
+				Data:    hexutil.MustDecode("0x00000000000000000000000000000000000000000000000000000000000003e8"),
+				Address: address,
+				Topics:  []common.Hash{common.HexToHash("0xefe5cb8d23d632b5d2cdd9f0a151c4b1a84ccb7afa1c57331009aa922d5e4f36")},
+			},
 		},
 	}
 )
@@ -106,22 +112,34 @@ func TestAPIParsing(t *testing.T) {
 	if err != nil {
 		t.Fatalf("expected no error, but got %v", err)
 	}
-	if parsedTx1.Parsed != "contract deployment transaction" {
-		t.Fatalf("expected %v, but got %v", "contract deployment transaction", err)
+	if parsedTx1.Sig != "constructor(uint256)" {
+		t.Fatalf("expected %v, but got %v", "constructor(uint256)", parsedTx1.Sig)
+	}
+	if parsedTx1.ParsedData["_initVal"].(*big.Int).Cmp(big.NewInt(42)) != 0 {
+		t.Fatalf("expected %v, but got %v", 42, parsedTx1.ParsedData["_initVal"])
 	}
 	parsedTx2, err := apis.GetTransaction(tx2.Hash)
 	if err != nil {
 		t.Fatalf("expected no error, but got %v", err)
 	}
-	if parsedTx2.Parsed != "set(uint256)" {
-		t.Fatalf("expected %v, but got %v", "set(uint256)", err)
+	if parsedTx2.Sig != "set(uint256)" {
+		t.Fatalf("expected %v, but got %v", "set(uint256)", parsedTx2.Sig)
+	}
+	if parsedTx2.ParsedData["_x"].(*big.Int).Cmp(big.NewInt(999)) != 0 {
+		t.Fatalf("expected %v, but got %v", 999, parsedTx2.ParsedData["_x"])
+	}
+	if parsedTx2.Func4Bytes.String() != "0x60fe47b1" {
+		t.Fatalf("expected %v, but got %v", "0x60fe47b1", parsedTx2.Func4Bytes.String())
 	}
 	parsedTx3, err := apis.GetTransaction(tx3.Hash)
 	if err != nil {
 		t.Fatalf("expected no error, but got %v", err)
 	}
-	if parsedTx3.Parsed != "set(uint256)" {
-		t.Fatalf("expected %v, but got %v", "set(uint256)", err)
+	if parsedTx3.Events[0].Sig != "event valueSet(uint256 _value)" {
+		t.Fatalf("expected %v, but got %v", "event valueSet(uint256 _value)", parsedTx3.Events[0].Sig)
+	}
+	if parsedTx3.Events[0].ParsedData["_value"].(*big.Int).Cmp(big.NewInt(1000)) != 0 {
+		t.Fatalf("expected %v, but got %v", 1000, parsedTx3.Events[0].ParsedData["_value"])
 	}
 	// Test GetAllEventsByAddress parse event.
 	err = db.IndexBlock(address, block)
@@ -132,7 +150,10 @@ func TestAPIParsing(t *testing.T) {
 	if err != nil {
 		t.Fatalf("expected no error, but got %v", err)
 	}
-	if parsedEvents[0].Parsed != "event valueSet(uint256 _value)" {
-		t.Fatalf("expected %v, but got %v", "set(uint256)", err)
+	if parsedEvents[0].Sig != "event valueSet(uint256 _value)" {
+		t.Fatalf("expected %v, but got %v", "event valueSet(uint256 _value)", parsedEvents[0].Sig)
+	}
+	if parsedEvents[0].ParsedData["_value"].(*big.Int).Cmp(big.NewInt(1000)) != 0 {
+		t.Fatalf("expected %v, but got %v", 1000, parsedEvents[0].ParsedData["_value"])
 	}
 }
