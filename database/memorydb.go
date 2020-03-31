@@ -244,7 +244,7 @@ func (db *MemoryDB) indexTransaction(address common.Address, tx *types.Transacti
 				db.eventIndexDB[address] = []*types.Event{}
 			}
 			db.eventIndexDB[address] = append(db.eventIndexDB[address], event)
-			log.Printf("append event with topic %v to registered address %v.\n", event.Topics[0].Hex(), address.Hex())
+			log.Printf("append event emitted in transaction %v to registered address %v.\n", event.TransactionHash.Hex(), address.Hex())
 		}
 	}
 }
