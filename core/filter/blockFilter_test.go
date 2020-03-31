@@ -12,7 +12,7 @@ import (
 func TestIndexBlock(t *testing.T) {
 	// setup
 	db := &FakeIndexDB{make(map[common.Address]bool)}
-	tf := &TransactionFilter{db}
+	tf := &BlockFilter{db}
 	addresses := []common.Address{{1}, {2}}
 	tf.IndexBlock(addresses, nil)
 	if !db.Indexed[common.Address{1}] {

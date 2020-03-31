@@ -13,18 +13,18 @@ import (
 
 // FilterService filters transactions and storage based on registered address list.
 type FilterService struct {
-	db                database.Database
-	transactionFilter *TransactionFilter
-	lastPersisted     uint64
+	db            database.Database
+	blockFilter   *BlockFilter
+	lastPersisted uint64
 	// storageFilter StorageFilter
 	stopFeed event.Feed
 }
 
 func NewFilterService(db database.Database, lastPersisted uint64) *FilterService {
 	return &FilterService{
-		db:                db,
-		transactionFilter: &TransactionFilter{db},
-		lastPersisted:     lastPersisted,
+		db:            db,
+		blockFilter:   &BlockFilter{db},
+		lastPersisted: lastPersisted,
 	}
 }
 
@@ -72,8 +72,7 @@ func (fs *FilterService) index(blockNumber uint64) error {
 	if err != nil {
 		return err
 	}
-	return fs.transactionFilter.IndexBlock(fs.getAddresses(), block)
-	// TODO: Index storage
+	return fs.blockFilter.IndexBlock(fs.getAddresses(), block)
 }
 
 func (fs *FilterService) getAddresses() []common.Address {

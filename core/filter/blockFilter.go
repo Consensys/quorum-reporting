@@ -7,13 +7,13 @@ import (
 	"quorumengineering/quorum-report/types"
 )
 
-type TransactionFilter struct {
+type BlockFilter struct {
 	db database.IndexDB
 }
 
-func (tf *TransactionFilter) IndexBlock(addresses []common.Address, block *types.Block) error {
+func (bf *BlockFilter) IndexBlock(addresses []common.Address, block *types.Block) error {
 	for _, address := range addresses {
-		err := tf.db.IndexBlock(address, block)
+		err := bf.db.IndexBlock(address, block)
 		if err != nil {
 			return err
 		}

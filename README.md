@@ -52,16 +52,16 @@ Quorum Reporting -----> [ Backend ] ----------> [ RPC Service ]
                            |   |                       |
                            |   |                       |
                            |   +--> [ Filter Service ] |
-                           |             |      |      |
-                           |             |      |      |
-                           V             |      |      |
-                  [ Monitor Service ]    |      |      |
-                           |             |      |      |
-                           |             |      |      |
-   +-----------------------|-------------+      |      |
-   |                       |                    |      |
-   |                       |                    |      |
-   V                       V                    V      V
+                           |                    |      |
+                           |                    |      |
+                           V                    |      |
+                  [ Monitor Service ]           |      |
+                           |                    |      |
+                           |                    |      |
+                           |                    |      |
+                           |                    |      |
+                           |                    |      |
+                           V                    V      V
 Quorum <--------- [ Block Monitor ] ----------> Database <---------- Visualization (e.g. Cakeshop)
    ^                       |                       ^
    |                       |                       |
@@ -69,7 +69,7 @@ Quorum <--------- [ Block Monitor ] ----------> Database <---------- Visualizati
    |                       |                       | 
    |                       |                       |
    |                       V                       |
-   +---------- [ Transaction Monitor ] ------------+
+   +------- [ Transaction/Storage Monitor ] -------+
 ```
 
 #### Items Required in Persistent Database
