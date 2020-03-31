@@ -76,6 +76,7 @@ Quorum <--------- [ Block Monitor ] ----------> Database <---------- Visualizati
 
 - All blocks
 - All transactions
+- Registered addresses and Contract ABIs
 - Storage at each block for registered contract addresses
 - **optional:** Indices (transactions/ events linked to registered contract addresses). While this may be implicitly 
 achieved by database, we may still store the indices result for easier query of transactions/ events.

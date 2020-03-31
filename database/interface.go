@@ -9,7 +9,7 @@ import (
 
 type Database interface {
 	AddressDB
-	ABIDB // not required for persistent db
+	ABIDB
 	BlockDB
 	TransactionDB
 	IndexDB
