@@ -39,9 +39,9 @@ go build
 ```bash
 ./quorum-report --help
 ```
-* Start `quorum-report` tool with default params
+* Start `quorum-report` tool with default config.toml file
 ```
-./quorum-report --config config.toml
+./quorum-report
 ```
 
 ## Architecture & Design
@@ -97,6 +97,7 @@ achieved by database, we may still store the indices result for easier query of 
 
 - Integrate persistent database
 - Handle restart & recover from fail-stop scenarios
+- Parse transaction/ event data inputs
 - Filter contract detailed storage by registered addresses (with dumpAccount available on geth side)
 - Resolve internal calls (incoming/ outgoing) for transactions of registered addresses
 
