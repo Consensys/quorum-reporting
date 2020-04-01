@@ -17,7 +17,7 @@ func TestAPIValidation(t *testing.T) {
 	apis := NewRPCAPIs(db)
 	// Test AddAddress validation
 	err = apis.AddAddress(common.Address{0})
-	if err.Error() != "invalid input" {
+	if err == nil || err.Error() != "invalid input" {
 		t.Fatalf("expected %v, but got %v", "invalid input", err)
 	}
 }
@@ -83,7 +83,7 @@ func TestAPIParsing(t *testing.T) {
 	}
 	// Test AddContractABI string to ABI parsing.
 	err = apis.AddContractABI(address, "hello")
-	if err.Error() != "invalid character 'h' looking for beginning of value" {
+	if err == nil || err.Error() != "invalid character 'h' looking for beginning of value" {
 		t.Fatalf("expected %v, but got %v", "invalid input", err)
 	}
 	err = apis.AddContractABI(address, validABI)

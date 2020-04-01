@@ -73,7 +73,7 @@ func (tx *Transaction) ParseTransaction(abi *abi.ABI) {
 		tx.Sig = "constructor" + abi.Constructor.Sig()
 		if len(data) > 32*abi.Constructor.Inputs.LengthNonIndexed() {
 			abi.Constructor.Inputs.UnpackIntoMap(tx.ParsedData, data[(len(data)-32*abi.Constructor.Inputs.LengthNonIndexed()):])
-			// TODO: parsing inputs for complex data type in constructor is not supported
+			// TODO: Parsing inputs for complex data type in constructor is not supported unless the exact contract bin is provided.
 		}
 	}
 	// parse events
