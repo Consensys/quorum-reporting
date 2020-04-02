@@ -2,6 +2,7 @@ package core
 
 import (
 	"log"
+	"time"
 
 	"quorumengineering/quorum-report/client"
 	"quorumengineering/quorum-report/core/filter"
@@ -21,7 +22,15 @@ type Backend struct {
 func New(config types.ReportInputStruct) (*Backend, error) {
 	quorumClient, err := client.NewQuorumClient(config.Reporting.WSUrl, config.Reporting.GraphQLUrl)
 	if err != nil {
-		return nil, err
+		if config.Reporting.AlwaysReconnect {
+			for err != nil {
+				log.Printf("Connection error: %v. Trying to reconnect in 3 second...\n", err)
+				time.Sleep(3 * time.Second)
+				quorumClient, err = client.NewQuorumClient(config.Reporting.WSUrl, config.Reporting.GraphQLUrl)
+			}
+		} else {
+			return nil, err
+		}
 	}
 	db := database.NewMemoryDB()
 	lastPersisted := db.GetLastPersistedBlockNumber()

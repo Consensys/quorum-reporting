@@ -11,12 +11,13 @@ import (
 type ReportInputStruct struct {
 	Title     string
 	Reporting struct {
-		WSUrl       string
-		GraphQLUrl  string
-		Addresses   []common.Address
-		RPCAddr     string
-		RPCCorsList []string
-		RPCVHosts   []string
+		WSUrl           string
+		GraphQLUrl      string
+		Addresses       []common.Address
+		RPCAddr         string
+		RPCCorsList     []string
+		RPCVHosts       []string
+		AlwaysReconnect bool
 	}
 }
 

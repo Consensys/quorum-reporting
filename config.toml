@@ -9,3 +9,4 @@ title = "Quorum reporting confg example"
 	rpcAddr =  "localhost:6666"
 	rpcCorsList =  ["localhost"]
 	rpcvHosts = ["localhost"]
+	alwaysReconnect = true
