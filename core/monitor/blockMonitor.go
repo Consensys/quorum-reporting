@@ -30,7 +30,7 @@ func NewBlockMonitor(db database.Database, quorumClient client.Client) *BlockMon
 	return &BlockMonitor{
 		db:                 db,
 		quorumClient:       quorumClient,
-		syncStart:          make(chan uint64),
+		syncStart:          make(chan uint64, 1), // make channel buffered so that it does not block chain head listener
 		transactionMonitor: NewTransactionMonitor(db, quorumClient),
 		storageMonitor:     NewStorageMonitor(db, quorumClient),
 	}
@@ -106,7 +106,6 @@ func (bm *BlockMonitor) listenToChainHead() error {
 					bm.syncStart <- header.Number.Uint64()
 					syncStarted = true
 				}
-				// TODO: do we want to change to FIFO queue and push headers to queue instead of direct processing
 				blockOrigin, err := bm.quorumClient.BlockByHash(context.Background(), header.Hash())
 				if err != nil {
 					// TODO: if quorum node is down, reconnect?
@@ -148,23 +147,20 @@ func (bm *BlockMonitor) sync(start, end uint64) {
 	}
 
 	// Sync from end + 1 to the first ChainHeadEvent if there is any gap.
-	// Use a go routine to prevent blocking.
-	go func() {
-		stopChan, stopSubscription := bm.subscribeStopEvent()
-		defer func() {
-			stopSubscription.Unsubscribe()
-		}()
-		select {
-		case latestChainHead := <-bm.syncStart:
-			close(bm.syncStart)
-			err := bm.syncBlocks(end, latestChainHead-1)
-			if err != nil {
-				log.Panicf("sync historic blocks from %v to %v failed: %v", end, latestChainHead-1, err)
-			}
-		case <-stopChan:
-			return
-		}
+	stopChan, stopSubscription := bm.subscribeStopEvent()
+	defer func() {
+		stopSubscription.Unsubscribe()
 	}()
+	select {
+	case latestChainHead := <-bm.syncStart:
+		close(bm.syncStart)
+		err := bm.syncBlocks(end, latestChainHead-1)
+		if err != nil {
+			log.Panicf("sync historic blocks from %v to %v failed: %v", end, latestChainHead-1, err)
+		}
+	case <-stopChan:
+		return
+	}
 }
 
 func (bm *BlockMonitor) process(block *types.Block) error {
