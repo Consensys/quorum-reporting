@@ -43,6 +43,10 @@ func (f *FakeIndexDB) GetAllEventsByAddress(common.Address) ([]*types.Event, err
 	return nil, errors.New("not implemented")
 }
 
+func (f *FakeIndexDB) GetStorage(common.Address, uint64) (map[common.Hash]string, error) {
+	return nil, errors.New("not implemented")
+}
+
 func (f *FakeIndexDB) GetLastFiltered(common.Address) uint64 {
 	return 0
 }

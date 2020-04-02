@@ -35,10 +35,7 @@ func NewQuorumClient(rawurl, qgurl string) (quorumClient *QuorumClient, err erro
 	// Test graphql endpoint connection.
 	var resp map[string]interface{}
 	err = quorumClient.ExecuteGraphQLQuery(context.Background(), &resp, graphqlQuery.CurrentBlockQuery())
-	if err != nil {
-		return nil, err
-	}
-	if len(resp) == 0 {
+	if err != nil || len(resp) == 0 {
 		return nil, errors.New("call graphql endpoint failed")
 	}
 	return quorumClient, err

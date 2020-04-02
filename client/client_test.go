@@ -66,8 +66,8 @@ func TestQuorumClient(t *testing.T) {
 	}
 	defer ws.Close()
 	_, err = NewQuorumClient("ws://localhost:6666", "http://localhost:8547/invalid")
-	if err == nil || err.Error() != "dial tcp [::1]:6666: connect: connection refused" {
-		t.Fatalf("expected error %v, but got %v", "dial tcp [::1]:6666: connect: connection refused", err)
+	if err == nil || !strings.Contains(err.Error(), "connect: connection refused") {
+		t.Fatalf("expected error contains %v, but got %v", "connect: connection refused", err)
 	}
 	_, err = NewQuorumClient(rpcurl, "http://localhost:8547/invalid")
 	if err == nil || err.Error() != "call graphql endpoint failed" {
