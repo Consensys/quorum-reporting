@@ -63,6 +63,10 @@ func (r *RPCAPIs) GetAllEventsByAddress(address common.Address) ([]*types.Event,
 	return events, nil
 }
 
+func (r *RPCAPIs) GetStorage(address common.Address, blockNumber uint64) (map[common.Hash]string, error) {
+	return r.db.GetStorage(address, blockNumber)
+}
+
 func (r *RPCAPIs) AddAddress(address common.Address) error {
 	if address == (common.Address{0}) {
 		return errors.New("invalid input")

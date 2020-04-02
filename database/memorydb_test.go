@@ -6,6 +6,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/state"
 
 	"quorumengineering/quorum-report/types"
 )
@@ -20,12 +21,23 @@ func TestMemoryDB(t *testing.T) {
 	// test data
 	db := NewMemoryDB()
 	address := common.HexToAddress("0x0000000000000000000000000000000000000001")
+	usedAddress := common.HexToAddress("0x0000000000000000000000000000000000000002")
 	testABI, _ := abi.JSON(strings.NewReader(jsondata))
 	block := &types.Block{
 		Hash:   common.BytesToHash([]byte("dummy")),
 		Number: 1,
 		Transactions: []common.Hash{
 			common.BytesToHash([]byte("tx1")), common.BytesToHash([]byte("tx2")), common.BytesToHash([]byte("tx3")),
+		},
+		PublicState: &state.Dump{
+			Accounts: map[common.Address]state.DumpAccount{
+				address: {
+					Storage: map[common.Hash]string{
+						common.HexToHash("0x0000000000000000000000000000000000000000000000000000000000000000"): "2a",
+						common.HexToHash("0x0000000000000000000000000000000000000000000000000000000000000001"): "2b",
+					},
+				},
+			},
 		},
 	}
 	tx1 := &types.Transaction{
@@ -42,15 +54,14 @@ func TestMemoryDB(t *testing.T) {
 		From:            common.HexToAddress("0x0000000000000000000000000000000000000009"),
 		To:              common.HexToAddress("0x0000000000000000000000000000000000000009"),
 		Value:           666,
-		CreatedContract: common.Address{0},
+		CreatedContract: usedAddress,
 	}
 	tx3 := &types.Transaction{
-		Hash:            common.BytesToHash([]byte("tx3")),
-		BlockNumber:     1,
-		From:            common.HexToAddress("0x0000000000000000000000000000000000000010"),
-		To:              address,
-		Value:           666,
-		CreatedContract: common.Address{0},
+		Hash:        common.BytesToHash([]byte("tx3")),
+		BlockNumber: 1,
+		From:        common.HexToAddress("0x0000000000000000000000000000000000000010"),
+		To:          address,
+		Value:       666,
 		Events: []*types.Event{
 			{}, // dummy event
 			{Address: address},
@@ -75,9 +86,11 @@ func TestMemoryDB(t *testing.T) {
 	// 5. Index block and check last filtered. Retrieve all transactions/ events.
 	testGetLastFiltered(t, db, address, 0)
 	testIndexBlock(t, db, address, block, false)
+	testIndexBlock(t, db, usedAddress, block, true)
 	testGetLastFiltered(t, db, address, 1)
 	testGetAllTransactionsByAddress(t, db, address, 2)
 	testGetAllEventsByAddress(t, db, address, 1)
+	testGetStorage(t, db, address, 1, 2)
 	// 6. Delete address and check last filtered
 	testDeleteAddress(t, db, address, false)
 	testGetLastFiltered(t, db, address, 0)
@@ -220,5 +233,15 @@ func testGetAllEventsByAddress(t *testing.T, db Database, address common.Address
 	}
 	if len(events) != expected {
 		t.Fatalf("expected %v, but got %v", expected, len(events))
+	}
+}
+
+func testGetStorage(t *testing.T, db Database, address common.Address, blockNumber uint64, expected int) {
+	storage, err := db.GetStorage(address, blockNumber)
+	if err != nil {
+		t.Fatalf("expected no error, but got %v", err)
+	}
+	if len(storage) != expected {
+		t.Fatalf("expected %v, but got %v", expected, len(storage))
 	}
 }

@@ -13,15 +13,20 @@ import (
 
 // MemoryDB is a sample memory database for dev only.
 type MemoryDB struct {
-	addressDB                []common.Address
-	abiDB                    map[common.Address]*abi.ABI
+	// registered contract data
+	addressDB []common.Address
+	abiDB     map[common.Address]*abi.ABI
+	// blockchain data
 	blockDB                  map[uint64]*types.Block
 	txDB                     map[common.Hash]*types.Transaction
-	txIndexDB                map[common.Address][]common.Hash
-	eventIndexDB             map[common.Address][]*types.Event
 	lastPersistedBlockNumber uint64
-	lastFiltered             map[common.Address]uint64
-	mux                      sync.RWMutex
+	// index data
+	txIndexDB      map[common.Address][]common.Hash
+	eventIndexDB   map[common.Address][]*types.Event
+	storageIndexDB map[common.Address]map[uint64]map[common.Hash]string
+	lastFiltered   map[common.Address]uint64
+	// mutex lock
+	mux sync.RWMutex
 }
 
 func NewMemoryDB() *MemoryDB {
@@ -32,6 +37,7 @@ func NewMemoryDB() *MemoryDB {
 		txDB:                     make(map[common.Hash]*types.Transaction),
 		txIndexDB:                make(map[common.Address][]common.Hash),
 		eventIndexDB:             make(map[common.Address][]*types.Event),
+		storageIndexDB:           make(map[common.Address]map[uint64]map[common.Hash]string),
 		lastPersistedBlockNumber: 0,
 		lastFiltered:             make(map[common.Address]uint64),
 	}
@@ -167,8 +173,26 @@ func (db *MemoryDB) IndexBlock(address common.Address, block *types.Block) error
 	if !db.addressIsRegistered(address) {
 		return errors.New("address is not registered")
 	}
+	// index transactions and events
 	for _, txHash := range block.Transactions {
 		db.indexTransaction(address, db.txDB[txHash])
+	}
+	// index storage
+	if block.PublicState != nil {
+		for address, account := range block.PublicState.Accounts {
+			if len(db.storageIndexDB[address]) == 0 {
+				db.storageIndexDB[address] = make(map[uint64]map[common.Hash]string)
+			}
+			db.storageIndexDB[address][block.Number] = account.Storage
+		}
+	}
+	if block.PrivateState != nil {
+		for address, account := range block.PrivateState.Accounts {
+			if len(db.storageIndexDB[address]) == 0 {
+				db.storageIndexDB[address] = make(map[uint64]map[common.Hash]string)
+			}
+			db.storageIndexDB[address][block.Number] = account.Storage
+		}
 	}
 	db.lastFiltered[address] = db.lastPersistedBlockNumber
 	return nil
@@ -192,6 +216,15 @@ func (db *MemoryDB) GetAllEventsByAddress(address common.Address) ([]*types.Even
 	return db.eventIndexDB[address], nil
 }
 
+func (db *MemoryDB) GetStorage(address common.Address, blockNumber uint64) (map[common.Hash]string, error) {
+	db.mux.RLock()
+	defer db.mux.RUnlock()
+	if !db.addressIsRegistered(address) {
+		return nil, errors.New("address is not registered")
+	}
+	return db.storageIndexDB[address][blockNumber], nil
+}
+
 func (db *MemoryDB) GetLastFiltered(address common.Address) uint64 {
 	db.mux.RLock()
 	defer db.mux.RUnlock()
@@ -210,14 +243,29 @@ func (db *MemoryDB) addressIsRegistered(address common.Address) bool {
 }
 
 func (db *MemoryDB) indexHistory(addresses []common.Address) {
-	last := uint64(0)
-
+	// index all historic transactions and events
 	for _, tx := range db.txDB {
 		for _, address := range addresses {
 			db.indexTransaction(address, tx)
 		}
-		if last < tx.BlockNumber {
-			last = tx.BlockNumber
+	}
+	// index all historic storage
+	for _, block := range db.blockDB {
+		if block.PublicState != nil {
+			for address, account := range block.PublicState.Accounts {
+				if len(db.storageIndexDB[address]) == 0 {
+					db.storageIndexDB[address] = make(map[uint64]map[common.Hash]string)
+				}
+				db.storageIndexDB[address][block.Number] = account.Storage
+			}
+		}
+		if block.PrivateState != nil {
+			for address, account := range block.PrivateState.Accounts {
+				if len(db.storageIndexDB[address]) == 0 {
+					db.storageIndexDB[address] = make(map[uint64]map[common.Hash]string)
+				}
+				db.storageIndexDB[address][block.Number] = account.Storage
+			}
 		}
 	}
 	for _, address := range addresses {
@@ -252,6 +300,7 @@ func (db *MemoryDB) indexTransaction(address common.Address, tx *types.Transacti
 func (db *MemoryDB) removeAllIndices(address common.Address) error {
 	delete(db.txIndexDB, address)
 	delete(db.eventIndexDB, address)
+	delete(db.storageIndexDB, address)
 	db.lastFiltered[address] = 0
 	return nil
 }
