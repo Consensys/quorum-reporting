@@ -54,7 +54,7 @@ func TestCurrentBlock(t *testing.T) {
 		graphql.CurrentBlockQuery(): {"block": interface{}(map[string]interface{}{"number": "0x10"})},
 	}
 	bm := &BlockMonitor{
-		quorumClient: client.NewStubQuorumClient(nil, mockGraphQL),
+		quorumClient: client.NewStubQuorumClient(nil, mockGraphQL, nil),
 	}
 	currentBlockNumber, err := bm.currentBlockNumber()
 	if err != nil {

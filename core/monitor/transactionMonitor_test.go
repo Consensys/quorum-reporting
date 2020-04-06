@@ -45,7 +45,7 @@ func TestCreateTransaction(t *testing.T) {
 		},
 	}
 	tm := &TransactionMonitor{
-		quorumClient: client.NewStubQuorumClient(nil, mockGraphQL),
+		quorumClient: client.NewStubQuorumClient(nil, mockGraphQL, nil),
 	}
 	tx, err := tm.createTransaction(common.HexToHash("0xe625ba9f14eed0671508966080fb01374d0a3a16b9cee545a324179b75f30aa8"))
 	if err != nil {

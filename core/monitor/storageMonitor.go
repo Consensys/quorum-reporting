@@ -12,7 +12,9 @@ import (
 )
 
 type StorageMonitor struct {
-	db           database.Database
+	db database.Database
+	// db is currently not in use.
+	// Potentially useful if we want to store storage out of block data and only keep public/ private state root in block.
 	quorumClient client.Client
 }
 
@@ -29,7 +31,7 @@ func (sm *StorageMonitor) PullStorage(block *types.Block) error {
 		return err
 	}
 	// 2. Get private state dump
-	err = sm.quorumClient.RPCCall(context.Background(), &block.PublicState, "debug_dumpBlock", hexutil.EncodeUint64(block.Number), "private")
+	err = sm.quorumClient.RPCCall(context.Background(), &block.PrivateState, "debug_dumpBlock", hexutil.EncodeUint64(block.Number), "private")
 	if err != nil {
 		return err
 	}
