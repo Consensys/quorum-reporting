@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"math/big"
+	"reflect"
 
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
@@ -58,10 +59,17 @@ func (qc *QuorumClient) RPCCall(ctx context.Context, result interface{}, method 
 type StubQuorumClient struct {
 	blocks      []*ethTypes.Block
 	mockGraphQL map[string]map[string]interface{}
+	mockRPC     map[string]interface{}
 }
 
-func NewStubQuorumClient(blocks []*ethTypes.Block, mockGraphQL map[string]map[string]interface{}) Client {
-	return &StubQuorumClient{blocks, mockGraphQL}
+func NewStubQuorumClient(blocks []*ethTypes.Block, mockGraphQL map[string]map[string]interface{}, mockRPC map[string]interface{}) Client {
+	if mockGraphQL == nil {
+		mockGraphQL = map[string]map[string]interface{}{}
+	}
+	if mockRPC == nil {
+		mockRPC = map[string]interface{}{}
+	}
+	return &StubQuorumClient{blocks, mockGraphQL, mockRPC}
 }
 
 func (qc *StubQuorumClient) SubscribeNewHead(context.Context, chan<- *ethTypes.Header) (ethereum.Subscription, error) {
@@ -97,5 +105,12 @@ func (qc *StubQuorumClient) ExecuteGraphQLQuery(ctx context.Context, result inte
 }
 
 func (qc *StubQuorumClient) RPCCall(ctx context.Context, result interface{}, method string, args ...interface{}) error {
-	return errors.New("not implemented")
+	for _, arg := range args {
+		method += reflect.ValueOf(arg).String()
+	}
+	if resp, ok := qc.mockRPC[method]; ok {
+		reflect.ValueOf(result).Elem().Set(reflect.ValueOf(resp))
+		return nil
+	}
+	return errors.New("not found")
 }

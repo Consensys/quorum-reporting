@@ -83,6 +83,9 @@ func TestStubQuorumClient(t *testing.T) {
 	mockGraphQL := map[string]map[string]interface{}{
 		"query": {"hello": "world"},
 	}
+	mockRPC := map[string]interface{}{
+		"rpc_method": "hi",
+	}
 	blocks := []*ethTypes.Block{
 		ethTypes.NewBlockWithHeader(&ethTypes.Header{Number: big.NewInt(1)}),
 		ethTypes.NewBlockWithHeader(&ethTypes.Header{Number: big.NewInt(2)}),
@@ -91,7 +94,7 @@ func TestStubQuorumClient(t *testing.T) {
 		block *ethTypes.Block
 		err   error
 	)
-	c := NewStubQuorumClient(blocks, mockGraphQL)
+	c := NewStubQuorumClient(blocks, mockGraphQL, mockRPC)
 	// test BlockByNumber
 	block, err = c.BlockByNumber(context.Background(), big.NewInt(2))
 	if err != nil {
@@ -126,6 +129,19 @@ func TestStubQuorumClient(t *testing.T) {
 		t.Fatalf("expected resp hello world, but got %v", resp["hello"])
 	}
 	err = c.ExecuteGraphQLQuery(context.Background(), &resp, "random")
+	if err == nil || err.Error() != "not found" {
+		t.Fatalf("expected error %v, but got %v", "not found", err)
+	}
+	// test mock RPC
+	var res string
+	err = c.RPCCall(context.Background(), &res, "rpc_method")
+	if err != nil {
+		t.Fatalf("expected no error, but got %v", err)
+	}
+	if res != "hi" {
+		t.Fatalf("expected res hi, but got %v", res)
+	}
+	err = c.RPCCall(context.Background(), &res, "rpc_nil")
 	if err == nil || err.Error() != "not found" {
 		t.Fatalf("expected error %v, but got %v", "not found", err)
 	}
