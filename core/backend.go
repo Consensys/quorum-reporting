@@ -23,9 +23,14 @@ func New(config types.ReportInputStruct) (*Backend, error) {
 	quorumClient, err := client.NewQuorumClient(config.Reporting.WSUrl, config.Reporting.GraphQLUrl)
 	if err != nil {
 		if config.Reporting.AlwaysReconnect {
+			i := 0
 			for err != nil {
+				i++
+				if i == config.Reporting.MaxReconnectTries {
+					return nil, err
+				}
 				log.Printf("Connection error: %v. Trying to reconnect in 3 second...\n", err)
-				time.Sleep(3 * time.Second)
+				time.Sleep(time.Duration(config.Reporting.ReconnectInterval) * time.Second)
 				quorumClient, err = client.NewQuorumClient(config.Reporting.WSUrl, config.Reporting.GraphQLUrl)
 			}
 		} else {

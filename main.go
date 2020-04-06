@@ -23,7 +23,10 @@ func main() {
 	}
 
 	// read the given config file
-	config := types.ReadConfig(configFile)
+	config, err := types.ReadConfig(configFile)
+	if err != nil {
+		log.Panicf("unable to read configuration from the config file: %v", err)
+	}
 
 	// start the back end with given config
 	backend, err := core.New(config)
