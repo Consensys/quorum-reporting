@@ -21,7 +21,7 @@ type MemoryDB struct {
 	txDB                     map[common.Hash]*types.Transaction
 	lastPersistedBlockNumber uint64
 	// index data
-	txIndexDB      map[common.Address][]common.Hash
+	txIndexDB      map[common.Address]*TxIndexer
 	eventIndexDB   map[common.Address][]*types.Event
 	storageIndexDB map[common.Address]map[uint64]map[common.Hash]string
 	lastFiltered   map[common.Address]uint64
@@ -35,11 +35,25 @@ func NewMemoryDB() *MemoryDB {
 		abiDB:                    make(map[common.Address]*abi.ABI),
 		blockDB:                  make(map[uint64]*types.Block),
 		txDB:                     make(map[common.Hash]*types.Transaction),
-		txIndexDB:                make(map[common.Address][]common.Hash),
+		txIndexDB:                make(map[common.Address]*TxIndexer),
 		eventIndexDB:             make(map[common.Address][]*types.Event),
 		storageIndexDB:           make(map[common.Address]map[uint64]map[common.Hash]string),
 		lastPersistedBlockNumber: 0,
 		lastFiltered:             make(map[common.Address]uint64),
+	}
+}
+
+type TxIndexer struct {
+	contractCreationTx common.Hash
+	txsTo              []common.Hash
+	txsInternalTo      []common.Hash
+}
+
+func NewTxIndexer() *TxIndexer {
+	return &TxIndexer{
+		contractCreationTx: common.Hash{},
+		txsTo:              []common.Hash{},
+		txsInternalTo:      []common.Hash{},
 	}
 }
 
@@ -57,6 +71,7 @@ func (db *MemoryDB) AddAddresses(addresses []common.Address) error {
 				}
 			}
 			if !isExist {
+				db.txIndexDB[a] = NewTxIndexer()
 				newAddresses = append(newAddresses, a)
 			}
 		}
@@ -87,10 +102,10 @@ func (db *MemoryDB) DeleteAddress(address common.Address) error {
 	return errors.New("address does not exist")
 }
 
-func (db *MemoryDB) GetAddresses() []common.Address {
+func (db *MemoryDB) GetAddresses() ([]common.Address, error) {
 	db.mux.RLock()
 	defer db.mux.RUnlock()
-	return db.addressDB
+	return db.addressDB, nil
 }
 
 func (db *MemoryDB) AddContractABI(address common.Address, abi *abi.ABI) error {
@@ -100,10 +115,10 @@ func (db *MemoryDB) AddContractABI(address common.Address, abi *abi.ABI) error {
 	return nil
 }
 
-func (db *MemoryDB) GetContractABI(address common.Address) *abi.ABI {
+func (db *MemoryDB) GetContractABI(address common.Address) (*abi.ABI, error) {
 	db.mux.RLock()
 	defer db.mux.RUnlock()
-	return db.abiDB[address]
+	return db.abiDB[address], nil
 }
 
 func (db *MemoryDB) WriteBlock(block *types.Block) error {
@@ -140,10 +155,10 @@ func (db *MemoryDB) ReadBlock(blockNumber uint64) (*types.Block, error) {
 	return nil, errors.New("block does not exist")
 }
 
-func (db *MemoryDB) GetLastPersistedBlockNumber() uint64 {
+func (db *MemoryDB) GetLastPersistedBlockNumber() (uint64, error) {
 	db.mux.RLock()
 	defer db.mux.RUnlock()
-	return db.lastPersistedBlockNumber
+	return db.lastPersistedBlockNumber, nil
 }
 
 func (db *MemoryDB) WriteTransaction(transaction *types.Transaction) error {
@@ -198,13 +213,31 @@ func (db *MemoryDB) IndexBlock(address common.Address, block *types.Block) error
 	return nil
 }
 
-func (db *MemoryDB) GetAllTransactionsByAddress(address common.Address) ([]common.Hash, error) {
+func (db *MemoryDB) GetContractCreationTransaction(address common.Address) (common.Hash, error) {
+	db.mux.RLock()
+	defer db.mux.RUnlock()
+	if !db.addressIsRegistered(address) {
+		return common.Hash{}, errors.New("address is not registered")
+	}
+	return db.txIndexDB[address].contractCreationTx, nil
+}
+
+func (db *MemoryDB) GetAllTransactionsToAddress(address common.Address) ([]common.Hash, error) {
 	db.mux.RLock()
 	defer db.mux.RUnlock()
 	if !db.addressIsRegistered(address) {
 		return nil, errors.New("address is not registered")
 	}
-	return db.txIndexDB[address], nil
+	return db.txIndexDB[address].txsTo, nil
+}
+
+func (db *MemoryDB) GetAllTransactionsInternalToAddress(address common.Address) ([]common.Hash, error) {
+	db.mux.RLock()
+	defer db.mux.RUnlock()
+	if !db.addressIsRegistered(address) {
+		return nil, errors.New("address is not registered")
+	}
+	return db.txIndexDB[address].txsInternalTo, nil
 }
 
 func (db *MemoryDB) GetAllEventsByAddress(address common.Address) ([]*types.Event, error) {
@@ -225,10 +258,10 @@ func (db *MemoryDB) GetStorage(address common.Address, blockNumber uint64) (map[
 	return db.storageIndexDB[address][blockNumber], nil
 }
 
-func (db *MemoryDB) GetLastFiltered(address common.Address) uint64 {
+func (db *MemoryDB) GetLastFiltered(address common.Address) (uint64, error) {
 	db.mux.RLock()
 	defer db.mux.RUnlock()
-	return db.lastFiltered[address]
+	return db.lastFiltered[address], nil
 }
 
 // internal functions
@@ -276,13 +309,15 @@ func (db *MemoryDB) indexHistory(addresses []common.Address) {
 
 func (db *MemoryDB) indexTransaction(address common.Address, tx *types.Transaction) {
 	// Compare the address with tx.To and tx.CreatedContract to check if the transaction is related.
-	if address == tx.To || address == tx.CreatedContract {
-		// initialize list if nil
-		if len(db.txIndexDB[address]) == 0 {
-			db.txIndexDB[address] = []common.Hash{}
-		}
-		db.txIndexDB[address] = append(db.txIndexDB[address], tx.Hash)
-		log.Printf("append tx %v to registered address %v.\n", tx.Hash.Hex(), address.Hex())
+	if address == tx.CreatedContract {
+		db.txIndexDB[address].contractCreationTx = tx.Hash
+		log.Printf("index contract creation tx %v of registered address %v.\n", tx.Hash.Hex(), address.Hex())
+	} else if address == tx.To {
+		db.txIndexDB[address].txsTo = append(db.txIndexDB[address].txsTo, tx.Hash)
+		log.Printf("index tx %v to registered address %v.\n", tx.Hash.Hex(), address.Hex())
+	} else if checkInternalCalls(address, tx.InternalCalls) {
+		db.txIndexDB[address].txsInternalTo = append(db.txIndexDB[address].txsInternalTo, tx.Hash)
+		log.Printf("index tx %v internal calling registered address %v.\n", tx.Hash.Hex(), address.Hex())
 	}
 	// Index events emitted by the given address
 	for _, event := range tx.Events {
@@ -303,4 +338,15 @@ func (db *MemoryDB) removeAllIndices(address common.Address) error {
 	delete(db.storageIndexDB, address)
 	db.lastFiltered[address] = 0
 	return nil
+}
+
+// utility functions
+
+func checkInternalCalls(address common.Address, internalCalls []*types.InternalCall) bool {
+	for _, internalCall := range internalCalls {
+		if internalCall.To == address {
+			return true
+		}
+	}
+	return false
 }

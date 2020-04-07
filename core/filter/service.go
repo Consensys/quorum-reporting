@@ -4,7 +4,6 @@ import (
 	"log"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/event"
 
 	"quorumengineering/quorum-report/database"
@@ -39,7 +38,10 @@ func (fs *FilterService) Start() error {
 		for {
 			select {
 			case <-ticker.C:
-				current := fs.db.GetLastPersistedBlockNumber()
+				current, err := fs.db.GetLastPersistedBlockNumber()
+				if err != nil {
+					log.Panicf("get last persisted block number failed: %v", err)
+				}
 				for current > fs.lastPersisted {
 					err := fs.index(fs.lastPersisted + 1)
 					if err != nil {
@@ -72,9 +74,9 @@ func (fs *FilterService) index(blockNumber uint64) error {
 	if err != nil {
 		return err
 	}
-	return fs.blockFilter.IndexBlock(fs.getAddresses(), block)
-}
-
-func (fs *FilterService) getAddresses() []common.Address {
-	return fs.db.GetAddresses()
+	addresses, err := fs.db.GetAddresses()
+	if err != nil {
+		return err
+	}
+	return fs.blockFilter.IndexBlock(addresses, block)
 }
