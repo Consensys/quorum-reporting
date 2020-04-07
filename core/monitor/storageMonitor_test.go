@@ -21,9 +21,7 @@ func TestPullStorage(t *testing.T) {
 	block := &types.Block{
 		Number: 666,
 	}
-	sm := &StorageMonitor{
-		quorumClient: client.NewStubQuorumClient(nil, nil, mockRPC),
-	}
+	sm := NewStorageMonitor(nil, client.NewStubQuorumClient(nil, nil, mockRPC))
 	err := sm.PullStorage(block)
 	if err != nil {
 		t.Fatalf("expected no error, but got %v", err)

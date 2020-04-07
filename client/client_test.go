@@ -65,13 +65,13 @@ func TestQuorumClient(t *testing.T) {
 		t.Fatalf("expected no error, but got %v", err)
 	}
 	defer ws.Close()
-	_, err = NewQuorumClient("ws://localhost:6666", "http://localhost:8547/invalid")
-	if err == nil || !strings.Contains(err.Error(), "connect: connection refused") {
-		t.Fatalf("expected error contains %v, but got %v", "connect: connection refused", err)
+	_, err = NewQuorumClient("ws://invalid", "http://invalid")
+	if err == nil {
+		t.Fatalf("expected error but got nil")
 	}
-	_, err = NewQuorumClient(rpcurl, "http://localhost:8547/invalid")
-	if err == nil || err.Error() != "call graphql endpoint failed" {
-		t.Fatalf("expected error %v, but got %v", "call graphql endpoint failed", err)
+	_, err = NewQuorumClient(rpcurl, "http://invalid")
+	if err == nil {
+		t.Fatalf("expected error but got nil")
 	}
 	_, err = NewQuorumClient(rpcurl, graphqlServer.URL)
 	if err != nil {

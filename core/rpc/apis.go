@@ -21,7 +21,7 @@ func NewRPCAPIs(db database.Database) *RPCAPIs {
 	}
 }
 
-func (r *RPCAPIs) GetLastPersistedBlockNumber() uint64 {
+func (r *RPCAPIs) GetLastPersistedBlockNumber() (uint64, error) {
 	return r.db.GetLastPersistedBlockNumber()
 }
 
@@ -38,15 +38,26 @@ func (r *RPCAPIs) GetTransaction(hash common.Hash) (*types.Transaction, error) {
 	if address == (common.Address{0}) {
 		address = tx.CreatedContract
 	}
-	contractABI := r.db.GetContractABI(address)
+	contractABI, err := r.db.GetContractABI(address)
+	if err != nil {
+		return nil, err
+	}
 	if contractABI != nil {
 		tx.ParseTransaction(contractABI)
 	}
 	return tx, nil
 }
 
-func (r *RPCAPIs) GetAllTransactionsByAddress(address common.Address) ([]common.Hash, error) {
-	return r.db.GetAllTransactionsByAddress(address)
+func (r *RPCAPIs) GetContractCreationTransaction(address common.Address) (common.Hash, error) {
+	return r.db.GetContractCreationTransaction(address)
+}
+
+func (r *RPCAPIs) GetAllTransactionsToAddress(address common.Address) ([]common.Hash, error) {
+	return r.db.GetAllTransactionsToAddress(address)
+}
+
+func (r *RPCAPIs) GetAllTransactionsInternalToAddress(address common.Address) ([]common.Hash, error) {
+	return r.db.GetAllTransactionsInternalToAddress(address)
 }
 
 func (r *RPCAPIs) GetAllEventsByAddress(address common.Address) ([]*types.Event, error) {
@@ -54,7 +65,10 @@ func (r *RPCAPIs) GetAllEventsByAddress(address common.Address) ([]*types.Event,
 	if err != nil {
 		return nil, err
 	}
-	contractABI := r.db.GetContractABI(address)
+	contractABI, err := r.db.GetContractABI(address)
+	if err != nil {
+		return nil, err
+	}
 	if contractABI != nil {
 		for _, e := range events {
 			e.ParseEvent(contractABI)
@@ -78,7 +92,7 @@ func (r *RPCAPIs) DeleteAddress(address common.Address) error {
 	return r.db.DeleteAddress(address)
 }
 
-func (r *RPCAPIs) GetAddresses() []common.Address {
+func (r *RPCAPIs) GetAddresses() ([]common.Address, error) {
 	return r.db.GetAddresses()
 }
 
@@ -90,6 +104,6 @@ func (r *RPCAPIs) AddContractABI(address common.Address, data string) error {
 	return r.db.AddContractABI(address, &contractABI)
 }
 
-func (r *RPCAPIs) GetContractABI(address common.Address) *abi.ABI {
+func (r *RPCAPIs) GetContractABI(address common.Address) (*abi.ABI, error) {
 	return r.db.GetContractABI(address)
 }

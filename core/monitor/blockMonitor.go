@@ -50,7 +50,11 @@ func (bm *BlockMonitor) Start() error {
 	log.Printf("Current block head is: %v\n", currentBlockNumber)
 
 	// 2. Sync from last persisted to current block height.
-	go bm.sync(bm.db.GetLastPersistedBlockNumber(), currentBlockNumber)
+	lastPersisted, err := bm.db.GetLastPersistedBlockNumber()
+	if err != nil {
+		return err
+	}
+	go bm.sync(lastPersisted, currentBlockNumber)
 
 	// 3. Listen to ChainHeadEvent and sync.
 	err = bm.listenToChainHead()

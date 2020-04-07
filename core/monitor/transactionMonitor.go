@@ -117,5 +117,43 @@ func (tm *TransactionMonitor) createTransaction(hash common.Hash) (*types.Transa
 		events = append(events, e)
 	}
 	tx.Events = events
+
+	// Trace internal calls of the transaction
+	type TraceConfig struct {
+		Tracer string
+	}
+	err = tm.quorumClient.RPCCall(context.Background(), &resp, "debug_traceTransaction", tx.Hash, &TraceConfig{Tracer: "callTracer"})
+	if err != nil {
+		return nil, err
+	}
+	if resp["calls"] != nil {
+		respCalls := resp["calls"].([]interface{})
+		tx.InternalCalls = make([]*types.InternalCall, len(respCalls))
+		for i, respCall := range respCalls {
+			respCallMap := respCall.(map[string]interface{})
+			gas, err := hexutil.DecodeUint64(respCallMap["gas"].(string))
+			if err != nil {
+				return nil, err
+			}
+			gasUsed, err := hexutil.DecodeUint64(respCallMap["gasUsed"].(string))
+			if err != nil {
+				return nil, err
+			}
+			value, err := hexutil.DecodeUint64(respCallMap["value"].(string))
+			if err != nil {
+				return nil, err
+			}
+			tx.InternalCalls[i] = &types.InternalCall{
+				From:    common.HexToAddress(respCallMap["from"].(string)),
+				To:      common.HexToAddress(respCallMap["to"].(string)),
+				Gas:     gas,
+				GasUsed: gasUsed,
+				Value:   value,
+				Input:   hexutil.MustDecode(respCallMap["input"].(string)),
+				Output:  hexutil.MustDecode(respCallMap["output"].(string)),
+				Type:    respCallMap["type"].(string),
+			}
+		}
+	}
 	return tx, nil
 }

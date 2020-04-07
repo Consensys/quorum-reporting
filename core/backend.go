@@ -38,7 +38,10 @@ func New(config types.ReportInputStruct) (*Backend, error) {
 		}
 	}
 	db := database.NewMemoryDB()
-	lastPersisted := db.GetLastPersistedBlockNumber()
+	lastPersisted, err := db.GetLastPersistedBlockNumber()
+	if err != nil {
+		return nil, err
+	}
 
 	// add addresses from config file as initial registered addresses
 	err = db.AddAddresses(config.Reporting.Addresses)
