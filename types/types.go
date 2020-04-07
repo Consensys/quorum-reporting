@@ -42,9 +42,21 @@ type Transaction struct {
 	PrivateData       hexutil.Bytes          `json:"privateData"`
 	IsPrivate         bool                   `json:"isPrivate"`
 	Events            []*Event               `json:"events"`
+	InternalCalls     []*InternalCall        `json:"internalCalls"`
 	Sig               string                 `json:"txSig"`
 	Func4Bytes        hexutil.Bytes          `json:"func4Bytes"`
 	ParsedData        map[string]interface{} `json:"parsedData"`
+}
+
+type InternalCall struct {
+	From    common.Address `json:"from"`
+	To      common.Address `json:"to"`
+	Gas     uint64         `json:"gas"`
+	GasUsed uint64         `json:"gasUsed"`
+	Value   uint64         `json:"value"`
+	Input   hexutil.Bytes  `json:"input"`
+	Output  hexutil.Bytes  `json:"output"`
+	Type    string         `json:"type"`
 }
 
 func (tx *Transaction) ParseTransaction(abi *abi.ABI) {

@@ -44,8 +44,24 @@ func TestCreateTransaction(t *testing.T) {
 			"transaction": interface{}(graphqlResp),
 		},
 	}
+	mockRPC := map[string]interface{}{
+		"debug_traceTransaction<common.Hash Value><*monitor.TraceConfig Value>": map[string]interface{}{
+			"calls": []interface{}{
+				map[string]interface{}{
+					"from":    "0x9d13c6d3afe1721beef56b55d303b09e021e27ab",
+					"gas":     "0x279e",
+					"gasUsed": "0x18aa",
+					"input":   "0x60fe47b10000000000000000000000000000000000000000000000000000000000000042",
+					"output":  "0x",
+					"to":      "0x1932c48b2bf8102ba33b4a6b545c32236e342f34",
+					"type":    "CALL",
+					"value":   "0x0",
+				},
+			},
+		},
+	}
 	tm := &TransactionMonitor{
-		quorumClient: client.NewStubQuorumClient(nil, mockGraphQL, nil),
+		quorumClient: client.NewStubQuorumClient(nil, mockGraphQL, mockRPC),
 	}
 	tx, err := tm.createTransaction(common.HexToHash("0xe625ba9f14eed0671508966080fb01374d0a3a16b9cee545a324179b75f30aa8"))
 	if err != nil {
@@ -83,5 +99,8 @@ func TestCreateTransaction(t *testing.T) {
 	}
 	if tx.Events[0].Topics[0] != common.HexToHash("0xefe5cb8d23d632b5d2cdd9f0a151c4b1a84ccb7afa1c57331009aa922d5e4f36") {
 		t.Fatalf("expected event topic %v, but got %v", "0xefe5cb8d23d632b5d2cdd9f0a151c4b1a84ccb7afa1c57331009aa922d5e4f36", tx.Events[0].Topics[0].Hex())
+	}
+	if len(tx.InternalCalls) != 1 {
+		t.Fatalf("expected %v internal calls, but got %v", 1, len(tx.InternalCalls))
 	}
 }
