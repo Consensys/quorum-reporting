@@ -188,7 +188,7 @@ func (db *MemoryDB) IndexBlock(address common.Address, block *types.Block) error
 		return errors.New("address is not registered")
 	}
 	if db.lastFiltered[address] < block.Number {
-		log.Printf("Start to index %v at block %v.\n", address.Hex(), block.Number)
+		log.Printf("Index registered address %v at block %v.\n", address.Hex(), block.Number)
 		// index transactions and events
 		for _, txHash := range block.Transactions {
 			db.indexTransaction(address, db.txDB[txHash])
@@ -281,13 +281,13 @@ func (db *MemoryDB) indexTransaction(address common.Address, tx *types.Transacti
 	// Compare the address with tx.To and tx.CreatedContract to check if the transaction is related.
 	if address == tx.CreatedContract {
 		db.txIndexDB[address].contractCreationTx = tx.Hash
-		log.Printf("index contract creation tx %v of registered address %v.\n", tx.Hash.Hex(), address.Hex())
+		log.Printf("Index contract creation tx %v of registered address %v.\n", tx.Hash.Hex(), address.Hex())
 	} else if address == tx.To {
 		db.txIndexDB[address].txsTo = append(db.txIndexDB[address].txsTo, tx.Hash)
-		log.Printf("index tx %v to registered address %v.\n", tx.Hash.Hex(), address.Hex())
+		log.Printf("Index tx %v to registered address %v.\n", tx.Hash.Hex(), address.Hex())
 	} else if checkInternalCalls(address, tx.InternalCalls) {
 		db.txIndexDB[address].txsInternalTo = append(db.txIndexDB[address].txsInternalTo, tx.Hash)
-		log.Printf("index tx %v internal calling registered address %v.\n", tx.Hash.Hex(), address.Hex())
+		log.Printf("Index tx %v internal calling registered address %v.\n", tx.Hash.Hex(), address.Hex())
 	}
 	// Index events emitted by the given address
 	for _, event := range tx.Events {
@@ -297,7 +297,7 @@ func (db *MemoryDB) indexTransaction(address common.Address, tx *types.Transacti
 				db.eventIndexDB[address] = []*types.Event{}
 			}
 			db.eventIndexDB[address] = append(db.eventIndexDB[address], event)
-			log.Printf("append event emitted in transaction %v to registered address %v.\n", event.TransactionHash.Hex(), address.Hex())
+			log.Printf("Append event emitted in transaction %v to registered address %v.\n", event.TransactionHash.Hex(), address.Hex())
 		}
 	}
 }

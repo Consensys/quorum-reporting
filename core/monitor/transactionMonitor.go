@@ -24,7 +24,7 @@ func NewTransactionMonitor(db database.Database, quorumClient client.Client) *Tr
 }
 
 func (tm *TransactionMonitor) PullTransactions(block *types.Block) error {
-	log.Printf("Pull all transactions for block %v\n", block.Number)
+	log.Printf("Pull all transactions for block %v.\n", block.Number)
 
 	for _, txHash := range block.Transactions {
 		// 1. Query transaction details by graphql.

@@ -23,7 +23,7 @@ func NewStorageMonitor(db database.Database, quorumClient client.Client) *Storag
 }
 
 func (sm *StorageMonitor) PullStorage(block *types.Block) error {
-	log.Printf("Pull all accounts storage at block %v\n", block.Number)
+	log.Printf("Pull all accounts storage at block %v.\n", block.Number)
 
 	// 1. Get public state dump
 	err := sm.quorumClient.RPCCall(context.Background(), &block.PublicState, "debug_dumpBlock", hexutil.EncodeUint64(block.Number))

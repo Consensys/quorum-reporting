@@ -47,7 +47,7 @@ func (bm *BlockMonitor) Start() error {
 	if err != nil {
 		return err
 	}
-	log.Printf("Current block head is: %v\n", currentBlockNumber)
+	log.Printf("Current block head is: %v.\n", currentBlockNumber)
 
 	// 2. Sync from last persisted to current block height.
 	lastPersisted, err := bm.db.GetLastPersistedBlockNumber()
