@@ -75,7 +75,6 @@ func (db *MemoryDB) AddAddresses(addresses []common.Address) error {
 				newAddresses = append(newAddresses, a)
 			}
 		}
-		db.indexHistory(newAddresses)
 		db.addressDB = append(db.addressDB, newAddresses...)
 	}
 	return nil
@@ -188,28 +187,31 @@ func (db *MemoryDB) IndexBlock(address common.Address, block *types.Block) error
 	if !db.addressIsRegistered(address) {
 		return errors.New("address is not registered")
 	}
-	// index transactions and events
-	for _, txHash := range block.Transactions {
-		db.indexTransaction(address, db.txDB[txHash])
-	}
-	// index storage
-	if block.PublicState != nil {
-		for address, account := range block.PublicState.Accounts {
-			if len(db.storageIndexDB[address]) == 0 {
-				db.storageIndexDB[address] = make(map[uint64]map[common.Hash]string)
-			}
-			db.storageIndexDB[address][block.Number] = account.Storage
+	if db.lastFiltered[address] < block.Number {
+		log.Printf("Start to index %v at block %v.\n", address.Hex(), block.Number)
+		// index transactions and events
+		for _, txHash := range block.Transactions {
+			db.indexTransaction(address, db.txDB[txHash])
 		}
-	}
-	if block.PrivateState != nil {
-		for address, account := range block.PrivateState.Accounts {
-			if len(db.storageIndexDB[address]) == 0 {
-				db.storageIndexDB[address] = make(map[uint64]map[common.Hash]string)
+		// index storage
+		if block.PublicState != nil {
+			for address, account := range block.PublicState.Accounts {
+				if len(db.storageIndexDB[address]) == 0 {
+					db.storageIndexDB[address] = make(map[uint64]map[common.Hash]string)
+				}
+				db.storageIndexDB[address][block.Number] = account.Storage
 			}
-			db.storageIndexDB[address][block.Number] = account.Storage
 		}
+		if block.PrivateState != nil {
+			for address, account := range block.PrivateState.Accounts {
+				if len(db.storageIndexDB[address]) == 0 {
+					db.storageIndexDB[address] = make(map[uint64]map[common.Hash]string)
+				}
+				db.storageIndexDB[address][block.Number] = account.Storage
+			}
+		}
+		db.lastFiltered[address] = block.Number
 	}
-	db.lastFiltered[address] = db.lastPersistedBlockNumber
 	return nil
 }
 
@@ -273,38 +275,6 @@ func (db *MemoryDB) addressIsRegistered(address common.Address) bool {
 		}
 	}
 	return false
-}
-
-func (db *MemoryDB) indexHistory(addresses []common.Address) {
-	// index all historic transactions and events
-	for _, tx := range db.txDB {
-		for _, address := range addresses {
-			db.indexTransaction(address, tx)
-		}
-	}
-	// index all historic storage
-	for _, block := range db.blockDB {
-		if block.PublicState != nil {
-			for address, account := range block.PublicState.Accounts {
-				if len(db.storageIndexDB[address]) == 0 {
-					db.storageIndexDB[address] = make(map[uint64]map[common.Hash]string)
-				}
-				db.storageIndexDB[address][block.Number] = account.Storage
-			}
-		}
-		if block.PrivateState != nil {
-			for address, account := range block.PrivateState.Accounts {
-				if len(db.storageIndexDB[address]) == 0 {
-					db.storageIndexDB[address] = make(map[uint64]map[common.Hash]string)
-				}
-				db.storageIndexDB[address][block.Number] = account.Storage
-			}
-		}
-	}
-	for _, address := range addresses {
-		db.lastFiltered[address] = db.lastPersistedBlockNumber
-	}
-
 }
 
 func (db *MemoryDB) indexTransaction(address common.Address, tx *types.Transaction) {

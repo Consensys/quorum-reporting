@@ -38,10 +38,6 @@ func New(config types.ReportInputStruct) (*Backend, error) {
 		}
 	}
 	db := database.NewMemoryDB()
-	lastPersisted, err := db.GetLastPersistedBlockNumber()
-	if err != nil {
-		return nil, err
-	}
 
 	// add addresses from config file as initial registered addresses
 	err = db.AddAddresses(config.Reporting.Addresses)
@@ -51,7 +47,7 @@ func New(config types.ReportInputStruct) (*Backend, error) {
 
 	return &Backend{
 		monitor: monitor.NewMonitorService(db, quorumClient),
-		filter:  filter.NewFilterService(db, lastPersisted),
+		filter:  filter.NewFilterService(db),
 		rpc:     rpc.NewRPCService(db, config.Reporting.RPCAddr, config.Reporting.RPCVHosts, config.Reporting.RPCCorsList),
 	}, nil
 }

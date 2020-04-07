@@ -100,9 +100,6 @@ func TestMemoryDB(t *testing.T) {
 	// 6. Delete address and check last filtered
 	testDeleteAddress(t, db, address, false)
 	testGetLastFiltered(t, db, address, 0)
-	// 7. Add an address and check index history
-	testAddAddresses(t, db, []common.Address{address}, false)
-	testGetLastFiltered(t, db, address, 1)
 }
 
 func testAddAddresses(t *testing.T, db Database, addresses []common.Address, expectedErr bool) {

@@ -12,18 +12,16 @@ import (
 
 // FilterService filters transactions and storage based on registered address list.
 type FilterService struct {
-	db            database.Database
-	blockFilter   *BlockFilter
-	lastPersisted uint64
+	db          database.Database
+	blockFilter *BlockFilter
 	// storageFilter StorageFilter
 	stopFeed event.Feed
 }
 
-func NewFilterService(db database.Database, lastPersisted uint64) *FilterService {
+func NewFilterService(db database.Database) *FilterService {
 	return &FilterService{
-		db:            db,
-		blockFilter:   &BlockFilter{db},
-		lastPersisted: lastPersisted,
+		db:          db,
+		blockFilter: &BlockFilter{db},
 	}
 }
 
@@ -42,12 +40,16 @@ func (fs *FilterService) Start() error {
 				if err != nil {
 					log.Panicf("get last persisted block number failed: %v", err)
 				}
-				for current > fs.lastPersisted {
-					err := fs.index(fs.lastPersisted + 1)
+				lastFiltered, err := fs.getLastFiltered(current)
+				if err != nil {
+					log.Panicf("get last filtered failed: %v", err)
+				}
+				for current > lastFiltered {
+					err := fs.index(lastFiltered + 1)
 					if err != nil {
-						log.Panicf("index block %v failed: %v", fs.lastPersisted+1, err)
+						log.Panicf("index block %v failed: %v", lastFiltered, err)
 					}
-					fs.lastPersisted++
+					lastFiltered++
 				}
 			case <-stopChan:
 				return
@@ -68,8 +70,24 @@ func (fs *FilterService) subscribeStopEvent() (chan types.StopEvent, event.Subsc
 	return c, s
 }
 
+func (fs *FilterService) getLastFiltered(lastFiltered uint64) (uint64, error) {
+	addresses, err := fs.db.GetAddresses()
+	if err != nil {
+		return 0, err
+	}
+	for _, address := range addresses {
+		curLastFiltered, err := fs.db.GetLastFiltered(address)
+		if err != nil {
+			return 0, err
+		}
+		if curLastFiltered < lastFiltered {
+			lastFiltered = curLastFiltered
+		}
+	}
+	return lastFiltered, nil
+}
+
 func (fs *FilterService) index(blockNumber uint64) error {
-	log.Printf("Start to index block %v.\n", blockNumber)
 	block, err := fs.db.ReadBlock(blockNumber)
 	if err != nil {
 		return err
