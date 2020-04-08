@@ -17,7 +17,6 @@ type ReportInputStruct struct {
 		RPCAddr           string           `toml:"rpcAddr"`
 		RPCCorsList       []string         `toml:"rpcCorsList,omitempty"`
 		RPCVHosts         []string         `toml:"rpcvHosts,omitempty"`
-		AlwaysReconnect   bool             `toml:"alwaysReconnect,omitempty"`
 		ReconnectInterval int              `toml:"reconnectInterval,omitempty"`
 		MaxReconnectTries int              `toml:"maxReconnectTries,omitempty"`
 	}
@@ -36,8 +35,8 @@ func ReadConfig(configFile string) (ReportInputStruct, error) {
 
 	// if AlwaysReconnect is set to true, check if ReconnectInterval
 	// and MaxReconnectTries are given or not. If not throw error
-	if input.Reporting.AlwaysReconnect && (input.Reporting.MaxReconnectTries == 0 || input.Reporting.ReconnectInterval == 0) {
-		return ReportInputStruct{}, errors.New("reconnection details not set in the config file")
+	if input.Reporting.MaxReconnectTries > 0 && input.Reporting.ReconnectInterval == 0 {
+		return ReportInputStruct{}, errors.New("reconnection details not set properly in the config file")
 	}
 	return input, nil
 }

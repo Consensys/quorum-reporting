@@ -22,7 +22,7 @@ type Backend struct {
 func New(config types.ReportInputStruct) (*Backend, error) {
 	quorumClient, err := client.NewQuorumClient(config.Reporting.WSUrl, config.Reporting.GraphQLUrl)
 	if err != nil {
-		if config.Reporting.AlwaysReconnect {
+		if config.Reporting.MaxReconnectTries > 0 {
 			i := 0
 			for err != nil {
 				i++

@@ -29,16 +29,22 @@ func TestParsePermissionConfig(t *testing.T) {
 	tmpConfigData.Reporting.RPCAddr = "localhost:6666"
 	tmpConfigData.Reporting.RPCCorsList = append(tmpConfigData.Reporting.RPCCorsList, "localhost")
 	tmpConfigData.Reporting.RPCVHosts = append(tmpConfigData.Reporting.RPCVHosts, "localhost")
-	tmpConfigData.Reporting.AlwaysReconnect = true
 
 	blob, err := toml.Marshal(tmpConfigData)
 	if err := ioutil.WriteFile(fileName, blob, 0644); err != nil {
 		t.Fatal("Error writing new node info to file", "fileName", fileName, "err", err)
 	}
 	_, err = ReadConfig(fileName)
-	assert.True(t, err.Error() == "reconnection details not set in the config file", "error reading the file")
-	tmpConfigData.Reporting.ReconnectInterval = 10
+	assert.True(t, err == nil, "error reading the file")
 	tmpConfigData.Reporting.MaxReconnectTries = 5
+	blob, err = toml.Marshal(tmpConfigData)
+	if err := ioutil.WriteFile(fileName, blob, 0644); err != nil {
+		t.Fatal("Error writing new node info to file", "fileName", fileName, "err", err)
+	}
+	_, err = ReadConfig(fileName)
+	assert.True(t, err.Error() == "reconnection details not set properly in the config file", "expected error not thrown")
+
+	tmpConfigData.Reporting.ReconnectInterval = 10
 	blob, err = toml.Marshal(tmpConfigData)
 	if err := ioutil.WriteFile(fileName, blob, 0644); err != nil {
 		t.Fatal("Error writing new node info to file", "fileName", fileName, "err", err)
