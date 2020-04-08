@@ -12,17 +12,13 @@ import (
 
 // FilterService filters transactions and storage based on registered address list.
 type FilterService struct {
-	db          database.Database
-	blockFilter *BlockFilter
+	db database.Database
 	// storageFilter StorageFilter
 	stopFeed event.Feed
 }
 
 func NewFilterService(db database.Database) *FilterService {
-	return &FilterService{
-		db:          db,
-		blockFilter: &BlockFilter{db},
-	}
+	return &FilterService{db: db}
 }
 
 func (fs *FilterService) Start() error {
@@ -96,5 +92,5 @@ func (fs *FilterService) index(blockNumber uint64) error {
 	if err != nil {
 		return err
 	}
-	return fs.blockFilter.IndexBlock(addresses, block)
+	return fs.db.IndexBlock(addresses, block)
 }

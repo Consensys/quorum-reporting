@@ -7,6 +7,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/state"
 
 	"quorumengineering/quorum-report/types"
 )
@@ -181,35 +182,29 @@ func (db *MemoryDB) ReadTransaction(hash common.Hash) (*types.Transaction, error
 	return nil, errors.New("transaction does not exist")
 }
 
-func (db *MemoryDB) IndexBlock(address common.Address, block *types.Block) error {
+func (db *MemoryDB) IndexBlock(addresses []common.Address, block *types.Block) error {
 	db.mux.Lock()
 	defer db.mux.Unlock()
-	if !db.addressIsRegistered(address) {
-		return errors.New("address is not registered")
+	// filter out registered and unfiltered address only
+	filteredAddresses := map[common.Address]bool{}
+	for _, address := range addresses {
+		if db.addressIsRegistered(address) && db.lastFiltered[address] < block.Number {
+			filteredAddresses[address] = true
+			log.Printf("Index registered address %v at block %v.\n", address.Hex(), block.Number)
+		}
 	}
-	if db.lastFiltered[address] < block.Number {
-		log.Printf("Index registered address %v at block %v.\n", address.Hex(), block.Number)
-		// index transactions and events
-		for _, txHash := range block.Transactions {
-			db.indexTransaction(address, db.txDB[txHash])
-		}
-		// index storage
-		if block.PublicState != nil {
-			for address, account := range block.PublicState.Accounts {
-				if len(db.storageIndexDB[address]) == 0 {
-					db.storageIndexDB[address] = make(map[uint64]map[common.Hash]string)
-				}
-				db.storageIndexDB[address][block.Number] = account.Storage
-			}
-		}
-		if block.PrivateState != nil {
-			for address, account := range block.PrivateState.Accounts {
-				if len(db.storageIndexDB[address]) == 0 {
-					db.storageIndexDB[address] = make(map[uint64]map[common.Hash]string)
-				}
-				db.storageIndexDB[address][block.Number] = account.Storage
-			}
-		}
+
+	// index transactions and events
+	for _, txHash := range block.Transactions {
+		db.indexTransaction(filteredAddresses, db.txDB[txHash])
+	}
+
+	// index public storage
+	db.indexStorage(filteredAddresses, block.Number, block.PublicState)
+	// index private storage
+	db.indexStorage(filteredAddresses, block.Number, block.PrivateState)
+
+	for address := range filteredAddresses {
 		db.lastFiltered[address] = block.Number
 	}
 	return nil
@@ -277,27 +272,44 @@ func (db *MemoryDB) addressIsRegistered(address common.Address) bool {
 	return false
 }
 
-func (db *MemoryDB) indexTransaction(address common.Address, tx *types.Transaction) {
+func (db *MemoryDB) indexTransaction(filteredAddresses map[common.Address]bool, tx *types.Transaction) {
 	// Compare the address with tx.To and tx.CreatedContract to check if the transaction is related.
-	if address == tx.CreatedContract {
-		db.txIndexDB[address].contractCreationTx = tx.Hash
-		log.Printf("Index contract creation tx %v of registered address %v.\n", tx.Hash.Hex(), address.Hex())
-	} else if address == tx.To {
-		db.txIndexDB[address].txsTo = append(db.txIndexDB[address].txsTo, tx.Hash)
-		log.Printf("Index tx %v to registered address %v.\n", tx.Hash.Hex(), address.Hex())
-	} else if checkInternalCalls(address, tx.InternalCalls) {
-		db.txIndexDB[address].txsInternalTo = append(db.txIndexDB[address].txsInternalTo, tx.Hash)
-		log.Printf("Index tx %v internal calling registered address %v.\n", tx.Hash.Hex(), address.Hex())
+	if filteredAddresses[tx.CreatedContract] {
+		db.txIndexDB[tx.CreatedContract].contractCreationTx = tx.Hash
+		log.Printf("Index contract creation tx %v of registered address %v.\n", tx.Hash.Hex(), tx.CreatedContract.Hex())
+	} else if filteredAddresses[tx.To] {
+		db.txIndexDB[tx.To].txsTo = append(db.txIndexDB[tx.To].txsTo, tx.Hash)
+		log.Printf("Index tx %v to registered address %v.\n", tx.Hash.Hex(), tx.To.Hex())
+	} else {
+		for address := range filteredAddresses {
+			if checkInternalCalls(address, tx.InternalCalls) {
+				db.txIndexDB[address].txsInternalTo = append(db.txIndexDB[address].txsInternalTo, tx.Hash)
+				log.Printf("Index tx %v internal calling registered address %v.\n", tx.Hash.Hex(), address.Hex())
+			}
+		}
 	}
 	// Index events emitted by the given address
 	for _, event := range tx.Events {
-		if event.Address == address {
+		if filteredAddresses[event.Address] {
 			// initialize list if nil
-			if len(db.eventIndexDB[address]) == 0 {
-				db.eventIndexDB[address] = []*types.Event{}
+			if len(db.eventIndexDB[event.Address]) == 0 {
+				db.eventIndexDB[event.Address] = []*types.Event{}
 			}
-			db.eventIndexDB[address] = append(db.eventIndexDB[address], event)
-			log.Printf("Append event emitted in transaction %v to registered address %v.\n", event.TransactionHash.Hex(), address.Hex())
+			db.eventIndexDB[event.Address] = append(db.eventIndexDB[event.Address], event)
+			log.Printf("Append event emitted in transaction %v to registered address %v.\n", event.TransactionHash.Hex(), event.Address.Hex())
+		}
+	}
+}
+
+func (db *MemoryDB) indexStorage(filteredAddresses map[common.Address]bool, blockNumber uint64, stateDump *state.Dump) {
+	if stateDump != nil {
+		for address, account := range stateDump.Accounts {
+			if filteredAddresses[address] {
+				if len(db.storageIndexDB[address]) == 0 {
+					db.storageIndexDB[address] = make(map[uint64]map[common.Hash]string)
+				}
+				db.storageIndexDB[address][blockNumber] = account.Storage
+			}
 		}
 	}
 }

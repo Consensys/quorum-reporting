@@ -85,9 +85,11 @@ func (f *FakeDB) ReadTransaction(common.Hash) (*types.Transaction, error) {
 	return nil, errors.New("not implemented")
 }
 
-func (f *FakeDB) IndexBlock(address common.Address, block *types.Block) error {
-	if f.lastFiltered[address] < block.Number {
-		f.lastFiltered[address] = block.Number
+func (f *FakeDB) IndexBlock(addresses []common.Address, block *types.Block) error {
+	for _, address := range addresses {
+		if f.lastFiltered[address] < block.Number {
+			f.lastFiltered[address] = block.Number
+		}
 	}
 	return nil
 }

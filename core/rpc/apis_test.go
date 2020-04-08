@@ -142,7 +142,7 @@ func TestAPIParsing(t *testing.T) {
 		t.Fatalf("expected %v, but got %v", 1000, parsedTx3.ParsedEvents[0].ParsedData["_value"])
 	}
 	// Test GetAllEventsByAddress parse event.
-	err = db.IndexBlock(address, block)
+	err = db.IndexBlock([]common.Address{address}, block)
 	if err != nil {
 		t.Fatalf("expected no error, but got %v", err)
 	}
