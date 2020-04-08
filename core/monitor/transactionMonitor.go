@@ -119,6 +119,7 @@ func (tm *TransactionMonitor) createTransaction(hash common.Hash) (*types.Transa
 	tx.Events = events
 
 	// Trace internal calls of the transaction
+	// Reference: https://github.com/ethereum/go-ethereum/issues/3128
 	type TraceConfig struct {
 		Tracer string
 	}

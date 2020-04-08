@@ -281,10 +281,10 @@ func (db *MemoryDB) indexTransaction(filteredAddresses map[common.Address]bool, 
 		db.txIndexDB[tx.To].txsTo = append(db.txIndexDB[tx.To].txsTo, tx.Hash)
 		log.Printf("Index tx %v to registered address %v.\n", tx.Hash.Hex(), tx.To.Hex())
 	} else {
-		for address := range filteredAddresses {
-			if checkInternalCalls(address, tx.InternalCalls) {
-				db.txIndexDB[address].txsInternalTo = append(db.txIndexDB[address].txsInternalTo, tx.Hash)
-				log.Printf("Index tx %v internal calling registered address %v.\n", tx.Hash.Hex(), address.Hex())
+		for _, internalCall := range tx.InternalCalls {
+			if filteredAddresses[internalCall.To] {
+				db.txIndexDB[internalCall.To].txsInternalTo = append(db.txIndexDB[internalCall.To].txsInternalTo, tx.Hash)
+				log.Printf("Index tx %v internal calling registered address %v.\n", tx.Hash.Hex(), internalCall.To.Hex())
 			}
 		}
 	}
@@ -320,15 +320,4 @@ func (db *MemoryDB) removeAllIndices(address common.Address) error {
 	delete(db.storageIndexDB, address)
 	db.lastFiltered[address] = 0
 	return nil
-}
-
-// utility functions
-
-func checkInternalCalls(address common.Address, internalCalls []*types.InternalCall) bool {
-	for _, internalCall := range internalCalls {
-		if internalCall.To == address {
-			return true
-		}
-	}
-	return false
 }
