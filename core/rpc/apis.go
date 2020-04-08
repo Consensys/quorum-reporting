@@ -29,7 +29,7 @@ func (r *RPCAPIs) GetBlock(blockNumber uint64) (*types.Block, error) {
 	return r.db.ReadBlock(blockNumber)
 }
 
-func (r *RPCAPIs) GetTransaction(hash common.Hash) (*types.Transaction, error) {
+func (r *RPCAPIs) GetTransaction(hash common.Hash) (*types.ParsedTransaction, error) {
 	tx, err := r.db.ReadTransaction(hash)
 	if err != nil {
 		return nil, err
@@ -42,10 +42,15 @@ func (r *RPCAPIs) GetTransaction(hash common.Hash) (*types.Transaction, error) {
 	if err != nil {
 		return nil, err
 	}
-	if contractABI != nil {
-		tx.ParseTransaction(contractABI)
+	parsedTx := &types.ParsedTransaction{
+		RawTransaction: tx,
 	}
-	return tx, nil
+	if contractABI != nil {
+		if err = parsedTx.ParseTransaction(contractABI); err != nil {
+			return nil, err
+		}
+	}
+	return parsedTx, nil
 }
 
 func (r *RPCAPIs) GetContractCreationTransaction(address common.Address) (common.Hash, error) {
@@ -60,7 +65,7 @@ func (r *RPCAPIs) GetAllTransactionsInternalToAddress(address common.Address) ([
 	return r.db.GetAllTransactionsInternalToAddress(address)
 }
 
-func (r *RPCAPIs) GetAllEventsByAddress(address common.Address) ([]*types.Event, error) {
+func (r *RPCAPIs) GetAllEventsByAddress(address common.Address) ([]*types.ParsedEvent, error) {
 	events, err := r.db.GetAllEventsByAddress(address)
 	if err != nil {
 		return nil, err
@@ -69,12 +74,18 @@ func (r *RPCAPIs) GetAllEventsByAddress(address common.Address) ([]*types.Event,
 	if err != nil {
 		return nil, err
 	}
-	if contractABI != nil {
-		for _, e := range events {
-			e.ParseEvent(contractABI)
+	parsedEvents := make([]*types.ParsedEvent, len(events))
+	for i, e := range events {
+		parsedEvents[i] = &types.ParsedEvent{
+			RawEvent: e,
+		}
+		if contractABI != nil {
+			if err = parsedEvents[i].ParseEvent(contractABI); err != nil {
+				return nil, err
+			}
 		}
 	}
-	return events, nil
+	return parsedEvents, nil
 }
 
 func (r *RPCAPIs) GetStorage(address common.Address, blockNumber uint64) (map[common.Hash]string, error) {

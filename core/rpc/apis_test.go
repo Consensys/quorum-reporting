@@ -135,11 +135,11 @@ func TestAPIParsing(t *testing.T) {
 	if err != nil {
 		t.Fatalf("expected no error, but got %v", err)
 	}
-	if parsedTx3.Events[0].Sig != "event valueSet(uint256 _value)" {
-		t.Fatalf("expected %v, but got %v", "event valueSet(uint256 _value)", parsedTx3.Events[0].Sig)
+	if parsedTx3.ParsedEvents[0].Sig != "event valueSet(uint256 _value)" {
+		t.Fatalf("expected %v, but got %v", "event valueSet(uint256 _value)", parsedTx3.ParsedEvents[0].Sig)
 	}
-	if parsedTx3.Events[0].ParsedData["_value"].(*big.Int).Cmp(big.NewInt(1000)) != 0 {
-		t.Fatalf("expected %v, but got %v", 1000, parsedTx3.Events[0].ParsedData["_value"])
+	if parsedTx3.ParsedEvents[0].ParsedData["_value"].(*big.Int).Cmp(big.NewInt(1000)) != 0 {
+		t.Fatalf("expected %v, but got %v", 1000, parsedTx3.ParsedEvents[0].ParsedData["_value"])
 	}
 	// Test GetAllEventsByAddress parse event.
 	err = db.IndexBlock(address, block)
