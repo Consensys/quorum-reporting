@@ -24,7 +24,7 @@ type MemoryDB struct {
 	// index data
 	txIndexDB      map[common.Address]*TxIndexer
 	eventIndexDB   map[common.Address][]*types.Event
-	storageIndexDB map[common.Address]map[uint64]map[common.Hash]string
+	storageIndexDB map[common.Address]*StorageIndexer
 	lastFiltered   map[common.Address]uint64
 	// mutex lock
 	mux sync.RWMutex
@@ -38,7 +38,7 @@ func NewMemoryDB() *MemoryDB {
 		txDB:                     make(map[common.Hash]*types.Transaction),
 		txIndexDB:                make(map[common.Address]*TxIndexer),
 		eventIndexDB:             make(map[common.Address][]*types.Event),
-		storageIndexDB:           make(map[common.Address]map[uint64]map[common.Hash]string),
+		storageIndexDB:           make(map[common.Address]*StorageIndexer),
 		lastPersistedBlockNumber: 0,
 		lastFiltered:             make(map[common.Address]uint64),
 	}
@@ -58,6 +58,18 @@ func NewTxIndexer() *TxIndexer {
 	}
 }
 
+type StorageIndexer struct {
+	root    map[uint64]string
+	storage map[string]map[common.Hash]string
+}
+
+func NewStorageIndexer() *StorageIndexer {
+	return &StorageIndexer{
+		root:    make(map[uint64]string),
+		storage: make(map[string]map[common.Hash]string),
+	}
+}
+
 func (db *MemoryDB) AddAddresses(addresses []common.Address) error {
 	db.mux.Lock()
 	defer db.mux.Unlock()
@@ -73,6 +85,8 @@ func (db *MemoryDB) AddAddresses(addresses []common.Address) error {
 			}
 			if !isExist {
 				db.txIndexDB[a] = NewTxIndexer()
+				db.eventIndexDB[a] = []*types.Event{}
+				db.storageIndexDB[a] = NewStorageIndexer()
 				newAddresses = append(newAddresses, a)
 			}
 		}
@@ -252,7 +266,11 @@ func (db *MemoryDB) GetStorage(address common.Address, blockNumber uint64) (map[
 	if !db.addressIsRegistered(address) {
 		return nil, errors.New("address is not registered")
 	}
-	return db.storageIndexDB[address][blockNumber], nil
+	storageRoot, ok := db.storageIndexDB[address].root[blockNumber]
+	if db.storageIndexDB[address] == nil || !ok {
+		return nil, errors.New("no record found")
+	}
+	return db.storageIndexDB[address].storage[storageRoot], nil
 }
 
 func (db *MemoryDB) GetLastFiltered(address common.Address) (uint64, error) {
@@ -291,10 +309,6 @@ func (db *MemoryDB) indexTransaction(filteredAddresses map[common.Address]bool, 
 	// Index events emitted by the given address
 	for _, event := range tx.Events {
 		if filteredAddresses[event.Address] {
-			// initialize list if nil
-			if len(db.eventIndexDB[event.Address]) == 0 {
-				db.eventIndexDB[event.Address] = []*types.Event{}
-			}
 			db.eventIndexDB[event.Address] = append(db.eventIndexDB[event.Address], event)
 			log.Printf("Append event emitted in transaction %v to registered address %v.\n", event.TransactionHash.Hex(), event.Address.Hex())
 		}
@@ -305,10 +319,10 @@ func (db *MemoryDB) indexStorage(filteredAddresses map[common.Address]bool, bloc
 	if stateDump != nil {
 		for address, account := range stateDump.Accounts {
 			if filteredAddresses[address] {
-				if len(db.storageIndexDB[address]) == 0 {
-					db.storageIndexDB[address] = make(map[uint64]map[common.Hash]string)
+				db.storageIndexDB[address].root[blockNumber] = account.Root
+				if _, ok := db.storageIndexDB[address].storage[account.Root]; !ok {
+					db.storageIndexDB[address].storage[account.Root] = account.Storage
 				}
-				db.storageIndexDB[address][blockNumber] = account.Storage
 			}
 		}
 	}
