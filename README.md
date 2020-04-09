@@ -55,8 +55,8 @@ Quorum Reporting -----> [ Backend ] ----------> [ RPC Service ]
                            |   +--> [ Filter Service ] |
                            |                    |      |
                            |                    |      |
-                           V                    V      |
-                  [ Monitor Service ] [ Block Filter ] |
+                           V                    |      |
+                  [ Monitor Service ]           |      |
                            |                    |      |
                            |                    |      |
                            |                    |      |
@@ -94,16 +94,23 @@ achieved by database, we may still store the indices result for easier query of 
 - Expose basic RPC endpoints to serve queries
 - Unit tests & CI/CD
 
-#### Phase 1 (in progress)
+#### Phase 1 (done)
 
-- Integrate persistent database
-- Handle restart & recover from fail-stop scenarios
-- Parse transaction/ event data inputs
+- Parse transaction/ event data inputs from contract ABI
 - Filter contract detailed storage by registered addresses (with dumpAccount available on geth side)
 - Resolve internal calls (incoming/ outgoing) for transactions of registered addresses
 
+#### Phase 2 (in progress)
+
+- Integrate persistent database
+- Handle restart & recover from fail-stop scenarios
+
 #### Phase 3 (todo)
 
-- Docker file & make file support
+- Fully functional reporting tool with all raw data parsing
 - Integrate UI for visualization
-- Fully functional reporting tool
+- Docker file & make file support
+
+#### Future Items
+
+- Convert Quorum to go module and use it instead of ethereum 1.9.8
