@@ -8,7 +8,7 @@ import (
 	"quorumengineering/quorum-report/core/filter"
 	"quorumengineering/quorum-report/core/monitor"
 	"quorumengineering/quorum-report/core/rpc"
-	"quorumengineering/quorum-report/database"
+	"quorumengineering/quorum-report/database/memory"
 	"quorumengineering/quorum-report/types"
 )
 
@@ -37,7 +37,7 @@ func New(config types.ReportInputStruct) (*Backend, error) {
 			return nil, err
 		}
 	}
-	db := database.NewMemoryDB()
+	db := memory.NewMemoryDB()
 
 	// add addresses from config file as initial registered addresses
 	err = db.AddAddresses(config.Reporting.Addresses)

@@ -1,4 +1,4 @@
-package database
+package memory
 
 import (
 	"strings"
@@ -8,6 +8,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/state"
 
+	"quorumengineering/quorum-report/database"
 	"quorumengineering/quorum-report/types"
 )
 
@@ -101,7 +102,7 @@ func TestMemoryDB(t *testing.T) {
 	testGetLastFiltered(t, db, address, 0)
 }
 
-func testAddAddresses(t *testing.T, db Database, addresses []common.Address, expectedErr bool) {
+func testAddAddresses(t *testing.T, db database.Database, addresses []common.Address, expectedErr bool) {
 	err := db.AddAddresses(addresses)
 	if err != nil && !expectedErr {
 		t.Fatalf("expected no error, but got %v", err)
@@ -111,7 +112,7 @@ func testAddAddresses(t *testing.T, db Database, addresses []common.Address, exp
 	}
 }
 
-func testDeleteAddress(t *testing.T, db Database, address common.Address, expectedErr bool) {
+func testDeleteAddress(t *testing.T, db database.Database, address common.Address, expectedErr bool) {
 	err := db.DeleteAddress(address)
 	if err != nil && !expectedErr {
 		t.Fatalf("expected no error, but got %v", err)
@@ -121,7 +122,7 @@ func testDeleteAddress(t *testing.T, db Database, address common.Address, expect
 	}
 }
 
-func testGetAddresses(t *testing.T, db Database, expected int) {
+func testGetAddresses(t *testing.T, db database.Database, expected int) {
 	actual, err := db.GetAddresses()
 	if err != nil {
 		t.Fatalf("expected no error, but got %v", err)
@@ -131,7 +132,7 @@ func testGetAddresses(t *testing.T, db Database, expected int) {
 	}
 }
 
-func testAddContractABI(t *testing.T, db Database, address common.Address, contractABI *abi.ABI, expectedErr bool) {
+func testAddContractABI(t *testing.T, db database.Database, address common.Address, contractABI *abi.ABI, expectedErr bool) {
 	err := db.AddContractABI(address, contractABI)
 	if err != nil && !expectedErr {
 		t.Fatalf("expected no error, but got %v", err)
@@ -141,7 +142,7 @@ func testAddContractABI(t *testing.T, db Database, address common.Address, contr
 	}
 }
 
-func testGetContractABI(t *testing.T, db Database, address common.Address, expected *abi.ABI) {
+func testGetContractABI(t *testing.T, db database.Database, address common.Address, expected *abi.ABI) {
 	actual, err := db.GetContractABI(address)
 	if err != nil {
 		t.Fatalf("expected no error, but got %v", err)
@@ -154,7 +155,7 @@ func testGetContractABI(t *testing.T, db Database, address common.Address, expec
 	}
 }
 
-func testWriteBlock(t *testing.T, db Database, block *types.Block, expectedErr bool) {
+func testWriteBlock(t *testing.T, db database.Database, block *types.Block, expectedErr bool) {
 	err := db.WriteBlock(block)
 	if err != nil && !expectedErr {
 		t.Fatalf("expected no error, but got %v", err)
@@ -164,7 +165,7 @@ func testWriteBlock(t *testing.T, db Database, block *types.Block, expectedErr b
 	}
 }
 
-func testReadBlock(t *testing.T, db Database, blockNumber uint64, expected common.Hash) {
+func testReadBlock(t *testing.T, db database.Database, blockNumber uint64, expected common.Hash) {
 	block, err := db.ReadBlock(blockNumber)
 	if err != nil {
 		t.Fatalf("expected no error, but got %v", err)
@@ -174,7 +175,7 @@ func testReadBlock(t *testing.T, db Database, blockNumber uint64, expected commo
 	}
 }
 
-func testGetLastPersistedBlockNumeber(t *testing.T, db Database, expected uint64) {
+func testGetLastPersistedBlockNumeber(t *testing.T, db database.Database, expected uint64) {
 	actual, err := db.GetLastPersistedBlockNumber()
 	if err != nil {
 		t.Fatalf("expected no error, but got %v", err)
@@ -184,7 +185,7 @@ func testGetLastPersistedBlockNumeber(t *testing.T, db Database, expected uint64
 	}
 }
 
-func testWriteTransaction(t *testing.T, db Database, tx *types.Transaction, expectedErr bool) {
+func testWriteTransaction(t *testing.T, db database.Database, tx *types.Transaction, expectedErr bool) {
 	err := db.WriteTransaction(tx)
 	if err != nil && !expectedErr {
 		t.Fatalf("expected no error, but got %v", err)
@@ -194,7 +195,7 @@ func testWriteTransaction(t *testing.T, db Database, tx *types.Transaction, expe
 	}
 }
 
-func testReadTransaction(t *testing.T, db Database, hash common.Hash, expected *types.Transaction) {
+func testReadTransaction(t *testing.T, db database.Database, hash common.Hash, expected *types.Transaction) {
 	tx, err := db.ReadTransaction(hash)
 	if err != nil {
 		t.Fatalf("expected no error, but got %v", err)
@@ -210,14 +211,14 @@ func testReadTransaction(t *testing.T, db Database, hash common.Hash, expected *
 	}
 }
 
-func testIndexBlock(t *testing.T, db Database, address common.Address, block *types.Block) {
+func testIndexBlock(t *testing.T, db database.Database, address common.Address, block *types.Block) {
 	err := db.IndexBlock([]common.Address{address}, block)
 	if err != nil {
 		t.Fatalf("expected no error, but got %v", err)
 	}
 }
 
-func testGetLastFiltered(t *testing.T, db Database, address common.Address, expected uint64) {
+func testGetLastFiltered(t *testing.T, db database.Database, address common.Address, expected uint64) {
 	actual, err := db.GetLastFiltered(address)
 	if err != nil {
 		t.Fatalf("expected no error, but got %v", err)
@@ -227,7 +228,7 @@ func testGetLastFiltered(t *testing.T, db Database, address common.Address, expe
 	}
 }
 
-func testGetContractCreationTransaction(t *testing.T, db Database, address common.Address, expected common.Hash) {
+func testGetContractCreationTransaction(t *testing.T, db database.Database, address common.Address, expected common.Hash) {
 	actual, err := db.GetContractCreationTransaction(address)
 	if err != nil {
 		t.Fatalf("expected no error, but got %v", err)
@@ -237,7 +238,7 @@ func testGetContractCreationTransaction(t *testing.T, db Database, address commo
 	}
 }
 
-func testGetAllTransactionsToAddress(t *testing.T, db Database, address common.Address, expected int) {
+func testGetAllTransactionsToAddress(t *testing.T, db database.Database, address common.Address, expected int) {
 	txs, err := db.GetAllTransactionsToAddress(address)
 	if err != nil {
 		t.Fatalf("expected no error, but got %v", err)
@@ -247,7 +248,7 @@ func testGetAllTransactionsToAddress(t *testing.T, db Database, address common.A
 	}
 }
 
-func testGetAllTransactionsInternalToAddress(t *testing.T, db Database, address common.Address, expected int) {
+func testGetAllTransactionsInternalToAddress(t *testing.T, db database.Database, address common.Address, expected int) {
 	txs, err := db.GetAllTransactionsInternalToAddress(address)
 	if err != nil {
 		t.Fatalf("expected no error, but got %v", err)
@@ -257,7 +258,7 @@ func testGetAllTransactionsInternalToAddress(t *testing.T, db Database, address 
 	}
 }
 
-func testGetAllEventsByAddress(t *testing.T, db Database, address common.Address, expected int) {
+func testGetAllEventsByAddress(t *testing.T, db database.Database, address common.Address, expected int) {
 	events, err := db.GetAllEventsByAddress(address)
 	if err != nil {
 		t.Fatalf("expected no error, but got %v", err)
@@ -267,7 +268,7 @@ func testGetAllEventsByAddress(t *testing.T, db Database, address common.Address
 	}
 }
 
-func testGetStorage(t *testing.T, db Database, address common.Address, blockNumber uint64, expected int) {
+func testGetStorage(t *testing.T, db database.Database, address common.Address, blockNumber uint64, expected int) {
 	storage, err := db.GetStorage(address, blockNumber)
 	if err != nil {
 		t.Fatalf("expected no error, but got %v", err)

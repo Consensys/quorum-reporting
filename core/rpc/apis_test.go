@@ -7,13 +7,13 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 
-	"quorumengineering/quorum-report/database"
+	"quorumengineering/quorum-report/database/memory"
 	"quorumengineering/quorum-report/types"
 )
 
 func TestAPIValidation(t *testing.T) {
 	var err error
-	db := database.NewMemoryDB()
+	db := memory.NewMemoryDB()
 	apis := NewRPCAPIs(db)
 	// Test AddAddress validation
 	err = apis.AddAddress(common.Address{0})
@@ -75,7 +75,7 @@ var (
 
 func TestAPIParsing(t *testing.T) {
 	var err error
-	db := database.NewMemoryDB()
+	db := memory.NewMemoryDB()
 	apis := NewRPCAPIs(db)
 	err = apis.AddAddress(address)
 	if err != nil {
