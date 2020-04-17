@@ -46,6 +46,8 @@ github.com/dgryski/go-sip13 v0.0.0-20181026042036-e10d5fee7954/go.mod h1:vAd38F8
 github.com/docker/docker v1.4.2-0.20180625184442-8e610b2b55bf/go.mod h1:eEKB0N0r5NX/I1kEveEz05bcu8tLC/8azJZsviup8Sk=
 github.com/edsrzf/mmap-go v0.0.0-20160512033002-935e0e8a636c h1:JHHhtb9XWJrGNMcrVP6vyzO4dusgi/HnceHTgxSejUM=
 github.com/edsrzf/mmap-go v0.0.0-20160512033002-935e0e8a636c/go.mod h1:YO35OhQPt3KJa3ryjFM5Bs14WD66h8eGKpfaBNrHW5M=
+github.com/elastic/go-elasticsearch/v7 v7.5.1-0.20200409075911-14061b088525 h1:Ric+HAFTuH1toUwB8fpMAvO8wfZLmK41OutygLtkRz8=
+github.com/elastic/go-elasticsearch/v7 v7.5.1-0.20200409075911-14061b088525/go.mod h1:OJ4wdbtDNk5g503kvlHLyErCgQwwzmDtaFC4XyOxXA4=
 github.com/elastic/gosigar v0.8.1-0.20180330100440-37f05ff46ffa h1:XKAhUk/dtp+CV0VO6mhG2V7jA9vbcGcnYF/Ay9NjZrY=
 github.com/elastic/gosigar v0.8.1-0.20180330100440-37f05ff46ffa/go.mod h1:cdorVVzy1fhmEqmtgqkoE3bYtCfSCkVyjTyCIo22xvs=
 github.com/ethereum/go-ethereum v1.9.8 h1:4KUtrZOt45Ob1yXh0Mv/pPWRib/6B4p2l41nzEsEgVw=
