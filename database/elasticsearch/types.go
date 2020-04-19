@@ -1,13 +1,14 @@
 package elasticsearch
 
 import (
+	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 )
 
 type Contract struct {
 	Address             common.Address `json:"address"`
-	ABI                 string         `json:"abi"`
+	ABI                 *abi.ABI       `json:"abi"`
 	CreationTransaction common.Hash    `json:"creationTx"`
 	LastFiltered        uint64         `json:"lastFiltered"`
 }
