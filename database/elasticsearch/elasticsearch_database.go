@@ -1,13 +1,13 @@
 package elasticsearch
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	elasticsearch7 "github.com/elastic/go-elasticsearch/v7"
 	"github.com/elastic/go-elasticsearch/v7/esapi"
+	"github.com/elastic/go-elasticsearch/v7/esutil"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"quorumengineering/quorum-report/types"
@@ -39,14 +39,10 @@ func (es *Database) AddAddresses(addresses []common.Address) error {
 			LastFiltered:        0,
 		}
 
-		var buf bytes.Buffer
-		//TODO: handle error
-		_ = json.NewEncoder(&buf).Encode(toSave[i])
-
 		req := esapi.IndexRequest{
 			Index:      "contract",
 			DocumentID: address.String(),
-			Body:       &buf,
+			Body:       esutil.NewJSONReader(toSave[i]),
 			Refresh:    "true",
 		}
 
@@ -70,10 +66,10 @@ func (es *Database) DeleteAddress(address common.Address) error {
 
 	//TODO: check if response needs reading
 	res, err := deleteRequest.Do(context.TODO(), es.client)
-	defer res.Body.Close()
 	if err != nil {
 		return fmt.Errorf("error getting response: %s", err.Error())
 	}
+	defer res.Body.Close()
 
 	//TODO: delete data from other indices
 	return nil
@@ -81,27 +77,38 @@ func (es *Database) DeleteAddress(address common.Address) error {
 
 //TODO: fix
 func (es *Database) GetAddresses() ([]common.Address, error) {
-	//{
-	//	"_source": ["address"],
-	//	"query": { "match_all": {} }
+	//queryString := `{ "_source": ["address"], "query": { "match_all": {} } }`
+	//searchRequest := esapi.SearchRequest{
+	//	Index: []string{"contract"},
+	//	Body: strings.NewReader(queryString),
 	//}
+	//
+	//res, err := searchRequest.Do(context.TODO(), es.client)
+	//if err != nil {
+	//	return nil, fmt.Errorf("error getting response: %s", err.Error())
+	//}
+
 	return []common.Address{common.HexToAddress("0x1932c48b2bf8102ba33b4a6b545c32236e342f34")}, nil
 }
 
 //ABIDB
 func (es *Database) AddContractABI(address common.Address, abi *abi.ABI) error {
 	//TODO: guard against unknown address?
-	var buf bytes.Buffer
-	//TODO: handle error
-	_ = json.NewEncoder(&buf).Encode(abi)
+
+	query := map[string]interface{}{
+		"doc": map[string]interface{}{
+			"abi": abi,
+		},
+	}
 
 	updateRequest := esapi.UpdateRequest{
 		Index:      "contract",
 		DocumentID: address.String(),
-		Body:       &buf,
+		Body:       esutil.NewJSONReader(query),
 		Refresh:    "true",
 	}
 
+	//TODO: check if error returned with unknown address
 	res, err := updateRequest.Do(context.TODO(), es.client)
 	defer res.Body.Close()
 	if err != nil {
@@ -134,14 +141,10 @@ func (es *Database) WriteBlock(block *types.Block) error {
 		Transactions: block.Transactions,
 	}
 
-	var buf bytes.Buffer
-	//TODO: handle error
-	_ = json.NewEncoder(&buf).Encode(blockToSave)
-
 	req := esapi.IndexRequest{
 		Index:      "block",
 		DocumentID: block.Hash.String(),
-		Body:       &buf,
+		Body:       esutil.NewJSONReader(blockToSave),
 		Refresh:    "true",
 	}
 
@@ -198,14 +201,10 @@ func (es *Database) GetLastPersistedBlockNumber() (uint64, error) {
 func (es *Database) WriteTransaction(transaction *types.Transaction) error {
 	//TODO: convert to internal transaction type
 
-	var buf bytes.Buffer
-	//TODO: handle error
-	_ = json.NewEncoder(&buf).Encode(transaction)
-
 	req := esapi.IndexRequest{
 		Index:      "transaction",
 		DocumentID: transaction.Hash.String(),
-		Body:       &buf,
+		Body:       esutil.NewJSONReader(transaction),
 		Refresh:    "true",
 	}
 
@@ -260,7 +259,7 @@ func (es *Database) GetLastFiltered(common.Address) (uint64, error) {
 
 func (es *Database) getContractByAddress(address common.Address) (*Contract, error) {
 	//TODO: make more readable
-	queryTemplate := "{\"query\": {\"bool\": {\"must\": [{ \"match\": { \"hash\": \"%s\" }}]}}}"
+	queryTemplate := "{\"query\": {\"bool\": {\"must\": [{ \"match\": { \"address\": \"%s\" }}]}}}"
 	query := fmt.Sprintf(queryTemplate, address.String())
 
 	searchRequest := esapi.SearchRequest{
@@ -286,8 +285,11 @@ func (es *Database) getContractByAddress(address common.Address) (*Contract, err
 		return nil, fmt.Errorf("too many addresses %s's found", address.String())
 	}
 
-	result := response["hits"].(map[string]interface{})["hits"].(map[string]interface{})["_source"].(map[string]interface{})
+	/////////
+
+	result := response["hits"].(map[string]interface{})["hits"].([]interface{})[0].(map[string]interface{})["_source"].(map[string]interface{})
 	marshalled, _ := json.Marshal(result)
+	fmt.Println(string(marshalled))
 	var contract Contract
 	json.Unmarshal(marshalled, &contract)
 	return &contract, nil
@@ -321,9 +323,13 @@ func (es *Database) getTransactionByHash(hash common.Hash) (*types.Transaction, 
 		return nil, fmt.Errorf("too many transactions with hash %s found", hash.String())
 	}
 
-	result := response["hits"].(map[string]interface{})["hits"].(map[string]interface{})["_source"].(map[string]interface{})
+	result := es.getSingleDocumentData(response)
 	marshalled, _ := json.Marshal(result)
 	var transaction types.Transaction
 	json.Unmarshal(marshalled, &transaction)
 	return &transaction, nil
+}
+
+func (es *Database) getSingleDocumentData(esResponse map[string]interface{}) map[string]interface{} {
+	return esResponse["hits"].(map[string]interface{})["hits"].([]interface{})[0].(map[string]interface{})["_source"].(map[string]interface{})
 }
