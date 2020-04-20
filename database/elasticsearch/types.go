@@ -3,6 +3,7 @@ package elasticsearch
 import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/ethereum/go-ethereum/core/state"
 )
 
 type Contract struct {
@@ -13,22 +14,20 @@ type Contract struct {
 }
 
 type State struct {
-	Address     common.Address    `json:"address"`
-	BlockNumber uint64            `json:"blockNumber"`
-	StorageRoot common.Hash       `json:"storageRoot"`
-	StorageMap  map[string]string `json:"storageMap"`
+	Address     common.Address         `json:"address"`
+	BlockNumber uint64                 `json:"blockNumber"`
+	StorageRoot common.Hash            `json:"storageRoot"`
+	StorageMap  map[common.Hash]string `json:"storageMap"`
 }
 
 type Event struct {
-	ID               string         `json:"id"`
-	Address          common.Address `json:"address"`
-	BlockHash        common.Hash    `json:"blockHash"`
-	BlockNumber      uint64         `json:"blockNumber"`
-	Data             hexutil.Bytes  `json:"data"`
-	LogIndex         uint64         `json:"logIndex"`
-	Topics           []common.Hash  `json:"topics"`
-	TransactionHash  common.Hash    `json:"transactionHash"`
-	TransactionIndex uint64         `json:"transactionIndex"`
+	ID              string         `json:"id"`
+	Address         common.Address `json:"address"`
+	BlockNumber     uint64         `json:"blockNumber"`
+	Data            hexutil.Bytes  `json:"data"`
+	LogIndex        uint64         `json:"logIndex"`
+	Topics          []common.Hash  `json:"topics"`
+	TransactionHash common.Hash    `json:"transactionHash"`
 }
 
 type Transaction struct {
@@ -84,4 +83,6 @@ type Block struct {
 	Timestamp    uint64        `json:"timestamp"`
 	ExtraData    hexutil.Bytes `json:"extraData"`
 	Transactions []common.Hash `json:"transactions"`
+	PublicState  *state.Dump   `json:"publicState"`
+	PrivateState *state.Dump   `json:"privateState"`
 }

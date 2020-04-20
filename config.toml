@@ -11,3 +11,4 @@ title = "Quorum reporting config example"
 	rpcvHosts = ["localhost"]
 	reconnectInterval = 5
 	maxReconnectTries = 5
+
