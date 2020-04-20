@@ -45,8 +45,10 @@ func (r *RPCAPIs) GetTransaction(hash common.Hash) (*types.ParsedTransaction, er
 	parsedTx := &types.ParsedTransaction{
 		RawTransaction: tx,
 	}
-	if contractABI != nil {
-		if err = parsedTx.ParseTransaction(contractABI); err != nil {
+	if contractABI != "" {
+		//error can't happen as was checked when adding originally
+		parsedAbi, _ := abi.JSON(strings.NewReader(contractABI))
+		if err = parsedTx.ParseTransaction(&parsedAbi); err != nil {
 			return nil, err
 		}
 	}
@@ -79,8 +81,9 @@ func (r *RPCAPIs) GetAllEventsByAddress(address common.Address) ([]*types.Parsed
 		parsedEvents[i] = &types.ParsedEvent{
 			RawEvent: e,
 		}
-		if contractABI != nil {
-			if err = parsedEvents[i].ParseEvent(contractABI); err != nil {
+		if contractABI != "" {
+			parsedAbi, _ := abi.JSON(strings.NewReader(contractABI))
+			if err = parsedEvents[i].ParseEvent(&parsedAbi); err != nil {
 				return nil, err
 			}
 		}
@@ -108,13 +111,14 @@ func (r *RPCAPIs) GetAddresses() ([]common.Address, error) {
 }
 
 func (r *RPCAPIs) AddContractABI(address common.Address, data string) error {
-	contractABI, err := abi.JSON(strings.NewReader(data))
+	//check ABI is valid
+	_, err := abi.JSON(strings.NewReader(data))
 	if err != nil {
 		return err
 	}
-	return r.db.AddContractABI(address, &contractABI)
+	return r.db.AddContractABI(address, data)
 }
 
-func (r *RPCAPIs) GetContractABI(address common.Address) (*abi.ABI, error) {
+func (r *RPCAPIs) GetContractABI(address common.Address) (string, error) {
 	return r.db.GetContractABI(address)
 }

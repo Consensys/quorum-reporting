@@ -4,7 +4,6 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 
 	"quorumengineering/quorum-report/types"
@@ -57,12 +56,12 @@ func (f *FakeDB) GetAddresses() ([]common.Address, error) {
 	return f.addresses, nil
 }
 
-func (f *FakeDB) AddContractABI(common.Address, *abi.ABI) error {
+func (f *FakeDB) AddContractABI(common.Address, string) error {
 	return errors.New("not implemented")
 }
 
-func (f *FakeDB) GetContractABI(common.Address) (*abi.ABI, error) {
-	return nil, errors.New("not implemented")
+func (f *FakeDB) GetContractABI(common.Address) (string, error) {
+	return "", errors.New("not implemented")
 }
 
 func (f *FakeDB) WriteBlock(*types.Block) error {

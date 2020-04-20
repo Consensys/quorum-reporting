@@ -76,7 +76,7 @@ func TestMemoryDB(t *testing.T) {
 	testAddAddresses(t, db, []common.Address{address}, false)
 	testGetAddresses(t, db, 1)
 	// 2. Add Contract ABI and get it.
-	testAddContractABI(t, db, address, &testABI, false)
+	testAddContractABI(t, db, address, jsondata, false)
 	testGetContractABI(t, db, address, &testABI)
 	// 3. Write transaction and get it.
 	testWriteTransaction(t, db, tx1, false)
@@ -132,7 +132,7 @@ func testGetAddresses(t *testing.T, db database.Database, expected int) {
 	}
 }
 
-func testAddContractABI(t *testing.T, db database.Database, address common.Address, contractABI *abi.ABI, expectedErr bool) {
+func testAddContractABI(t *testing.T, db database.Database, address common.Address, contractABI string, expectedErr bool) {
 	err := db.AddContractABI(address, contractABI)
 	if err != nil && !expectedErr {
 		t.Fatalf("expected no error, but got %v", err)
@@ -143,15 +143,16 @@ func testAddContractABI(t *testing.T, db database.Database, address common.Addre
 }
 
 func testGetContractABI(t *testing.T, db database.Database, address common.Address, expected *abi.ABI) {
-	actual, err := db.GetContractABI(address)
+	retrieved, err := db.GetContractABI(address)
+	parsed, _ := abi.JSON(strings.NewReader(retrieved))
 	if err != nil {
 		t.Fatalf("expected no error, but got %v", err)
 	}
-	if len(actual.Events) != len(expected.Events) {
-		t.Fatalf("expected %v events, but got %v", len(expected.Events), len(actual.Events))
+	if len(parsed.Events) != len(expected.Events) {
+		t.Fatalf("expected %v events, but got %v", len(expected.Events), len(parsed.Events))
 	}
-	if len(actual.Methods) != len(expected.Methods) {
-		t.Fatalf("expected %v methods, but got %v", len(expected.Methods), len(actual.Methods))
+	if len(parsed.Methods) != len(expected.Methods) {
+		t.Fatalf("expected %v methods, but got %v", len(expected.Methods), len(parsed.Methods))
 	}
 }
 

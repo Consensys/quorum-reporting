@@ -5,7 +5,6 @@ import (
 	"log"
 	"sync"
 
-	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/state"
 
@@ -16,7 +15,7 @@ import (
 type MemoryDB struct {
 	// registered contract data
 	addressDB []common.Address
-	abiDB     map[common.Address]*abi.ABI
+	abiDB     map[common.Address]string
 	// blockchain data
 	blockDB                  map[uint64]*types.Block
 	txDB                     map[common.Hash]*types.Transaction
@@ -33,7 +32,7 @@ type MemoryDB struct {
 func NewMemoryDB() *MemoryDB {
 	return &MemoryDB{
 		addressDB:                []common.Address{},
-		abiDB:                    make(map[common.Address]*abi.ABI),
+		abiDB:                    make(map[common.Address]string),
 		blockDB:                  make(map[uint64]*types.Block),
 		txDB:                     make(map[common.Hash]*types.Transaction),
 		txIndexDB:                make(map[common.Address]*TxIndexer),
@@ -122,14 +121,14 @@ func (db *MemoryDB) GetAddresses() ([]common.Address, error) {
 	return db.addressDB, nil
 }
 
-func (db *MemoryDB) AddContractABI(address common.Address, abi *abi.ABI) error {
+func (db *MemoryDB) AddContractABI(address common.Address, abi string) error {
 	db.mux.Lock()
 	defer db.mux.Unlock()
 	db.abiDB[address] = abi
 	return nil
 }
 
-func (db *MemoryDB) GetContractABI(address common.Address) (*abi.ABI, error) {
+func (db *MemoryDB) GetContractABI(address common.Address) (string, error) {
 	db.mux.RLock()
 	defer db.mux.RUnlock()
 	return db.abiDB[address], nil

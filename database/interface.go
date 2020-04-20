@@ -1,7 +1,6 @@
 package database
 
 import (
-	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 
 	"quorumengineering/quorum-report/types"
@@ -24,8 +23,8 @@ type AddressDB interface {
 
 // ABIDB stores contract ABI of registered address
 type ABIDB interface {
-	AddContractABI(common.Address, *abi.ABI) error
-	GetContractABI(common.Address) (*abi.ABI, error)
+	AddContractABI(common.Address, string) error
+	GetContractABI(common.Address) (string, error)
 }
 
 // BlockDB stores the block details for all blocks.
