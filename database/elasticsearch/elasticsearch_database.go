@@ -8,7 +8,6 @@ import (
 	elasticsearch7 "github.com/elastic/go-elasticsearch/v7"
 	"github.com/elastic/go-elasticsearch/v7/esapi"
 	"github.com/elastic/go-elasticsearch/v7/esutil"
-	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"quorumengineering/quorum-report/types"
 	"strings"
@@ -34,7 +33,7 @@ func (es *Database) AddAddresses(addresses []common.Address) error {
 	for i, address := range addresses {
 		toSave[i] = Contract{
 			Address:             address,
-			ABI:                 nil,
+			ABI:                 "",
 			CreationTransaction: common.Hash{},
 			LastFiltered:        0,
 		}
@@ -92,9 +91,8 @@ func (es *Database) GetAddresses() ([]common.Address, error) {
 }
 
 //ABIDB
-func (es *Database) AddContractABI(address common.Address, abi *abi.ABI) error {
+func (es *Database) AddContractABI(address common.Address, abi string) error {
 	//TODO: guard against unknown address?
-
 	query := map[string]interface{}{
 		"doc": map[string]interface{}{
 			"abi": abi,
@@ -108,7 +106,7 @@ func (es *Database) AddContractABI(address common.Address, abi *abi.ABI) error {
 		Refresh:    "true",
 	}
 
-	//TODO: check if error returned with unknown address
+	//TODO: check if error returned
 	res, err := updateRequest.Do(context.TODO(), es.client)
 	defer res.Body.Close()
 	if err != nil {
@@ -117,12 +115,13 @@ func (es *Database) AddContractABI(address common.Address, abi *abi.ABI) error {
 	return nil
 }
 
-func (es *Database) GetContractABI(address common.Address) (*abi.ABI, error) {
+func (es *Database) GetContractABI(address common.Address) (string, error) {
 	contract, err := es.getContractByAddress(address)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
-	return contract.ABI, nil
+	abi, _ := json.Marshal(contract.ABI)
+	return string(abi), nil
 }
 
 // BlockDB
@@ -287,7 +286,7 @@ func (es *Database) getContractByAddress(address common.Address) (*Contract, err
 
 	/////////
 
-	result := response["hits"].(map[string]interface{})["hits"].([]interface{})[0].(map[string]interface{})["_source"].(map[string]interface{})
+	result := es.getSingleDocumentData(response)
 	marshalled, _ := json.Marshal(result)
 	fmt.Println(string(marshalled))
 	var contract Contract
