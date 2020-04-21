@@ -46,9 +46,7 @@ func (r *RPCAPIs) GetTransaction(hash common.Hash) (*types.ParsedTransaction, er
 		RawTransaction: tx,
 	}
 	if contractABI != "" {
-		//error can't happen as was checked when adding originally
-		parsedAbi, _ := abi.JSON(strings.NewReader(contractABI))
-		if err = parsedTx.ParseTransaction(&parsedAbi); err != nil {
+		if err = parsedTx.ParseTransaction(contractABI); err != nil {
 			return nil, err
 		}
 	}
@@ -82,8 +80,7 @@ func (r *RPCAPIs) GetAllEventsByAddress(address common.Address) ([]*types.Parsed
 			RawEvent: e,
 		}
 		if contractABI != "" {
-			parsedAbi, _ := abi.JSON(strings.NewReader(contractABI))
-			if err = parsedEvents[i].ParseEvent(&parsedAbi); err != nil {
+			if err = parsedEvents[i].ParseEvent(contractABI); err != nil {
 				return nil, err
 			}
 		}
