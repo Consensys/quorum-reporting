@@ -81,12 +81,12 @@ func TestAPIParsing(t *testing.T) {
 	if err != nil {
 		t.Fatalf("expected no error, but got %v", err)
 	}
-	// Test AddContractABI string to ABI parsing.
-	err = apis.AddContractABI(address, "hello")
+	// Test AddABI string to ABI parsing.
+	err = apis.AddABI(address, "hello")
 	if err == nil || err.Error() != "invalid character 'h' looking for beginning of value" {
 		t.Fatalf("expected %v, but got %v", "invalid input", err)
 	}
-	err = apis.AddContractABI(address, validABI)
+	err = apis.AddABI(address, validABI)
 	if err != nil {
 		t.Fatalf("expected no error, but got %v", err)
 	}

@@ -107,7 +107,7 @@ func (r *RPCAPIs) GetAddresses() ([]common.Address, error) {
 	return r.db.GetAddresses()
 }
 
-func (r *RPCAPIs) AddContractABI(address common.Address, data string) error {
+func (r *RPCAPIs) AddABI(address common.Address, data string) error {
 	//check ABI is valid
 	_, err := abi.JSON(strings.NewReader(data))
 	if err != nil {
@@ -116,6 +116,6 @@ func (r *RPCAPIs) AddContractABI(address common.Address, data string) error {
 	return r.db.AddContractABI(address, data)
 }
 
-func (r *RPCAPIs) GetContractABI(address common.Address) (string, error) {
+func (r *RPCAPIs) GetABI(address common.Address) (string, error) {
 	return r.db.GetContractABI(address)
 }
