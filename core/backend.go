@@ -2,7 +2,7 @@ package core
 
 import (
 	"log"
-	"quorumengineering/quorum-report/database/elasticsearch"
+	"quorumengineering/quorum-report/database/factory"
 	"time"
 
 	"quorumengineering/quorum-report/client"
@@ -37,8 +37,12 @@ func New(config types.ReportInputStruct) (*Backend, error) {
 			return nil, err
 		}
 	}
-	//db := memory.NewMemoryDB()
-	db := elasticsearch.New()
+
+	dbFactory := factory.NewFactory()
+	db, err := dbFactory.Database(config)
+	if err != nil {
+		return nil, err
+	}
 
 	// add addresses from config file as initial registered addresses
 	err = db.AddAddresses(config.Reporting.Addresses)

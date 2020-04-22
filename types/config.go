@@ -33,7 +33,7 @@ type ElasticSearchConfig struct {
 type ReportInputStruct struct {
 	Title string
 
-	ElasticSearch ElasticSearchConfig
+	ElasticSearch *ElasticSearchConfig
 
 	Reporting struct {
 		WSUrl             string           `toml:"wsUrl"`

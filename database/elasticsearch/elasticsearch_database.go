@@ -22,10 +22,9 @@ type ElasticsearchDB struct {
 	client *elasticsearch7.Client
 }
 
-func New() *ElasticsearchDB {
-	c, _ := elasticsearch7.NewDefaultClient()
+func New(client *elasticsearch7.Client) *ElasticsearchDB {
 	db := &ElasticsearchDB{
-		client: c,
+		client: client,
 	}
 
 	db.setupMappings()
