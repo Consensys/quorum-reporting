@@ -1,6 +1,7 @@
-package database
+package factory
 
 import (
+	"quorumengineering/quorum-report/database"
 	"quorumengineering/quorum-report/database/elasticsearch"
 	"quorumengineering/quorum-report/database/memory"
 )
@@ -12,7 +13,7 @@ func NewFactory() *Factory {
 	return &Factory{}
 }
 
-func (dbFactory *Factory) Database() Database {
+func (dbFactory *Factory) Database() database.Database {
 	return dbFactory.NewInMemoryDatabase()
 }
 
