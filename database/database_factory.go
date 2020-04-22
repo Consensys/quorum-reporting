@@ -20,6 +20,6 @@ func (dbFactory *Factory) NewInMemoryDatabase() *memory.MemoryDB {
 	return memory.NewMemoryDB()
 }
 
-func (dbFactory *Factory) NewElasticSearchDatabase() *elasticsearch.Database {
+func (dbFactory *Factory) NewElasticSearchDatabase() *elasticsearch.ElasticsearchDB {
 	return elasticsearch.New()
 }
