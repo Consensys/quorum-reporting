@@ -121,8 +121,7 @@ func (es *ElasticsearchDB) GetContractABI(address common.Address) (string, error
 	if err != nil {
 		return "", err
 	}
-	abi, _ := json.Marshal(contract.ABI)
-	return string(abi), nil
+	return contract.ABI, nil
 }
 
 // BlockDB
