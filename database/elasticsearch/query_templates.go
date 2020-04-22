@@ -60,4 +60,22 @@ const (
 		}
 	}
 }`
+	QueryInternalTransactions = `
+{
+  "query": {
+    "nested": {
+      "path": "internalCalls",
+      "query": {
+        "bool": {
+          "must": [
+            {
+              "match": { "internalCalls.to": "%s" }
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+`
 )

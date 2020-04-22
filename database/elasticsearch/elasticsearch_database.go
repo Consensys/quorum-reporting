@@ -24,9 +24,29 @@ type ElasticsearchDB struct {
 
 func New() *ElasticsearchDB {
 	c, _ := elasticsearch7.NewDefaultClient()
-	return &ElasticsearchDB{
+	db := &ElasticsearchDB{
 		client: c,
 	}
+
+	db.setupMappings()
+
+	return db
+}
+
+func (es *ElasticsearchDB) setupMappings() error {
+	mapping := `{"mappings":{"properties": {"internalCalls": {"type": "nested" }}}}`
+	createRequest := esapi.IndicesCreateRequest{
+		Index: "transaction",
+		Body:  strings.NewReader(mapping),
+	}
+
+	//TODO: check error scenarios
+	res, err := createRequest.Do(context.TODO(), es.client)
+	if err != nil {
+		return fmt.Errorf("error getting response: %s", err.Error())
+	}
+	defer res.Body.Close()
+	return nil
 }
 
 //AddressDB
@@ -233,6 +253,10 @@ func (es *ElasticsearchDB) GetLastPersistedBlockNumber() (uint64, error) {
 func (es *ElasticsearchDB) WriteTransaction(transaction *types.Transaction) error {
 	//TODO: convert to internal transaction type
 
+	if transaction.InternalCalls == nil {
+		transaction.InternalCalls = make([]*types.InternalCall, 0)
+	}
+
 	req := esapi.IndexRequest{
 		Index:      "transaction",
 		DocumentID: transaction.Hash.String(),
@@ -304,8 +328,18 @@ func (es *ElasticsearchDB) GetAllTransactionsToAddress(address common.Address) (
 	return converted, nil
 }
 
-func (es *ElasticsearchDB) GetAllTransactionsInternalToAddress(common.Address) ([]common.Hash, error) {
-	return nil, errors.New("not implemented 9")
+func (es *ElasticsearchDB) GetAllTransactionsInternalToAddress(address common.Address) ([]common.Hash, error) {
+	queryString := fmt.Sprintf(QueryInternalTransactions, address.String())
+	results := es.scrollAllResults("transaction", strings.NewReader(queryString))
+
+	converted := make([]common.Hash, len(results))
+	for i, result := range results {
+		data := result.(map[string]interface{})["_source"].(map[string]interface{})
+		addr := data["hash"].(string)
+		converted[i] = common.HexToHash(addr)
+	}
+
+	return converted, nil
 }
 
 func (es *ElasticsearchDB) GetAllEventsByAddress(address common.Address) ([]*types.Event, error) {
@@ -470,13 +504,6 @@ func (es *ElasticsearchDB) indexTransaction(filteredAddresses map[common.Address
 		es.updateCreatedTx(tx.CreatedContract, tx.Hash)
 		log.Printf("Index contract creation tx %v of registered address %v.\n", tx.Hash.Hex(), tx.CreatedContract.Hex())
 	}
-
-	//for _, internalCall := range tx.InternalCalls {
-	//	if filteredAddresses[internalCall.To] {
-	//		db.txIndexDB[internalCall.To].txsInternalTo = append(db.txIndexDB[internalCall.To].txsInternalTo, tx.Hash)
-	//		log.Printf("Index tx %v internal calling registered address %v.\n", tx.Hash.Hex(), internalCall.To.Hex())
-	//	}
-	//}
 
 	// Index events emitted by the given address
 	for _, event := range tx.Events {
