@@ -140,9 +140,12 @@ func (tm *TransactionMonitor) createTransaction(hash common.Hash) (*types.Transa
 			if err != nil {
 				return nil, err
 			}
-			value, err := hexutil.DecodeUint64(respCallMap["value"].(string))
-			if err != nil {
-				return nil, err
+			value = uint64(0)
+			if val, ok := respCallMap["value"].(string); ok {
+				value, err = hexutil.DecodeUint64(val)
+				if err != nil {
+					return nil, err
+				}
 			}
 			tx.InternalCalls[i] = &types.InternalCall{
 				From:    common.HexToAddress(respCallMap["from"].(string)),
