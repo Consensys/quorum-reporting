@@ -3,6 +3,7 @@ package types
 import (
 	"errors"
 	"log"
+	"strings"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
@@ -17,7 +18,8 @@ type ParsedTransaction struct {
 	RawTransaction *Transaction           `json:"rawTransaction"`
 }
 
-func (ptx *ParsedTransaction) ParseTransaction(abi *abi.ABI) error {
+func (ptx *ParsedTransaction) ParseTransaction(rawABI string) error {
+	parsedABI, _ := abi.JSON(strings.NewReader(rawABI))
 	if ptx.RawTransaction == nil {
 		return errors.New("transaction is nil or invalid")
 	}
@@ -34,7 +36,7 @@ func (ptx *ParsedTransaction) ParseTransaction(abi *abi.ABI) error {
 	if ptx.RawTransaction.To != (common.Address{0}) {
 		ptx.Func4Bytes = data[:4]
 		// check against all abi methods
-		for _, method := range abi.Methods {
+		for _, method := range parsedABI.Methods {
 			if string(method.ID()) == string(ptx.Func4Bytes) {
 				ptx.Sig = method.Sig()
 				method.Inputs.UnpackIntoMap(ptx.ParsedData, data[4:])
@@ -43,9 +45,9 @@ func (ptx *ParsedTransaction) ParseTransaction(abi *abi.ABI) error {
 		}
 	} else {
 		// contract deployment transaction
-		ptx.Sig = "constructor" + abi.Constructor.Sig()
-		if len(data) > 32*abi.Constructor.Inputs.LengthNonIndexed() {
-			abi.Constructor.Inputs.UnpackIntoMap(ptx.ParsedData, data[(len(data)-32*abi.Constructor.Inputs.LengthNonIndexed()):])
+		ptx.Sig = "constructor" + parsedABI.Constructor.Sig()
+		if len(data) > 32*parsedABI.Constructor.Inputs.LengthNonIndexed() {
+			parsedABI.Constructor.Inputs.UnpackIntoMap(ptx.ParsedData, data[(len(data)-32*parsedABI.Constructor.Inputs.LengthNonIndexed()):])
 			// TODO: Parsing inputs for complex data type in constructor is not supported unless the exact contract bin is provided.
 		}
 	}
@@ -54,7 +56,7 @@ func (ptx *ParsedTransaction) ParseTransaction(abi *abi.ABI) error {
 		ptx.ParsedEvents[i] = &ParsedEvent{
 			RawEvent: e,
 		}
-		if err := ptx.ParsedEvents[i].ParseEvent(abi); err != nil {
+		if err := ptx.ParsedEvents[i].ParseEvent(rawABI); err != nil {
 			return err
 		}
 	}
@@ -67,12 +69,13 @@ type ParsedEvent struct {
 	RawEvent   *Event                 `json:"rawEvent"`
 }
 
-func (pe *ParsedEvent) ParseEvent(abi *abi.ABI) error {
+func (pe *ParsedEvent) ParseEvent(rawABI string) error {
+	parsedABI, _ := abi.JSON(strings.NewReader(rawABI))
 	if pe.RawEvent == nil || pe.RawEvent.Topics == nil {
 		return errors.New("event is nil or invalid")
 	}
 	log.Printf("Parse event %v.\n", pe.RawEvent.Topics[0].Hex())
-	if eventABI, err := abi.EventByID(pe.RawEvent.Topics[0]); err == nil {
+	if eventABI, err := parsedABI.EventByID(pe.RawEvent.Topics[0]); err == nil {
 		pe.Sig = eventABI.String()
 		pe.ParsedData = map[string]interface{}{}
 		eventABI.Inputs.UnpackIntoMap(pe.ParsedData, pe.RawEvent.Data)
