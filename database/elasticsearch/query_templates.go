@@ -2,12 +2,6 @@ package elasticsearch
 
 // constant query template strings for ES
 const (
-	UpdateContractABITemplate = `
-{
-	"doc": {
-		"abi": "%s"
-	}
-}`
 	QueryAllAddressesTemplate = `
 {
 	"_source": ["address"],

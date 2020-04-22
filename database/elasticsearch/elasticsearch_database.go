@@ -94,10 +94,16 @@ func (es *ElasticsearchDB) GetAddresses() ([]common.Address, error) {
 //ABIDB
 func (es *ElasticsearchDB) AddContractABI(address common.Address, abi string) error {
 	//TODO: guard against unknown address?
+	query := map[string]interface{}{
+		"doc": map[string]interface{}{
+			"abi": abi,
+		},
+	}
+
 	updateRequest := esapi.UpdateRequest{
 		Index:      "contract",
 		DocumentID: address.String(),
-		Body:       strings.NewReader(fmt.Sprintf(UpdateContractABITemplate, abi)),
+		Body:       esutil.NewJSONReader(query),
 		Refresh:    "true",
 	}
 
