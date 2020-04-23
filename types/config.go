@@ -12,9 +12,9 @@ type ElasticSearchConfig struct {
 	Addresses []string `toml:"urls,omitempty"`
 	CloudID   string   `toml:"cloudid"`
 
-	//Username  string 	`toml:"username"`
-	//Password  string 	`toml:"password"`
-	//APIKey  string 		`toml:"apikey"`
+	Username string `toml:"username"`
+	Password string `toml:"password"`
+	APIKey   string `toml:"apikey"`
 
 	// PEM-encoded certificate authorities.
 	// When set, an empty certificate pool will be created, and the certificates will be appended to it.

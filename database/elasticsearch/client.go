@@ -14,5 +14,9 @@ func NewConfig(config *types.ElasticSearchConfig) elasticsearch7.Config {
 	return elasticsearch7.Config{
 		Addresses: config.Addresses,
 		CloudID:   config.CloudID,
+
+		Username: config.Username,
+		Password: config.Password,
+		APIKey:   config.APIKey,
 	}
 }
