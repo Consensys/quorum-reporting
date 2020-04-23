@@ -1,7 +1,6 @@
 package elasticsearch
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -10,21 +9,21 @@ import (
 	"github.com/elastic/go-elasticsearch/v7/esutil"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/state"
-	"io"
 	"log"
 	"quorumengineering/quorum-report/types"
 	"strconv"
 	"strings"
-	"time"
 )
 
 type ElasticsearchDB struct {
-	client *elasticsearch7.Client
+	client    *elasticsearch7.Client
+	apiClient *APIClient
 }
 
 func New(client *elasticsearch7.Client) *ElasticsearchDB {
 	db := &ElasticsearchDB{
-		client: client,
+		client:    client,
+		apiClient: NewAPIClient(client),
 	}
 
 	db.setupMappings()
@@ -40,11 +39,7 @@ func (es *ElasticsearchDB) setupMappings() error {
 	}
 
 	//TODO: check error scenarios
-	res, err := createRequest.Do(context.TODO(), es.client)
-	if err != nil {
-		return fmt.Errorf("error getting response: %s", err.Error())
-	}
-	defer res.Body.Close()
+	es.apiClient.doRequest(createRequest)
 	return nil
 }
 
@@ -69,12 +64,7 @@ func (es *ElasticsearchDB) AddAddresses(addresses []common.Address) error {
 			Refresh:    "true",
 		}
 
-		//TODO: check if response needs reading
-		res, err := req.Do(context.TODO(), es.client)
-		if err != nil {
-			return fmt.Errorf("error getting response: %s", err.Error())
-		}
-		res.Body.Close()
+		es.apiClient.doRequest(req)
 	}
 
 	return nil
@@ -88,18 +78,14 @@ func (es *ElasticsearchDB) DeleteAddress(address common.Address) error {
 	}
 
 	//TODO: check if response needs reading
-	res, err := deleteRequest.Do(context.TODO(), es.client)
-	if err != nil {
-		return fmt.Errorf("error getting response: %s", err.Error())
-	}
-	defer res.Body.Close()
+	es.apiClient.doRequest(deleteRequest)
 
 	//TODO: delete data from other indices
 	return nil
 }
 
 func (es *ElasticsearchDB) GetAddresses() ([]common.Address, error) {
-	results := es.scrollAllResults("contract", strings.NewReader(QueryAllAddressesTemplate))
+	results := es.apiClient.scrollAllResults("contract", strings.NewReader(QueryAllAddressesTemplate))
 	converted := make([]common.Address, len(results))
 	for i, result := range results {
 		data := result.(map[string]interface{})["_source"].(map[string]interface{})
@@ -127,11 +113,7 @@ func (es *ElasticsearchDB) AddContractABI(address common.Address, abi string) er
 	}
 
 	//TODO: check if error returned
-	res, err := updateRequest.Do(context.TODO(), es.client)
-	if err != nil {
-		return fmt.Errorf("error getting response: %s", err.Error())
-	}
-	defer res.Body.Close()
+	es.apiClient.doRequest(updateRequest)
 	return nil
 }
 
@@ -153,11 +135,7 @@ func (es *ElasticsearchDB) WriteBlock(block *types.Block) error {
 	}
 
 	//TODO: check if response needs reading
-	res, err := req.Do(context.TODO(), es.client)
-	if err != nil {
-		return fmt.Errorf("error getting response: %s", err.Error())
-	}
-	res.Body.Close()
+	es.apiClient.doRequest(req)
 	return nil
 }
 
@@ -169,15 +147,11 @@ func (es *ElasticsearchDB) ReadBlock(number uint64) (*types.Block, error) {
 		Body:  strings.NewReader(query),
 	}
 
-	res, err := searchRequest.Do(context.TODO(), es.client)
-	if err != nil {
-		return nil, fmt.Errorf("error getting response: %s", err.Error())
-	}
-	defer res.Body.Close()
+	body, _ := es.apiClient.doRequest(searchRequest)
 
 	//TODO: handle error
 	var response map[string]interface{}
-	_ = json.NewDecoder(res.Body).Decode(&response)
+	json.Unmarshal(body, &response)
 
 	if response["error"] != nil {
 		return nil, errors.New("error talking to db")
@@ -206,15 +180,11 @@ func (es *ElasticsearchDB) GetLastPersistedBlockNumber() (uint64, error) {
 		Body:  strings.NewReader(query),
 	}
 
-	res, err := searchRequest.Do(context.TODO(), es.client)
-	if err != nil {
-		return 0, fmt.Errorf("error getting response: %s", err.Error())
-	}
-	defer res.Body.Close()
+	body, _ := es.apiClient.doRequest(searchRequest)
 
 	//TODO: handle error
 	var response map[string]interface{}
-	_ = json.NewDecoder(res.Body).Decode(&response)
+	json.Unmarshal(body, &response)
 
 	if response["error"] != nil {
 		return 0, nil
@@ -250,11 +220,7 @@ func (es *ElasticsearchDB) WriteTransaction(transaction *types.Transaction) erro
 	}
 
 	//TODO: check if response needs reading
-	res, err := req.Do(context.TODO(), es.client)
-	if err != nil {
-		return fmt.Errorf("error getting response: %s", err.Error())
-	}
-	res.Body.Close()
+	es.apiClient.doRequest(req)
 	return nil
 }
 
@@ -301,7 +267,7 @@ func (es *ElasticsearchDB) GetContractCreationTransaction(address common.Address
 
 func (es *ElasticsearchDB) GetAllTransactionsToAddress(address common.Address) ([]common.Hash, error) {
 	queryString := fmt.Sprintf(QueryByToAddressTemplate, address.String())
-	results := es.scrollAllResults("transaction", strings.NewReader(queryString))
+	results := es.apiClient.scrollAllResults("transaction", strings.NewReader(queryString))
 
 	converted := make([]common.Hash, len(results))
 	for i, result := range results {
@@ -315,7 +281,7 @@ func (es *ElasticsearchDB) GetAllTransactionsToAddress(address common.Address) (
 
 func (es *ElasticsearchDB) GetAllTransactionsInternalToAddress(address common.Address) ([]common.Hash, error) {
 	queryString := fmt.Sprintf(QueryInternalTransactions, address.String())
-	results := es.scrollAllResults("transaction", strings.NewReader(queryString))
+	results := es.apiClient.scrollAllResults("transaction", strings.NewReader(queryString))
 
 	converted := make([]common.Hash, len(results))
 	for i, result := range results {
@@ -329,7 +295,7 @@ func (es *ElasticsearchDB) GetAllTransactionsInternalToAddress(address common.Ad
 
 func (es *ElasticsearchDB) GetAllEventsByAddress(address common.Address) ([]*types.Event, error) {
 	query := fmt.Sprintf(QueryByAddressTemplate, address.String())
-	results := es.scrollAllResults("events", strings.NewReader(query))
+	results := es.apiClient.scrollAllResults("events", strings.NewReader(query))
 
 	convertedList := make([]*types.Event, len(results))
 	for i, result := range results {
@@ -360,15 +326,11 @@ func (es *ElasticsearchDB) GetStorage(address common.Address, blockNumber uint64
 		Body:  strings.NewReader(query),
 	}
 
-	res, err := searchRequest.Do(context.TODO(), es.client)
-	if err != nil {
-		return nil, fmt.Errorf("error getting response: %s", err.Error())
-	}
-	defer res.Body.Close()
+	body, _ := es.apiClient.doRequest(searchRequest)
 
 	//TODO: handle error
 	var response map[string]interface{}
-	_ = json.NewDecoder(res.Body).Decode(&response)
+	json.Unmarshal(body, &response)
 
 	numberOfResults := int(response["hits"].(map[string]interface{})["total"].(map[string]interface{})["value"].(float64))
 	if numberOfResults == 0 {
@@ -408,15 +370,11 @@ func (es *ElasticsearchDB) getContractByAddress(address common.Address) (*Contra
 		Body:  strings.NewReader(query),
 	}
 
-	res, err := searchRequest.Do(context.TODO(), es.client)
-	if err != nil {
-		return nil, fmt.Errorf("error getting response: %s", err.Error())
-	}
-	defer res.Body.Close()
+	body, _ := es.apiClient.doRequest(searchRequest)
 
 	//TODO: handle error
 	var response map[string]interface{}
-	_ = json.NewDecoder(res.Body).Decode(&response)
+	json.Unmarshal(body, &response)
 
 	numberOfResults := int(response["hits"].(map[string]interface{})["total"].(map[string]interface{})["value"].(float64))
 	if numberOfResults == 0 {
@@ -444,15 +402,11 @@ func (es *ElasticsearchDB) getTransactionByHash(hash common.Hash) (*types.Transa
 		Body:  strings.NewReader(query),
 	}
 
-	res, err := searchRequest.Do(context.TODO(), es.client)
-	if err != nil {
-		return nil, fmt.Errorf("error getting response: %s", err.Error())
-	}
-	defer res.Body.Close()
+	body, _ := es.apiClient.doRequest(searchRequest)
 
 	//TODO: handle error
 	var response map[string]interface{}
-	_ = json.NewDecoder(res.Body).Decode(&response)
+	json.Unmarshal(body, &response)
 
 	numberOfResults := int(response["hits"].(map[string]interface{})["total"].(map[string]interface{})["value"].(float64))
 	if numberOfResults == 0 {
@@ -515,11 +469,7 @@ func (es *ElasticsearchDB) updateCreatedTx(address common.Address, creationTxHas
 	}
 
 	//TODO: check if error returned
-	res, err := updateRequest.Do(context.TODO(), es.client)
-	defer res.Body.Close()
-	if err != nil {
-		return fmt.Errorf("error getting response: %s", err.Error())
-	}
+	es.apiClient.doRequest(updateRequest)
 	return nil
 }
 
@@ -539,11 +489,7 @@ func (es *ElasticsearchDB) updateLastFiltered(address common.Address, lastFilter
 	}
 
 	//TODO: check if error returned
-	res, err := updateRequest.Do(context.TODO(), es.client)
-	defer res.Body.Close()
-	if err != nil {
-		return fmt.Errorf("error getting response: %s", err.Error())
-	}
+	es.apiClient.doRequest(updateRequest)
 	return nil
 }
 
@@ -565,71 +511,9 @@ func (es *ElasticsearchDB) createEvent(event *types.Event) error {
 		Refresh:    "true",
 	}
 
-	//TODO: check if response needs reading
-	res, err := req.Do(context.TODO(), es.client)
-	if err != nil {
-		return fmt.Errorf("error getting response: %s", err.Error())
-	}
-	res.Body.Close()
+	//TODO: check response
+	es.apiClient.doRequest(req)
 	return nil
-}
-
-func (es *ElasticsearchDB) scrollAllResults(index string, query io.Reader) []interface{} {
-	var (
-		scrollID string
-		results  []interface{}
-	)
-
-	res, _ := es.client.Search(
-		es.client.Search.WithIndex(index),
-		es.client.Search.WithSort("_doc"),
-		es.client.Search.WithSize(10),
-		es.client.Search.WithScroll(time.Minute),
-		es.client.Search.WithBody(query),
-	)
-
-	// Handle the first batch of data and extract the scrollID
-	//
-	var response map[string]interface{}
-	_ = json.NewDecoder(res.Body).Decode(&response)
-	res.Body.Close()
-
-	scrollID = response["_scroll_id"].(string)
-	hits := response["hits"].(map[string]interface{})["hits"].([]interface{})
-	results = append(results, hits...)
-
-	// Perform the scroll requests in sequence
-	//
-	for {
-		// Perform the scroll request and pass the scrollID and scroll duration
-		res, err := es.client.Scroll(es.client.Scroll.WithScrollID(scrollID), es.client.Scroll.WithScroll(time.Minute))
-		if err != nil {
-			//log.Fatalf("Error: %s", err)
-		}
-		if res.IsError() {
-			//log.Fatalf("Error response: %s", res)
-		}
-
-		var scrollResponse map[string]interface{}
-		_ = json.NewDecoder(res.Body).Decode(&scrollResponse)
-		res.Body.Close()
-
-		// Extract the scrollID from response
-		scrollID = scrollResponse["_scroll_id"].(string)
-
-		// Extract the search results
-		hits := scrollResponse["hits"].(map[string]interface{})["hits"].([]interface{})
-
-		// Break out of the loop when there are no results
-		if len(hits) == 0 {
-			//log.Println("Finished scrolling")
-			break
-		}
-
-		results = append(results, hits...)
-	}
-
-	return results
 }
 
 func (es *ElasticsearchDB) indexStorage(filteredAddresses map[common.Address]bool, blockNumber uint64, stateDump *state.Dump) error {
@@ -653,12 +537,8 @@ func (es *ElasticsearchDB) indexStorage(filteredAddresses map[common.Address]boo
 				Refresh:    "true",
 			}
 
-			//TODO: check if response needs reading
-			res, err := req.Do(context.TODO(), es.client)
-			if err != nil {
-				return fmt.Errorf("error getting response: %s", err.Error())
-			}
-			res.Body.Close()
+			//TODO: check response
+			es.apiClient.doRequest(req)
 		}
 	}
 
