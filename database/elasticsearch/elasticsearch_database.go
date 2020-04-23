@@ -45,12 +45,10 @@ func (es *ElasticsearchDB) setupMappings() error {
 
 //AddressDB
 func (es *ElasticsearchDB) AddAddresses(addresses []common.Address) error {
-	toSave := make([]Contract, len(addresses))
-
 	//TODO: use bulk indexing
 	//TODO: check exists
-	for i, address := range addresses {
-		toSave[i] = Contract{
+	for _, address := range addresses {
+		contract := Contract{
 			Address:             address,
 			ABI:                 "",
 			CreationTransaction: common.Hash{},
@@ -60,7 +58,7 @@ func (es *ElasticsearchDB) AddAddresses(addresses []common.Address) error {
 		req := esapi.IndexRequest{
 			Index:      "contract",
 			DocumentID: address.String(),
-			Body:       esutil.NewJSONReader(toSave[i]),
+			Body:       esutil.NewJSONReader(contract),
 			Refresh:    "true",
 		}
 
@@ -454,30 +452,18 @@ func (es *ElasticsearchDB) indexTransaction(filteredAddresses map[common.Address
 }
 
 func (es *ElasticsearchDB) updateCreatedTx(address common.Address, creationTxHash common.Hash) error {
-	//TODO: guard against unknown address?
-	query := map[string]interface{}{
-		"doc": map[string]interface{}{
-			"creationTx": creationTxHash.String(),
-		},
-	}
-
-	updateRequest := esapi.UpdateRequest{
-		Index:      "contract",
-		DocumentID: address.String(),
-		Body:       esutil.NewJSONReader(query),
-		Refresh:    "true",
-	}
-
-	//TODO: check if error returned
-	es.apiClient.doRequest(updateRequest)
-	return nil
+	return es.updateContract(address, "creationTx", creationTxHash.String())
 }
 
 func (es *ElasticsearchDB) updateLastFiltered(address common.Address, lastFiltered uint64) error {
+	return es.updateContract(address, "lastFiltered", lastFiltered)
+}
+
+func (es *ElasticsearchDB) updateContract(address common.Address, property string, value interface{}) error {
 	//TODO: guard against unknown address?
 	query := map[string]interface{}{
 		"doc": map[string]interface{}{
-			"lastFiltered": lastFiltered,
+			property: value,
 		},
 	}
 
@@ -495,7 +481,6 @@ func (es *ElasticsearchDB) updateLastFiltered(address common.Address, lastFilter
 
 func (es *ElasticsearchDB) createEvent(event *types.Event) error {
 	converted := Event{
-		ID:              strconv.FormatUint(event.BlockNumber, 10) + "-" + strconv.FormatUint(event.Index, 10),
 		Address:         event.Address,
 		BlockNumber:     event.BlockNumber,
 		Data:            event.Data,

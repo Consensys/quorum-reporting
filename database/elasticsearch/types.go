@@ -21,7 +21,6 @@ type State struct {
 }
 
 type Event struct {
-	ID              string         `json:"id"`
 	Address         common.Address `json:"address"`
 	BlockNumber     uint64         `json:"blockNumber"`
 	Data            hexutil.Bytes  `json:"data"`
