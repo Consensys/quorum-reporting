@@ -128,10 +128,10 @@ func (es *ElasticsearchDB) AddContractABI(address common.Address, abi string) er
 
 	//TODO: check if error returned
 	res, err := updateRequest.Do(context.TODO(), es.client)
-	defer res.Body.Close()
 	if err != nil {
 		return fmt.Errorf("error getting response: %s", err.Error())
 	}
+	defer res.Body.Close()
 	return nil
 }
 
@@ -145,20 +145,6 @@ func (es *ElasticsearchDB) GetContractABI(address common.Address) (string, error
 
 // BlockDB
 func (es *ElasticsearchDB) WriteBlock(block *types.Block) error {
-	//blockToSave := Block{
-	//	Hash:         block.Hash,
-	//	ParentHash:   block.ParentHash,
-	//	StateRoot:    block.StateRoot,
-	//	TxRoot:       block.TxRoot,
-	//	ReceiptRoot:  block.ReceiptRoot,
-	//	Number:       block.Number,
-	//	GasLimit:     block.GasLimit,
-	//	GasUsed:      block.GasUsed,
-	//	Timestamp:    block.Timestamp,
-	//	ExtraData:    block.ExtraData,
-	//	Transactions: block.Transactions,
-	//}
-
 	req := esapi.IndexRequest{
 		Index:      "block",
 		DocumentID: block.Hash.String(),
@@ -590,7 +576,6 @@ func (es *ElasticsearchDB) createEvent(event *types.Event) error {
 
 func (es *ElasticsearchDB) scrollAllResults(index string, query io.Reader) []interface{} {
 	var (
-		batchNum int
 		scrollID string
 		results  []interface{}
 	)
@@ -616,10 +601,7 @@ func (es *ElasticsearchDB) scrollAllResults(index string, query io.Reader) []int
 	// Perform the scroll requests in sequence
 	//
 	for {
-		batchNum++
-
 		// Perform the scroll request and pass the scrollID and scroll duration
-		//
 		res, err := es.client.Scroll(es.client.Scroll.WithScrollID(scrollID), es.client.Scroll.WithScroll(time.Minute))
 		if err != nil {
 			//log.Fatalf("Error: %s", err)
@@ -633,16 +615,13 @@ func (es *ElasticsearchDB) scrollAllResults(index string, query io.Reader) []int
 		res.Body.Close()
 
 		// Extract the scrollID from response
-		//
 		scrollID = scrollResponse["_scroll_id"].(string)
 
 		// Extract the search results
-		//
 		hits := scrollResponse["hits"].(map[string]interface{})["hits"].([]interface{})
 
 		// Break out of the loop when there are no results
-		//
-		if len(hits) < 1 {
+		if len(hits) == 0 {
 			//log.Println("Finished scrolling")
 			break
 		}
@@ -654,30 +633,32 @@ func (es *ElasticsearchDB) scrollAllResults(index string, query io.Reader) []int
 }
 
 func (es *ElasticsearchDB) indexStorage(filteredAddresses map[common.Address]bool, blockNumber uint64, stateDump *state.Dump) error {
-	if stateDump != nil {
-		for address, account := range stateDump.Accounts {
-			if filteredAddresses[address] {
-				stateObj := State{
-					Address:     address,
-					BlockNumber: blockNumber,
-					StorageRoot: common.HexToHash(account.Root),
-					StorageMap:  account.Storage,
-				}
+	if stateDump == nil {
+		return nil
+	}
 
-				req := esapi.IndexRequest{
-					Index:      "storage",
-					DocumentID: address.String() + "-" + strconv.FormatUint(blockNumber, 10),
-					Body:       esutil.NewJSONReader(stateObj),
-					Refresh:    "true",
-				}
-
-				//TODO: check if response needs reading
-				res, err := req.Do(context.TODO(), es.client)
-				if err != nil {
-					return fmt.Errorf("error getting response: %s", err.Error())
-				}
-				res.Body.Close()
+	for address, account := range stateDump.Accounts {
+		if filteredAddresses[address] {
+			stateObj := State{
+				Address:     address,
+				BlockNumber: blockNumber,
+				StorageRoot: common.HexToHash(account.Root),
+				StorageMap:  account.Storage,
 			}
+
+			req := esapi.IndexRequest{
+				Index:      "storage",
+				DocumentID: address.String() + "-" + strconv.FormatUint(blockNumber, 10),
+				Body:       esutil.NewJSONReader(stateObj),
+				Refresh:    "true",
+			}
+
+			//TODO: check if response needs reading
+			res, err := req.Do(context.TODO(), es.client)
+			if err != nil {
+				return fmt.Errorf("error getting response: %s", err.Error())
+			}
+			res.Body.Close()
 		}
 	}
 
