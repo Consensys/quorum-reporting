@@ -12,12 +12,17 @@ import (
 	"github.com/elastic/go-elasticsearch/v7/esapi"
 )
 
-type APIClient struct {
+type APIClient interface {
+	ScrollAllResults(index string, query io.Reader) []interface{}
+	DoRequest(req esapi.Request) ([]byte, error)
+}
+
+type DefaultAPIClient struct {
 	client *elasticsearch7.Client
 }
 
-func NewAPIClient(client *elasticsearch7.Client) *APIClient {
-	return &APIClient{client: client}
+func NewAPIClient(client *elasticsearch7.Client) *DefaultAPIClient {
+	return &DefaultAPIClient{client: client}
 }
 
 func NewClient(config elasticsearch7.Config) (*elasticsearch7.Client, error) {
@@ -35,7 +40,7 @@ func NewConfig(config *types.ElasticSearchConfig) elasticsearch7.Config {
 	}
 }
 
-func (c *APIClient) scrollAllResults(index string, query io.Reader) []interface{} {
+func (c *DefaultAPIClient) ScrollAllResults(index string, query io.Reader) []interface{} {
 	var (
 		scrollID string
 		results  []interface{}
@@ -96,7 +101,7 @@ func (c *APIClient) scrollAllResults(index string, query io.Reader) []interface{
 	return results
 }
 
-func (c *APIClient) doRequest(req esapi.Request) ([]byte, error) {
+func (c *DefaultAPIClient) DoRequest(req esapi.Request) ([]byte, error) {
 	res, err := req.Do(context.TODO(), c.client)
 	if err != nil {
 		return nil, err

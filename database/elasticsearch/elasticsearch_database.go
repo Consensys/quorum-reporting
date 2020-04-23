@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	elasticsearch7 "github.com/elastic/go-elasticsearch/v7"
 	"github.com/elastic/go-elasticsearch/v7/esapi"
 	"github.com/elastic/go-elasticsearch/v7/esutil"
 	"github.com/ethereum/go-ethereum/common"
@@ -16,14 +15,12 @@ import (
 )
 
 type ElasticsearchDB struct {
-	client    *elasticsearch7.Client
-	apiClient *APIClient
+	apiClient APIClient
 }
 
-func New(client *elasticsearch7.Client) *ElasticsearchDB {
+func New(client APIClient) *ElasticsearchDB {
 	db := &ElasticsearchDB{
-		client:    client,
-		apiClient: NewAPIClient(client),
+		apiClient: client,
 	}
 
 	db.setupMappings()
@@ -39,7 +36,7 @@ func (es *ElasticsearchDB) setupMappings() error {
 	}
 
 	//TODO: check error scenarios
-	es.apiClient.doRequest(createRequest)
+	es.apiClient.DoRequest(createRequest)
 	return nil
 }
 
@@ -62,7 +59,7 @@ func (es *ElasticsearchDB) AddAddresses(addresses []common.Address) error {
 			Refresh:    "true",
 		}
 
-		es.apiClient.doRequest(req)
+		es.apiClient.DoRequest(req)
 	}
 
 	return nil
@@ -76,14 +73,14 @@ func (es *ElasticsearchDB) DeleteAddress(address common.Address) error {
 	}
 
 	//TODO: check if response needs reading
-	es.apiClient.doRequest(deleteRequest)
+	es.apiClient.DoRequest(deleteRequest)
 
 	//TODO: delete data from other indices
 	return nil
 }
 
 func (es *ElasticsearchDB) GetAddresses() ([]common.Address, error) {
-	results := es.apiClient.scrollAllResults("contract", strings.NewReader(QueryAllAddressesTemplate))
+	results := es.apiClient.ScrollAllResults("contract", strings.NewReader(QueryAllAddressesTemplate))
 	converted := make([]common.Address, len(results))
 	for i, result := range results {
 		data := result.(map[string]interface{})["_source"].(map[string]interface{})
@@ -111,7 +108,7 @@ func (es *ElasticsearchDB) AddContractABI(address common.Address, abi string) er
 	}
 
 	//TODO: check if error returned
-	es.apiClient.doRequest(updateRequest)
+	es.apiClient.DoRequest(updateRequest)
 	return nil
 }
 
@@ -133,7 +130,7 @@ func (es *ElasticsearchDB) WriteBlock(block *types.Block) error {
 	}
 
 	//TODO: check if response needs reading
-	es.apiClient.doRequest(req)
+	es.apiClient.DoRequest(req)
 	return nil
 }
 
@@ -145,7 +142,7 @@ func (es *ElasticsearchDB) ReadBlock(number uint64) (*types.Block, error) {
 		Body:  strings.NewReader(query),
 	}
 
-	body, _ := es.apiClient.doRequest(searchRequest)
+	body, _ := es.apiClient.DoRequest(searchRequest)
 
 	//TODO: handle error
 	var response map[string]interface{}
@@ -178,7 +175,7 @@ func (es *ElasticsearchDB) GetLastPersistedBlockNumber() (uint64, error) {
 		Body:  strings.NewReader(query),
 	}
 
-	body, _ := es.apiClient.doRequest(searchRequest)
+	body, _ := es.apiClient.DoRequest(searchRequest)
 
 	//TODO: handle error
 	var response map[string]interface{}
@@ -218,7 +215,7 @@ func (es *ElasticsearchDB) WriteTransaction(transaction *types.Transaction) erro
 	}
 
 	//TODO: check if response needs reading
-	es.apiClient.doRequest(req)
+	es.apiClient.DoRequest(req)
 	return nil
 }
 
@@ -265,7 +262,7 @@ func (es *ElasticsearchDB) GetContractCreationTransaction(address common.Address
 
 func (es *ElasticsearchDB) GetAllTransactionsToAddress(address common.Address) ([]common.Hash, error) {
 	queryString := fmt.Sprintf(QueryByToAddressTemplate, address.String())
-	results := es.apiClient.scrollAllResults("transaction", strings.NewReader(queryString))
+	results := es.apiClient.ScrollAllResults("transaction", strings.NewReader(queryString))
 
 	converted := make([]common.Hash, len(results))
 	for i, result := range results {
@@ -279,7 +276,7 @@ func (es *ElasticsearchDB) GetAllTransactionsToAddress(address common.Address) (
 
 func (es *ElasticsearchDB) GetAllTransactionsInternalToAddress(address common.Address) ([]common.Hash, error) {
 	queryString := fmt.Sprintf(QueryInternalTransactions, address.String())
-	results := es.apiClient.scrollAllResults("transaction", strings.NewReader(queryString))
+	results := es.apiClient.ScrollAllResults("transaction", strings.NewReader(queryString))
 
 	converted := make([]common.Hash, len(results))
 	for i, result := range results {
@@ -293,7 +290,7 @@ func (es *ElasticsearchDB) GetAllTransactionsInternalToAddress(address common.Ad
 
 func (es *ElasticsearchDB) GetAllEventsByAddress(address common.Address) ([]*types.Event, error) {
 	query := fmt.Sprintf(QueryByAddressTemplate, address.String())
-	results := es.apiClient.scrollAllResults("events", strings.NewReader(query))
+	results := es.apiClient.ScrollAllResults("events", strings.NewReader(query))
 
 	convertedList := make([]*types.Event, len(results))
 	for i, result := range results {
@@ -324,7 +321,7 @@ func (es *ElasticsearchDB) GetStorage(address common.Address, blockNumber uint64
 		Body:  strings.NewReader(query),
 	}
 
-	body, _ := es.apiClient.doRequest(searchRequest)
+	body, _ := es.apiClient.DoRequest(searchRequest)
 
 	//TODO: handle error
 	var response map[string]interface{}
@@ -368,7 +365,7 @@ func (es *ElasticsearchDB) getContractByAddress(address common.Address) (*Contra
 		Body:  strings.NewReader(query),
 	}
 
-	body, _ := es.apiClient.doRequest(searchRequest)
+	body, _ := es.apiClient.DoRequest(searchRequest)
 
 	//TODO: handle error
 	var response map[string]interface{}
@@ -400,7 +397,7 @@ func (es *ElasticsearchDB) getTransactionByHash(hash common.Hash) (*types.Transa
 		Body:  strings.NewReader(query),
 	}
 
-	body, _ := es.apiClient.doRequest(searchRequest)
+	body, _ := es.apiClient.DoRequest(searchRequest)
 
 	//TODO: handle error
 	var response map[string]interface{}
@@ -475,7 +472,7 @@ func (es *ElasticsearchDB) updateContract(address common.Address, property strin
 	}
 
 	//TODO: check if error returned
-	es.apiClient.doRequest(updateRequest)
+	es.apiClient.DoRequest(updateRequest)
 	return nil
 }
 
@@ -497,7 +494,7 @@ func (es *ElasticsearchDB) createEvent(event *types.Event) error {
 	}
 
 	//TODO: check response
-	es.apiClient.doRequest(req)
+	es.apiClient.DoRequest(req)
 	return nil
 }
 
@@ -523,7 +520,7 @@ func (es *ElasticsearchDB) indexStorage(filteredAddresses map[common.Address]boo
 			}
 
 			//TODO: check response
-			es.apiClient.doRequest(req)
+			es.apiClient.DoRequest(req)
 		}
 	}
 
