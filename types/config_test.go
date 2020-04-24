@@ -21,11 +21,11 @@ func TestConfigFile(t *testing.T) {
 	// test config file with missing fields
 	var tmpConfigData ReportInputStruct
 	tmpConfigData.Title = "Quorum reporting config example"
-	tmpConfigData.Reporting.RPCAddr = "ws://localhost:23000"
-	tmpConfigData.Reporting.GraphQLUrl = "http://localhost:8547/graphql"
-	tmpConfigData.Reporting.RPCAddr = "localhost:6666"
-	tmpConfigData.Reporting.RPCCorsList = append(tmpConfigData.Reporting.RPCCorsList, "localhost")
-	tmpConfigData.Reporting.RPCVHosts = append(tmpConfigData.Reporting.RPCVHosts, "localhost")
+	tmpConfigData.Server.RPCAddr = "ws://localhost:23000"
+	tmpConfigData.Connection.GraphQLUrl = "http://localhost:8547/graphql"
+	tmpConfigData.Connection.WSUrl = "localhost:6666"
+	tmpConfigData.Server.RPCCorsList = append(tmpConfigData.Server.RPCCorsList, "localhost")
+	tmpConfigData.Server.RPCVHosts = append(tmpConfigData.Server.RPCVHosts, "localhost")
 
 	blob, err := toml.Marshal(tmpConfigData)
 	if err != nil {
@@ -37,7 +37,7 @@ func TestConfigFile(t *testing.T) {
 	if _, err := ReadConfig(fileName); err != nil {
 		t.Fatal("error reading config file", "error", err)
 	}
-	tmpConfigData.Reporting.MaxReconnectTries = 5
+	tmpConfigData.Connection.MaxReconnectTries = 5
 	blob, err = toml.Marshal(tmpConfigData)
 	if err != nil {
 		t.Fatal("error marshalling test config file", "error", err)
@@ -49,7 +49,7 @@ func TestConfigFile(t *testing.T) {
 		t.Fatalf("expected %v, but got %v", "reconnection details not set properly in the config file", err)
 	}
 
-	tmpConfigData.Reporting.ReconnectInterval = 10
+	tmpConfigData.Connection.ReconnectInterval = 10
 	blob, err = toml.Marshal(tmpConfigData)
 	if err != nil {
 		t.Fatal("error marshalling test config file")
