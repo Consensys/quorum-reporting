@@ -15,8 +15,8 @@ func NewFactory() *Factory {
 }
 
 func (dbFactory *Factory) Database(config types.ReportInputStruct) (database.Database, error) {
-	if config.ElasticSearch != nil {
-		return dbFactory.NewElasticSearchDatabase(config.ElasticSearch)
+	if config.Database.Elasticsearch != nil {
+		return dbFactory.NewElasticsearchDatabase(config.Database.Elasticsearch)
 	}
 	return dbFactory.NewInMemoryDatabase(), nil
 }
@@ -25,7 +25,7 @@ func (dbFactory *Factory) NewInMemoryDatabase() *memory.MemoryDB {
 	return memory.NewMemoryDB()
 }
 
-func (dbFactory *Factory) NewElasticSearchDatabase(config *types.ElasticSearchConfig) (*elasticsearch.ElasticsearchDB, error) {
+func (dbFactory *Factory) NewElasticsearchDatabase(config *types.ElasticsearchConfig) (*elasticsearch.ElasticsearchDB, error) {
 	esConfig := elasticsearch.NewConfig(config)
 	client, err := elasticsearch.NewClient(esConfig)
 	if err != nil {

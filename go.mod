@@ -10,5 +10,4 @@ require (
 	github.com/matryer/is v1.3.0 // indirect
 	github.com/mitchellh/mapstructure v1.2.0
 	github.com/naoina/toml v0.1.2-0.20170918210437-9fafd6967416
-	github.com/stretchr/testify v1.4.0
 )

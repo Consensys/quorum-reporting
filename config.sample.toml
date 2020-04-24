@@ -1,14 +1,16 @@
 # This is sample config file for quorum reporting
-title = "Quorum reporting config example"
+title = "Quorum reporting confg example"
+addresses = ["0x1932c48b2bf8102ba33b4a6b545c32236e342f34"]
 
-[reporting]
+[server]
 
-	wsUrl = "ws://localhost:23000"
-	graphQLUrl = "http://localhost:8547/graphql"
-	addresses = ["0x1932c48b2bf8102ba33b4a6b545c32236e342f34"]
-	rpcAddr =  "localhost:6666"
-	rpcCorsList =  ["localhost"]
+    rpcAddr = "localhost:6666"
+	rpcCorsList = ["localhost"]
 	rpcvHosts = ["localhost"]
+
+[connection]
+
+    wsUrl = "ws://localhost:23000"
+	graphQLUrl = "http://localhost:8547/graphql"
 	reconnectInterval = 5
 	maxReconnectTries = 5
-

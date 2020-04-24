@@ -8,7 +8,7 @@ import (
 	"github.com/naoina/toml"
 )
 
-type ElasticSearchConfig struct {
+type ElasticsearchConfig struct {
 	Addresses []string `toml:"urls,omitempty"`
 	CloudID   string   `toml:"cloudid"`
 
@@ -31,19 +31,21 @@ type ElasticSearchConfig struct {
 }
 
 type ReportInputStruct struct {
-	Title string
-
-	ElasticSearch *ElasticSearchConfig
-
-	Reporting struct {
-		WSUrl             string           `toml:"wsUrl"`
-		GraphQLUrl        string           `toml:"graphQLUrl"`
-		Addresses         []common.Address `toml:"addresses,omitempty"`
-		RPCAddr           string           `toml:"rpcAddr"`
-		RPCCorsList       []string         `toml:"rpcCorsList,omitempty"`
-		RPCVHosts         []string         `toml:"rpcvHosts,omitempty"`
-		ReconnectInterval int              `toml:"reconnectInterval,omitempty"`
-		MaxReconnectTries int              `toml:"maxReconnectTries,omitempty"`
+	Title     string
+	Addresses []common.Address `toml:"addresses,omitempty"`
+	Database  struct {
+		Elasticsearch *ElasticsearchConfig `toml:"elasticsearch,omitempty"`
+	}
+	Server struct {
+		RPCAddr     string   `toml:"rpcAddr"`
+		RPCCorsList []string `toml:"rpcCorsList,omitempty"`
+		RPCVHosts   []string `toml:"rpcvHosts,omitempty"`
+	}
+	Connection struct {
+		WSUrl             string `toml:"wsUrl"`
+		GraphQLUrl        string `toml:"graphQLUrl"`
+		ReconnectInterval int    `toml:"reconnectInterval,omitempty"`
+		MaxReconnectTries int    `toml:"maxReconnectTries,omitempty"`
 	}
 }
 
@@ -60,7 +62,7 @@ func ReadConfig(configFile string) (ReportInputStruct, error) {
 
 	// if AlwaysReconnect is set to true, check if ReconnectInterval
 	// and MaxReconnectTries are given or not. If not throw error
-	if input.Reporting.MaxReconnectTries > 0 && input.Reporting.ReconnectInterval == 0 {
+	if input.Connection.MaxReconnectTries > 0 && input.Connection.ReconnectInterval == 0 {
 		return ReportInputStruct{}, errors.New("reconnection details not set properly in the config file")
 	}
 	return input, nil

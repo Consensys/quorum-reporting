@@ -20,18 +20,18 @@ type Backend struct {
 }
 
 func New(config types.ReportInputStruct) (*Backend, error) {
-	quorumClient, err := client.NewQuorumClient(config.Reporting.WSUrl, config.Reporting.GraphQLUrl)
+	quorumClient, err := client.NewQuorumClient(config.Connection.WSUrl, config.Connection.GraphQLUrl)
 	if err != nil {
-		if config.Reporting.MaxReconnectTries > 0 {
+		if config.Connection.MaxReconnectTries > 0 {
 			i := 0
 			for err != nil {
 				i++
-				if i == config.Reporting.MaxReconnectTries {
+				if i == config.Connection.MaxReconnectTries {
 					return nil, err
 				}
 				log.Printf("Connection error: %v. Trying to reconnect in 3 second...\n", err)
-				time.Sleep(time.Duration(config.Reporting.ReconnectInterval) * time.Second)
-				quorumClient, err = client.NewQuorumClient(config.Reporting.WSUrl, config.Reporting.GraphQLUrl)
+				time.Sleep(time.Duration(config.Connection.ReconnectInterval) * time.Second)
+				quorumClient, err = client.NewQuorumClient(config.Connection.WSUrl, config.Connection.GraphQLUrl)
 			}
 		} else {
 			return nil, err
@@ -45,7 +45,7 @@ func New(config types.ReportInputStruct) (*Backend, error) {
 	}
 
 	// add addresses from config file as initial registered addresses
-	err = db.AddAddresses(config.Reporting.Addresses)
+	err = db.AddAddresses(config.Addresses)
 	if err != nil {
 		return nil, err
 	}
@@ -53,7 +53,7 @@ func New(config types.ReportInputStruct) (*Backend, error) {
 	return &Backend{
 		monitor: monitor.NewMonitorService(db, quorumClient),
 		filter:  filter.NewFilterService(db),
-		rpc:     rpc.NewRPCService(db, config.Reporting.RPCAddr, config.Reporting.RPCVHosts, config.Reporting.RPCCorsList),
+		rpc:     rpc.NewRPCService(db, config.Server.RPCAddr, config.Server.RPCVHosts, config.Server.RPCCorsList),
 	}, nil
 }
 

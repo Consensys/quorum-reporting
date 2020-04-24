@@ -6,49 +6,64 @@ import (
 	"testing"
 
 	"github.com/naoina/toml"
-	"github.com/stretchr/testify/assert"
 )
 
-func TestParsePermissionConfig(t *testing.T) {
+func TestConfigFile(t *testing.T) {
 	d, _ := ioutil.TempDir("", "test")
 	defer os.RemoveAll(d)
-
-	_, err := ReadConfig(d)
-	assert.True(t, err != nil, "expected file not there error")
-
 	fileName := d + "/config.toml"
-	_, err = os.Create(fileName)
-	_, err = ReadConfig(d)
-	assert.True(t, err != nil, "expected unmarshalling error")
 
+	// test reading a non-exist file
+	if _, err := ReadConfig(fileName); err == nil {
+		t.Fatal("expect file not there error")
+	}
+
+	// test config file with missing fields
 	var tmpConfigData ReportInputStruct
-
-	tmpConfigData.Title = "Quorum reporting confg example"
-	tmpConfigData.Reporting.RPCAddr = "ws://localhost:23000"
-	tmpConfigData.Reporting.GraphQLUrl = "http://localhost:8547/graphql"
-	tmpConfigData.Reporting.RPCAddr = "localhost:6666"
-	tmpConfigData.Reporting.RPCCorsList = append(tmpConfigData.Reporting.RPCCorsList, "localhost")
-	tmpConfigData.Reporting.RPCVHosts = append(tmpConfigData.Reporting.RPCVHosts, "localhost")
+	tmpConfigData.Title = "Quorum reporting config example"
+	tmpConfigData.Server.RPCAddr = "ws://localhost:23000"
+	tmpConfigData.Connection.GraphQLUrl = "http://localhost:8547/graphql"
+	tmpConfigData.Connection.WSUrl = "localhost:6666"
+	tmpConfigData.Server.RPCCorsList = append(tmpConfigData.Server.RPCCorsList, "localhost")
+	tmpConfigData.Server.RPCVHosts = append(tmpConfigData.Server.RPCVHosts, "localhost")
 
 	blob, err := toml.Marshal(tmpConfigData)
-	if err := ioutil.WriteFile(fileName, blob, 0644); err != nil {
-		t.Fatal("Error writing new node info to file", "fileName", fileName, "err", err)
+	if err != nil {
+		t.Fatal("error marshalling test config file", "error", err)
 	}
-	_, err = ReadConfig(fileName)
-	assert.True(t, err == nil, "error reading the file")
-	tmpConfigData.Reporting.MaxReconnectTries = 5
+	if err := ioutil.WriteFile(fileName, blob, 0644); err != nil {
+		t.Fatal("error writing new node info to file", "fileName", fileName, "error", err)
+	}
+	if _, err := ReadConfig(fileName); err != nil {
+		t.Fatal("error reading config file", "error", err)
+	}
+	tmpConfigData.Connection.MaxReconnectTries = 5
 	blob, err = toml.Marshal(tmpConfigData)
-	if err := ioutil.WriteFile(fileName, blob, 0644); err != nil {
-		t.Fatal("Error writing new node info to file", "fileName", fileName, "err", err)
+	if err != nil {
+		t.Fatal("error marshalling test config file", "error", err)
 	}
-	_, err = ReadConfig(fileName)
-	assert.True(t, err.Error() == "reconnection details not set properly in the config file", "expected error not thrown")
+	if err := ioutil.WriteFile(fileName, blob, 0644); err != nil {
+		t.Fatal("error writing new node info to file", "fileName", fileName, "error", err)
+	}
+	if _, err := ReadConfig(fileName); err.Error() != "reconnection details not set properly in the config file" {
+		t.Fatalf("expected %v, but got %v", "reconnection details not set properly in the config file", err)
+	}
 
-	tmpConfigData.Reporting.ReconnectInterval = 10
+	tmpConfigData.Connection.ReconnectInterval = 10
 	blob, err = toml.Marshal(tmpConfigData)
-	if err := ioutil.WriteFile(fileName, blob, 0644); err != nil {
-		t.Fatal("Error writing new node info to file", "fileName", fileName, "err", err)
+	if err != nil {
+		t.Fatal("error marshalling test config file")
 	}
-	_, err = ReadConfig(fileName)
-	assert.True(t, err == nil, "errors encountered")
+	if err := ioutil.WriteFile(fileName, blob, 0644); err != nil {
+		t.Fatal("error writing new node info to file", "fileName", fileName, "error", err)
+	}
+	if _, err := ReadConfig(fileName); err != nil {
+		t.Fatalf("expected no error, but got %v", err)
+	}
+
+	// test config.sample.toml is valid
+	if _, err := ReadConfig("../config.sample.toml"); err != nil {
+		t.Fatal("error reading sample config file")
+	}
+
 }
