@@ -5,12 +5,12 @@ addresses = ["0x1932c48b2bf8102ba33b4a6b545c32236e342f34"]
 [server]
 
     rpcAddr = "localhost:6666"
-	rpcCorsList = ["localhost"]
-	rpcvHosts = ["localhost"]
+    rpcCorsList = ["localhost"]
+    rpcvHosts = ["localhost"]
 
 [connection]
 
     wsUrl = "ws://localhost:23000"
-	graphQLUrl = "http://localhost:8547/graphql"
-	reconnectInterval = 5
-	maxReconnectTries = 5
+    graphQLUrl = "http://localhost:8547/graphql"
+    reconnectInterval = 5
+    maxReconnectTries = 5
