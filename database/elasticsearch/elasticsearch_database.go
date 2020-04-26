@@ -59,7 +59,8 @@ func (es *ElasticsearchDB) AddAddresses(addresses []common.Address) error {
 			Refresh:    "true",
 		}
 
-		es.apiClient.DoRequest(req)
+		//TODO: bubble up this error
+		es.apiClient.IndexRequest(req)
 	}
 
 	return nil

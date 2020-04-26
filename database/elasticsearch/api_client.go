@@ -12,9 +12,13 @@ import (
 	"github.com/elastic/go-elasticsearch/v7/esapi"
 )
 
+//go:generate mockgen -destination=./api_client_mock_test.go -package elasticsearch . APIClient
 type APIClient interface {
 	ScrollAllResults(index string, query io.Reader) []interface{}
+	//DoRequest executes any operation type for ElasticSearch
 	DoRequest(req esapi.Request) ([]byte, error)
+	//IndexRequest specifically executes an ElasticSearch index operation
+	IndexRequest(req esapi.IndexRequest) ([]byte, error)
 }
 
 type DefaultAPIClient struct {
@@ -109,4 +113,8 @@ func (c *DefaultAPIClient) DoRequest(req esapi.Request) ([]byte, error) {
 	defer res.Body.Close()
 
 	return ioutil.ReadAll(res.Body)
+}
+
+func (c *DefaultAPIClient) IndexRequest(req esapi.IndexRequest) ([]byte, error) {
+	return c.DoRequest(req)
 }
