@@ -43,32 +43,29 @@ func (es *ElasticsearchDB) setupMappings() error {
 }
 
 //AddressDB
-func (es *ElasticsearchDB) AddAddresses(addresses []common.Address) (err error) {
+func (es *ElasticsearchDB) AddAddresses(addresses []common.Address) error {
 	//TODO: use bulk indexing
 	for _, address := range addresses {
-		_, err = es.getContractByAddress(address)
-		if err != nil && (err == ErrAddressNotFound || err.Error() == "index_not_found_exception") {
-			contract := Contract{
-				Address:             address,
-				ABI:                 "",
-				CreationTransaction: common.Hash{},
-				LastFiltered:        0,
-			}
-
-			req := esapi.IndexRequest{
-				Index:      "contract",
-				DocumentID: address.String(),
-				Body:       esutil.NewJSONReader(contract),
-				Refresh:    "true",
-			}
-
-			//TODO: bubble up this error
-			es.apiClient.IndexRequest(req)
-			return nil
+		contract := Contract{
+			Address:             address,
+			ABI:                 "",
+			CreationTransaction: common.Hash{},
+			LastFiltered:        0,
 		}
+
+		req := esapi.IndexRequest{
+			Index:      "contract",
+			DocumentID: address.String(),
+			Body:       esutil.NewJSONReader(contract),
+			Refresh:    "true",
+			OpType:     "_create", //This will only create if the contract does not exist
+		}
+
+		//TODO: bubble up this error
+		es.apiClient.IndexRequest(req)
 	}
 
-	return err
+	return nil
 }
 
 func (es *ElasticsearchDB) DeleteAddress(address common.Address) error {

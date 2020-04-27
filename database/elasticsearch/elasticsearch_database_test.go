@@ -39,6 +39,31 @@ func (rm *IndexRequestMatcher) String() string {
 	return fmt.Sprintf("IndexRequestMatcher{}")
 }
 
+type SearchRequestMatcher struct {
+	req esapi.SearchRequest
+}
+
+func NewSearchRequestMatcher(req esapi.SearchRequest) *SearchRequestMatcher {
+	return &SearchRequestMatcher{req: req}
+}
+
+func (rm *SearchRequestMatcher) Matches(x interface{}) bool {
+	if val, ok := x.(esapi.SearchRequest); ok {
+		actualBody, _ := ioutil.ReadAll(val.Body)
+		expectedBody, _ := ioutil.ReadAll(rm.req.Body)
+		//only ever expect one item here, and to always be populated
+		return val.Index[0] == rm.req.Index[0] &&
+			bytes.Compare(actualBody, expectedBody) == 0
+	}
+	return false
+}
+
+func (rm *SearchRequestMatcher) String() string {
+	return fmt.Sprintf("SearchRequestMatcher{%s}", rm.req.Index)
+}
+
+//Tests
+
 func TestAddSingleAddress(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
@@ -62,7 +87,9 @@ func TestAddSingleAddress(t *testing.T) {
 	}
 
 	mockedClient.EXPECT().DoRequest(gomock.Any())
-	mockedClient.EXPECT().IndexRequest(NewIndexRequestMatcher(ex))
+	mockedClient.EXPECT().IndexRequest(NewIndexRequestMatcher(ex)).Do(func(input esapi.IndexRequest) {
+		assert.Equal(t, "_create", input.OpType)
+	})
 
 	db := New(mockedClient)
 
@@ -106,8 +133,12 @@ func TestAddMultipleAddresses(t *testing.T) {
 	}
 
 	mockedClient.EXPECT().DoRequest(gomock.Any())
-	mockedClient.EXPECT().IndexRequest(NewIndexRequestMatcher(req1))
-	mockedClient.EXPECT().IndexRequest(NewIndexRequestMatcher(req2))
+	mockedClient.EXPECT().IndexRequest(NewIndexRequestMatcher(req1)).Do(func(input esapi.IndexRequest) {
+		assert.Equal(t, "_create", input.OpType)
+	})
+	mockedClient.EXPECT().IndexRequest(NewIndexRequestMatcher(req2)).Do(func(input esapi.IndexRequest) {
+		assert.Equal(t, "_create", input.OpType)
+	})
 
 	db := New(mockedClient)
 
@@ -154,7 +185,9 @@ func TestAddSingleAddressWithError(t *testing.T) {
 	}
 
 	mockedClient.EXPECT().DoRequest(gomock.Any())
-	mockedClient.EXPECT().IndexRequest(NewIndexRequestMatcher(ex)).Return(nil, errors.New("test error"))
+	mockedClient.EXPECT().IndexRequest(NewIndexRequestMatcher(ex)).Do(func(input esapi.IndexRequest) {
+		assert.Equal(t, "_create", input.OpType)
+	}).Return(nil, errors.New("test error"))
 
 	db := New(mockedClient)
 
