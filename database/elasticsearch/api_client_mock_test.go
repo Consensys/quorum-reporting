@@ -64,11 +64,12 @@ func (mr *MockAPIClientMockRecorder) IndexRequest(arg0 interface{}) *gomock.Call
 }
 
 // ScrollAllResults mocks base method
-func (m *MockAPIClient) ScrollAllResults(arg0, arg1 string) []interface{} {
+func (m *MockAPIClient) ScrollAllResults(arg0, arg1 string) ([]interface{}, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ScrollAllResults", arg0, arg1)
 	ret0, _ := ret[0].([]interface{})
-	return ret0
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // ScrollAllResults indicates an expected call of ScrollAllResults

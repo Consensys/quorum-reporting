@@ -18,7 +18,7 @@ import (
 
 //go:generate mockgen -destination=./api_client_mock_test.go -package elasticsearch . APIClient
 type APIClient interface {
-	ScrollAllResults(index string, query string) []interface{}
+	ScrollAllResults(index string, query string) ([]interface{}, error)
 	//DoRequest executes any operation type for ElasticSearch
 	DoRequest(req esapi.Request) ([]byte, error)
 	//IndexRequest specifically executes an ElasticSearch index operation
@@ -48,7 +48,7 @@ func NewConfig(config *types.ElasticsearchConfig) elasticsearch7.Config {
 	}
 }
 
-func (c *DefaultAPIClient) ScrollAllResults(index string, query string) []interface{} {
+func (c *DefaultAPIClient) ScrollAllResults(index string, query string) ([]interface{}, error) {
 	var (
 		scrollID string
 		results  []interface{}
@@ -81,10 +81,12 @@ func (c *DefaultAPIClient) ScrollAllResults(index string, query string) []interf
 			c.client.Scroll.WithScroll(time.Minute),
 		)
 		if err != nil {
-			//log.Fatalf("Error: %s", err)
+			return nil, err
 		}
 		if res.IsError() {
-			//log.Fatalf("Error response: %s", res)
+			err := c.extractError(res.StatusCode, res.Body)
+			res.Body.Close()
+			return nil, err
 		}
 
 		var scrollResponse map[string]interface{}
@@ -106,7 +108,7 @@ func (c *DefaultAPIClient) ScrollAllResults(index string, query string) []interf
 		results = append(results, hits...)
 	}
 
-	return results
+	return results, nil
 }
 
 func (c *DefaultAPIClient) DoRequest(req esapi.Request) ([]byte, error) {

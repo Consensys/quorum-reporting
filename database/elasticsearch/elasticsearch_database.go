@@ -89,7 +89,10 @@ func (es *ElasticsearchDB) DeleteAddress(address common.Address) error {
 }
 
 func (es *ElasticsearchDB) GetAddresses() ([]common.Address, error) {
-	results := es.apiClient.ScrollAllResults("contract", QueryAllAddressesTemplate)
+	results, err := es.apiClient.ScrollAllResults("contract", QueryAllAddressesTemplate)
+	if err != nil {
+		return nil, errors.New("error fetching addresses: " + err.Error())
+	}
 	converted := make([]common.Address, len(results))
 	for i, result := range results {
 		data := result.(map[string]interface{})["_source"].(map[string]interface{})
@@ -269,7 +272,7 @@ func (es *ElasticsearchDB) GetContractCreationTransaction(address common.Address
 
 func (es *ElasticsearchDB) GetAllTransactionsToAddress(address common.Address) ([]common.Hash, error) {
 	queryString := fmt.Sprintf(QueryByToAddressTemplate, address.String())
-	results := es.apiClient.ScrollAllResults("transaction", queryString)
+	results, _ := es.apiClient.ScrollAllResults("transaction", queryString)
 
 	converted := make([]common.Hash, len(results))
 	for i, result := range results {
@@ -283,7 +286,7 @@ func (es *ElasticsearchDB) GetAllTransactionsToAddress(address common.Address) (
 
 func (es *ElasticsearchDB) GetAllTransactionsInternalToAddress(address common.Address) ([]common.Hash, error) {
 	queryString := fmt.Sprintf(QueryInternalTransactions, address.String())
-	results := es.apiClient.ScrollAllResults("transaction", queryString)
+	results, _ := es.apiClient.ScrollAllResults("transaction", queryString)
 
 	converted := make([]common.Hash, len(results))
 	for i, result := range results {
@@ -297,7 +300,7 @@ func (es *ElasticsearchDB) GetAllTransactionsInternalToAddress(address common.Ad
 
 func (es *ElasticsearchDB) GetAllEventsByAddress(address common.Address) ([]*types.Event, error) {
 	query := fmt.Sprintf(QueryByAddressTemplate, address.String())
-	results := es.apiClient.ScrollAllResults("event", query)
+	results, _ := es.apiClient.ScrollAllResults("event", query)
 
 	convertedList := make([]*types.Event, len(results))
 	for i, result := range results {

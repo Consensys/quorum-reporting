@@ -202,7 +202,7 @@ func TestElasticsearchDB_GetAddresses_NoAddresses(t *testing.T) {
 	mockedClient.EXPECT().DoRequest(gomock.Any())
 	mockedClient.EXPECT().
 		ScrollAllResults("contract", QueryAllAddressesTemplate).
-		Return(make([]interface{}, 0, 0))
+		Return(make([]interface{}, 0, 0), nil)
 
 	db := New(mockedClient)
 	allAddresses, err := db.GetAddresses()
@@ -229,7 +229,7 @@ func TestElasticsearchDB_GetAddresses_SingleAddress(t *testing.T) {
 	mockedClient.EXPECT().DoRequest(gomock.Any())
 	mockedClient.EXPECT().
 		ScrollAllResults("contract", QueryAllAddressesTemplate).
-		Return([]interface{}{createReturnValue(sampleAddress)})
+		Return([]interface{}{createReturnValue(sampleAddress)}, nil)
 
 	db := New(mockedClient)
 	allAddresses, err := db.GetAddresses()
@@ -258,7 +258,7 @@ func TestElasticsearchDB_GetAddresses_MultipleAddress(t *testing.T) {
 	mockedClient.EXPECT().DoRequest(gomock.Any())
 	mockedClient.EXPECT().
 		ScrollAllResults("contract", QueryAllAddressesTemplate).
-		Return([]interface{}{createReturnValue(sampleAddress1), createReturnValue(sampleAddress2)})
+		Return([]interface{}{createReturnValue(sampleAddress1), createReturnValue(sampleAddress2)}, nil)
 
 	db := New(mockedClient)
 	allAddresses, err := db.GetAddresses()
@@ -267,4 +267,22 @@ func TestElasticsearchDB_GetAddresses_MultipleAddress(t *testing.T) {
 	assert.Equal(t, 2, len(allAddresses), "wrong number of addresses found: %s", allAddresses)
 	assert.Equal(t, allAddresses[0], sampleAddress1, "unexpected address found: %s", allAddresses[0])
 	assert.Equal(t, allAddresses[1], sampleAddress2, "unexpected address found: %s", allAddresses[1])
+}
+
+func TestElasticsearchDB_GetAddresses_WithError(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockedClient := NewMockAPIClient(ctrl)
+
+	mockedClient.EXPECT().DoRequest(gomock.Any())
+	mockedClient.EXPECT().
+		ScrollAllResults("contract", QueryAllAddressesTemplate).
+		Return(nil, errors.New("test error"))
+
+	db := New(mockedClient)
+	allAddresses, err := db.GetAddresses()
+
+	assert.Nil(t, allAddresses, "error was not nil")
+	assert.EqualError(t, err, "error fetching addresses: test error", "wrong error message")
 }
