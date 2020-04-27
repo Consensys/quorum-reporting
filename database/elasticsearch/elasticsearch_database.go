@@ -79,15 +79,17 @@ func (es *ElasticsearchDB) DeleteAddress(address common.Address) error {
 		Refresh:    "true",
 	}
 
-	//TODO: check if response needs reading
-	es.apiClient.DoRequest(deleteRequest)
+	_, err := es.apiClient.DoRequest(deleteRequest)
+	if err != nil {
+		return errors.New("error deleting address: " + err.Error())
+	}
 
-	//TODO: delete data from other indices
+	//TODO: delete data from other indices (event + storage)
 	return nil
 }
 
 func (es *ElasticsearchDB) GetAddresses() ([]common.Address, error) {
-	results := es.apiClient.ScrollAllResults("contract", strings.NewReader(QueryAllAddressesTemplate))
+	results := es.apiClient.ScrollAllResults("contract", QueryAllAddressesTemplate)
 	converted := make([]common.Address, len(results))
 	for i, result := range results {
 		data := result.(map[string]interface{})["_source"].(map[string]interface{})
@@ -149,15 +151,14 @@ func (es *ElasticsearchDB) ReadBlock(number uint64) (*types.Block, error) {
 		Body:  strings.NewReader(query),
 	}
 
-	body, _ := es.apiClient.DoRequest(searchRequest)
+	body, err := es.apiClient.DoRequest(searchRequest)
+	if err != nil {
+		return nil, err
+	}
 
 	//TODO: handle error
 	var response map[string]interface{}
 	json.Unmarshal(body, &response)
-
-	if response["error"] != nil {
-		return nil, errors.New("error talking to db")
-	}
 
 	numberOfResults := int(response["hits"].(map[string]interface{})["total"].(map[string]interface{})["value"].(float64))
 	if numberOfResults == 0 {
@@ -182,15 +183,14 @@ func (es *ElasticsearchDB) GetLastPersistedBlockNumber() (uint64, error) {
 		Body:  strings.NewReader(query),
 	}
 
-	body, _ := es.apiClient.DoRequest(searchRequest)
-
-	//TODO: handle error
-	var response map[string]interface{}
-	json.Unmarshal(body, &response)
-
-	if response["error"] != nil {
+	body, err := es.apiClient.DoRequest(searchRequest)
+	if err != nil {
+		//TODO: return error
 		return 0, nil
 	}
+
+	var response map[string]interface{}
+	json.Unmarshal(body, &response)
 
 	//numberOfResults := int(response["hits"].(map[string]interface{})["total"].(map[string]interface{})["value"].(float64))
 	//if numberOfResults == 0 {
@@ -269,7 +269,7 @@ func (es *ElasticsearchDB) GetContractCreationTransaction(address common.Address
 
 func (es *ElasticsearchDB) GetAllTransactionsToAddress(address common.Address) ([]common.Hash, error) {
 	queryString := fmt.Sprintf(QueryByToAddressTemplate, address.String())
-	results := es.apiClient.ScrollAllResults("transaction", strings.NewReader(queryString))
+	results := es.apiClient.ScrollAllResults("transaction", queryString)
 
 	converted := make([]common.Hash, len(results))
 	for i, result := range results {
@@ -283,7 +283,7 @@ func (es *ElasticsearchDB) GetAllTransactionsToAddress(address common.Address) (
 
 func (es *ElasticsearchDB) GetAllTransactionsInternalToAddress(address common.Address) ([]common.Hash, error) {
 	queryString := fmt.Sprintf(QueryInternalTransactions, address.String())
-	results := es.apiClient.ScrollAllResults("transaction", strings.NewReader(queryString))
+	results := es.apiClient.ScrollAllResults("transaction", queryString)
 
 	converted := make([]common.Hash, len(results))
 	for i, result := range results {
@@ -297,7 +297,7 @@ func (es *ElasticsearchDB) GetAllTransactionsInternalToAddress(address common.Ad
 
 func (es *ElasticsearchDB) GetAllEventsByAddress(address common.Address) ([]*types.Event, error) {
 	query := fmt.Sprintf(QueryByAddressTemplate, address.String())
-	results := es.apiClient.ScrollAllResults("event", strings.NewReader(query))
+	results := es.apiClient.ScrollAllResults("event", query)
 
 	convertedList := make([]*types.Event, len(results))
 	for i, result := range results {
@@ -372,14 +372,13 @@ func (es *ElasticsearchDB) getContractByAddress(address common.Address) (*Contra
 		Body:  strings.NewReader(query),
 	}
 
-	body, _ := es.apiClient.DoRequest(searchRequest)
+	body, err := es.apiClient.DoRequest(searchRequest)
+	if err != nil {
+		return nil, err
+	}
 
-	//TODO: handle error
 	var response map[string]interface{}
 	json.Unmarshal(body, &response)
-	if response["error"] != nil {
-		return nil, errors.New(response["error"].(map[string]interface{})["type"].(string))
-	}
 
 	numberOfResults := int(response["hits"].(map[string]interface{})["total"].(map[string]interface{})["value"].(float64))
 	if numberOfResults == 0 {

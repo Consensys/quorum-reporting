@@ -3,8 +3,11 @@ package elasticsearch
 import (
 	"context"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"io"
 	"io/ioutil"
+	"strings"
 	"time"
 
 	elasticsearch7 "github.com/elastic/go-elasticsearch/v7"
@@ -15,7 +18,7 @@ import (
 
 //go:generate mockgen -destination=./api_client_mock_test.go -package elasticsearch . APIClient
 type APIClient interface {
-	ScrollAllResults(index string, query io.Reader) []interface{}
+	ScrollAllResults(index string, query string) []interface{}
 	//DoRequest executes any operation type for ElasticSearch
 	DoRequest(req esapi.Request) ([]byte, error)
 	//IndexRequest specifically executes an ElasticSearch index operation
@@ -45,7 +48,7 @@ func NewConfig(config *types.ElasticsearchConfig) elasticsearch7.Config {
 	}
 }
 
-func (c *DefaultAPIClient) ScrollAllResults(index string, query io.Reader) []interface{} {
+func (c *DefaultAPIClient) ScrollAllResults(index string, query string) []interface{} {
 	var (
 		scrollID string
 		results  []interface{}
@@ -56,7 +59,7 @@ func (c *DefaultAPIClient) ScrollAllResults(index string, query io.Reader) []int
 		c.client.Search.WithSort("_doc"),
 		c.client.Search.WithSize(10),
 		c.client.Search.WithScroll(time.Minute),
-		c.client.Search.WithBody(query),
+		c.client.Search.WithBody(strings.NewReader(query)),
 	)
 
 	// Handle the first batch of data and extract the scrollID
@@ -113,9 +116,22 @@ func (c *DefaultAPIClient) DoRequest(req esapi.Request) ([]byte, error) {
 	}
 	defer res.Body.Close()
 
+	if res.IsError() {
+		return nil, c.extractError(res.StatusCode, res.Body)
+	}
 	return ioutil.ReadAll(res.Body)
 }
 
 func (c *DefaultAPIClient) IndexRequest(req esapi.IndexRequest) ([]byte, error) {
 	return c.DoRequest(req)
+}
+
+func (c *DefaultAPIClient) extractError(statusCode int, body io.ReadCloser) error {
+	var raw map[string]interface{}
+	err := json.NewDecoder(body).Decode(&raw)
+	if err != nil {
+		return errors.New("could not resolve response body")
+	}
+	errorObj := raw["error"].(map[string]interface{})
+	return fmt.Errorf("error: [%d] %s: %s", statusCode, errorObj["type"], errorObj["reason"])
 }

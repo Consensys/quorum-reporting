@@ -7,7 +7,6 @@ package elasticsearch
 import (
 	esapi "github.com/elastic/go-elasticsearch/v7/esapi"
 	gomock "github.com/golang/mock/gomock"
-	io "io"
 	reflect "reflect"
 )
 
@@ -65,7 +64,7 @@ func (mr *MockAPIClientMockRecorder) IndexRequest(arg0 interface{}) *gomock.Call
 }
 
 // ScrollAllResults mocks base method
-func (m *MockAPIClient) ScrollAllResults(arg0 string, arg1 io.Reader) []interface{} {
+func (m *MockAPIClient) ScrollAllResults(arg0, arg1 string) []interface{} {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ScrollAllResults", arg0, arg1)
 	ret0, _ := ret[0].([]interface{})
