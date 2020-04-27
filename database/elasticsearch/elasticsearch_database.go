@@ -39,6 +39,10 @@ func (es *ElasticsearchDB) setupMappings() error {
 
 	//TODO: check error scenarios
 	es.apiClient.DoRequest(createRequest)
+
+	es.apiClient.DoRequest(esapi.IndicesCreateRequest{Index: "contract"})
+	es.apiClient.DoRequest(esapi.IndicesCreateRequest{Index: "storage"})
+	es.apiClient.DoRequest(esapi.IndicesCreateRequest{Index: "event"})
 	return nil
 }
 
@@ -58,7 +62,7 @@ func (es *ElasticsearchDB) AddAddresses(addresses []common.Address) error {
 			DocumentID: address.String(),
 			Body:       esutil.NewJSONReader(contract),
 			Refresh:    "true",
-			OpType:     "_create", //This will only create if the contract does not exist
+			OpType:     "create", //This will only create if the contract does not exist
 		}
 
 		//TODO: bubble up this error

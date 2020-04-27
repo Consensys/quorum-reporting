@@ -86,9 +86,9 @@ func TestAddSingleAddress(t *testing.T) {
 		Refresh:    "true",
 	}
 
-	mockedClient.EXPECT().DoRequest(gomock.Any())
+	mockedClient.EXPECT().DoRequest(gomock.Any()).Times(4)
 	mockedClient.EXPECT().IndexRequest(NewIndexRequestMatcher(ex)).Do(func(input esapi.IndexRequest) {
-		assert.Equal(t, "_create", input.OpType)
+		assert.Equal(t, "create", input.OpType)
 	})
 
 	db := New(mockedClient)
@@ -132,12 +132,12 @@ func TestAddMultipleAddresses(t *testing.T) {
 		Refresh:    "true",
 	}
 
-	mockedClient.EXPECT().DoRequest(gomock.Any())
+	mockedClient.EXPECT().DoRequest(gomock.Any()).Times(4)
 	mockedClient.EXPECT().IndexRequest(NewIndexRequestMatcher(req1)).Do(func(input esapi.IndexRequest) {
-		assert.Equal(t, "_create", input.OpType)
+		assert.Equal(t, "create", input.OpType)
 	})
 	mockedClient.EXPECT().IndexRequest(NewIndexRequestMatcher(req2)).Do(func(input esapi.IndexRequest) {
-		assert.Equal(t, "_create", input.OpType)
+		assert.Equal(t, "create", input.OpType)
 	})
 
 	db := New(mockedClient)
@@ -153,7 +153,7 @@ func TestAddNoAddresses(t *testing.T) {
 
 	mockedClient := NewMockAPIClient(ctrl)
 
-	mockedClient.EXPECT().DoRequest(gomock.Any())
+	mockedClient.EXPECT().DoRequest(gomock.Any()).Times(4)
 
 	db := New(mockedClient)
 
@@ -184,9 +184,9 @@ func TestAddSingleAddressWithError(t *testing.T) {
 		Refresh:    "true",
 	}
 
-	mockedClient.EXPECT().DoRequest(gomock.Any())
+	mockedClient.EXPECT().DoRequest(gomock.Any()).Times(4)
 	mockedClient.EXPECT().IndexRequest(NewIndexRequestMatcher(ex)).Do(func(input esapi.IndexRequest) {
-		assert.Equal(t, "_create", input.OpType)
+		assert.Equal(t, "create", input.OpType)
 	}).Return(nil, errors.New("test error"))
 
 	db := New(mockedClient)
