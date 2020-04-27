@@ -85,3 +85,15 @@ type Block struct {
 	PublicState  *state.Dump   `json:"publicState"`
 	PrivateState *state.Dump   `json:"privateState"`
 }
+
+//
+
+type ContractQuery struct {
+	Source Contract `json:"_source"`
+}
+
+type LastPersistedResult struct {
+	Source struct {
+		LastPersisted uint64 `json:"lastPersisted"`
+	} `json:"_source"`
+}

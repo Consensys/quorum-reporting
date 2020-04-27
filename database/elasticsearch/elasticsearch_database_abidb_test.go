@@ -2,8 +2,6 @@ package elasticsearch
 
 import (
 	"errors"
-	"fmt"
-	"strings"
 	"testing"
 
 	"github.com/elastic/go-elasticsearch/v7/esapi"
@@ -34,31 +32,22 @@ func TestElasticsearchDB_AddContractABI(t *testing.T) {
 		Body:       esutil.NewJSONReader(query),
 		Refresh:    "true",
 	}
-	searchRequest := esapi.SearchRequest{
-		Index: []string{"contract"},
-		Body:  strings.NewReader(fmt.Sprintf(QueryByAddressTemplate, addr.String())),
+	searchRequest := esapi.GetRequest{
+		Index:      "contract",
+		DocumentID: addr.String(),
 	}
 
 	contractSearchReturnValue := `{
-  "hits": {
-    "total": {
-      "value": 1
-    },
-    "hits": [
-      {
         "_source": {
           "address" : "0x1932c48b2bf8102ba33b4a6b545c32236e342f34",
           "creationTx" : "0xd09fc502b74c7e6015e258e3aed2d724cb50317684a46e00355e50b1b21c6446",
           "lastFiltered" : 20,
           "abi": ""
         }
-      }
-    ]
-  }
 }`
 
 	mockedClient.EXPECT().DoRequest(gomock.Any()).Times(4)
-	mockedClient.EXPECT().DoRequest(NewSearchRequestMatcher(searchRequest)).Return([]byte(contractSearchReturnValue), nil)
+	mockedClient.EXPECT().DoRequest(NewGetRequestMatcher(searchRequest)).Return([]byte(contractSearchReturnValue), nil)
 	mockedClient.EXPECT().DoRequest(NewUpdateRequestMatcher(updateRequest))
 
 	db := New(mockedClient)
@@ -89,31 +78,22 @@ func TestElasticsearchDB_AddContractABI_WithError(t *testing.T) {
 		Body:       esutil.NewJSONReader(query),
 		Refresh:    "true",
 	}
-	searchRequest := esapi.SearchRequest{
-		Index: []string{"contract"},
-		Body:  strings.NewReader(fmt.Sprintf(QueryByAddressTemplate, addr.String())),
+	searchRequest := esapi.GetRequest{
+		Index:      "contract",
+		DocumentID: addr.String(),
 	}
 
 	contractSearchReturnValue := `{
-  "hits": {
-    "total": {
-      "value": 1
-    },
-    "hits": [
-      {
         "_source": {
           "address" : "0x1932c48b2bf8102ba33b4a6b545c32236e342f34",
           "creationTx" : "0xd09fc502b74c7e6015e258e3aed2d724cb50317684a46e00355e50b1b21c6446",
           "lastFiltered" : 20,
           "abi": ""
         }
-      }
-    ]
-  }
 }`
 
 	mockedClient.EXPECT().DoRequest(gomock.Any()).Times(4)
-	mockedClient.EXPECT().DoRequest(NewSearchRequestMatcher(searchRequest)).Return([]byte(contractSearchReturnValue), nil)
+	mockedClient.EXPECT().DoRequest(NewGetRequestMatcher(searchRequest)).Return([]byte(contractSearchReturnValue), nil)
 	mockedClient.EXPECT().DoRequest(NewUpdateRequestMatcher(updateRequest)).Return(nil, errors.New("test error"))
 
 	db := New(mockedClient)
@@ -132,26 +112,19 @@ func TestElasticsearchDB_AddContractABI_ContractDoesntExist(t *testing.T) {
 	addr := common.HexToAddress("0x1932c48b2bf8102ba33b4a6b545c32236e342f34")
 	abi := "test ABI string"
 
-	searchRequest := esapi.SearchRequest{
-		Index: []string{"contract"},
-		Body:  strings.NewReader(fmt.Sprintf(QueryByAddressTemplate, addr.String())),
+	searchRequest := esapi.GetRequest{
+		Index:      "contract",
+		DocumentID: addr.String(),
 	}
 
-	contractSearchReturnValue := `{
-  "hits": {
-    "total": {"value": 0},
-    "hits": []
-  }
-}`
-
 	mockedClient.EXPECT().DoRequest(gomock.Any()).Times(4)
-	mockedClient.EXPECT().DoRequest(NewSearchRequestMatcher(searchRequest)).Return([]byte(contractSearchReturnValue), nil)
+	mockedClient.EXPECT().DoRequest(NewGetRequestMatcher(searchRequest)).Return(nil, errors.New("not found"))
 
 	db := New(mockedClient)
 
 	err := db.AddContractABI(addr, abi)
 
-	assert.EqualError(t, err, "address not found", "wrong error message")
+	assert.EqualError(t, err, "not found", "wrong error message")
 }
 
 func TestElasticsearchDB_GetContractABI(t *testing.T) {
@@ -162,31 +135,22 @@ func TestElasticsearchDB_GetContractABI(t *testing.T) {
 
 	addr := common.HexToAddress("0x1932c48b2bf8102ba33b4a6b545c32236e342f34")
 
-	searchRequest := esapi.SearchRequest{
-		Index: []string{"contract"},
-		Body:  strings.NewReader(fmt.Sprintf(QueryByAddressTemplate, addr.String())),
+	searchRequest := esapi.GetRequest{
+		Index:      "contract",
+		DocumentID: addr.String(),
 	}
 
 	contractSearchReturnValue := `{
-  "hits": {
-    "total": {
-      "value": 1
-    },
-    "hits": [
-      {
         "_source": {
           "address" : "0x1932c48b2bf8102ba33b4a6b545c32236e342f34",
           "creationTx" : "0xd09fc502b74c7e6015e258e3aed2d724cb50317684a46e00355e50b1b21c6446",
           "lastFiltered" : 20,
           "abi": "test abi"
         }
-      }
-    ]
-  }
 }`
 
 	mockedClient.EXPECT().DoRequest(gomock.Any()).Times(4)
-	mockedClient.EXPECT().DoRequest(NewSearchRequestMatcher(searchRequest)).Return([]byte(contractSearchReturnValue), nil)
+	mockedClient.EXPECT().DoRequest(NewGetRequestMatcher(searchRequest)).Return([]byte(contractSearchReturnValue), nil)
 
 	db := New(mockedClient)
 
@@ -204,27 +168,18 @@ func TestElasticsearchDB_GetContractABI_ContractDoesntExist(t *testing.T) {
 
 	addr := common.HexToAddress("0x1932c48b2bf8102ba33b4a6b545c32236e342f34")
 
-	searchRequest := esapi.SearchRequest{
-		Index: []string{"contract"},
-		Body:  strings.NewReader(fmt.Sprintf(QueryByAddressTemplate, addr.String())),
+	searchRequest := esapi.GetRequest{
+		Index:      "contract",
+		DocumentID: addr.String(),
 	}
 
-	contractSearchReturnValue := `{
-  "hits": {
-    "total": {
-      "value": 0
-    },
-    "hits": []
-  }
-}`
-
 	mockedClient.EXPECT().DoRequest(gomock.Any()).Times(4)
-	mockedClient.EXPECT().DoRequest(NewSearchRequestMatcher(searchRequest)).Return([]byte(contractSearchReturnValue), nil)
+	mockedClient.EXPECT().DoRequest(NewGetRequestMatcher(searchRequest)).Return(nil, errors.New("not found"))
 
 	db := New(mockedClient)
 
 	abi, err := db.GetContractABI(addr)
 
 	assert.Equal(t, "", abi, "unexpected error")
-	assert.EqualError(t, err, "address not found", "unexpected error message")
+	assert.EqualError(t, err, "not found", "unexpected error message")
 }

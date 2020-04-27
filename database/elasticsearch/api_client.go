@@ -134,6 +134,12 @@ func (c *DefaultAPIClient) extractError(statusCode int, body io.ReadCloser) erro
 	if err != nil {
 		return errors.New("could not resolve response body")
 	}
-	errorObj := raw["error"].(map[string]interface{})
-	return fmt.Errorf("error: [%d] %s: %s", statusCode, errorObj["type"], errorObj["reason"])
+
+	//an error occured with the request
+	if raw["error"] != nil {
+		errorObj := raw["error"].(map[string]interface{})
+		return fmt.Errorf("error: [%d] %s: %s", statusCode, errorObj["type"], errorObj["reason"])
+	}
+	//this was a search request that had no result
+	return errors.New("not found")
 }

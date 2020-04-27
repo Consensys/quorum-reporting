@@ -43,6 +43,17 @@ func (es *ElasticsearchDB) setupMappings() error {
 	es.apiClient.DoRequest(esapi.IndicesCreateRequest{Index: "contract"})
 	es.apiClient.DoRequest(esapi.IndicesCreateRequest{Index: "storage"})
 	es.apiClient.DoRequest(esapi.IndicesCreateRequest{Index: "event"})
+	es.apiClient.DoRequest(esapi.IndicesCreateRequest{Index: "meta"})
+
+	req := esapi.IndexRequest{
+		Index:      "meta",
+		DocumentID: "lastPersisted",
+		Body:       strings.NewReader(`{"lastPersisted": 0}`),
+		Refresh:    "true",
+		OpType:     "create", //This will only create if the contract does not exist
+	}
+	es.apiClient.IndexRequest(req)
+
 	return nil
 }
 
@@ -146,6 +157,26 @@ func (es *ElasticsearchDB) WriteBlock(block *types.Block) error {
 
 	//TODO: check if response needs reading
 	es.apiClient.DoRequest(req)
+
+	// Update last persisted block number.
+	blockNumber := block.Number
+	last, _ := es.GetLastPersistedBlockNumber()
+	if blockNumber == last+1 {
+		for {
+			if block, _ := es.ReadBlock(blockNumber + 1); block != nil {
+				blockNumber++
+			} else {
+				break
+			}
+		}
+		req := esapi.IndexRequest{
+			Index:      "meta",
+			DocumentID: "lastPersisted",
+			Body:       strings.NewReader(fmt.Sprintf(`{"lastPersisted": %d}`, blockNumber)),
+			Refresh:    "true",
+		}
+		es.apiClient.IndexRequest(req)
+	}
 	return nil
 }
 
@@ -182,34 +213,20 @@ func (es *ElasticsearchDB) ReadBlock(number uint64) (*types.Block, error) {
 }
 
 func (es *ElasticsearchDB) GetLastPersistedBlockNumber() (uint64, error) {
-	// TODO: We need a separate db storage for last persisted
-	query := `{"_source":["number"],"from":0,"size":1,"query":{"match_all":{}},"sort":[{"number":"desc"}]}`
-	searchRequest := esapi.SearchRequest{
-		Index: []string{"block"},
-		Body:  strings.NewReader(query),
+	fetchReq := esapi.GetRequest{
+		Index:      "meta",
+		DocumentID: "lastPersisted",
 	}
 
-	body, err := es.apiClient.DoRequest(searchRequest)
+	body, err := es.apiClient.DoRequest(fetchReq)
 	if err != nil {
-		//TODO: return error
-		return 0, nil
+		return 0, err
 	}
 
-	var response map[string]interface{}
-	json.Unmarshal(body, &response)
-
-	//numberOfResults := int(response["hits"].(map[string]interface{})["total"].(map[string]interface{})["value"].(float64))
-	//if numberOfResults == 0 {
-	//	return 0, errors.New("last persisted block not found")
-	//}
-	//if numberOfResults > 1 {
-	//	return 0, errors.New("too many blocks found for last persisted")
-	//}
-
-	/////////
-
-	result := es.getSingleDocumentData(response)
-	return uint64(result["number"].(float64)), nil
+	fmt.Println(string(body))
+	var lastPersisted LastPersistedResult
+	json.Unmarshal(body, &lastPersisted)
+	return lastPersisted.Source.LastPersisted, nil
 }
 
 // TransactionDB
@@ -370,34 +387,19 @@ func (es *ElasticsearchDB) GetLastFiltered(address common.Address) (uint64, erro
 // Internal functions
 
 func (es *ElasticsearchDB) getContractByAddress(address common.Address) (*Contract, error) {
-	query := fmt.Sprintf(QueryByAddressTemplate, address.String())
-
-	searchRequest := esapi.SearchRequest{
-		Index: []string{"contract"},
-		Body:  strings.NewReader(query),
+	fetchReq := esapi.GetRequest{
+		Index:      "contract",
+		DocumentID: address.String(),
 	}
 
-	body, err := es.apiClient.DoRequest(searchRequest)
+	body, err := es.apiClient.DoRequest(fetchReq)
 	if err != nil {
 		return nil, err
 	}
 
-	var response map[string]interface{}
-	json.Unmarshal(body, &response)
-
-	numberOfResults := int(response["hits"].(map[string]interface{})["total"].(map[string]interface{})["value"].(float64))
-	if numberOfResults == 0 {
-		return nil, ErrAddressNotFound
-	}
-	if numberOfResults > 1 {
-		return nil, ErrTooManyResults
-	}
-
-	result := es.getSingleDocumentData(response)
-	marshalled, _ := json.Marshal(result)
-	var contract Contract
-	json.Unmarshal(marshalled, &contract)
-	return &contract, nil
+	var contract ContractQuery
+	json.Unmarshal(body, &contract)
+	return &contract.Source, nil
 }
 
 func (es *ElasticsearchDB) getTransactionByHash(hash common.Hash) (*types.Transaction, error) {

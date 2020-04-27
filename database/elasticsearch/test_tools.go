@@ -94,3 +94,22 @@ func (rm *UpdateRequestMatcher) Matches(x interface{}) bool {
 func (rm *UpdateRequestMatcher) String() string {
 	return fmt.Sprintf("UpdateRequestMatcher{%s}", rm.req.Index)
 }
+
+type GetRequestMatcher struct {
+	req esapi.GetRequest
+}
+
+func NewGetRequestMatcher(req esapi.GetRequest) *GetRequestMatcher {
+	return &GetRequestMatcher{req: req}
+}
+
+func (rm *GetRequestMatcher) Matches(x interface{}) bool {
+	if val, ok := x.(esapi.GetRequest); ok {
+		return val.Index == rm.req.Index && val.DocumentID == rm.req.DocumentID
+	}
+	return false
+}
+
+func (rm *GetRequestMatcher) String() string {
+	return fmt.Sprintf("GetRequestMatcher{%s/%s}", rm.req.Index, rm.req.DocumentID)
+}
