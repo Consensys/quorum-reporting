@@ -43,29 +43,32 @@ func (es *ElasticsearchDB) setupMappings() error {
 }
 
 //AddressDB
-func (es *ElasticsearchDB) AddAddresses(addresses []common.Address) error {
+func (es *ElasticsearchDB) AddAddresses(addresses []common.Address) (err error) {
 	//TODO: use bulk indexing
-	//TODO: check exists
 	for _, address := range addresses {
-		contract := Contract{
-			Address:             address,
-			ABI:                 "",
-			CreationTransaction: common.Hash{},
-			LastFiltered:        0,
-		}
+		_, err = es.getContractByAddress(address)
+		if err == ErrAddressNotFound {
+			contract := Contract{
+				Address:             address,
+				ABI:                 "",
+				CreationTransaction: common.Hash{},
+				LastFiltered:        0,
+			}
 
-		req := esapi.IndexRequest{
-			Index:      "contract",
-			DocumentID: address.String(),
-			Body:       esutil.NewJSONReader(contract),
-			Refresh:    "true",
-		}
+			req := esapi.IndexRequest{
+				Index:      "contract",
+				DocumentID: address.String(),
+				Body:       esutil.NewJSONReader(contract),
+				Refresh:    "true",
+			}
 
-		//TODO: bubble up this error
-		es.apiClient.IndexRequest(req)
+			//TODO: bubble up this error
+			es.apiClient.IndexRequest(req)
+			return nil
+		}
 	}
 
-	return nil
+	return err
 }
 
 func (es *ElasticsearchDB) DeleteAddress(address common.Address) error {
@@ -376,10 +379,10 @@ func (es *ElasticsearchDB) getContractByAddress(address common.Address) (*Contra
 
 	numberOfResults := int(response["hits"].(map[string]interface{})["total"].(map[string]interface{})["value"].(float64))
 	if numberOfResults == 0 {
-		return nil, fmt.Errorf("address %s not found", address.String())
+		return nil, ErrAddressNotFound
 	}
 	if numberOfResults > 1 {
-		return nil, fmt.Errorf("too many addresses %s's found", address.String())
+		return nil, ErrTooManyResults
 	}
 
 	/////////
