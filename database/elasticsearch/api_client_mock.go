@@ -1,8 +1,9 @@
 package elasticsearch
 
 import (
-	"github.com/elastic/go-elasticsearch/v7/esapi"
 	"io"
+
+	"github.com/elastic/go-elasticsearch/v7/esapi"
 )
 
 type MockAPIClient struct {

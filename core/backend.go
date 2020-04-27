@@ -2,13 +2,13 @@ package core
 
 import (
 	"log"
-	"quorumengineering/quorum-report/database/factory"
 	"time"
 
 	"quorumengineering/quorum-report/client"
 	"quorumengineering/quorum-report/core/filter"
 	"quorumengineering/quorum-report/core/monitor"
 	"quorumengineering/quorum-report/core/rpc"
+	"quorumengineering/quorum-report/database/factory"
 	"quorumengineering/quorum-report/types"
 )
 

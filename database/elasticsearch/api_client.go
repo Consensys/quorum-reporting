@@ -5,11 +5,12 @@ import (
 	"encoding/json"
 	"io"
 	"io/ioutil"
-	"quorumengineering/quorum-report/types"
 	"time"
 
 	elasticsearch7 "github.com/elastic/go-elasticsearch/v7"
 	"github.com/elastic/go-elasticsearch/v7/esapi"
+
+	"quorumengineering/quorum-report/types"
 )
 
 type APIClient interface {
