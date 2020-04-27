@@ -1,4 +1,12 @@
-on: [push, pull_request]
+on:
+  push:
+    branches:
+      - master
+    path-ignore:
+      - '*.md'
+  pull_request:
+    path-ignore:
+      - '*.md'
 name: Tests
 jobs:
   unit-tests:
