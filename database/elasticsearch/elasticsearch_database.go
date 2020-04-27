@@ -47,7 +47,7 @@ func (es *ElasticsearchDB) AddAddresses(addresses []common.Address) (err error) 
 	//TODO: use bulk indexing
 	for _, address := range addresses {
 		_, err = es.getContractByAddress(address)
-		if err == ErrAddressNotFound {
+		if err != nil && (err == ErrAddressNotFound || err.Error() == "index_not_found_exception") {
 			contract := Contract{
 				Address:             address,
 				ABI:                 "",
@@ -376,6 +376,9 @@ func (es *ElasticsearchDB) getContractByAddress(address common.Address) (*Contra
 	//TODO: handle error
 	var response map[string]interface{}
 	json.Unmarshal(body, &response)
+	if response["error"] != nil {
+		return nil, errors.New(response["error"].(map[string]interface{})["type"].(string))
+	}
 
 	numberOfResults := int(response["hits"].(map[string]interface{})["total"].(map[string]interface{})["value"].(float64))
 	if numberOfResults == 0 {
