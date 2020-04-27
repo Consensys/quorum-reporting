@@ -105,7 +105,11 @@ func (es *ElasticsearchDB) GetAddresses() ([]common.Address, error) {
 
 //ABIDB
 func (es *ElasticsearchDB) AddContractABI(address common.Address, abi string) error {
-	//TODO: guard against unknown address?
+	_, err := es.getContractByAddress(address)
+	if err != nil {
+		return err
+	}
+
 	query := map[string]interface{}{
 		"doc": map[string]interface{}{
 			"abi": abi,
@@ -119,9 +123,8 @@ func (es *ElasticsearchDB) AddContractABI(address common.Address, abi string) er
 		Refresh:    "true",
 	}
 
-	//TODO: check if error returned
-	es.apiClient.DoRequest(updateRequest)
-	return nil
+	_, errUpdate := es.apiClient.DoRequest(updateRequest)
+	return errUpdate //nil if successful
 }
 
 func (es *ElasticsearchDB) GetContractABI(address common.Address) (string, error) {
@@ -367,7 +370,6 @@ func (es *ElasticsearchDB) GetLastFiltered(address common.Address) (uint64, erro
 // Internal functions
 
 func (es *ElasticsearchDB) getContractByAddress(address common.Address) (*Contract, error) {
-	//TODO: make more readable
 	query := fmt.Sprintf(QueryByAddressTemplate, address.String())
 
 	searchRequest := esapi.SearchRequest{
@@ -390,8 +392,6 @@ func (es *ElasticsearchDB) getContractByAddress(address common.Address) (*Contra
 	if numberOfResults > 1 {
 		return nil, ErrTooManyResults
 	}
-
-	/////////
 
 	result := es.getSingleDocumentData(response)
 	marshalled, _ := json.Marshal(result)

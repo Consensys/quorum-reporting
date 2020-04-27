@@ -71,3 +71,26 @@ func (rm *DeleteRequestMatcher) Matches(x interface{}) bool {
 func (rm *DeleteRequestMatcher) String() string {
 	return fmt.Sprintf("DeleteRequestMatcher{%s}", rm.req.Index)
 }
+
+type UpdateRequestMatcher struct {
+	req esapi.UpdateRequest
+}
+
+func NewUpdateRequestMatcher(req esapi.UpdateRequest) *UpdateRequestMatcher {
+	return &UpdateRequestMatcher{req: req}
+}
+
+func (rm *UpdateRequestMatcher) Matches(x interface{}) bool {
+	if val, ok := x.(esapi.UpdateRequest); ok {
+		actualBody, _ := ioutil.ReadAll(val.Body)
+		expectedBody, _ := ioutil.ReadAll(rm.req.Body)
+		return val.Index == rm.req.Index &&
+			val.DocumentID == rm.req.DocumentID &&
+			bytes.Compare(actualBody, expectedBody) == 0
+	}
+	return false
+}
+
+func (rm *UpdateRequestMatcher) String() string {
+	return fmt.Sprintf("UpdateRequestMatcher{%s}", rm.req.Index)
+}
