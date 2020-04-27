@@ -296,7 +296,7 @@ func (es *ElasticsearchDB) GetAllTransactionsInternalToAddress(address common.Ad
 
 func (es *ElasticsearchDB) GetAllEventsByAddress(address common.Address) ([]*types.Event, error) {
 	query := fmt.Sprintf(QueryByAddressTemplate, address.String())
-	results := es.apiClient.ScrollAllResults("events", strings.NewReader(query))
+	results := es.apiClient.ScrollAllResults("event", strings.NewReader(query))
 
 	convertedList := make([]*types.Event, len(results))
 	for i, result := range results {
@@ -493,7 +493,7 @@ func (es *ElasticsearchDB) createEvent(event *types.Event) error {
 	}
 
 	req := esapi.IndexRequest{
-		Index:      "events",
+		Index:      "event",
 		DocumentID: strconv.FormatUint(event.BlockNumber, 10) + "-" + strconv.FormatUint(event.Index, 10),
 		Body:       esutil.NewJSONReader(converted),
 		Refresh:    "true",
