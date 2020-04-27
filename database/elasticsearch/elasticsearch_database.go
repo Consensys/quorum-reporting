@@ -116,26 +116,7 @@ func (es *ElasticsearchDB) GetAddresses() ([]common.Address, error) {
 
 //ABIDB
 func (es *ElasticsearchDB) AddContractABI(address common.Address, abi string) error {
-	_, err := es.getContractByAddress(address)
-	if err != nil {
-		return err
-	}
-
-	query := map[string]interface{}{
-		"doc": map[string]interface{}{
-			"abi": abi,
-		},
-	}
-
-	updateRequest := esapi.UpdateRequest{
-		Index:      "contract",
-		DocumentID: address.String(),
-		Body:       esutil.NewJSONReader(query),
-		Refresh:    "true",
-	}
-
-	_, errUpdate := es.apiClient.DoRequest(updateRequest)
-	return errUpdate //nil if successful
+	return es.updateContract(address, "abi", abi)
 }
 
 func (es *ElasticsearchDB) GetContractABI(address common.Address) (string, error) {
@@ -150,7 +131,7 @@ func (es *ElasticsearchDB) GetContractABI(address common.Address) (string, error
 func (es *ElasticsearchDB) WriteBlock(block *types.Block) error {
 	req := esapi.IndexRequest{
 		Index:      "block",
-		DocumentID: block.Hash.String(),
+		DocumentID: strconv.FormatUint(block.Number, 10),
 		Body:       esutil.NewJSONReader(block),
 		Refresh:    "true",
 	}
@@ -181,35 +162,19 @@ func (es *ElasticsearchDB) WriteBlock(block *types.Block) error {
 }
 
 func (es *ElasticsearchDB) ReadBlock(number uint64) (*types.Block, error) {
-	//TODO: make more readable
-	query := fmt.Sprintf(QueryByNumberTemplate, number)
-	searchRequest := esapi.SearchRequest{
-		Index: []string{"block"},
-		Body:  strings.NewReader(query),
+	fetchReq := esapi.GetRequest{
+		Index:      "block",
+		DocumentID: strconv.FormatUint(number, 10),
 	}
 
-	body, err := es.apiClient.DoRequest(searchRequest)
+	body, err := es.apiClient.DoRequest(fetchReq)
 	if err != nil {
 		return nil, err
 	}
 
-	//TODO: handle error
-	var response map[string]interface{}
-	json.Unmarshal(body, &response)
-
-	numberOfResults := int(response["hits"].(map[string]interface{})["total"].(map[string]interface{})["value"].(float64))
-	if numberOfResults == 0 {
-		return nil, fmt.Errorf("block number %d not found", number)
-	}
-	if numberOfResults > 1 {
-		return nil, fmt.Errorf("too many block number %d's found", number)
-	}
-
-	result := es.getSingleDocumentData(response)
-	marshalled, _ := json.Marshal(result)
-	var block types.Block
-	json.Unmarshal(marshalled, &block)
-	return &block, nil
+	var blockResult BlockQueryResult
+	json.Unmarshal(body, &blockResult)
+	return &blockResult.Source, nil
 }
 
 func (es *ElasticsearchDB) GetLastPersistedBlockNumber() (uint64, error) {
@@ -231,8 +196,6 @@ func (es *ElasticsearchDB) GetLastPersistedBlockNumber() (uint64, error) {
 
 // TransactionDB
 func (es *ElasticsearchDB) WriteTransaction(transaction *types.Transaction) error {
-	//TODO: convert to internal transaction type
-
 	if transaction.InternalCalls == nil {
 		transaction.InternalCalls = make([]*types.InternalCall, 0)
 	}
@@ -250,7 +213,19 @@ func (es *ElasticsearchDB) WriteTransaction(transaction *types.Transaction) erro
 }
 
 func (es *ElasticsearchDB) ReadTransaction(hash common.Hash) (*types.Transaction, error) {
-	return es.getTransactionByHash(hash)
+	fetchReq := esapi.GetRequest{
+		Index:      "transaction",
+		DocumentID: hash.String(),
+	}
+
+	body, err := es.apiClient.DoRequest(fetchReq)
+	if err != nil {
+		return nil, err
+	}
+
+	var transactionResult TransactionQueryResult
+	json.Unmarshal(body, &transactionResult)
+	return &transactionResult.Source, nil
 }
 
 // IndexDB
@@ -344,30 +319,20 @@ func (es *ElasticsearchDB) GetAllEventsByAddress(address common.Address) ([]*typ
 }
 
 func (es *ElasticsearchDB) GetStorage(address common.Address, blockNumber uint64) (map[common.Hash]string, error) {
-	query := fmt.Sprintf(QueryByAddressAndBlockNumberTemplate, address.String(), blockNumber)
-
-	searchRequest := esapi.SearchRequest{
-		Index: []string{"storage"},
-		Body:  strings.NewReader(query),
+	fetchReq := esapi.GetRequest{
+		Index:      "storage",
+		DocumentID: address.String() + "-" + strconv.FormatUint(blockNumber, 10),
 	}
 
-	body, _ := es.apiClient.DoRequest(searchRequest)
-
-	//TODO: handle error
-	var response map[string]interface{}
-	json.Unmarshal(body, &response)
-
-	numberOfResults := int(response["hits"].(map[string]interface{})["total"].(map[string]interface{})["value"].(float64))
-	if numberOfResults == 0 {
-		return nil, fmt.Errorf("address %s not found", address.String())
-	}
-	if numberOfResults > 1 {
-		return nil, fmt.Errorf("too many addresses %s's found", address.String())
+	body, err := es.apiClient.DoRequest(fetchReq)
+	if err != nil {
+		return nil, err
 	}
 
-	/////////
+	var storageResult StorageQueryResult
+	json.Unmarshal(body, &storageResult)
+	result := storageResult.Source
 
-	result := es.getSingleDocumentData(response)
 	retrievedStorage := result["storageMap"].(map[string]interface{})
 	storage := make(map[common.Hash]string)
 	for hsh, val := range retrievedStorage {
@@ -397,43 +362,9 @@ func (es *ElasticsearchDB) getContractByAddress(address common.Address) (*Contra
 		return nil, err
 	}
 
-	var contract ContractQuery
+	var contract ContractQueryResult
 	json.Unmarshal(body, &contract)
 	return &contract.Source, nil
-}
-
-func (es *ElasticsearchDB) getTransactionByHash(hash common.Hash) (*types.Transaction, error) {
-	//TODO: make more readable
-	query := fmt.Sprintf(QueryByHashTemplate, hash.String())
-
-	searchRequest := esapi.SearchRequest{
-		Index: []string{"transaction"},
-		Body:  strings.NewReader(query),
-	}
-
-	body, _ := es.apiClient.DoRequest(searchRequest)
-
-	//TODO: handle error
-	var response map[string]interface{}
-	json.Unmarshal(body, &response)
-
-	numberOfResults := int(response["hits"].(map[string]interface{})["total"].(map[string]interface{})["value"].(float64))
-	if numberOfResults == 0 {
-		return nil, fmt.Errorf("transaction %s not found", hash.String())
-	}
-	if numberOfResults > 1 {
-		return nil, fmt.Errorf("too many transactions with hash %s found", hash.String())
-	}
-
-	result := es.getSingleDocumentData(response)
-	marshalled, _ := json.Marshal(result)
-	var transaction types.Transaction
-	json.Unmarshal(marshalled, &transaction)
-	return &transaction, nil
-}
-
-func (es *ElasticsearchDB) getSingleDocumentData(esResponse map[string]interface{}) map[string]interface{} {
-	return esResponse["hits"].(map[string]interface{})["hits"].([]interface{})[0].(map[string]interface{})["_source"].(map[string]interface{})
 }
 
 func (es *ElasticsearchDB) addressIsRegistered(address common.Address) bool {
@@ -471,7 +402,6 @@ func (es *ElasticsearchDB) updateLastFiltered(address common.Address, lastFilter
 }
 
 func (es *ElasticsearchDB) updateContract(address common.Address, property string, value interface{}) error {
-	//TODO: guard against unknown address?
 	query := map[string]interface{}{
 		"doc": map[string]interface{}{
 			property: value,

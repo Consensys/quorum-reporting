@@ -9,16 +9,6 @@ const (
 		"match_all": {}
 	}
 }`
-	QueryByNumberTemplate = `
-{
-	"query": {
-		"bool": {
-			"must": [
-				{ "match": { "number": "%d" } }
-			]
-		}
-	}
-}`
 	QueryByToAddressTemplate = `
 {
 	"query": {
@@ -29,33 +19,12 @@ const (
 		}
 	}
 }`
-	QueryByHashTemplate = `
-{
-	"query": {
-		"bool": {
-			"must": [
-				{ "match": { "hash": "%s" } }
-			]
-		}
-	}
-}`
 	QueryByAddressTemplate = `
 {
 	"query": {
 		"bool": {
 			"must": [
 				{ "match": { "address": "%s" } }
-			]
-		}
-	}
-}`
-	QueryByAddressAndBlockNumberTemplate = `
-{
-	"query": {
-		"bool": {
-			"must": [
-				{ "match": { "address": "%s" } },
-				{ "match": { "blockNumber": "%d" } }
 			]
 		}
 	}

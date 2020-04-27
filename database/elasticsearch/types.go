@@ -4,6 +4,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/state"
+	"quorumengineering/quorum-report/types"
 )
 
 type Contract struct {
@@ -88,8 +89,20 @@ type Block struct {
 
 //
 
-type ContractQuery struct {
+type ContractQueryResult struct {
 	Source Contract `json:"_source"`
+}
+
+type TransactionQueryResult struct {
+	Source types.Transaction `json:"_source"`
+}
+
+type BlockQueryResult struct {
+	Source types.Block `json:"_source"`
+}
+
+type StorageQueryResult struct {
+	Source map[string]interface{} `json:"_source"`
 }
 
 type LastPersistedResult struct {
