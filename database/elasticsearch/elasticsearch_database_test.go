@@ -4,13 +4,14 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"io/ioutil"
+	"testing"
+
 	"github.com/elastic/go-elasticsearch/v7/esapi"
 	"github.com/elastic/go-elasticsearch/v7/esutil"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
-	"io/ioutil"
-	"testing"
 )
 
 // GoMock matchers that can be used to check specific request types

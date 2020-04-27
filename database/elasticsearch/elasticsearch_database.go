@@ -4,14 +4,16 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
+	"strconv"
+	"strings"
+
 	"github.com/elastic/go-elasticsearch/v7/esapi"
 	"github.com/elastic/go-elasticsearch/v7/esutil"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/state"
-	"log"
+
 	"quorumengineering/quorum-report/types"
-	"strconv"
-	"strings"
 )
 
 type ElasticsearchDB struct {
