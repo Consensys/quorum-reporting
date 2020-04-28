@@ -132,14 +132,17 @@ func (c *DefaultAPIClient) extractError(statusCode int, body io.ReadCloser) erro
 	var raw map[string]interface{}
 	err := json.NewDecoder(body).Decode(&raw)
 	if err != nil {
-		return errors.New("could not resolve response body")
+		return ErrCouldNotResolveResp
 	}
 
-	//an error occured with the request
+	// An error occurred with the request
 	if raw["error"] != nil {
 		errorObj := raw["error"].(map[string]interface{})
+		if errorObj["type"] == "index_not_found_exception" {
+			return ErrIndexNotFound
+		}
 		return fmt.Errorf("error: [%d] %s: %s", statusCode, errorObj["type"], errorObj["reason"])
 	}
-	//this was a search request that had no result
+	// This was a search request that had no result
 	return errors.New("not found")
 }

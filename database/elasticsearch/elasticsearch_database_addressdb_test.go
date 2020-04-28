@@ -42,7 +42,7 @@ func TestAddSingleAddress(t *testing.T) {
 		assert.Equal(t, "create", input.OpType)
 	})
 
-	db := New(mockedClient)
+	db, _ := New(mockedClient)
 
 	err := db.AddAddresses([]common.Address{addr})
 
@@ -91,7 +91,7 @@ func TestAddMultipleAddresses(t *testing.T) {
 		assert.Equal(t, "create", input.OpType)
 	})
 
-	db := New(mockedClient)
+	db, _ := New(mockedClient)
 
 	err := db.AddAddresses([]common.Address{addr1, addr2})
 
@@ -106,7 +106,7 @@ func TestAddNoAddresses(t *testing.T) {
 
 	mockedClient.EXPECT().DoRequest(gomock.Any()).Times(4)
 
-	db := New(mockedClient)
+	db, _ := New(mockedClient)
 
 	err := db.AddAddresses([]common.Address{})
 
@@ -140,7 +140,7 @@ func TestAddSingleAddressWithError(t *testing.T) {
 		assert.Equal(t, "create", input.OpType)
 	}).Return(nil, errors.New("test error"))
 
-	db := New(mockedClient)
+	db, _ := New(mockedClient)
 
 	err := db.AddAddresses([]common.Address{addr})
 
@@ -163,7 +163,7 @@ func TestElasticsearchDB_DeleteAddress(t *testing.T) {
 	mockedClient.EXPECT().DoRequest(gomock.Any()).Times(4)
 	mockedClient.EXPECT().DoRequest(NewDeleteRequestMatcher(req)).Return(nil, nil)
 
-	db := New(mockedClient)
+	db, _ := New(mockedClient)
 
 	err := db.DeleteAddress(addr)
 
@@ -186,7 +186,7 @@ func TestElasticsearchDB_DeleteAddress_WithError(t *testing.T) {
 	mockedClient.EXPECT().DoRequest(gomock.Any()).Times(4)
 	mockedClient.EXPECT().DoRequest(NewDeleteRequestMatcher(req)).Return(nil, errors.New("test error"))
 
-	db := New(mockedClient)
+	db, _ := New(mockedClient)
 
 	err := db.DeleteAddress(addr)
 
@@ -204,7 +204,7 @@ func TestElasticsearchDB_GetAddresses_NoAddresses(t *testing.T) {
 		ScrollAllResults("contract", QueryAllAddressesTemplate).
 		Return(make([]interface{}, 0, 0), nil)
 
-	db := New(mockedClient)
+	db, _ := New(mockedClient)
 	allAddresses, err := db.GetAddresses()
 
 	assert.Nil(t, err, "error was not nil")
@@ -231,7 +231,7 @@ func TestElasticsearchDB_GetAddresses_SingleAddress(t *testing.T) {
 		ScrollAllResults("contract", QueryAllAddressesTemplate).
 		Return([]interface{}{createReturnValue(sampleAddress)}, nil)
 
-	db := New(mockedClient)
+	db, _ := New(mockedClient)
 	allAddresses, err := db.GetAddresses()
 
 	assert.Nil(t, err, "error was not nil")
@@ -260,7 +260,7 @@ func TestElasticsearchDB_GetAddresses_MultipleAddress(t *testing.T) {
 		ScrollAllResults("contract", QueryAllAddressesTemplate).
 		Return([]interface{}{createReturnValue(sampleAddress1), createReturnValue(sampleAddress2)}, nil)
 
-	db := New(mockedClient)
+	db, _ := New(mockedClient)
 	allAddresses, err := db.GetAddresses()
 
 	assert.Nil(t, err, "error was not nil")
@@ -280,7 +280,7 @@ func TestElasticsearchDB_GetAddresses_WithError(t *testing.T) {
 		ScrollAllResults("contract", QueryAllAddressesTemplate).
 		Return(nil, errors.New("test error"))
 
-	db := New(mockedClient)
+	db, _ := New(mockedClient)
 	allAddresses, err := db.GetAddresses()
 
 	assert.Nil(t, allAddresses, "error was not nil")

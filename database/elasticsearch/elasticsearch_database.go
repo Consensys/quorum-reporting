@@ -20,17 +20,25 @@ type ElasticsearchDB struct {
 	apiClient APIClient
 }
 
-func New(client APIClient) *ElasticsearchDB {
+func New(client APIClient) (*ElasticsearchDB, error) {
 	db := &ElasticsearchDB{
 		apiClient: client,
 	}
 
-	db.setupMappings()
-
-	return db
+	initialized, err := db.checkIsInitialized()
+	if err != nil {
+		return nil, err
+	}
+	if !initialized {
+		err := db.init()
+		if err != nil {
+			return nil, err
+		}
+	}
+	return db, nil
 }
 
-func (es *ElasticsearchDB) setupMappings() error {
+func (es *ElasticsearchDB) init() error {
 	mapping := `{"mappings":{"properties": {"internalCalls": {"type": "nested" }}}}`
 	createRequest := esapi.IndicesCreateRequest{
 		Index: "transaction",
@@ -188,7 +196,6 @@ func (es *ElasticsearchDB) GetLastPersistedBlockNumber() (uint64, error) {
 		return 0, err
 	}
 
-	fmt.Println(string(body))
 	var lastPersisted LastPersistedResult
 	json.Unmarshal(body, &lastPersisted)
 	return lastPersisted.Source.LastPersisted, nil
@@ -350,6 +357,21 @@ func (es *ElasticsearchDB) GetLastFiltered(address common.Address) (uint64, erro
 }
 
 // Internal functions
+
+func (es *ElasticsearchDB) checkIsInitialized() (bool, error) {
+	fetchReq := esapi.CatIndicesRequest{
+		Index: []string{MetaIndex, ContractIndex, BlockIndex, StorageIndex, TransactionIndex, EventIndex},
+	}
+
+	_, err := es.apiClient.DoRequest(fetchReq)
+	if err != nil {
+		if err != ErrIndexNotFound {
+			return false, nil
+		}
+		return false, err
+	}
+	return true, nil
+}
 
 func (es *ElasticsearchDB) getContractByAddress(address common.Address) (*Contract, error) {
 	fetchReq := esapi.GetRequest{

@@ -50,7 +50,7 @@ func TestElasticsearchDB_AddContractABI(t *testing.T) {
 	mockedClient.EXPECT().DoRequest(NewGetRequestMatcher(searchRequest)).Return([]byte(contractSearchReturnValue), nil)
 	mockedClient.EXPECT().DoRequest(NewUpdateRequestMatcher(updateRequest))
 
-	db := New(mockedClient)
+	db, _ := New(mockedClient)
 
 	err := db.AddContractABI(addr, abi)
 
@@ -96,7 +96,7 @@ func TestElasticsearchDB_AddContractABI_WithError(t *testing.T) {
 	mockedClient.EXPECT().DoRequest(NewGetRequestMatcher(searchRequest)).Return([]byte(contractSearchReturnValue), nil)
 	mockedClient.EXPECT().DoRequest(NewUpdateRequestMatcher(updateRequest)).Return(nil, errors.New("test error"))
 
-	db := New(mockedClient)
+	db, _ := New(mockedClient)
 
 	err := db.AddContractABI(addr, abi)
 
@@ -120,7 +120,7 @@ func TestElasticsearchDB_AddContractABI_ContractDoesntExist(t *testing.T) {
 	mockedClient.EXPECT().DoRequest(gomock.Any()).Times(4)
 	mockedClient.EXPECT().DoRequest(NewGetRequestMatcher(searchRequest)).Return(nil, errors.New("not found"))
 
-	db := New(mockedClient)
+	db, _ := New(mockedClient)
 
 	err := db.AddContractABI(addr, abi)
 
@@ -152,7 +152,7 @@ func TestElasticsearchDB_GetContractABI(t *testing.T) {
 	mockedClient.EXPECT().DoRequest(gomock.Any()).Times(4)
 	mockedClient.EXPECT().DoRequest(NewGetRequestMatcher(searchRequest)).Return([]byte(contractSearchReturnValue), nil)
 
-	db := New(mockedClient)
+	db, _ := New(mockedClient)
 
 	abi, err := db.GetContractABI(addr)
 
@@ -176,7 +176,7 @@ func TestElasticsearchDB_GetContractABI_ContractDoesntExist(t *testing.T) {
 	mockedClient.EXPECT().DoRequest(gomock.Any()).Times(4)
 	mockedClient.EXPECT().DoRequest(NewGetRequestMatcher(searchRequest)).Return(nil, errors.New("not found"))
 
-	db := New(mockedClient)
+	db, _ := New(mockedClient)
 
 	abi, err := db.GetContractABI(addr)
 
