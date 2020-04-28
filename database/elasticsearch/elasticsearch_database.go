@@ -58,7 +58,7 @@ func (es *ElasticsearchDB) init() error {
 		DocumentID: "lastPersisted",
 		Body:       strings.NewReader(`{"lastPersisted": 0}`),
 		Refresh:    "true",
-		OpType:     "create", //This will only create if the contract does not exist
+		OpType:     "create",
 	}
 	es.apiClient.IndexRequest(req)
 
@@ -365,7 +365,7 @@ func (es *ElasticsearchDB) checkIsInitialized() (bool, error) {
 
 	_, err := es.apiClient.DoRequest(fetchReq)
 	if err != nil {
-		if err != ErrIndexNotFound {
+		if err == ErrIndexNotFound {
 			return false, nil
 		}
 		return false, err

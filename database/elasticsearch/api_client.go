@@ -137,6 +137,7 @@ func (c *DefaultAPIClient) extractError(statusCode int, body io.ReadCloser) erro
 
 	// An error occurred with the request
 	if raw["error"] != nil {
+		// TODO: it is possible that the error is just a string not a map
 		errorObj := raw["error"].(map[string]interface{})
 		if errorObj["type"] == "index_not_found_exception" {
 			return ErrIndexNotFound
