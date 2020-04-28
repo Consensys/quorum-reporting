@@ -41,20 +41,20 @@ func New(client APIClient) (*ElasticsearchDB, error) {
 func (es *ElasticsearchDB) init() error {
 	mapping := `{"mappings":{"properties": {"internalCalls": {"type": "nested" }}}}`
 	createRequest := esapi.IndicesCreateRequest{
-		Index: "transaction",
+		Index: TransactionIndex,
 		Body:  strings.NewReader(mapping),
 	}
 
 	//TODO: check error scenarios
 	es.apiClient.DoRequest(createRequest)
 
-	es.apiClient.DoRequest(esapi.IndicesCreateRequest{Index: "contract"})
-	es.apiClient.DoRequest(esapi.IndicesCreateRequest{Index: "storage"})
-	es.apiClient.DoRequest(esapi.IndicesCreateRequest{Index: "event"})
-	es.apiClient.DoRequest(esapi.IndicesCreateRequest{Index: "meta"})
+	es.apiClient.DoRequest(esapi.IndicesCreateRequest{Index: ContractIndex})
+	es.apiClient.DoRequest(esapi.IndicesCreateRequest{Index: StorageIndex})
+	es.apiClient.DoRequest(esapi.IndicesCreateRequest{Index: EventIndex})
+	es.apiClient.DoRequest(esapi.IndicesCreateRequest{Index: MetaIndex})
 
 	req := esapi.IndexRequest{
-		Index:      "meta",
+		Index:      MetaIndex,
 		DocumentID: "lastPersisted",
 		Body:       strings.NewReader(`{"lastPersisted": 0}`),
 		Refresh:    "true",
@@ -77,7 +77,7 @@ func (es *ElasticsearchDB) AddAddresses(addresses []common.Address) error {
 		}
 
 		req := esapi.IndexRequest{
-			Index:      "contract",
+			Index:      ContractIndex,
 			DocumentID: address.String(),
 			Body:       esutil.NewJSONReader(contract),
 			Refresh:    "true",
@@ -93,7 +93,7 @@ func (es *ElasticsearchDB) AddAddresses(addresses []common.Address) error {
 
 func (es *ElasticsearchDB) DeleteAddress(address common.Address) error {
 	deleteRequest := esapi.DeleteRequest{
-		Index:      "contract",
+		Index:      ContractIndex,
 		DocumentID: address.String(),
 		Refresh:    "true",
 	}
@@ -108,7 +108,7 @@ func (es *ElasticsearchDB) DeleteAddress(address common.Address) error {
 }
 
 func (es *ElasticsearchDB) GetAddresses() ([]common.Address, error) {
-	results, err := es.apiClient.ScrollAllResults("contract", QueryAllAddressesTemplate)
+	results, err := es.apiClient.ScrollAllResults(ContractIndex, QueryAllAddressesTemplate)
 	if err != nil {
 		return nil, errors.New("error fetching addresses: " + err.Error())
 	}
@@ -138,7 +138,7 @@ func (es *ElasticsearchDB) GetContractABI(address common.Address) (string, error
 // BlockDB
 func (es *ElasticsearchDB) WriteBlock(block *types.Block) error {
 	req := esapi.IndexRequest{
-		Index:      "block",
+		Index:      BlockIndex,
 		DocumentID: strconv.FormatUint(block.Number, 10),
 		Body:       esutil.NewJSONReader(block),
 		Refresh:    "true",
@@ -159,7 +159,7 @@ func (es *ElasticsearchDB) WriteBlock(block *types.Block) error {
 			}
 		}
 		req := esapi.IndexRequest{
-			Index:      "meta",
+			Index:      MetaIndex,
 			DocumentID: "lastPersisted",
 			Body:       strings.NewReader(fmt.Sprintf(`{"lastPersisted": %d}`, blockNumber)),
 			Refresh:    "true",
@@ -171,7 +171,7 @@ func (es *ElasticsearchDB) WriteBlock(block *types.Block) error {
 
 func (es *ElasticsearchDB) ReadBlock(number uint64) (*types.Block, error) {
 	fetchReq := esapi.GetRequest{
-		Index:      "block",
+		Index:      BlockIndex,
 		DocumentID: strconv.FormatUint(number, 10),
 	}
 
@@ -187,7 +187,7 @@ func (es *ElasticsearchDB) ReadBlock(number uint64) (*types.Block, error) {
 
 func (es *ElasticsearchDB) GetLastPersistedBlockNumber() (uint64, error) {
 	fetchReq := esapi.GetRequest{
-		Index:      "meta",
+		Index:      MetaIndex,
 		DocumentID: "lastPersisted",
 	}
 
@@ -208,7 +208,7 @@ func (es *ElasticsearchDB) WriteTransaction(transaction *types.Transaction) erro
 	}
 
 	req := esapi.IndexRequest{
-		Index:      "transaction",
+		Index:      TransactionIndex,
 		DocumentID: transaction.Hash.String(),
 		Body:       esutil.NewJSONReader(transaction),
 		Refresh:    "true",
@@ -221,7 +221,7 @@ func (es *ElasticsearchDB) WriteTransaction(transaction *types.Transaction) erro
 
 func (es *ElasticsearchDB) ReadTransaction(hash common.Hash) (*types.Transaction, error) {
 	fetchReq := esapi.GetRequest{
-		Index:      "transaction",
+		Index:      TransactionIndex,
 		DocumentID: hash.String(),
 	}
 
@@ -274,7 +274,7 @@ func (es *ElasticsearchDB) GetContractCreationTransaction(address common.Address
 
 func (es *ElasticsearchDB) GetAllTransactionsToAddress(address common.Address) ([]common.Hash, error) {
 	queryString := fmt.Sprintf(QueryByToAddressTemplate, address.String())
-	results, _ := es.apiClient.ScrollAllResults("transaction", queryString)
+	results, _ := es.apiClient.ScrollAllResults(TransactionIndex, queryString)
 
 	converted := make([]common.Hash, len(results))
 	for i, result := range results {
@@ -288,7 +288,7 @@ func (es *ElasticsearchDB) GetAllTransactionsToAddress(address common.Address) (
 
 func (es *ElasticsearchDB) GetAllTransactionsInternalToAddress(address common.Address) ([]common.Hash, error) {
 	queryString := fmt.Sprintf(QueryInternalTransactions, address.String())
-	results, _ := es.apiClient.ScrollAllResults("transaction", queryString)
+	results, _ := es.apiClient.ScrollAllResults(TransactionIndex, queryString)
 
 	converted := make([]common.Hash, len(results))
 	for i, result := range results {
@@ -302,7 +302,7 @@ func (es *ElasticsearchDB) GetAllTransactionsInternalToAddress(address common.Ad
 
 func (es *ElasticsearchDB) GetAllEventsByAddress(address common.Address) ([]*types.Event, error) {
 	query := fmt.Sprintf(QueryByAddressTemplate, address.String())
-	results, _ := es.apiClient.ScrollAllResults("event", query)
+	results, _ := es.apiClient.ScrollAllResults(EventIndex, query)
 
 	convertedList := make([]*types.Event, len(results))
 	for i, result := range results {
@@ -327,7 +327,7 @@ func (es *ElasticsearchDB) GetAllEventsByAddress(address common.Address) ([]*typ
 
 func (es *ElasticsearchDB) GetStorage(address common.Address, blockNumber uint64) (map[common.Hash]string, error) {
 	fetchReq := esapi.GetRequest{
-		Index:      "storage",
+		Index:      StorageIndex,
 		DocumentID: address.String() + "-" + strconv.FormatUint(blockNumber, 10),
 	}
 
@@ -375,7 +375,7 @@ func (es *ElasticsearchDB) checkIsInitialized() (bool, error) {
 
 func (es *ElasticsearchDB) getContractByAddress(address common.Address) (*Contract, error) {
 	fetchReq := esapi.GetRequest{
-		Index:      "contract",
+		Index:      ContractIndex,
 		DocumentID: address.String(),
 	}
 
@@ -431,7 +431,7 @@ func (es *ElasticsearchDB) updateContract(address common.Address, property strin
 	}
 
 	updateRequest := esapi.UpdateRequest{
-		Index:      "contract",
+		Index:      ContractIndex,
 		DocumentID: address.String(),
 		Body:       esutil.NewJSONReader(query),
 		Refresh:    "true",
@@ -453,7 +453,7 @@ func (es *ElasticsearchDB) createEvent(event *types.Event) error {
 	}
 
 	req := esapi.IndexRequest{
-		Index:      "event",
+		Index:      EventIndex,
 		DocumentID: strconv.FormatUint(event.BlockNumber, 10) + "-" + strconv.FormatUint(event.Index, 10),
 		Body:       esutil.NewJSONReader(converted),
 		Refresh:    "true",
@@ -479,7 +479,7 @@ func (es *ElasticsearchDB) indexStorage(filteredAddresses map[common.Address]boo
 			}
 
 			req := esapi.IndexRequest{
-				Index:      "storage",
+				Index:      StorageIndex,
 				DocumentID: address.String() + "-" + strconv.FormatUint(blockNumber, 10),
 				Body:       esutil.NewJSONReader(stateObj),
 				Refresh:    "true",

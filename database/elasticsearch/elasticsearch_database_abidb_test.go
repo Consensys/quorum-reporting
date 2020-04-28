@@ -27,13 +27,13 @@ func TestElasticsearchDB_AddContractABI(t *testing.T) {
 	}
 
 	updateRequest := esapi.UpdateRequest{
-		Index:      "contract",
+		Index:      ContractIndex,
 		DocumentID: addr.String(),
 		Body:       esutil.NewJSONReader(query),
 		Refresh:    "true",
 	}
 	searchRequest := esapi.GetRequest{
-		Index:      "contract",
+		Index:      ContractIndex,
 		DocumentID: addr.String(),
 	}
 
@@ -73,13 +73,13 @@ func TestElasticsearchDB_AddContractABI_WithError(t *testing.T) {
 	}
 
 	updateRequest := esapi.UpdateRequest{
-		Index:      "contract",
+		Index:      ContractIndex,
 		DocumentID: addr.String(),
 		Body:       esutil.NewJSONReader(query),
 		Refresh:    "true",
 	}
 	searchRequest := esapi.GetRequest{
-		Index:      "contract",
+		Index:      ContractIndex,
 		DocumentID: addr.String(),
 	}
 
@@ -113,7 +113,7 @@ func TestElasticsearchDB_AddContractABI_ContractDoesntExist(t *testing.T) {
 	abi := "test ABI string"
 
 	searchRequest := esapi.GetRequest{
-		Index:      "contract",
+		Index:      ContractIndex,
 		DocumentID: addr.String(),
 	}
 
@@ -136,7 +136,7 @@ func TestElasticsearchDB_GetContractABI(t *testing.T) {
 	addr := common.HexToAddress("0x1932c48b2bf8102ba33b4a6b545c32236e342f34")
 
 	searchRequest := esapi.GetRequest{
-		Index:      "contract",
+		Index:      ContractIndex,
 		DocumentID: addr.String(),
 	}
 
@@ -169,7 +169,7 @@ func TestElasticsearchDB_GetContractABI_ContractDoesntExist(t *testing.T) {
 	addr := common.HexToAddress("0x1932c48b2bf8102ba33b4a6b545c32236e342f34")
 
 	searchRequest := esapi.GetRequest{
-		Index:      "contract",
+		Index:      ContractIndex,
 		DocumentID: addr.String(),
 	}
 

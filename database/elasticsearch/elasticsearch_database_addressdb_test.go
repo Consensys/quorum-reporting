@@ -31,7 +31,7 @@ func TestAddSingleAddress(t *testing.T) {
 	}
 
 	ex := esapi.IndexRequest{
-		Index:      "contract",
+		Index:      ContractIndex,
 		DocumentID: addr.String(),
 		Body:       esutil.NewJSONReader(contract),
 		Refresh:    "true",
@@ -65,7 +65,7 @@ func TestAddMultipleAddresses(t *testing.T) {
 		LastFiltered:        0,
 	}
 	req1 := esapi.IndexRequest{
-		Index:      "contract",
+		Index:      ContractIndex,
 		DocumentID: addr1.String(),
 		Body:       esutil.NewJSONReader(contract1),
 		Refresh:    "true",
@@ -77,7 +77,7 @@ func TestAddMultipleAddresses(t *testing.T) {
 		LastFiltered:        0,
 	}
 	req2 := esapi.IndexRequest{
-		Index:      "contract",
+		Index:      ContractIndex,
 		DocumentID: addr2.String(),
 		Body:       esutil.NewJSONReader(contract2),
 		Refresh:    "true",
@@ -129,7 +129,7 @@ func TestAddSingleAddressWithError(t *testing.T) {
 	}
 
 	ex := esapi.IndexRequest{
-		Index:      "contract",
+		Index:      ContractIndex,
 		DocumentID: addr.String(),
 		Body:       esutil.NewJSONReader(contract),
 		Refresh:    "true",
@@ -155,7 +155,7 @@ func TestElasticsearchDB_DeleteAddress(t *testing.T) {
 
 	addr := common.HexToAddress("0x1932c48b2bf8102ba33b4a6b545c32236e342f34")
 	req := esapi.DeleteRequest{
-		Index:      "contract",
+		Index:      ContractIndex,
 		DocumentID: addr.String(),
 		Refresh:    "true",
 	}
@@ -178,7 +178,7 @@ func TestElasticsearchDB_DeleteAddress_WithError(t *testing.T) {
 
 	addr := common.HexToAddress("0x1932c48b2bf8102ba33b4a6b545c32236e342f34")
 	req := esapi.DeleteRequest{
-		Index:      "contract",
+		Index:      ContractIndex,
 		DocumentID: addr.String(),
 		Refresh:    "true",
 	}
@@ -201,7 +201,7 @@ func TestElasticsearchDB_GetAddresses_NoAddresses(t *testing.T) {
 
 	mockedClient.EXPECT().DoRequest(gomock.Any()).Times(4)
 	mockedClient.EXPECT().
-		ScrollAllResults("contract", QueryAllAddressesTemplate).
+		ScrollAllResults(ContractIndex, QueryAllAddressesTemplate).
 		Return(make([]interface{}, 0, 0), nil)
 
 	db, _ := New(mockedClient)
@@ -228,7 +228,7 @@ func TestElasticsearchDB_GetAddresses_SingleAddress(t *testing.T) {
 
 	mockedClient.EXPECT().DoRequest(gomock.Any()).Times(4)
 	mockedClient.EXPECT().
-		ScrollAllResults("contract", QueryAllAddressesTemplate).
+		ScrollAllResults(ContractIndex, QueryAllAddressesTemplate).
 		Return([]interface{}{createReturnValue(sampleAddress)}, nil)
 
 	db, _ := New(mockedClient)
@@ -257,7 +257,7 @@ func TestElasticsearchDB_GetAddresses_MultipleAddress(t *testing.T) {
 
 	mockedClient.EXPECT().DoRequest(gomock.Any()).Times(4)
 	mockedClient.EXPECT().
-		ScrollAllResults("contract", QueryAllAddressesTemplate).
+		ScrollAllResults(ContractIndex, QueryAllAddressesTemplate).
 		Return([]interface{}{createReturnValue(sampleAddress1), createReturnValue(sampleAddress2)}, nil)
 
 	db, _ := New(mockedClient)
@@ -277,7 +277,7 @@ func TestElasticsearchDB_GetAddresses_WithError(t *testing.T) {
 
 	mockedClient.EXPECT().DoRequest(gomock.Any()).Times(4)
 	mockedClient.EXPECT().
-		ScrollAllResults("contract", QueryAllAddressesTemplate).
+		ScrollAllResults(ContractIndex, QueryAllAddressesTemplate).
 		Return(nil, errors.New("test error"))
 
 	db, _ := New(mockedClient)
