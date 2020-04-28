@@ -37,14 +37,14 @@ func TestAddSingleAddress(t *testing.T) {
 		Refresh:    "true",
 	}
 
-	mockedClient.EXPECT().DoRequest(gomock.Any()).Times(4)
+	mockedClient.EXPECT().DoRequest(gomock.Any()) //for setup, not relevant to test
 	mockedClient.EXPECT().IndexRequest(NewIndexRequestMatcher(ex)).Do(func(input esapi.IndexRequest) {
 		assert.Equal(t, "create", input.OpType)
 	})
 
-	db, _ := New(mockedClient)
+	db, err := New(mockedClient)
 
-	err := db.AddAddresses([]common.Address{addr})
+	err = db.AddAddresses([]common.Address{addr})
 
 	assert.Nil(t, err, "expected error to be nil")
 }
@@ -83,7 +83,7 @@ func TestAddMultipleAddresses(t *testing.T) {
 		Refresh:    "true",
 	}
 
-	mockedClient.EXPECT().DoRequest(gomock.Any()).Times(4)
+	mockedClient.EXPECT().DoRequest(gomock.Any()) //for setup, not relevant to test
 	mockedClient.EXPECT().IndexRequest(NewIndexRequestMatcher(req1)).Do(func(input esapi.IndexRequest) {
 		assert.Equal(t, "create", input.OpType)
 	})
@@ -104,7 +104,7 @@ func TestAddNoAddresses(t *testing.T) {
 
 	mockedClient := NewMockAPIClient(ctrl)
 
-	mockedClient.EXPECT().DoRequest(gomock.Any()).Times(4)
+	mockedClient.EXPECT().DoRequest(gomock.Any()) //for setup, not relevant to test
 
 	db, _ := New(mockedClient)
 
@@ -135,7 +135,7 @@ func TestAddSingleAddressWithError(t *testing.T) {
 		Refresh:    "true",
 	}
 
-	mockedClient.EXPECT().DoRequest(gomock.Any()).Times(4)
+	mockedClient.EXPECT().DoRequest(gomock.Any()) //for setup, not relevant to test
 	mockedClient.EXPECT().IndexRequest(NewIndexRequestMatcher(ex)).Do(func(input esapi.IndexRequest) {
 		assert.Equal(t, "create", input.OpType)
 	}).Return(nil, errors.New("test error"))
@@ -160,7 +160,7 @@ func TestElasticsearchDB_DeleteAddress(t *testing.T) {
 		Refresh:    "true",
 	}
 
-	mockedClient.EXPECT().DoRequest(gomock.Any()).Times(4)
+	mockedClient.EXPECT().DoRequest(gomock.Any()) //for setup, not relevant to test
 	mockedClient.EXPECT().DoRequest(NewDeleteRequestMatcher(req)).Return(nil, nil)
 
 	db, _ := New(mockedClient)
@@ -183,7 +183,7 @@ func TestElasticsearchDB_DeleteAddress_WithError(t *testing.T) {
 		Refresh:    "true",
 	}
 
-	mockedClient.EXPECT().DoRequest(gomock.Any()).Times(4)
+	mockedClient.EXPECT().DoRequest(gomock.Any()) //for setup, not relevant to test
 	mockedClient.EXPECT().DoRequest(NewDeleteRequestMatcher(req)).Return(nil, errors.New("test error"))
 
 	db, _ := New(mockedClient)
@@ -199,7 +199,7 @@ func TestElasticsearchDB_GetAddresses_NoAddresses(t *testing.T) {
 
 	mockedClient := NewMockAPIClient(ctrl)
 
-	mockedClient.EXPECT().DoRequest(gomock.Any()).Times(4)
+	mockedClient.EXPECT().DoRequest(gomock.Any()) //for setup, not relevant to test
 	mockedClient.EXPECT().
 		ScrollAllResults(ContractIndex, QueryAllAddressesTemplate).
 		Return(make([]interface{}, 0, 0), nil)
@@ -226,7 +226,7 @@ func TestElasticsearchDB_GetAddresses_SingleAddress(t *testing.T) {
 
 	mockedClient := NewMockAPIClient(ctrl)
 
-	mockedClient.EXPECT().DoRequest(gomock.Any()).Times(4)
+	mockedClient.EXPECT().DoRequest(gomock.Any()) //for setup, not relevant to test
 	mockedClient.EXPECT().
 		ScrollAllResults(ContractIndex, QueryAllAddressesTemplate).
 		Return([]interface{}{createReturnValue(sampleAddress)}, nil)
@@ -255,7 +255,7 @@ func TestElasticsearchDB_GetAddresses_MultipleAddress(t *testing.T) {
 
 	mockedClient := NewMockAPIClient(ctrl)
 
-	mockedClient.EXPECT().DoRequest(gomock.Any()).Times(4)
+	mockedClient.EXPECT().DoRequest(gomock.Any()) //for setup, not relevant to test
 	mockedClient.EXPECT().
 		ScrollAllResults(ContractIndex, QueryAllAddressesTemplate).
 		Return([]interface{}{createReturnValue(sampleAddress1), createReturnValue(sampleAddress2)}, nil)
@@ -275,7 +275,7 @@ func TestElasticsearchDB_GetAddresses_WithError(t *testing.T) {
 
 	mockedClient := NewMockAPIClient(ctrl)
 
-	mockedClient.EXPECT().DoRequest(gomock.Any()).Times(4)
+	mockedClient.EXPECT().DoRequest(gomock.Any()) //for setup, not relevant to test
 	mockedClient.EXPECT().
 		ScrollAllResults(ContractIndex, QueryAllAddressesTemplate).
 		Return(nil, errors.New("test error"))

@@ -30,8 +30,7 @@ func New(client APIClient) (*ElasticsearchDB, error) {
 		return nil, err
 	}
 	if !initialized {
-		err := db.init()
-		if err != nil {
+		if err := db.init(); err != nil {
 			return nil, err
 		}
 	}
@@ -363,8 +362,7 @@ func (es *ElasticsearchDB) checkIsInitialized() (bool, error) {
 		Index: []string{MetaIndex, ContractIndex, BlockIndex, StorageIndex, TransactionIndex, EventIndex},
 	}
 
-	_, err := es.apiClient.DoRequest(fetchReq)
-	if err != nil {
+	if _, err := es.apiClient.DoRequest(fetchReq); err != nil {
 		if err == ErrIndexNotFound {
 			return false, nil
 		}

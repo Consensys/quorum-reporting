@@ -32,22 +32,8 @@ func TestElasticsearchDB_AddContractABI(t *testing.T) {
 		Body:       esutil.NewJSONReader(query),
 		Refresh:    "true",
 	}
-	searchRequest := esapi.GetRequest{
-		Index:      ContractIndex,
-		DocumentID: addr.String(),
-	}
 
-	contractSearchReturnValue := `{
-        "_source": {
-          "address" : "0x1932c48b2bf8102ba33b4a6b545c32236e342f34",
-          "creationTx" : "0xd09fc502b74c7e6015e258e3aed2d724cb50317684a46e00355e50b1b21c6446",
-          "lastFiltered" : 20,
-          "abi": ""
-        }
-}`
-
-	mockedClient.EXPECT().DoRequest(gomock.Any()).Times(4)
-	mockedClient.EXPECT().DoRequest(NewGetRequestMatcher(searchRequest)).Return([]byte(contractSearchReturnValue), nil)
+	mockedClient.EXPECT().DoRequest(gomock.Any()) //for setup, not relevant to test
 	mockedClient.EXPECT().DoRequest(NewUpdateRequestMatcher(updateRequest))
 
 	db, _ := New(mockedClient)
@@ -78,22 +64,8 @@ func TestElasticsearchDB_AddContractABI_WithError(t *testing.T) {
 		Body:       esutil.NewJSONReader(query),
 		Refresh:    "true",
 	}
-	searchRequest := esapi.GetRequest{
-		Index:      ContractIndex,
-		DocumentID: addr.String(),
-	}
 
-	contractSearchReturnValue := `{
-        "_source": {
-          "address" : "0x1932c48b2bf8102ba33b4a6b545c32236e342f34",
-          "creationTx" : "0xd09fc502b74c7e6015e258e3aed2d724cb50317684a46e00355e50b1b21c6446",
-          "lastFiltered" : 20,
-          "abi": ""
-        }
-}`
-
-	mockedClient.EXPECT().DoRequest(gomock.Any()).Times(4)
-	mockedClient.EXPECT().DoRequest(NewGetRequestMatcher(searchRequest)).Return([]byte(contractSearchReturnValue), nil)
+	mockedClient.EXPECT().DoRequest(gomock.Any()) //for setup, not relevant to test
 	mockedClient.EXPECT().DoRequest(NewUpdateRequestMatcher(updateRequest)).Return(nil, errors.New("test error"))
 
 	db, _ := New(mockedClient)
@@ -117,7 +89,7 @@ func TestElasticsearchDB_AddContractABI_ContractDoesntExist(t *testing.T) {
 		DocumentID: addr.String(),
 	}
 
-	mockedClient.EXPECT().DoRequest(gomock.Any()).Times(4)
+	mockedClient.EXPECT().DoRequest(gomock.Any()) //for setup, not relevant to test
 	mockedClient.EXPECT().DoRequest(NewGetRequestMatcher(searchRequest)).Return(nil, errors.New("not found"))
 
 	db, _ := New(mockedClient)
@@ -149,7 +121,7 @@ func TestElasticsearchDB_GetContractABI(t *testing.T) {
         }
 }`
 
-	mockedClient.EXPECT().DoRequest(gomock.Any()).Times(4)
+	mockedClient.EXPECT().DoRequest(gomock.Any()) //for setup, not relevant to test
 	mockedClient.EXPECT().DoRequest(NewGetRequestMatcher(searchRequest)).Return([]byte(contractSearchReturnValue), nil)
 
 	db, _ := New(mockedClient)
@@ -173,7 +145,7 @@ func TestElasticsearchDB_GetContractABI_ContractDoesntExist(t *testing.T) {
 		DocumentID: addr.String(),
 	}
 
-	mockedClient.EXPECT().DoRequest(gomock.Any()).Times(4)
+	mockedClient.EXPECT().DoRequest(gomock.Any()) //for setup, not relevant to test
 	mockedClient.EXPECT().DoRequest(NewGetRequestMatcher(searchRequest)).Return(nil, errors.New("not found"))
 
 	db, _ := New(mockedClient)
