@@ -30,13 +30,16 @@ type ElasticsearchConfig struct {
 	//DiscoverNodesInterval time.Duration // Discover nodes periodically. Default: disabled.
 }
 
-type ReportInputStruct struct {
+type DatabaseConfig struct {
+	Elasticsearch *ElasticsearchConfig `toml:"elasticsearch,omitempty"`
+	CacheSize     int                  `toml:"cacheSize,omitempty"`
+}
+
+type ReportingConfig struct {
 	Title     string
 	Addresses []common.Address `toml:"addresses,omitempty"`
-	Database  struct {
-		Elasticsearch *ElasticsearchConfig `toml:"elasticsearch,omitempty"`
-	}
-	Server struct {
+	Database  *DatabaseConfig  `toml:"database,omitempty"`
+	Server    struct {
 		RPCAddr     string   `toml:"rpcAddr"`
 		RPCCorsList []string `toml:"rpcCorsList,omitempty"`
 		RPCVHosts   []string `toml:"rpcvHosts,omitempty"`
@@ -49,21 +52,21 @@ type ReportInputStruct struct {
 	}
 }
 
-func ReadConfig(configFile string) (ReportInputStruct, error) {
+func ReadConfig(configFile string) (ReportingConfig, error) {
 	f, err := os.Open(configFile)
 	if err != nil {
-		return ReportInputStruct{}, err
+		return ReportingConfig{}, err
 	}
 	defer f.Close()
-	var input ReportInputStruct
+	var input ReportingConfig
 	if err := toml.NewDecoder(f).Decode(&input); err != nil {
-		return ReportInputStruct{}, err
+		return ReportingConfig{}, err
 	}
 
 	// if AlwaysReconnect is set to true, check if ReconnectInterval
 	// and MaxReconnectTries are given or not. If not throw error
 	if input.Connection.MaxReconnectTries > 0 && input.Connection.ReconnectInterval == 0 {
-		return ReportInputStruct{}, errors.New("reconnection details not set properly in the config file")
+		return ReportingConfig{}, errors.New("reconnection details not set properly in the config file")
 	}
 	return input, nil
 }

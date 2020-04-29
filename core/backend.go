@@ -19,7 +19,7 @@ type Backend struct {
 	rpc     *rpc.RPCService
 }
 
-func New(config types.ReportInputStruct) (*Backend, error) {
+func New(config types.ReportingConfig) (*Backend, error) {
 	quorumClient, err := client.NewQuorumClient(config.Connection.WSUrl, config.Connection.GraphQLUrl)
 	if err != nil {
 		if config.Connection.MaxReconnectTries > 0 {
@@ -39,7 +39,7 @@ func New(config types.ReportInputStruct) (*Backend, error) {
 	}
 
 	dbFactory := factory.NewFactory()
-	db, err := dbFactory.Database(config)
+	db, err := dbFactory.Database(config.Database)
 	if err != nil {
 		return nil, err
 	}

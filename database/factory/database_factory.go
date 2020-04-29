@@ -7,16 +7,19 @@ import (
 	"quorumengineering/quorum-report/types"
 )
 
-type Factory struct {
-}
+type Factory struct{}
 
 func NewFactory() *Factory {
 	return &Factory{}
 }
 
-func (dbFactory *Factory) Database(config types.ReportInputStruct) (database.Database, error) {
-	if config.Database.Elasticsearch != nil {
-		return dbFactory.NewElasticsearchDatabase(config.Database.Elasticsearch)
+func (dbFactory *Factory) Database(config *types.DatabaseConfig) (database.Database, error) {
+	if config != nil && config.Elasticsearch != nil {
+		db, err := dbFactory.NewElasticsearchDatabase(config.Elasticsearch)
+		if err != nil {
+			return nil, err
+		}
+		return NewDatabaseWithCache(db, config.CacheSize)
 	}
 	return dbFactory.NewInMemoryDatabase(), nil
 }
