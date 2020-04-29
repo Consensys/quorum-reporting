@@ -8,13 +8,38 @@ import (
 	"github.com/naoina/toml"
 )
 
-type ReportInputStruct struct {
+type ElasticsearchConfig struct {
+	Addresses []string `toml:"urls,omitempty"`
+	CloudID   string   `toml:"cloudid"`
+
+	Username string `toml:"username"`
+	Password string `toml:"password"`
+	APIKey   string `toml:"apikey"`
+
+	// PEM-encoded certificate authorities.
+	// When set, an empty certificate pool will be created, and the certificates will be appended to it.
+	// The option is only valid when the transport is not specified, or when it's http.Transport.
+	//CACert []byte
+
+	//RetryOnStatus        []int // List of status codes for retry. Default: 502, 503, 504.
+	//DisableRetry         bool  // Default: false.
+	//EnableRetryOnTimeout bool  // Default: false.
+	//MaxRetries           int   // Default: 3.
+
+	//DiscoverNodesOnStart  bool          // Discover nodes when initializing the client. Default: false.
+	//DiscoverNodesInterval time.Duration // Discover nodes periodically. Default: disabled.
+}
+
+type DatabaseConfig struct {
+	Elasticsearch *ElasticsearchConfig `toml:"elasticsearch,omitempty"`
+	CacheSize     int                  `toml:"cacheSize,omitempty"`
+}
+
+type ReportingConfig struct {
 	Title     string
 	Addresses []common.Address `toml:"addresses,omitempty"`
-	Database  struct {
-		// TODO: placeholder
-	}
-	Server struct {
+	Database  *DatabaseConfig  `toml:"database,omitempty"`
+	Server    struct {
 		RPCAddr     string   `toml:"rpcAddr"`
 		RPCCorsList []string `toml:"rpcCorsList,omitempty"`
 		RPCVHosts   []string `toml:"rpcvHosts,omitempty"`
@@ -27,21 +52,21 @@ type ReportInputStruct struct {
 	}
 }
 
-func ReadConfig(configFile string) (ReportInputStruct, error) {
+func ReadConfig(configFile string) (ReportingConfig, error) {
 	f, err := os.Open(configFile)
 	if err != nil {
-		return ReportInputStruct{}, err
+		return ReportingConfig{}, err
 	}
 	defer f.Close()
-	var input ReportInputStruct
+	var input ReportingConfig
 	if err := toml.NewDecoder(f).Decode(&input); err != nil {
-		return ReportInputStruct{}, err
+		return ReportingConfig{}, err
 	}
 
 	// if AlwaysReconnect is set to true, check if ReconnectInterval
 	// and MaxReconnectTries are given or not. If not throw error
 	if input.Connection.MaxReconnectTries > 0 && input.Connection.ReconnectInterval == 0 {
-		return ReportInputStruct{}, errors.New("reconnection details not set properly in the config file")
+		return ReportingConfig{}, errors.New("reconnection details not set properly in the config file")
 	}
 	return input, nil
 }

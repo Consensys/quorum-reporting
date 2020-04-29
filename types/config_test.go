@@ -19,7 +19,7 @@ func TestConfigFile(t *testing.T) {
 	}
 
 	// test config file with missing fields
-	var tmpConfigData ReportInputStruct
+	var tmpConfigData ReportingConfig
 	tmpConfigData.Title = "Quorum reporting config example"
 	tmpConfigData.Server.RPCAddr = "ws://localhost:23000"
 	tmpConfigData.Connection.GraphQLUrl = "http://localhost:8547/graphql"
