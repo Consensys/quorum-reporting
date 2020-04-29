@@ -137,13 +137,21 @@ func (c *DefaultAPIClient) extractError(statusCode int, body io.ReadCloser) erro
 
 	// An error occurred with the request
 	if raw["error"] != nil {
-		// TODO: it is possible that the error is just a string not a map
-		errorObj := raw["error"].(map[string]interface{})
-		if errorObj["type"] == "index_not_found_exception" {
-			return ErrIndexNotFound
+		errorObj, ok := raw["error"].(map[string]interface{})
+		if ok {
+			if errorObj["type"] == "index_not_found_exception" {
+				return ErrIndexNotFound
+			}
+			errorStr := fmt.Sprintf("[%d] %s: %s", statusCode, errorObj["type"], errorObj["reason"])
+			return fmt.Errorf("error response from Elasticsearch: %s", errorStr)
 		}
-		return fmt.Errorf("error: [%d] %s: %s", statusCode, errorObj["type"], errorObj["reason"])
+		// It is possible that the error is just a string not a map
+		errorStr, ok := raw["error"].(string)
+		if ok {
+			return fmt.Errorf("error response from Elasticsearch: %s", errorStr)
+		}
 	}
 	// This was a search request that had no result
+	// TODO: Feels like "not found" is not an intuitive error message...
 	return errors.New("not found")
 }
