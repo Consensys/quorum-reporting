@@ -15,8 +15,12 @@ type Contract struct {
 }
 
 type State struct {
-	Address     common.Address         `json:"address"`
-	BlockNumber uint64                 `json:"blockNumber"`
+	Address     common.Address `json:"address"`
+	BlockNumber uint64         `json:"blockNumber"`
+	StorageRoot common.Hash    `json:"storageRoot"`
+}
+
+type Storage struct {
 	StorageRoot common.Hash            `json:"storageRoot"`
 	StorageMap  map[common.Hash]string `json:"storageMap"`
 }
@@ -101,8 +105,12 @@ type BlockQueryResult struct {
 	Source types.Block `json:"_source"`
 }
 
+type StateQueryResult struct {
+	Source State `json:"_source"`
+}
+
 type StorageQueryResult struct {
-	Source map[string]interface{} `json:"_source"`
+	Source Storage `json:"_source"`
 }
 
 type LastPersistedResult struct {
