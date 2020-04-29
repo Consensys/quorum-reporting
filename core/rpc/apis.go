@@ -49,6 +49,21 @@ func (r *RPCAPIs) GetTransaction(hash common.Hash) (*types.ParsedTransaction, er
 		if err = parsedTx.ParseTransaction(contractABI); err != nil {
 			return nil, err
 		}
+		parsedTx.ParsedEvents = make([]*types.ParsedEvent, len(parsedTx.RawTransaction.Events))
+		for i, e := range parsedTx.RawTransaction.Events {
+			contractABI, err := r.db.GetContractABI(e.Address)
+			if err != nil {
+				return nil, err
+			}
+			if contractABI != "" {
+				parsedTx.ParsedEvents[i] = &types.ParsedEvent{
+					RawEvent: e,
+				}
+				if err := parsedTx.ParsedEvents[i].ParseEvent(contractABI); err != nil {
+					return nil, err
+				}
+			}
+		}
 	}
 	return parsedTx, nil
 }

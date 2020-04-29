@@ -51,15 +51,6 @@ func (ptx *ParsedTransaction) ParseTransaction(rawABI string) error {
 			// TODO: Parsing inputs for complex data type in constructor is not supported unless the exact contract bin is provided.
 		}
 	}
-	ptx.ParsedEvents = make([]*ParsedEvent, len(ptx.RawTransaction.Events))
-	for i, e := range ptx.RawTransaction.Events {
-		ptx.ParsedEvents[i] = &ParsedEvent{
-			RawEvent: e,
-		}
-		if err := ptx.ParsedEvents[i].ParseEvent(rawABI); err != nil {
-			return err
-		}
-	}
 	return nil
 }
 
