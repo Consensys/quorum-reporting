@@ -143,12 +143,18 @@ func (es *ElasticsearchDB) WriteBlock(block *types.Block) error {
 		Refresh:    "true",
 	}
 
-	//TODO: check if response needs reading
-	es.apiClient.DoRequest(req)
+	_, err := es.apiClient.DoRequest(req)
+	if err != nil {
+		return err
+	}
 
 	// Update last persisted block number.
+	last, err := es.GetLastPersistedBlockNumber()
+	if err != nil {
+		return err
+	}
+
 	blockNumber := block.Number
-	last, _ := es.GetLastPersistedBlockNumber()
 	if blockNumber == last+1 {
 		for {
 			if block, _ := es.ReadBlock(blockNumber + 1); block != nil {
@@ -163,7 +169,8 @@ func (es *ElasticsearchDB) WriteBlock(block *types.Block) error {
 			Body:       strings.NewReader(fmt.Sprintf(`{"lastPersisted": %d}`, blockNumber)),
 			Refresh:    "true",
 		}
-		es.apiClient.IndexRequest(req)
+		_, err := es.apiClient.DoRequest(req)
+		return err //may be nil
 	}
 	return nil
 }
@@ -180,7 +187,10 @@ func (es *ElasticsearchDB) ReadBlock(number uint64) (*types.Block, error) {
 	}
 
 	var blockResult BlockQueryResult
-	json.Unmarshal(body, &blockResult)
+	err = json.Unmarshal(body, &blockResult)
+	if err != nil {
+		return nil, err
+	}
 	return &blockResult.Source, nil
 }
 
@@ -422,6 +432,12 @@ func (es *ElasticsearchDB) updateLastFiltered(address common.Address, lastFilter
 }
 
 func (es *ElasticsearchDB) updateContract(address common.Address, property string, value interface{}) error {
+	//check contract exists before updating
+	_, err := es.getContractByAddress(address)
+	if err != nil {
+		return err
+	}
+
 	query := map[string]interface{}{
 		"doc": map[string]interface{}{
 			property: value,
@@ -435,9 +451,8 @@ func (es *ElasticsearchDB) updateContract(address common.Address, property strin
 		Refresh:    "true",
 	}
 
-	//TODO: check if error returned
-	es.apiClient.DoRequest(updateRequest)
-	return nil
+	_, err = es.apiClient.DoRequest(updateRequest)
+	return err
 }
 
 func (es *ElasticsearchDB) createEvent(event *types.Event) error {

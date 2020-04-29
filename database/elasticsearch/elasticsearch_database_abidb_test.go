@@ -32,7 +32,20 @@ func TestElasticsearchDB_AddContractABI(t *testing.T) {
 		Body:       esutil.NewJSONReader(query),
 		Refresh:    "true",
 	}
+	searchRequest := esapi.GetRequest{
+		Index:      ContractIndex,
+		DocumentID: addr.String(),
+	}
+	contractSearchReturnValue := `{
+         "_source": {		
+           "address" : "0x1932c48b2bf8102ba33b4a6b545c32236e342f34",		
+           "creationTx" : "0xd09fc502b74c7e6015e258e3aed2d724cb50317684a46e00355e50b1b21c6446",		
+           "lastFiltered" : 20,		
+           "abi": ""		
+         }		
+ }`
 
+	mockedClient.EXPECT().DoRequest(NewGetRequestMatcher(searchRequest)).Return([]byte(contractSearchReturnValue), nil)
 	mockedClient.EXPECT().DoRequest(gomock.Any()) //for setup, not relevant to test
 	mockedClient.EXPECT().DoRequest(NewUpdateRequestMatcher(updateRequest))
 
@@ -64,7 +77,20 @@ func TestElasticsearchDB_AddContractABI_WithError(t *testing.T) {
 		Body:       esutil.NewJSONReader(query),
 		Refresh:    "true",
 	}
+	searchRequest := esapi.GetRequest{
+		Index:      ContractIndex,
+		DocumentID: addr.String(),
+	}
+	contractSearchReturnValue := `{
+         "_source": {		
+           "address" : "0x1932c48b2bf8102ba33b4a6b545c32236e342f34",		
+           "creationTx" : "0xd09fc502b74c7e6015e258e3aed2d724cb50317684a46e00355e50b1b21c6446",		
+           "lastFiltered" : 20,		
+           "abi": ""		
+         }		
+ }`
 
+	mockedClient.EXPECT().DoRequest(NewGetRequestMatcher(searchRequest)).Return([]byte(contractSearchReturnValue), nil)
 	mockedClient.EXPECT().DoRequest(gomock.Any()) //for setup, not relevant to test
 	mockedClient.EXPECT().DoRequest(NewUpdateRequestMatcher(updateRequest)).Return(nil, errors.New("test error"))
 
