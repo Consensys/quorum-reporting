@@ -1,6 +1,8 @@
 package factory
 
 import (
+	"sync"
+
 	"github.com/ethereum/go-ethereum/common"
 	lru "github.com/hashicorp/golang-lru"
 
@@ -14,6 +16,8 @@ type DatabaseWithCache struct {
 	transactionCache      *lru.Cache
 	storageCache          *lru.Cache
 	contractCreationCache *lru.Cache
+	// mutex lock
+	mux sync.RWMutex
 }
 
 func NewDatabaseWithCache(db database.Database, cacheSize int) (database.Database, error) {
@@ -46,26 +50,38 @@ func NewDatabaseWithCache(db database.Database, cacheSize int) (database.Databas
 }
 
 func (cachingDB *DatabaseWithCache) AddAddresses(addresses []common.Address) error {
+	cachingDB.mux.Lock()
+	defer cachingDB.mux.Unlock()
 	return cachingDB.db.AddAddresses(addresses)
 }
 
 func (cachingDB *DatabaseWithCache) DeleteAddress(address common.Address) error {
+	cachingDB.mux.Lock()
+	defer cachingDB.mux.Unlock()
 	return cachingDB.db.DeleteAddress(address)
 }
 
 func (cachingDB *DatabaseWithCache) GetAddresses() ([]common.Address, error) {
+	cachingDB.mux.RLock()
+	defer cachingDB.mux.RUnlock()
 	return cachingDB.db.GetAddresses()
 }
 
 func (cachingDB *DatabaseWithCache) AddContractABI(address common.Address, abi string) error {
+	cachingDB.mux.Lock()
+	defer cachingDB.mux.Unlock()
 	return cachingDB.db.AddContractABI(address, abi)
 }
 
 func (cachingDB *DatabaseWithCache) GetContractABI(address common.Address) (string, error) {
+	cachingDB.mux.RLock()
+	defer cachingDB.mux.RUnlock()
 	return cachingDB.db.GetContractABI(address)
 }
 
 func (cachingDB *DatabaseWithCache) WriteBlock(block *types.Block) error {
+	cachingDB.mux.Lock()
+	defer cachingDB.mux.Unlock()
 	err := cachingDB.db.WriteBlock(block)
 	if err != nil {
 		return err
@@ -75,6 +91,8 @@ func (cachingDB *DatabaseWithCache) WriteBlock(block *types.Block) error {
 }
 
 func (cachingDB *DatabaseWithCache) ReadBlock(blockNumber uint64) (*types.Block, error) {
+	cachingDB.mux.RLock()
+	defer cachingDB.mux.RUnlock()
 	if cachedBlock, ok := cachingDB.blockCache.Get(blockNumber); ok {
 		return cachedBlock.(*types.Block), nil
 	}
@@ -87,10 +105,14 @@ func (cachingDB *DatabaseWithCache) ReadBlock(blockNumber uint64) (*types.Block,
 }
 
 func (cachingDB *DatabaseWithCache) GetLastPersistedBlockNumber() (uint64, error) {
+	cachingDB.mux.RLock()
+	defer cachingDB.mux.RUnlock()
 	return cachingDB.db.GetLastPersistedBlockNumber()
 }
 
 func (cachingDB *DatabaseWithCache) WriteTransaction(tx *types.Transaction) error {
+	cachingDB.mux.Lock()
+	defer cachingDB.mux.Unlock()
 	err := cachingDB.db.WriteTransaction(tx)
 	if err != nil {
 		return err
@@ -100,6 +122,8 @@ func (cachingDB *DatabaseWithCache) WriteTransaction(tx *types.Transaction) erro
 }
 
 func (cachingDB *DatabaseWithCache) ReadTransaction(hash common.Hash) (*types.Transaction, error) {
+	cachingDB.mux.RLock()
+	defer cachingDB.mux.RUnlock()
 	if cachedTx, ok := cachingDB.transactionCache.Get(hash); ok {
 		return cachedTx.(*types.Transaction), nil
 	}
@@ -112,10 +136,14 @@ func (cachingDB *DatabaseWithCache) ReadTransaction(hash common.Hash) (*types.Tr
 }
 
 func (cachingDB *DatabaseWithCache) IndexBlock(addresses []common.Address, block *types.Block) error {
+	cachingDB.mux.Lock()
+	defer cachingDB.mux.Unlock()
 	return cachingDB.db.IndexBlock(addresses, block)
 }
 
 func (cachingDB *DatabaseWithCache) GetContractCreationTransaction(address common.Address) (common.Hash, error) {
+	cachingDB.mux.RLock()
+	defer cachingDB.mux.RUnlock()
 	if cachedHash, ok := cachingDB.contractCreationCache.Get(address); ok {
 		return cachedHash.(common.Hash), nil
 	}
@@ -130,21 +158,31 @@ func (cachingDB *DatabaseWithCache) GetContractCreationTransaction(address commo
 }
 
 func (cachingDB *DatabaseWithCache) GetAllTransactionsToAddress(address common.Address) ([]common.Hash, error) {
+	cachingDB.mux.RLock()
+	defer cachingDB.mux.RUnlock()
 	return cachingDB.db.GetAllTransactionsToAddress(address)
 }
 
 func (cachingDB *DatabaseWithCache) GetAllTransactionsInternalToAddress(address common.Address) ([]common.Hash, error) {
+	cachingDB.mux.RLock()
+	defer cachingDB.mux.RUnlock()
 	return cachingDB.db.GetAllTransactionsInternalToAddress(address)
 }
 
 func (cachingDB *DatabaseWithCache) GetAllEventsByAddress(address common.Address) ([]*types.Event, error) {
+	cachingDB.mux.RLock()
+	defer cachingDB.mux.RUnlock()
 	return cachingDB.db.GetAllEventsByAddress(address)
 }
 
 func (cachingDB *DatabaseWithCache) GetStorage(address common.Address, blockNumber uint64) (map[common.Hash]string, error) {
+	cachingDB.mux.RLock()
+	defer cachingDB.mux.RUnlock()
 	return cachingDB.db.GetStorage(address, blockNumber)
 }
 
 func (cachingDB *DatabaseWithCache) GetLastFiltered(address common.Address) (uint64, error) {
+	cachingDB.mux.RLock()
+	defer cachingDB.mux.RUnlock()
 	return cachingDB.db.GetLastFiltered(address)
 }
