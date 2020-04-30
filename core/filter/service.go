@@ -70,6 +70,7 @@ func (fs *FilterService) subscribeStopEvent() (chan types.StopEvent, event.Subsc
 	return c, s
 }
 
+// getLastFiltered finds the minimum value of "lastFiltered" across all addresses
 func (fs *FilterService) getLastFiltered(lastFiltered uint64) (uint64, error) {
 	addresses, err := fs.db.GetAddresses()
 	if err != nil {

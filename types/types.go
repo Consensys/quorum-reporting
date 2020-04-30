@@ -3,7 +3,6 @@ package types
 import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/ethereum/go-ethereum/core/state"
 )
 
 type Block struct {
@@ -18,8 +17,6 @@ type Block struct {
 	Timestamp    uint64        `json:"timestamp"`
 	ExtraData    hexutil.Bytes `json:"extraData"`
 	Transactions []common.Hash `json:"transactions"`
-	PublicState  *state.Dump   `json:"publicState"`
-	PrivateState *state.Dump   `json:"privateState"`
 }
 
 type Transaction struct {

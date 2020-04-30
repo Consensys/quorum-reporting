@@ -150,9 +150,8 @@ func (bm *BlockMonitor) sync(start, end uint64) {
 
 	// Sync from end + 1 to the first ChainHeadEvent if there is any gap.
 	stopChan, stopSubscription := bm.subscribeStopEvent()
-	defer func() {
-		stopSubscription.Unsubscribe()
-	}()
+	defer stopSubscription.Unsubscribe()
+
 	select {
 	case latestChainHead := <-bm.syncStart:
 		close(bm.syncStart)

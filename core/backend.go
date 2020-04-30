@@ -58,7 +58,7 @@ func New(config types.ReportingConfig) (*Backend, error) {
 }
 
 func (b *Backend) Start() {
-	for _, f := range [](func() error){
+	for _, f := range []func() error{
 		b.monitor.Start, // monitor service
 		b.filter.Start,  // filter service
 		b.rpc.Start,     // RPC service
