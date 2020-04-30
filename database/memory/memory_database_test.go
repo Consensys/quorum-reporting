@@ -30,14 +30,12 @@ func TestMemoryDB(t *testing.T) {
 		Transactions: []common.Hash{
 			common.BytesToHash([]byte("tx1")), common.BytesToHash([]byte("tx2")), common.BytesToHash([]byte("tx3")),
 		},
-		PublicState: &state.Dump{
-			Accounts: map[common.Address]state.DumpAccount{
-				address: {
-					Storage: map[common.Hash]string{
-						common.HexToHash("0x0000000000000000000000000000000000000000000000000000000000000000"): "2a",
-						common.HexToHash("0x0000000000000000000000000000000000000000000000000000000000000001"): "2b",
-					},
-				},
+	}
+	rawStorage := map[common.Address]*state.DumpAccount{
+		address: {
+			Storage: map[common.Hash]string{
+				common.HexToHash("0x0000000000000000000000000000000000000000000000000000000000000000"): "2a",
+				common.HexToHash("0x0000000000000000000000000000000000000000000000000000000000000001"): "2b",
 			},
 		},
 	}
@@ -90,6 +88,7 @@ func TestMemoryDB(t *testing.T) {
 	testGetLastPersistedBlockNumeber(t, db, 1)
 	// 5. Index block and check last filtered. Retrieve all transactions/ events.
 	testGetLastFiltered(t, db, address, 0)
+	testIndexStorage(t, db, 1, rawStorage)
 	testIndexBlock(t, db, address, block)
 	testGetLastFiltered(t, db, address, 1)
 	testGetContractCreationTransaction(t, db, address, common.BytesToHash([]byte("tx1")))
@@ -214,6 +213,13 @@ func testReadTransaction(t *testing.T, db database.Database, hash common.Hash, e
 
 func testIndexBlock(t *testing.T, db database.Database, address common.Address, block *types.Block) {
 	err := db.IndexBlock([]common.Address{address}, block)
+	if err != nil {
+		t.Fatalf("expected no error, but got %v", err)
+	}
+}
+
+func testIndexStorage(t *testing.T, db database.Database, blockNumber uint64, rawStorage map[common.Address]*state.DumpAccount) {
+	err := db.IndexStorage(blockNumber, rawStorage)
 	if err != nil {
 		t.Fatalf("expected no error, but got %v", err)
 	}
