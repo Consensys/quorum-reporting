@@ -176,10 +176,10 @@ func (cachingDB *DatabaseWithCache) GetAllTransactionsInternalToAddress(address 
 	return cachingDB.db.GetAllTransactionsInternalToAddress(address)
 }
 
-func (cachingDB *DatabaseWithCache) GetAllEventsByAddress(address common.Address) ([]*types.Event, error) {
+func (cachingDB *DatabaseWithCache) GetAllEventsFromAddress(address common.Address) ([]*types.Event, error) {
 	cachingDB.mux.RLock()
 	defer cachingDB.mux.RUnlock()
-	return cachingDB.db.GetAllEventsByAddress(address)
+	return cachingDB.db.GetAllEventsFromAddress(address)
 }
 
 func (cachingDB *DatabaseWithCache) GetStorage(address common.Address, blockNumber uint64) (map[common.Hash]string, error) {

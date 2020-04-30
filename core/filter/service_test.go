@@ -117,7 +117,7 @@ func (f *FakeDB) GetAllTransactionsInternalToAddress(common.Address) ([]common.H
 	return nil, errors.New("not implemented")
 }
 
-func (f *FakeDB) GetAllEventsByAddress(common.Address) ([]*types.Event, error) {
+func (f *FakeDB) GetAllEventsFromAddress(common.Address) ([]*types.Event, error) {
 	return nil, errors.New("not implemented")
 }
 

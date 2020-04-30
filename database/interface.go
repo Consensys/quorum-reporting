@@ -48,7 +48,7 @@ type IndexDB interface {
 	GetContractCreationTransaction(common.Address) (common.Hash, error)
 	GetAllTransactionsToAddress(common.Address) ([]common.Hash, error)
 	GetAllTransactionsInternalToAddress(common.Address) ([]common.Hash, error)
-	GetAllEventsByAddress(common.Address) ([]*types.Event, error)
+	GetAllEventsFromAddress(common.Address) ([]*types.Event, error)
 	GetStorage(common.Address, uint64) (map[common.Hash]string, error)
 	GetLastFiltered(common.Address) (uint64, error)
 }

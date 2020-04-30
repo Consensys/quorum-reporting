@@ -205,7 +205,7 @@ func TestElasticsearchDB_GetAllEventsByAddress_WithError(t *testing.T) {
 		Return(nil, errors.New("test error"))
 
 	db, _ := New(mockedClient)
-	events, err := db.GetAllEventsByAddress(addr)
+	events, err := db.GetAllEventsFromAddress(addr)
 
 	assert.EqualError(t, err, "test error", "wrong number of returned transactions")
 	assert.Nil(t, events, "unexpected error")
@@ -241,7 +241,7 @@ func TestElasticsearchDB_GetAllEventsByAddress_WithSingleResult(t *testing.T) {
 		Return(result, nil)
 
 	db, _ := New(mockedClient)
-	events, err := db.GetAllEventsByAddress(addr)
+	events, err := db.GetAllEventsFromAddress(addr)
 
 	assert.Equal(t, 1, len(events), "wrong number of returned events")
 	assert.Nil(t, err, "unexpected error")
@@ -263,7 +263,7 @@ func TestElasticsearchDB_GetAllEventsByAddress_WithNoResult(t *testing.T) {
 		Return(result, nil)
 
 	db, _ := New(mockedClient)
-	events, err := db.GetAllEventsByAddress(addr)
+	events, err := db.GetAllEventsFromAddress(addr)
 
 	assert.Equal(t, 0, len(events), "wrong number of returned events")
 	assert.Nil(t, err, "unexpected error")
@@ -312,7 +312,7 @@ func TestElasticsearchDB_GetAllEventsByAddress_MultipleResults(t *testing.T) {
 		Return(result, nil)
 
 	db, _ := New(mockedClient)
-	events, err := db.GetAllEventsByAddress(addr)
+	events, err := db.GetAllEventsFromAddress(addr)
 
 	assert.Equal(t, 2, len(events), "wrong number of returned events")
 	assert.Nil(t, err, "unexpected error")

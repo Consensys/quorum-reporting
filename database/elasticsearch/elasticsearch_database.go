@@ -341,7 +341,7 @@ func (es *ElasticsearchDB) GetAllTransactionsInternalToAddress(address common.Ad
 	return converted, nil
 }
 
-func (es *ElasticsearchDB) GetAllEventsByAddress(address common.Address) ([]*types.Event, error) {
+func (es *ElasticsearchDB) GetAllEventsFromAddress(address common.Address) ([]*types.Event, error) {
 	query := fmt.Sprintf(QueryByAddressTemplate, address.String())
 	results, err := es.apiClient.ScrollAllResults(EventIndex, query)
 	if err != nil {

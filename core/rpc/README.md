@@ -98,9 +98,9 @@ the address. Switching to a set of new APIs with query condition.
 
 ### Event
 
-#### reporting_getAllEventsByAddress
+#### reporting_getAllEventsFromAddress
 
-(Deprecated) `reporting_getAllEventsByAddress` currently returns all events emitted from the address. Switching to a 
+(Deprecated) `reporting_getAllEventsFromAddress` currently returns all events emitted from the address. Switching to a 
 set of new APIs with query condition.
 
 #### reporting_getAllEventsFromAddressByNumber

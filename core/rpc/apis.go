@@ -80,8 +80,8 @@ func (r *RPCAPIs) GetAllTransactionsInternalToAddress(address common.Address) ([
 	return r.db.GetAllTransactionsInternalToAddress(address)
 }
 
-func (r *RPCAPIs) GetAllEventsByAddress(address common.Address) ([]*types.ParsedEvent, error) {
-	events, err := r.db.GetAllEventsByAddress(address)
+func (r *RPCAPIs) GetAllEventsFromAddress(address common.Address) ([]*types.ParsedEvent, error) {
+	events, err := r.db.GetAllEventsFromAddress(address)
 	if err != nil {
 		return nil, err
 	}

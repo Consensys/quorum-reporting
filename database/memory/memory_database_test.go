@@ -266,7 +266,7 @@ func testGetAllTransactionsInternalToAddress(t *testing.T, db database.Database,
 }
 
 func testGetAllEventsByAddress(t *testing.T, db database.Database, address common.Address, expected int) {
-	events, err := db.GetAllEventsByAddress(address)
+	events, err := db.GetAllEventsFromAddress(address)
 	if err != nil {
 		t.Fatalf("expected no error, but got %v", err)
 	}
