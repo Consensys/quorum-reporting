@@ -82,11 +82,16 @@ func (tm *TransactionMonitor) createTransaction(hash common.Hash) (*types.Transa
 	if err != nil {
 		return nil, err
 	}
+	gasPrice, err := hexutil.DecodeUint64(txOrigin.GasPrice)
+	if err != nil {
+		return nil, err
+	}
 
 	tx := &types.Transaction{
 		Hash:              common.HexToHash(txOrigin.Hash),
 		Status:            txOrigin.Status == "0x1",
 		BlockNumber:       blockNumber,
+		BlockHash:         common.HexToHash(txOrigin.Block.Hash),
 		Index:             txOrigin.Index,
 		Nonce:             nonce,
 		From:              common.HexToAddress(txOrigin.From.Address),
@@ -94,6 +99,7 @@ func (tm *TransactionMonitor) createTransaction(hash common.Hash) (*types.Transa
 		Value:             value,
 		Gas:               gas,
 		GasUsed:           gasUsed,
+		GasPrice:          gasPrice,
 		CumulativeGasUsed: cumulativeGasUsed,
 		CreatedContract:   common.HexToAddress(txOrigin.CreatedContract.Address),
 		Data:              hexutil.MustDecode(txOrigin.InputData),

@@ -23,12 +23,14 @@ type Transaction struct {
 	Hash              common.Hash     `json:"hash"`
 	Status            bool            `json:"status"`
 	BlockNumber       uint64          `json:"blockNumber"`
+	BlockHash         common.Hash     `json:"blockHash"`
 	Index             uint64          `json:"index"`
 	Nonce             uint64          `json:"nonce"`
 	From              common.Address  `json:"from"`
 	To                common.Address  `json:"to"`
 	Value             uint64          `json:"value"`
 	Gas               uint64          `json:"gas"`
+	GasPrice          uint64          `json:"gasPrice"`
 	GasUsed           uint64          `json:"gasUsed"`
 	CumulativeGasUsed uint64          `json:"cumulativeGasUsed"`
 	CreatedContract   common.Address  `json:"createdContract"`

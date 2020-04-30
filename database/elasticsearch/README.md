@@ -82,22 +82,12 @@ Transaction {
     TransactionIndex
     Value
     IsPrivate
-    Receipt: {
-      ContractAddress
-      CumulativeGasUsed
-      GasUsed
-      Logs: [{
-          Address
-          Data,
-          LogIndex
-          Topics
-      }],
-      LogsBloom
-      Status
-      Root
-    }
-    
-    ContractsCalled
+    ContractAddress
+    CumulativeGasUsed
+    GasUsed
+    Status
+    Root
+    InternalCalls
 }
 ```
 

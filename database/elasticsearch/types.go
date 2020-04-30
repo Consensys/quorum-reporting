@@ -3,7 +3,6 @@ package elasticsearch
 import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/ethereum/go-ethereum/core/state"
 	"quorumengineering/quorum-report/types"
 )
 
@@ -61,44 +60,130 @@ func (e *Event) To() *types.Event {
 }
 
 type Transaction struct {
-	Hash        common.Hash    `json:"hash"`
-	BlockHash   common.Hash    `json:"blockHash"`
-	BlockNumber uint64         `json:"blockNumber"`
-	From        common.Address `json:"from"`
-	Gas         uint64         `json:"gas"`
-	GasPrice    uint64         `json:"gasPrice"`
-	Data        hexutil.Bytes  `json:"data"`
-	Nonce       uint64         `json:"nonce"`
-	To          common.Address `json:"to"`
-	Index       uint64         `json:"index"`
-	Value       uint64         `json:"value"`
-	IsPrivate   bool           `json:"isPrivate"`
-	PrivateData hexutil.Bytes  `json:"privateData"`
-
-	Receipt Receipt `json:"receipt"`
-
-	InternalCalls []*InternalCall `json:"internalCalls"`
+	Hash              common.Hash     `json:"hash"`
+	Status            bool            `json:"status"`
+	BlockNumber       uint64          `json:"blockNumber"`
+	BlockHash         common.Hash     `json:"blockHash"`
+	Index             uint64          `json:"index"`
+	Nonce             uint64          `json:"nonce"`
+	Sender            common.Address  `json:"from"`
+	Recipient         common.Address  `json:"to"`
+	Value             uint64          `json:"value"`
+	Gas               uint64          `json:"gas"`
+	GasPrice          uint64          `json:"gasPrice"`
+	GasUsed           uint64          `json:"gasUsed"`
+	CumulativeGasUsed uint64          `json:"cumulativeGasUsed"`
+	CreatedContract   common.Address  `json:"createdContract"`
+	Data              hexutil.Bytes   `json:"data"`
+	PrivateData       hexutil.Bytes   `json:"privateData"`
+	IsPrivate         bool            `json:"isPrivate"`
+	Events            []*Event        `json:"events"`
+	InternalCalls     []*InternalCall `json:"internalCalls"`
 }
 
-type Receipt struct {
-	ContractAddress   common.Address `json:"contractAddress"`
-	CumulativeGasUsed uint64         `json:"cumulativeGasUsed"`
-	GasUsed           uint64         `json:"gasUsed"`
-	Events            []*Event       `json:"events"`
-	LogsBloom         []byte         `json:"logsBloom"`
-	Status            bool           `json:"status"`
-	Root              common.Hash    `json:"root"`
+func (t *Transaction) To() *types.Transaction {
+	var internalCalls []*types.InternalCall
+	for _, call := range t.InternalCalls {
+		internalCalls = append(internalCalls, call.To())
+	}
+
+	var events []*types.Event
+	for _, ev := range t.Events {
+		events = append(events, ev.To())
+	}
+
+	return &types.Transaction{
+		Hash:              t.Hash,
+		Status:            t.Status,
+		BlockNumber:       t.BlockNumber,
+		BlockHash:         t.BlockHash,
+		Index:             t.Index,
+		Nonce:             t.Nonce,
+		From:              t.Sender,
+		To:                t.Recipient,
+		Value:             t.Value,
+		Gas:               t.Gas,
+		GasPrice:          t.GasPrice,
+		GasUsed:           t.GasUsed,
+		CumulativeGasUsed: t.CumulativeGasUsed,
+		CreatedContract:   t.CreatedContract,
+		Data:              t.Data,
+		PrivateData:       t.PrivateData,
+		IsPrivate:         t.IsPrivate,
+		Events:            events,
+		InternalCalls:     internalCalls,
+	}
+}
+
+func (t *Transaction) From(tx *types.Transaction) {
+	internalCalls := make([]*InternalCall, 0)
+	for _, call := range tx.InternalCalls {
+		var ic InternalCall
+		ic.From(call)
+		internalCalls = append(internalCalls, &ic)
+	}
+
+	events := make([]*Event, 0)
+	for _, ev := range tx.Events {
+		var event Event
+		event.From(ev)
+		events = append(events, &event)
+	}
+
+	t.Hash = tx.Hash
+	t.Status = tx.Status
+	t.BlockNumber = tx.BlockNumber
+	t.BlockHash = tx.BlockHash
+	t.Index = tx.Index
+	t.Nonce = tx.Nonce
+	t.Sender = tx.From
+	t.Recipient = tx.To
+	t.Value = tx.Value
+	t.Gas = tx.Gas
+	t.GasPrice = tx.GasPrice
+	t.GasUsed = tx.GasUsed
+	t.CumulativeGasUsed = tx.CumulativeGasUsed
+	t.CreatedContract = tx.CreatedContract
+	t.Data = tx.Data
+	t.PrivateData = tx.PrivateData
+	t.IsPrivate = tx.IsPrivate
+	t.Events = events
+	t.InternalCalls = internalCalls
 }
 
 type InternalCall struct {
-	From    common.Address `json:"from"`
-	To      common.Address `json:"to"`
-	Gas     uint64         `json:"gas"`
-	GasUsed uint64         `json:"gasUsed"`
-	Value   uint64         `json:"value"`
-	Input   hexutil.Bytes  `json:"input"`
-	Output  hexutil.Bytes  `json:"output"`
-	Type    string         `json:"type"`
+	Sender    common.Address `json:"from"`
+	Recipient common.Address `json:"to"`
+	Gas       uint64         `json:"gas"`
+	GasUsed   uint64         `json:"gasUsed"`
+	Value     uint64         `json:"value"`
+	Input     hexutil.Bytes  `json:"input"`
+	Output    hexutil.Bytes  `json:"output"`
+	Type      string         `json:"type"`
+}
+
+func (ic *InternalCall) To() *types.InternalCall {
+	return &types.InternalCall{
+		From:    ic.Sender,
+		To:      ic.Recipient,
+		Gas:     ic.Gas,
+		GasUsed: ic.GasUsed,
+		Value:   ic.Value,
+		Input:   ic.Input,
+		Output:  ic.Output,
+		Type:    ic.Type,
+	}
+}
+
+func (ic *InternalCall) From(internalCall *types.InternalCall) {
+	ic.Sender = internalCall.From
+	ic.Recipient = internalCall.To
+	ic.Gas = internalCall.Gas
+	ic.GasUsed = internalCall.GasUsed
+	ic.Value = internalCall.Value
+	ic.Input = internalCall.Input
+	ic.Output = internalCall.Output
+	ic.Type = internalCall.Type
 }
 
 type Block struct {
@@ -113,8 +198,36 @@ type Block struct {
 	Timestamp    uint64        `json:"timestamp"`
 	ExtraData    hexutil.Bytes `json:"extraData"`
 	Transactions []common.Hash `json:"transactions"`
-	PublicState  *state.Dump   `json:"publicState"`
-	PrivateState *state.Dump   `json:"privateState"`
+}
+
+func (b *Block) To() *types.Block {
+	return &types.Block{
+		Hash:         b.Hash,
+		ParentHash:   b.ParentHash,
+		StateRoot:    b.StateRoot,
+		TxRoot:       b.TxRoot,
+		ReceiptRoot:  b.ReceiptRoot,
+		Number:       b.Number,
+		GasLimit:     b.GasLimit,
+		GasUsed:      b.GasUsed,
+		Timestamp:    b.Timestamp,
+		ExtraData:    b.ExtraData,
+		Transactions: b.Transactions,
+	}
+}
+
+func (b *Block) From(block *types.Block) {
+	b.Hash = block.Hash
+	b.ParentHash = block.ParentHash
+	b.StateRoot = block.StateRoot
+	b.TxRoot = block.TxRoot
+	b.ReceiptRoot = block.ReceiptRoot
+	b.Number = block.Number
+	b.GasLimit = block.GasLimit
+	b.GasUsed = block.GasUsed
+	b.Timestamp = block.Timestamp
+	b.ExtraData = block.ExtraData
+	b.Transactions = block.Transactions
 }
 
 //
@@ -124,11 +237,11 @@ type ContractQueryResult struct {
 }
 
 type TransactionQueryResult struct {
-	Source types.Transaction `json:"_source"`
+	Source Transaction `json:"_source"`
 }
 
 type BlockQueryResult struct {
-	Source types.Block `json:"_source"`
+	Source Block `json:"_source"`
 }
 
 type StateQueryResult struct {
