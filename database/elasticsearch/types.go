@@ -34,6 +34,21 @@ type Event struct {
 	TransactionHash common.Hash    `json:"transactionHash"`
 }
 
+func (e Event) From(event *types.Event) {
+
+}
+
+func (e Event) To() *types.Event {
+	return &types.Event{
+		Index:           e.LogIndex,
+		Address:         e.Address,
+		Topics:          e.Topics,
+		Data:            e.Data,
+		BlockNumber:     e.BlockNumber,
+		TransactionHash: e.TransactionHash,
+	}
+}
+
 type Transaction struct {
 	Hash        common.Hash    `json:"hash"`
 	BlockHash   common.Hash    `json:"blockHash"`
