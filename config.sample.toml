@@ -4,7 +4,7 @@ addresses = ["0x1932c48b2bf8102ba33b4a6b545c32236e342f34"]
 
 [database]
 
-    cacheSize = 0
+    cacheSize = 10
     [database.elasticsearch]
 
 [server]
