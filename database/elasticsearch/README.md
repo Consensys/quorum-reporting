@@ -26,59 +26,6 @@ So far, we have pulled in more than we need whilst the requirements were not cle
 
 Considering that we are using ElasticSearch, it makes sense to structure our data as a JSON document.
 
-Two examples of the data needed are below (`5` represents block 5):
-```
-Contract {
-	Address
-	ABI
-	ContractCreationTransaction
-	InternalTransactions
-	Transactions
-	Events (not necessary if we can query event from the above three tx categories efficiently)
-	States {
-		BlockNumber : Storage {
-			Key : Value
-		}
-	}
-	LastFiltered
-}
-```
-
-To allow searching on various indexes, there is also a need to have the data rearranged it different formats:
-```
-Transaction {
-    TxData
-    Addresses : [
-        Address1,
-        Address2,
-        ...
-    ]
-    Receipt
-}
-```
-
-```
-Block {
-    Hash
-    ParentHash
-    StateRoot
-    TxRoot
-    ReceiptRoot
-    Number
-    GasLimit
-    GasUsed
-    Timestamp
-    ExtraData
-    Transactions
-}
-
-```
-
-
------------------------------------------------
-
-Below is an immutable (mostly) version of all the data, so stop documents becoming too large over time.
-
 ```
 Contract {
 	Address
