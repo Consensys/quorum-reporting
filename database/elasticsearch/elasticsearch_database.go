@@ -223,9 +223,8 @@ func (es *ElasticsearchDB) WriteTransaction(transaction *types.Transaction) erro
 		Refresh:    "true",
 	}
 
-	//TODO: check if response needs reading
-	es.apiClient.DoRequest(req)
-	return nil
+	_, err := es.apiClient.DoRequest(req)
+	return err //may be nil
 }
 
 func (es *ElasticsearchDB) ReadTransaction(hash common.Hash) (*types.Transaction, error) {
@@ -240,7 +239,10 @@ func (es *ElasticsearchDB) ReadTransaction(hash common.Hash) (*types.Transaction
 	}
 
 	var transactionResult TransactionQueryResult
-	json.Unmarshal(body, &transactionResult)
+	err = json.Unmarshal(body, &transactionResult)
+	if err != nil {
+		return nil, err
+	}
 	return &transactionResult.Source, nil
 }
 
@@ -262,13 +264,40 @@ func (es *ElasticsearchDB) IndexBlock(addresses []common.Address, block *types.B
 		es.indexTransaction(filteredAddresses, transaction)
 	}
 
-	// index public storage
-	es.indexStorage(filteredAddresses, block.Number, block.PublicState)
-	//// index private storage
-	es.indexStorage(filteredAddresses, block.Number, block.PrivateState)
-
 	for addr := range filteredAddresses {
 		es.updateLastFiltered(addr, block.Number)
+	}
+	return nil
+}
+
+func (es *ElasticsearchDB) IndexStorage(blockNumber uint64, rawStorage map[common.Address]*state.DumpAccount) error {
+	for address, dumpAccount := range rawStorage {
+		stateObj := State{
+			Address:     address,
+			BlockNumber: blockNumber,
+			StorageRoot: common.HexToHash(dumpAccount.Root),
+		}
+		storageMap := Storage{
+			StorageRoot: common.HexToHash(dumpAccount.Root),
+			StorageMap:  dumpAccount.Storage,
+		}
+
+		reqState := esapi.IndexRequest{
+			Index:      StateIndex,
+			DocumentID: address.String() + "-" + strconv.FormatUint(blockNumber, 10),
+			Body:       esutil.NewJSONReader(stateObj),
+			Refresh:    "true",
+		}
+		reqStorage := esapi.IndexRequest{
+			Index:      StorageIndex,
+			DocumentID: "0x" + dumpAccount.Root,
+			Body:       esutil.NewJSONReader(storageMap),
+			Refresh:    "true",
+		}
+
+		//TODO: check response
+		es.apiClient.DoRequest(reqState)
+		es.apiClient.DoRequest(reqStorage)
 	}
 	return nil
 }
@@ -283,7 +312,10 @@ func (es *ElasticsearchDB) GetContractCreationTransaction(address common.Address
 
 func (es *ElasticsearchDB) GetAllTransactionsToAddress(address common.Address) ([]common.Hash, error) {
 	queryString := fmt.Sprintf(QueryByToAddressTemplate, address.String())
-	results, _ := es.apiClient.ScrollAllResults(TransactionIndex, queryString)
+	results, err := es.apiClient.ScrollAllResults(TransactionIndex, queryString)
+	if err != nil {
+		return nil, err
+	}
 
 	converted := make([]common.Hash, len(results))
 	for i, result := range results {
@@ -311,7 +343,10 @@ func (es *ElasticsearchDB) GetAllTransactionsInternalToAddress(address common.Ad
 
 func (es *ElasticsearchDB) GetAllEventsByAddress(address common.Address) ([]*types.Event, error) {
 	query := fmt.Sprintf(QueryByAddressTemplate, address.String())
-	results, _ := es.apiClient.ScrollAllResults(EventIndex, query)
+	results, err := es.apiClient.ScrollAllResults(EventIndex, query)
+	if err != nil {
+		return nil, err
+	}
 
 	convertedList := make([]*types.Event, len(results))
 	for i, result := range results {
@@ -321,14 +356,7 @@ func (es *ElasticsearchDB) GetAllEventsByAddress(address common.Address) ([]*typ
 		var event Event
 		json.Unmarshal(marshalled, &event)
 
-		convertedList[i] = &types.Event{
-			Index:           event.LogIndex,
-			Address:         event.Address,
-			Topics:          event.Topics,
-			Data:            event.Data,
-			BlockNumber:     event.BlockNumber,
-			TransactionHash: event.TransactionHash,
-		}
+		convertedList[i] = event.To()
 	}
 
 	return convertedList, nil
@@ -336,25 +364,28 @@ func (es *ElasticsearchDB) GetAllEventsByAddress(address common.Address) ([]*typ
 
 func (es *ElasticsearchDB) GetStorage(address common.Address, blockNumber uint64) (map[common.Hash]string, error) {
 	fetchReq := esapi.GetRequest{
-		Index:      StorageIndex,
+		Index:      StateIndex,
 		DocumentID: address.String() + "-" + strconv.FormatUint(blockNumber, 10),
 	}
-
 	body, err := es.apiClient.DoRequest(fetchReq)
 	if err != nil {
 		return nil, err
 	}
+	var stateResult StateQueryResult
+	json.Unmarshal(body, &stateResult)
 
+	storageFetchReq := esapi.GetRequest{
+		Index:      StorageIndex,
+		DocumentID: stateResult.Source.StorageRoot.String(),
+	}
+	body, err = es.apiClient.DoRequest(storageFetchReq)
+	if err != nil {
+		return nil, err
+	}
 	var storageResult StorageQueryResult
 	json.Unmarshal(body, &storageResult)
-	result := storageResult.Source
 
-	retrievedStorage := result["storageMap"].(map[string]interface{})
-	storage := make(map[common.Hash]string)
-	for hsh, val := range retrievedStorage {
-		storage[common.HexToHash(hsh)] = val.(string)
-	}
-	return storage, nil
+	return storageResult.Source.StorageMap, nil
 }
 
 func (es *ElasticsearchDB) GetLastFiltered(address common.Address) (uint64, error) {
@@ -456,14 +487,9 @@ func (es *ElasticsearchDB) updateContract(address common.Address, property strin
 }
 
 func (es *ElasticsearchDB) createEvent(event *types.Event) error {
-	converted := Event{
-		Address:         event.Address,
-		BlockNumber:     event.BlockNumber,
-		Data:            event.Data,
-		LogIndex:        event.Index,
-		Topics:          event.Topics,
-		TransactionHash: event.TransactionHash,
-	}
+	var e Event
+	e.From(event)
+	converted := e
 
 	req := esapi.IndexRequest{
 		Index:      EventIndex,
@@ -474,34 +500,5 @@ func (es *ElasticsearchDB) createEvent(event *types.Event) error {
 
 	//TODO: check response
 	es.apiClient.DoRequest(req)
-	return nil
-}
-
-func (es *ElasticsearchDB) indexStorage(filteredAddresses map[common.Address]bool, blockNumber uint64, stateDump *state.Dump) error {
-	if stateDump == nil {
-		return nil
-	}
-
-	for address, account := range stateDump.Accounts {
-		if filteredAddresses[address] {
-			stateObj := State{
-				Address:     address,
-				BlockNumber: blockNumber,
-				StorageRoot: common.HexToHash(account.Root),
-				StorageMap:  account.Storage,
-			}
-
-			req := esapi.IndexRequest{
-				Index:      StorageIndex,
-				DocumentID: address.String() + "-" + strconv.FormatUint(blockNumber, 10),
-				Body:       esutil.NewJSONReader(stateObj),
-				Refresh:    "true",
-			}
-
-			//TODO: check response
-			es.apiClient.DoRequest(req)
-		}
-	}
-
 	return nil
 }

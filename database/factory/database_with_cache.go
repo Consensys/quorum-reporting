@@ -1,6 +1,7 @@
 package factory
 
 import (
+	"github.com/ethereum/go-ethereum/core/state"
 	"sync"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -139,6 +140,12 @@ func (cachingDB *DatabaseWithCache) IndexBlock(addresses []common.Address, block
 	cachingDB.mux.Lock()
 	defer cachingDB.mux.Unlock()
 	return cachingDB.db.IndexBlock(addresses, block)
+}
+
+func (cachingDB *DatabaseWithCache) IndexStorage(blockNumber uint64, rawStorage map[common.Address]*state.DumpAccount) error {
+	cachingDB.mux.Lock()
+	defer cachingDB.mux.Unlock()
+	return cachingDB.db.IndexStorage(blockNumber, rawStorage)
 }
 
 func (cachingDB *DatabaseWithCache) GetContractCreationTransaction(address common.Address) (common.Hash, error) {

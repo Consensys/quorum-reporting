@@ -22,7 +22,6 @@ type BlockMonitor struct {
 	quorumClient       client.Client
 	syncStart          chan uint64
 	transactionMonitor *TransactionMonitor
-	storageMonitor     *StorageMonitor
 	stopFeed           event.Feed
 }
 
@@ -32,7 +31,6 @@ func NewBlockMonitor(db database.Database, quorumClient client.Client) *BlockMon
 		quorumClient:       quorumClient,
 		syncStart:          make(chan uint64, 1), // make channel buffered so that it does not block chain head listener
 		transactionMonitor: NewTransactionMonitor(db, quorumClient),
-		storageMonitor:     NewStorageMonitor(db, quorumClient),
 	}
 }
 
@@ -170,12 +168,6 @@ func (bm *BlockMonitor) sync(start, end uint64) {
 func (bm *BlockMonitor) process(block *types.Block) error {
 	// Transaction monitor pulls all transactions for the given block.
 	err := bm.transactionMonitor.PullTransactions(block)
-	if err != nil {
-		return err
-	}
-
-	// Storage monitor pulls all account with state for the given block.
-	err = bm.storageMonitor.PullStorage(block)
 	if err != nil {
 		return err
 	}

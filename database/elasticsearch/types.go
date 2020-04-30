@@ -15,8 +15,12 @@ type Contract struct {
 }
 
 type State struct {
-	Address     common.Address         `json:"address"`
-	BlockNumber uint64                 `json:"blockNumber"`
+	Address     common.Address `json:"address"`
+	BlockNumber uint64         `json:"blockNumber"`
+	StorageRoot common.Hash    `json:"storageRoot"`
+}
+
+type Storage struct {
 	StorageRoot common.Hash            `json:"storageRoot"`
 	StorageMap  map[common.Hash]string `json:"storageMap"`
 }
@@ -28,6 +32,21 @@ type Event struct {
 	LogIndex        uint64         `json:"logIndex"`
 	Topics          []common.Hash  `json:"topics"`
 	TransactionHash common.Hash    `json:"transactionHash"`
+}
+
+func (e Event) From(event *types.Event) {
+
+}
+
+func (e Event) To() *types.Event {
+	return &types.Event{
+		Index:           e.LogIndex,
+		Address:         e.Address,
+		Topics:          e.Topics,
+		Data:            e.Data,
+		BlockNumber:     e.BlockNumber,
+		TransactionHash: e.TransactionHash,
+	}
 }
 
 type Transaction struct {
@@ -101,8 +120,12 @@ type BlockQueryResult struct {
 	Source types.Block `json:"_source"`
 }
 
+type StateQueryResult struct {
+	Source State `json:"_source"`
+}
+
 type StorageQueryResult struct {
-	Source map[string]interface{} `json:"_source"`
+	Source Storage `json:"_source"`
 }
 
 type LastPersistedResult struct {
