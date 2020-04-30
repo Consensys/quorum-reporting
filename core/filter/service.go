@@ -6,19 +6,23 @@ import (
 
 	"github.com/ethereum/go-ethereum/event"
 
+	"quorumengineering/quorum-report/client"
 	"quorumengineering/quorum-report/database"
 	"quorumengineering/quorum-report/types"
 )
 
 // FilterService filters transactions and storage based on registered address list.
 type FilterService struct {
-	db database.Database
-	// storageFilter StorageFilter
-	stopFeed event.Feed
+	db            database.Database
+	storageFilter *StorageFilter
+	stopFeed      event.Feed
 }
 
-func NewFilterService(db database.Database) *FilterService {
-	return &FilterService{db: db}
+func NewFilterService(db database.Database, client client.Client) *FilterService {
+	return &FilterService{
+		db:            db,
+		storageFilter: NewStorageFilter(db, client),
+	}
 }
 
 func (fs *FilterService) Start() error {
@@ -92,5 +96,10 @@ func (fs *FilterService) index(blockNumber uint64) error {
 	if err != nil {
 		return err
 	}
+	err = fs.storageFilter.IndexStorage(blockNumber, addresses)
+	if err != nil {
+		return err
+	}
+	// if IndexStorage has an error, IndexBlock is never called, last filtered will not be updated
 	return fs.db.IndexBlock(addresses, block)
 }

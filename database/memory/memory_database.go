@@ -195,6 +195,16 @@ func (db *MemoryDB) ReadTransaction(hash common.Hash) (*types.Transaction, error
 	return nil, errors.New("transaction does not exist")
 }
 
+func (db *MemoryDB) IndexStorage(blockNumber uint64, rawStorage map[common.Address]*state.DumpAccount) error {
+	for address, dumpAccount := range rawStorage {
+		db.storageIndexDB[address].root[blockNumber] = dumpAccount.Root
+		if _, ok := db.storageIndexDB[address].storage[dumpAccount.Root]; !ok {
+			db.storageIndexDB[address].storage[dumpAccount.Root] = dumpAccount.Storage
+		}
+	}
+	return nil
+}
+
 func (db *MemoryDB) IndexBlock(addresses []common.Address, block *types.Block) error {
 	db.mux.Lock()
 	defer db.mux.Unlock()
@@ -211,11 +221,6 @@ func (db *MemoryDB) IndexBlock(addresses []common.Address, block *types.Block) e
 	for _, txHash := range block.Transactions {
 		db.indexTransaction(filteredAddresses, db.txDB[txHash])
 	}
-
-	// index public storage
-	db.indexStorage(filteredAddresses, block.Number, block.PublicState)
-	// index private storage
-	db.indexStorage(filteredAddresses, block.Number, block.PrivateState)
 
 	for address := range filteredAddresses {
 		db.lastFiltered[address] = block.Number
@@ -310,19 +315,6 @@ func (db *MemoryDB) indexTransaction(filteredAddresses map[common.Address]bool, 
 		if filteredAddresses[event.Address] {
 			db.eventIndexDB[event.Address] = append(db.eventIndexDB[event.Address], event)
 			log.Printf("Append event emitted in transaction %v to registered address %v.\n", event.TransactionHash.Hex(), event.Address.Hex())
-		}
-	}
-}
-
-func (db *MemoryDB) indexStorage(filteredAddresses map[common.Address]bool, blockNumber uint64, stateDump *state.Dump) {
-	if stateDump != nil {
-		for address, account := range stateDump.Accounts {
-			if filteredAddresses[address] {
-				db.storageIndexDB[address].root[blockNumber] = account.Root
-				if _, ok := db.storageIndexDB[address].storage[account.Root]; !ok {
-					db.storageIndexDB[address].storage[account.Root] = account.Storage
-				}
-			}
 		}
 	}
 }

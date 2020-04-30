@@ -262,13 +262,40 @@ func (es *ElasticsearchDB) IndexBlock(addresses []common.Address, block *types.B
 		es.indexTransaction(filteredAddresses, transaction)
 	}
 
-	// index public storage
-	es.indexStorage(filteredAddresses, block.Number, block.PublicState)
-	//// index private storage
-	es.indexStorage(filteredAddresses, block.Number, block.PrivateState)
-
 	for addr := range filteredAddresses {
 		es.updateLastFiltered(addr, block.Number)
+	}
+	return nil
+}
+
+func (es *ElasticsearchDB) IndexStorage(blockNumber uint64, rawStorage map[common.Address]*state.DumpAccount) error {
+	for address, dumpAccount := range rawStorage {
+		stateObj := State{
+			Address:     address,
+			BlockNumber: blockNumber,
+			StorageRoot: common.HexToHash(dumpAccount.Root),
+		}
+		storageMap := Storage{
+			StorageRoot: common.HexToHash(dumpAccount.Root),
+			StorageMap:  dumpAccount.Storage,
+		}
+
+		reqState := esapi.IndexRequest{
+			Index:      StateIndex,
+			DocumentID: address.String() + "-" + strconv.FormatUint(blockNumber, 10),
+			Body:       esutil.NewJSONReader(stateObj),
+			Refresh:    "true",
+		}
+		reqStorage := esapi.IndexRequest{
+			Index:      StorageIndex,
+			DocumentID: "0x" + dumpAccount.Root,
+			Body:       esutil.NewJSONReader(storageMap),
+			Refresh:    "true",
+		}
+
+		//TODO: check response
+		es.apiClient.DoRequest(reqState)
+		es.apiClient.DoRequest(reqStorage)
 	}
 	return nil
 }
@@ -477,65 +504,5 @@ func (es *ElasticsearchDB) createEvent(event *types.Event) error {
 
 	//TODO: check response
 	es.apiClient.DoRequest(req)
-	return nil
-}
-
-func (es *ElasticsearchDB) indexStorage(filteredAddresses map[common.Address]bool, blockNumber uint64, stateDump *state.Dump) error {
-	if stateDump == nil {
-		return nil
-	}
-
-	for address := range filteredAddresses {
-		if addressState, ok := stateDump.Accounts[address]; ok {
-			stateObj := State{
-				Address:     address,
-				BlockNumber: blockNumber,
-				StorageRoot: common.HexToHash(addressState.Root),
-			}
-			storageMap := Storage{
-				StorageRoot: common.HexToHash(addressState.Root),
-				StorageMap:  addressState.Storage,
-			}
-
-			reqState := esapi.IndexRequest{
-				Index:      StateIndex,
-				DocumentID: address.String() + "-" + strconv.FormatUint(blockNumber, 10),
-				Body:       esutil.NewJSONReader(stateObj),
-				Refresh:    "true",
-			}
-			reqStorage := esapi.IndexRequest{
-				Index:      StorageIndex,
-				DocumentID: "0x" + addressState.Root,
-				Body:       esutil.NewJSONReader(storageMap),
-				Refresh:    "true",
-			}
-
-			//TODO: check response
-			es.apiClient.DoRequest(reqState)
-			es.apiClient.DoRequest(reqStorage)
-		}
-	}
-
-	//for address, account := range stateDump.Accounts {
-	//	if filteredAddresses[address] {
-	//		stateObj := State{
-	//			Address:     address,
-	//			BlockNumber: blockNumber,
-	//			StorageRoot: common.HexToHash(account.Root),
-	//			StorageMap:  account.Storage,
-	//		}
-	//
-	//		req := esapi.IndexRequest{
-	//			Index:      StorageIndex,
-	//			DocumentID: address.String() + "-" + strconv.FormatUint(blockNumber, 10),
-	//			Body:       esutil.NewJSONReader(stateObj),
-	//			Refresh:    "true",
-	//		}
-	//
-	//		//TODO: check response
-	//		es.apiClient.DoRequest(req)
-	//	}
-	//}
-
 	return nil
 }

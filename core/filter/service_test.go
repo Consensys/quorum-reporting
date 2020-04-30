@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/state"
 
 	"quorumengineering/quorum-report/types"
 )
@@ -12,7 +13,7 @@ import (
 func TestIndexBlock(t *testing.T) {
 	// setup
 	db := &FakeDB{[]common.Address{{1}, {2}}, map[common.Address]uint64{{1}: 3, {2}: 5}}
-	fs := NewFilterService(db)
+	fs := NewFilterService(db, nil)
 	lastFiltered, err := fs.getLastFiltered(6)
 	if err != nil {
 		t.Fatalf("expected no error, but got %v", err)
@@ -82,6 +83,10 @@ func (f *FakeDB) WriteTransaction(*types.Transaction) error {
 
 func (f *FakeDB) ReadTransaction(common.Hash) (*types.Transaction, error) {
 	return nil, errors.New("not implemented")
+}
+
+func (f *FakeDB) IndexStorage(uint64, map[common.Address]*state.DumpAccount) error {
+	return errors.New("not implemented")
 }
 
 func (f *FakeDB) IndexBlock(addresses []common.Address, block *types.Block) error {
