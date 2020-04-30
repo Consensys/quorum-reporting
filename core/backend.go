@@ -52,7 +52,7 @@ func New(config types.ReportingConfig) (*Backend, error) {
 
 	return &Backend{
 		monitor: monitor.NewMonitorService(db, quorumClient),
-		filter:  filter.NewFilterService(db),
+		filter:  filter.NewFilterService(db, quorumClient),
 		rpc:     rpc.NewRPCService(db, config.Server.RPCAddr, config.Server.RPCVHosts, config.Server.RPCCorsList),
 	}, nil
 }

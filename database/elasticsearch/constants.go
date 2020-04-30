@@ -8,6 +8,7 @@ const (
 	ContractIndex    = "contract"
 	BlockIndex       = "block"
 	StorageIndex     = "storage"
+	StateIndex       = "state"
 	TransactionIndex = "transaction"
 	EventIndex       = "event"
 )

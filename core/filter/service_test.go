@@ -5,14 +5,21 @@ import (
 	"testing"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/state"
 
+	"quorumengineering/quorum-report/client"
 	"quorumengineering/quorum-report/types"
 )
 
 func TestIndexBlock(t *testing.T) {
 	// setup
+	mockRPC := map[string]interface{}{
+		"debug_dumpAddress<common.Address Value>0x4": &state.DumpAccount{},
+		"debug_dumpAddress<common.Address Value>0x6": &state.DumpAccount{},
+	}
 	db := &FakeDB{[]common.Address{{1}, {2}}, map[common.Address]uint64{{1}: 3, {2}: 5}}
-	fs := NewFilterService(db)
+	fs := NewFilterService(db, client.NewStubQuorumClient(nil, nil, mockRPC))
+	// test fs.getLastFiltered
 	lastFiltered, err := fs.getLastFiltered(6)
 	if err != nil {
 		t.Fatalf("expected no error, but got %v", err)
@@ -20,6 +27,7 @@ func TestIndexBlock(t *testing.T) {
 	if lastFiltered != 3 {
 		t.Fatalf("expected last filtered %v, but got %v", 3, lastFiltered)
 	}
+	// test fs.index
 	err = fs.index(4)
 	if err != nil {
 		t.Fatalf("expected no error, but got %v", err)
@@ -82,6 +90,10 @@ func (f *FakeDB) WriteTransaction(*types.Transaction) error {
 
 func (f *FakeDB) ReadTransaction(common.Hash) (*types.Transaction, error) {
 	return nil, errors.New("not implemented")
+}
+
+func (f *FakeDB) IndexStorage(uint64, map[common.Address]*state.DumpAccount) error {
+	return nil
 }
 
 func (f *FakeDB) IndexBlock(addresses []common.Address, block *types.Block) error {
