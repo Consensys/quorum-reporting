@@ -104,6 +104,7 @@ achieved by database, we may still store the indices result for easier query of 
 
 - Integrate persistent database
 - Handle restart & recover from fail-stop scenarios
+- Extend RPC APIs with complex queries
 
 #### Phase 3 (todo)
 
