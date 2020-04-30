@@ -26,26 +26,37 @@ type Storage struct {
 }
 
 type Event struct {
-	Address         common.Address `json:"address"`
-	BlockNumber     uint64         `json:"blockNumber"`
-	Data            hexutil.Bytes  `json:"data"`
-	LogIndex        uint64         `json:"logIndex"`
-	Topics          []common.Hash  `json:"topics"`
-	TransactionHash common.Hash    `json:"transactionHash"`
+	Address          common.Address `json:"address"`
+	BlockHash        common.Hash    `json:"blockHash"`
+	BlockNumber      uint64         `json:"blockNumber"`
+	Data             hexutil.Bytes  `json:"data"`
+	LogIndex         uint64         `json:"logIndex"`
+	Topics           []common.Hash  `json:"topics"`
+	TransactionHash  common.Hash    `json:"transactionHash"`
+	TransactionIndex uint64         `json:"transactionIndex"`
 }
 
-func (e Event) From(event *types.Event) {
-
+func (e *Event) From(event *types.Event) {
+	e.Address = event.Address
+	e.BlockNumber = event.BlockNumber
+	e.Data = event.Data
+	e.LogIndex = event.Index
+	e.Topics = event.Topics
+	e.TransactionHash = event.TransactionHash
+	e.BlockHash = event.BlockHash
+	e.TransactionIndex = event.TransactionIndex
 }
 
-func (e Event) To() *types.Event {
+func (e *Event) To() *types.Event {
 	return &types.Event{
-		Index:           e.LogIndex,
-		Address:         e.Address,
-		Topics:          e.Topics,
-		Data:            e.Data,
-		BlockNumber:     e.BlockNumber,
-		TransactionHash: e.TransactionHash,
+		Index:            e.LogIndex,
+		Address:          e.Address,
+		Topics:           e.Topics,
+		Data:             e.Data,
+		BlockNumber:      e.BlockNumber,
+		TransactionHash:  e.TransactionHash,
+		BlockHash:        e.BlockHash,
+		TransactionIndex: e.TransactionIndex,
 	}
 }
 

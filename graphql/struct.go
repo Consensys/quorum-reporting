@@ -2,6 +2,7 @@ package graphql
 
 type CurrentBlock struct {
 	Number string
+	Hash   string
 }
 
 type Transaction struct {

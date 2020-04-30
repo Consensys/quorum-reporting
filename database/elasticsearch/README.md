@@ -35,11 +35,19 @@ Contract {
 }
 ```
 
-Note: the storage here can still get extremely large. This may be problematic, see https://www.elastic.co/guide/en/elasticsearch/reference/current/general-recommendations.html#maximum-document-size
+Storage has been split into "storage" and "state".
+This is so that we only need to store the storage mapping once, which can 
+then be reference by the state multiple times in an effort to keep as little
+duplicate data as possible.
 ```
-States {
+State {
     Address
     BlockNumber
+    StorageRoot
+}
+```
+```
+Storage {
     StorageRoot
     Storage : {
         Key: Value
@@ -49,7 +57,6 @@ States {
 
 ```
 Events {
-    ID (BlockNum + LogIndex)
     Address
     BlockHash
     BlockNumber

@@ -107,12 +107,14 @@ func (tm *TransactionMonitor) createTransaction(hash common.Hash) (*types.Transa
 			topics = append(topics, common.HexToHash(t))
 		}
 		e := &types.Event{
-			Index:           l.Index,
-			Address:         common.HexToAddress(l.Account.Address),
-			Topics:          topics,
-			Data:            hexutil.MustDecode(l.Data),
-			BlockNumber:     tx.BlockNumber,
-			TransactionHash: tx.Hash,
+			Index:            l.Index,
+			Address:          common.HexToAddress(l.Account.Address),
+			Topics:           topics,
+			Data:             hexutil.MustDecode(l.Data),
+			BlockNumber:      tx.BlockNumber,
+			BlockHash:        common.HexToHash(txOrigin.Block.Hash),
+			TransactionHash:  tx.Hash,
+			TransactionIndex: txOrigin.Index,
 		}
 		events = append(events, e)
 	}

@@ -18,7 +18,7 @@ func TransactionDetailQuery(hash common.Hash) string {
 	return `query { transaction(hash:"` + hash.Hex() + `") {
         hash
         status
-		block { number }
+		block { number, hash }
 		index
         nonce
         from { address }
