@@ -59,15 +59,15 @@ func TestElasticsearchDB_WriteTransaction_WithError(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	updatedTestTx := testTransaction
-	updatedTestTx.InternalCalls = make([]*types.InternalCall, 0)
-
 	mockedClient := NewMockAPIClient(ctrl)
+
+	var convertedTx Transaction
+	convertedTx.From(&testTransaction)
 
 	req := esapi.IndexRequest{
 		Index:      TransactionIndex,
 		DocumentID: testTransaction.Hash.String(),
-		Body:       esutil.NewJSONReader(updatedTestTx),
+		Body:       esutil.NewJSONReader(convertedTx),
 		Refresh:    "true",
 	}
 
@@ -86,15 +86,15 @@ func TestElasticsearchDB_WriteTransaction(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	updatedTestTx := testTransaction
-	updatedTestTx.InternalCalls = make([]*types.InternalCall, 0)
+	var convertedTx Transaction
+	convertedTx.From(&testTransaction)
 
 	mockedClient := NewMockAPIClient(ctrl)
 
 	req := esapi.IndexRequest{
 		Index:      TransactionIndex,
 		DocumentID: testTransaction.Hash.String(),
-		Body:       esutil.NewJSONReader(updatedTestTx),
+		Body:       esutil.NewJSONReader(convertedTx),
 		Refresh:    "true",
 	}
 
@@ -111,9 +111,6 @@ func TestElasticsearchDB_WriteTransaction(t *testing.T) {
 func TestElasticsearchDB_ReadTransaction_WithError(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
-
-	updatedTestTx := testTransaction
-	updatedTestTx.InternalCalls = make([]*types.InternalCall, 0)
 
 	mockedClient := NewMockAPIClient(ctrl)
 
@@ -137,9 +134,6 @@ func TestElasticsearchDB_ReadTransaction_WithErrorUnmarshalling(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	updatedTestTx := testTransaction
-	updatedTestTx.InternalCalls = make([]*types.InternalCall, 0)
-
 	mockedClient := NewMockAPIClient(ctrl)
 
 	req := esapi.GetRequest{
@@ -162,9 +156,9 @@ func TestElasticsearchDB_ReadTransaction(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	updatedTestTx := testTransaction
-	updatedTestTx.InternalCalls = make([]*types.InternalCall, 0)
-	asJson, _ := json.Marshal(updatedTestTx)
+	var convertedTx Transaction
+	convertedTx.From(&testTransaction)
+	asJson, _ := json.Marshal(convertedTx)
 
 	mockedClient := NewMockAPIClient(ctrl)
 
@@ -183,5 +177,5 @@ func TestElasticsearchDB_ReadTransaction(t *testing.T) {
 	tx, err := db.ReadTransaction(testTransaction.Hash)
 
 	assert.Nil(t, err, "unexpected error")
-	assert.Equal(t, tx, &updatedTestTx, "unexpected transaction returned")
+	assert.Equal(t, tx, &testTransaction, "unexpected transaction returned")
 }

@@ -136,10 +136,13 @@ func (es *ElasticsearchDB) GetContractABI(address common.Address) (string, error
 
 // BlockDB
 func (es *ElasticsearchDB) WriteBlock(block *types.Block) error {
+	var internalBlock Block
+	internalBlock.From(block)
+
 	req := esapi.IndexRequest{
 		Index:      BlockIndex,
 		DocumentID: strconv.FormatUint(block.Number, 10),
-		Body:       esutil.NewJSONReader(block),
+		Body:       esutil.NewJSONReader(internalBlock),
 		Refresh:    "true",
 	}
 
@@ -191,7 +194,7 @@ func (es *ElasticsearchDB) ReadBlock(number uint64) (*types.Block, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &blockResult.Source, nil
+	return blockResult.Source.To(), nil
 }
 
 func (es *ElasticsearchDB) GetLastPersistedBlockNumber() (uint64, error) {
@@ -212,14 +215,13 @@ func (es *ElasticsearchDB) GetLastPersistedBlockNumber() (uint64, error) {
 
 // TransactionDB
 func (es *ElasticsearchDB) WriteTransaction(transaction *types.Transaction) error {
-	if transaction.InternalCalls == nil {
-		transaction.InternalCalls = make([]*types.InternalCall, 0)
-	}
+	var tx Transaction
+	tx.From(transaction)
 
 	req := esapi.IndexRequest{
 		Index:      TransactionIndex,
 		DocumentID: transaction.Hash.String(),
-		Body:       esutil.NewJSONReader(transaction),
+		Body:       esutil.NewJSONReader(tx),
 		Refresh:    "true",
 	}
 
@@ -243,7 +245,7 @@ func (es *ElasticsearchDB) ReadTransaction(hash common.Hash) (*types.Transaction
 	if err != nil {
 		return nil, err
 	}
-	return &transactionResult.Source, nil
+	return transactionResult.Source.To(), nil
 }
 
 // IndexDB
@@ -489,12 +491,11 @@ func (es *ElasticsearchDB) updateContract(address common.Address, property strin
 func (es *ElasticsearchDB) createEvent(event *types.Event) error {
 	var e Event
 	e.From(event)
-	converted := e
 
 	req := esapi.IndexRequest{
 		Index:      EventIndex,
 		DocumentID: strconv.FormatUint(event.BlockNumber, 10) + "-" + strconv.FormatUint(event.Index, 10),
-		Body:       esutil.NewJSONReader(converted),
+		Body:       esutil.NewJSONReader(e),
 		Refresh:    "true",
 	}
 
