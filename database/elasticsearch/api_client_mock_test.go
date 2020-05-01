@@ -48,21 +48,6 @@ func (mr *MockAPIClientMockRecorder) DoRequest(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DoRequest", reflect.TypeOf((*MockAPIClient)(nil).DoRequest), arg0)
 }
 
-// IndexRequest mocks base method
-func (m *MockAPIClient) IndexRequest(arg0 esapi.IndexRequest) ([]byte, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "IndexRequest", arg0)
-	ret0, _ := ret[0].([]byte)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// IndexRequest indicates an expected call of IndexRequest
-func (mr *MockAPIClientMockRecorder) IndexRequest(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IndexRequest", reflect.TypeOf((*MockAPIClient)(nil).IndexRequest), arg0)
-}
-
 // ScrollAllResults mocks base method
 func (m *MockAPIClient) ScrollAllResults(arg0, arg1 string) ([]interface{}, error) {
 	m.ctrl.T.Helper()

@@ -21,8 +21,6 @@ type APIClient interface {
 	ScrollAllResults(index string, query string) ([]interface{}, error)
 	//DoRequest executes any operation type for ElasticSearch
 	DoRequest(req esapi.Request) ([]byte, error)
-	//IndexRequest specifically executes an ElasticSearch index operation
-	IndexRequest(req esapi.IndexRequest) ([]byte, error)
 }
 
 type DefaultAPIClient struct {
@@ -122,10 +120,6 @@ func (c *DefaultAPIClient) DoRequest(req esapi.Request) ([]byte, error) {
 		return nil, c.extractError(res.StatusCode, res.Body)
 	}
 	return ioutil.ReadAll(res.Body)
-}
-
-func (c *DefaultAPIClient) IndexRequest(req esapi.IndexRequest) ([]byte, error) {
-	return c.DoRequest(req)
 }
 
 func (c *DefaultAPIClient) extractError(statusCode int, body io.ReadCloser) error {

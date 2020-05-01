@@ -59,7 +59,7 @@ func (es *ElasticsearchDB) init() error {
 		Refresh:    "true",
 		OpType:     "create",
 	}
-	es.apiClient.IndexRequest(req)
+	es.apiClient.DoRequest(req)
 
 	return nil
 }
@@ -84,7 +84,7 @@ func (es *ElasticsearchDB) AddAddresses(addresses []common.Address) error {
 		}
 
 		//TODO: bubble up this error
-		es.apiClient.IndexRequest(req)
+		es.apiClient.DoRequest(req)
 	}
 
 	return nil
