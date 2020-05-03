@@ -47,7 +47,11 @@ func (fs *FilterService) Start() error {
 				for current > lastFiltered {
 					err := fs.index(lastFiltered + 1)
 					if err != nil {
-						log.Panicf("index block %v failed: %v", lastFiltered, err)
+						log.Printf("index block %v failed: %v", lastFiltered, err)
+
+						//end the loop early, forgetting about any iterations left
+						//they will be picked up in the next round
+						break
 					}
 					lastFiltered++
 				}

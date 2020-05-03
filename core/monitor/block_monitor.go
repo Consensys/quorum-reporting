@@ -2,8 +2,10 @@ package monitor
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"math/big"
+	"strconv"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -129,14 +131,17 @@ func (bm *BlockMonitor) listenToChainHead() error {
 func (bm *BlockMonitor) syncBlocks(start, end uint64) error {
 	log.Printf("Start to sync historic blocks from %v to %v. \n", start, end)
 	for i := start + 1; i <= end; i++ {
+		fmt.Println("PETER: " + strconv.FormatUint(i, 10))
 		blockOrigin, err := bm.quorumClient.BlockByNumber(context.Background(), big.NewInt(int64(i)))
 		if err != nil {
 			// TODO: if quorum node is down, reconnect?
-			return err
+			//return err
+			i--
 		}
 		err = bm.process(createBlock(blockOrigin))
 		if err != nil {
-			return err
+			//return err
+			i--
 		}
 	}
 	return nil
