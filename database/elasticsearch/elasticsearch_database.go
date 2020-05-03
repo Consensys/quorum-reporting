@@ -1,19 +1,19 @@
 package elasticsearch
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
-	"strconv"
-	"strings"
-
 	"github.com/elastic/go-elasticsearch/v7/esapi"
 	"github.com/elastic/go-elasticsearch/v7/esutil"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/state"
-
+	"log"
 	"quorumengineering/quorum-report/types"
+	"strconv"
+	"strings"
+	"time"
 )
 
 type ElasticsearchDB struct {
@@ -66,7 +66,8 @@ func (es *ElasticsearchDB) init() error {
 
 //AddressDB
 func (es *ElasticsearchDB) AddAddresses(addresses []common.Address) error {
-	//TODO: use bulk indexing
+	bi := es.apiClient.GetBulkHandler(ContractIndex)
+
 	for _, address := range addresses {
 		contract := Contract{
 			Address:             address,
@@ -75,17 +76,18 @@ func (es *ElasticsearchDB) AddAddresses(addresses []common.Address) error {
 			LastFiltered:        0,
 		}
 
-		req := esapi.IndexRequest{
-			Index:      ContractIndex,
-			DocumentID: address.String(),
-			Body:       esutil.NewJSONReader(contract),
-			Refresh:    "true",
-			OpType:     "create", //This will only create if the contract does not exist
-		}
-
-		//TODO: bubble up this error
-		es.apiClient.DoRequest(req)
+		bi.Add(
+			context.Background(),
+			esutil.BulkIndexerItem{
+				Action:     "create",
+				DocumentID: address.String(),
+				Body:       esutil.NewJSONReader(contract),
+			},
+		)
 	}
+
+	//temporary
+	time.Sleep(2 * time.Second)
 
 	return nil
 }
@@ -254,9 +256,9 @@ func (es *ElasticsearchDB) IndexBlock(addresses []common.Address, block *types.B
 	filteredAddresses := map[common.Address]bool{}
 	for _, address := range addresses {
 		lastFiltered, _ := es.GetLastFiltered(address)
-		if es.addressIsRegistered(address) && lastFiltered < block.Number {
+		if lastFiltered < block.Number {
 			filteredAddresses[address] = true
-			log.Printf("Index registered address %v at block %v.\n", address.Hex(), block.Number)
+			//log.Printf("Index registered address %v at block %v.\n", address.Hex(), block.Number)
 		}
 	}
 
@@ -266,13 +268,13 @@ func (es *ElasticsearchDB) IndexBlock(addresses []common.Address, block *types.B
 		es.indexTransaction(filteredAddresses, transaction)
 	}
 
-	for addr := range filteredAddresses {
-		es.updateLastFiltered(addr, block.Number)
-	}
-	return nil
+	return es.updateAllLastFiltered(filteredAddresses, block.Number)
 }
 
 func (es *ElasticsearchDB) IndexStorage(blockNumber uint64, rawStorage map[common.Address]*state.DumpAccount) error {
+	biState := es.apiClient.GetBulkHandler(StateIndex)
+	biStorage := es.apiClient.GetBulkHandler(StorageIndex)
+
 	for address, dumpAccount := range rawStorage {
 		stateObj := State{
 			Address:     address,
@@ -284,22 +286,22 @@ func (es *ElasticsearchDB) IndexStorage(blockNumber uint64, rawStorage map[commo
 			StorageMap:  dumpAccount.Storage,
 		}
 
-		reqState := esapi.IndexRequest{
-			Index:      StateIndex,
-			DocumentID: address.String() + "-" + strconv.FormatUint(blockNumber, 10),
-			Body:       esutil.NewJSONReader(stateObj),
-			Refresh:    "true",
-		}
-		reqStorage := esapi.IndexRequest{
-			Index:      StorageIndex,
-			DocumentID: "0x" + dumpAccount.Root,
-			Body:       esutil.NewJSONReader(storageMap),
-			Refresh:    "true",
-		}
-
-		//TODO: check response
-		es.apiClient.DoRequest(reqState)
-		es.apiClient.DoRequest(reqStorage)
+		biState.Add(
+			context.Background(),
+			esutil.BulkIndexerItem{
+				Action:     "create",
+				DocumentID: address.String() + "-" + strconv.FormatUint(blockNumber, 10),
+				Body:       esutil.NewJSONReader(stateObj),
+			},
+		)
+		biStorage.Add(
+			context.Background(),
+			esutil.BulkIndexerItem{
+				Action:     "create",
+				DocumentID: "0x" + dumpAccount.Root,
+				Body:       esutil.NewJSONReader(storageMap),
+			},
+		)
 	}
 	return nil
 }
@@ -460,8 +462,21 @@ func (es *ElasticsearchDB) updateCreatedTx(address common.Address, creationTxHas
 	return es.updateContract(address, "creationTx", creationTxHash.String())
 }
 
-func (es *ElasticsearchDB) updateLastFiltered(address common.Address, lastFiltered uint64) error {
-	return es.updateContract(address, "lastFiltered", lastFiltered)
+func (es *ElasticsearchDB) updateAllLastFiltered(addresses map[common.Address]bool, lastFiltered uint64) error {
+	bi := es.apiClient.GetBulkHandler(ContractIndex)
+
+	updateQuery := fmt.Sprintf(`{"doc":{"lastFiltered":%d}}`, lastFiltered)
+	for address := range addresses {
+		bi.Add(
+			context.Background(),
+			esutil.BulkIndexerItem{
+				Action:     "update",
+				DocumentID: address.String(),
+				Body:       strings.NewReader(updateQuery),
+			},
+		)
+	}
+	return nil
 }
 
 func (es *ElasticsearchDB) updateContract(address common.Address, property string, value interface{}) error {

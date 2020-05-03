@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	elasticsearch_mocks "quorumengineering/quorum-report/database/elasticsearch/mocks"
 	"testing"
 
 	"github.com/elastic/go-elasticsearch/v7/esapi"
@@ -16,7 +17,7 @@ func TestElasticsearchDB_GetContractCreationTransaction(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockedClient := NewMockAPIClient(ctrl)
+	mockedClient := elasticsearch_mocks.NewMockAPIClient(ctrl)
 
 	addr := common.HexToAddress("0x1932c48b2bf8102ba33b4a6b545c32236e342f34")
 	creationTx := common.HexToHash("0xd09fc502b74c7e6015e258e3aed2d724cb50317684a46e00355e50b1b21c6446")
@@ -49,7 +50,7 @@ func TestElasticsearchDB_GetContractCreationTransaction_WithError(t *testing.T) 
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockedClient := NewMockAPIClient(ctrl)
+	mockedClient := elasticsearch_mocks.NewMockAPIClient(ctrl)
 
 	addr := common.HexToAddress("0x1932c48b2bf8102ba33b4a6b545c32236e342f34")
 
@@ -73,7 +74,7 @@ func TestElasticsearchDB_GetAllTransactionsToAddress_WithError(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockedClient := NewMockAPIClient(ctrl)
+	mockedClient := elasticsearch_mocks.NewMockAPIClient(ctrl)
 
 	addr := common.HexToAddress("0x1932c48b2bf8102ba33b4a6b545c32236e342f34")
 
@@ -102,7 +103,7 @@ func TestElasticsearchDB_GetAllTransactionsToAddress_SingleResult(t *testing.T) 
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockedClient := NewMockAPIClient(ctrl)
+	mockedClient := elasticsearch_mocks.NewMockAPIClient(ctrl)
 
 	addr := common.HexToAddress("0x1932c48b2bf8102ba33b4a6b545c32236e342f34")
 
@@ -134,7 +135,7 @@ func TestElasticsearchDB_GetAllTransactionsToAddress_NoResults(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockedClient := NewMockAPIClient(ctrl)
+	mockedClient := elasticsearch_mocks.NewMockAPIClient(ctrl)
 
 	addr := common.HexToAddress("0x1932c48b2bf8102ba33b4a6b545c32236e342f34")
 
@@ -156,7 +157,7 @@ func TestElasticsearchDB_GetAllTransactionsToAddress_MultipleResults(t *testing.
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockedClient := NewMockAPIClient(ctrl)
+	mockedClient := elasticsearch_mocks.NewMockAPIClient(ctrl)
 
 	addr := common.HexToAddress("0x1932c48b2bf8102ba33b4a6b545c32236e342f34")
 
@@ -195,7 +196,7 @@ func TestElasticsearchDB_GetAllEventsByAddress_WithError(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockedClient := NewMockAPIClient(ctrl)
+	mockedClient := elasticsearch_mocks.NewMockAPIClient(ctrl)
 
 	addr := common.HexToAddress("0x1932c48b2bF8102Ba33B4A6B545C32236e342f34")
 
@@ -215,7 +216,7 @@ func TestElasticsearchDB_GetAllEventsByAddress_WithSingleResult(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockedClient := NewMockAPIClient(ctrl)
+	mockedClient := elasticsearch_mocks.NewMockAPIClient(ctrl)
 
 	addr := common.HexToAddress("0x1932c48b2bF8102Ba33B4A6B545C32236e342f34")
 
@@ -251,7 +252,7 @@ func TestElasticsearchDB_GetAllEventsByAddress_WithNoResult(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockedClient := NewMockAPIClient(ctrl)
+	mockedClient := elasticsearch_mocks.NewMockAPIClient(ctrl)
 
 	addr := common.HexToAddress("0x1932c48b2bF8102Ba33B4A6B545C32236e342f34")
 
@@ -273,7 +274,7 @@ func TestElasticsearchDB_GetAllEventsByAddress_MultipleResults(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockedClient := NewMockAPIClient(ctrl)
+	mockedClient := elasticsearch_mocks.NewMockAPIClient(ctrl)
 
 	addr := common.HexToAddress("0x1932c48b2bF8102Ba33B4A6B545C32236e342f34")
 
@@ -322,7 +323,7 @@ func TestElasticsearchDB_GetLastFiltered(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockedClient := NewMockAPIClient(ctrl)
+	mockedClient := elasticsearch_mocks.NewMockAPIClient(ctrl)
 
 	addr := common.HexToAddress("0x1932c48b2bf8102ba33b4a6b545c32236e342f34")
 
@@ -355,7 +356,7 @@ func TestElasticsearchDB_GetLastFiltered_ContractDoesntExist(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockedClient := NewMockAPIClient(ctrl)
+	mockedClient := elasticsearch_mocks.NewMockAPIClient(ctrl)
 
 	addr := common.HexToAddress("0x1932c48b2bf8102ba33b4a6b545c32236e342f34")
 

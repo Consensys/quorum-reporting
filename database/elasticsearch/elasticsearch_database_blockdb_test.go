@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/elastic/go-elasticsearch/v7/esutil"
 	"github.com/ethereum/go-ethereum/common/hexutil"
+	elasticsearch_mocks "quorumengineering/quorum-report/database/elasticsearch/mocks"
 	"quorumengineering/quorum-report/types"
 	"strings"
 	"testing"
@@ -42,7 +43,7 @@ func TestElasticsearchDB_WriteBlock_WithError(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockedClient := NewMockAPIClient(ctrl)
+	mockedClient := elasticsearch_mocks.NewMockAPIClient(ctrl)
 
 	req := esapi.IndexRequest{
 		Index:      BlockIndex,
@@ -66,7 +67,7 @@ func TestElasticsearchDB_WriteBlock_ErrorFetchingLastPersisted(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockedClient := NewMockAPIClient(ctrl)
+	mockedClient := elasticsearch_mocks.NewMockAPIClient(ctrl)
 
 	req := esapi.IndexRequest{
 		Index:      BlockIndex,
@@ -99,7 +100,7 @@ func TestElasticsearchDB_WriteBlock_NotSequential(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockedClient := NewMockAPIClient(ctrl)
+	mockedClient := elasticsearch_mocks.NewMockAPIClient(ctrl)
 
 	req := esapi.IndexRequest{
 		Index:      BlockIndex,
@@ -132,7 +133,7 @@ func TestElasticsearchDB_WriteBlock_IsSequentialNotCaughtUp(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockedClient := NewMockAPIClient(ctrl)
+	mockedClient := elasticsearch_mocks.NewMockAPIClient(ctrl)
 
 	req := esapi.IndexRequest{
 		Index:      BlockIndex,
@@ -178,7 +179,7 @@ func TestElasticsearchDB_WriteBlock_IsSequentialAndCaughtUp(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockedClient := NewMockAPIClient(ctrl)
+	mockedClient := elasticsearch_mocks.NewMockAPIClient(ctrl)
 
 	req := esapi.IndexRequest{
 		Index:      BlockIndex,
@@ -233,7 +234,7 @@ func TestElasticsearchDB_WriteBlock_ErrorWritingLastPersisted(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockedClient := NewMockAPIClient(ctrl)
+	mockedClient := elasticsearch_mocks.NewMockAPIClient(ctrl)
 
 	req := esapi.IndexRequest{
 		Index:      BlockIndex,
@@ -263,7 +264,7 @@ func TestElasticsearchDB_ReadBlock_WithError(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockedClient := NewMockAPIClient(ctrl)
+	mockedClient := elasticsearch_mocks.NewMockAPIClient(ctrl)
 
 	blockReadRequest := esapi.GetRequest{
 		Index:      BlockIndex,
@@ -287,7 +288,7 @@ func TestElasticsearchDB_ReadBlock_WithErrorReadingResult(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockedClient := NewMockAPIClient(ctrl)
+	mockedClient := elasticsearch_mocks.NewMockAPIClient(ctrl)
 
 	blockReadRequest := esapi.GetRequest{
 		Index:      BlockIndex,
@@ -311,7 +312,7 @@ func TestElasticsearchDB_ReadBlock(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockedClient := NewMockAPIClient(ctrl)
+	mockedClient := elasticsearch_mocks.NewMockAPIClient(ctrl)
 
 	blockReadRequest := esapi.GetRequest{
 		Index:      BlockIndex,

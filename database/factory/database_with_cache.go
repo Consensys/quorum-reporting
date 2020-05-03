@@ -12,7 +12,11 @@ import (
 )
 
 type DatabaseWithCache struct {
-	db                    database.Database
+	db database.Database
+
+	addresses  []common.Address
+	addressMap map[common.Address]interface{}
+
 	blockCache            *lru.Cache
 	transactionCache      *lru.Cache
 	storageCache          *lru.Cache
@@ -41,8 +45,20 @@ func NewDatabaseWithCache(db database.Database, cacheSize int) (database.Databas
 	if err != nil {
 		return nil, err
 	}
+
+	existingAddresses, err := db.GetAddresses()
+	if err != nil {
+		return nil, err
+	}
+	addressMap := make(map[common.Address]interface{})
+	for _, address := range existingAddresses {
+		addressMap[address] = struct{}{}
+	}
+
 	return &DatabaseWithCache{
 		db:                    db,
+		addresses:             existingAddresses,
+		addressMap:            addressMap,
 		blockCache:            blockCache,
 		transactionCache:      transactionCache,
 		storageCache:          storageCache,
@@ -53,19 +69,48 @@ func NewDatabaseWithCache(db database.Database, cacheSize int) (database.Databas
 func (cachingDB *DatabaseWithCache) AddAddresses(addresses []common.Address) error {
 	cachingDB.mux.Lock()
 	defer cachingDB.mux.Unlock()
-	return cachingDB.db.AddAddresses(addresses)
+
+	err := cachingDB.db.AddAddresses(addresses)
+	if err != nil {
+		return err
+	}
+	for _, newAddress := range addresses {
+		cachingDB.addressMap[newAddress] = struct{}{}
+	}
+	cachingDB.addresses = addressesFromMap(cachingDB.addressMap)
+	return nil
 }
 
 func (cachingDB *DatabaseWithCache) DeleteAddress(address common.Address) error {
 	cachingDB.mux.Lock()
 	defer cachingDB.mux.Unlock()
-	return cachingDB.db.DeleteAddress(address)
+
+	if _, ok := cachingDB.addressMap[address]; !ok {
+		return nil
+	}
+
+	err := cachingDB.db.DeleteAddress(address)
+	if err != nil {
+		return err
+	}
+
+	delete(cachingDB.addressMap, address)
+	cachingDB.addresses = addressesFromMap(cachingDB.addressMap)
+	return nil
+}
+
+func addressesFromMap(existing map[common.Address]interface{}) []common.Address {
+	addresses := make([]common.Address, 0, len(existing))
+	for key := range existing {
+		addresses = append(addresses, key)
+	}
+	return addresses
 }
 
 func (cachingDB *DatabaseWithCache) GetAddresses() ([]common.Address, error) {
 	cachingDB.mux.RLock()
 	defer cachingDB.mux.RUnlock()
-	return cachingDB.db.GetAddresses()
+	return cachingDB.addresses, nil
 }
 
 func (cachingDB *DatabaseWithCache) AddContractABI(address common.Address, abi string) error {
