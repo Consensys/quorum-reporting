@@ -8,6 +8,7 @@ import (
 	"log"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/elastic/go-elasticsearch/v7/esapi"
 	"github.com/elastic/go-elasticsearch/v7/esutil"
@@ -69,6 +70,7 @@ func (es *ElasticsearchDB) init() error {
 func (es *ElasticsearchDB) AddAddresses(addresses []common.Address) error {
 	bi := es.apiClient.GetBulkHandler(ContractIndex)
 
+	var wg sync.WaitGroup
 	for _, address := range addresses {
 		contract := Contract{
 			Address:             address,
@@ -76,19 +78,23 @@ func (es *ElasticsearchDB) AddAddresses(addresses []common.Address) error {
 			CreationTransaction: common.Hash{},
 			LastFiltered:        0,
 		}
-
+		wg.Add(1)
 		bi.Add(
 			context.Background(),
 			esutil.BulkIndexerItem{
 				Action:     "create",
 				DocumentID: address.String(),
 				Body:       esutil.NewJSONReader(contract),
+				OnSuccess: func(ctx context.Context, item esutil.BulkIndexerItem, item2 esutil.BulkIndexerResponseItem) {
+					wg.Done()
+				},
 			},
 		)
 	}
 
 	//temporary
 	//time.Sleep(2 * time.Second)
+	wg.Wait()
 
 	return nil
 }
