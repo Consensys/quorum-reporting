@@ -88,12 +88,13 @@ func (es *ElasticsearchDB) AddAddresses(addresses []common.Address) error {
 				OnSuccess: func(ctx context.Context, item esutil.BulkIndexerItem, item2 esutil.BulkIndexerResponseItem) {
 					wg.Done()
 				},
+				OnFailure: func(ctx context.Context, item esutil.BulkIndexerItem, item2 esutil.BulkIndexerResponseItem, err error) {
+					wg.Done()
+				},
 			},
 		)
 	}
 
-	//temporary
-	//time.Sleep(2 * time.Second)
 	wg.Wait()
 
 	return nil

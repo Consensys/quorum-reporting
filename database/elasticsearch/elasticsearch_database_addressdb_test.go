@@ -1,6 +1,7 @@
 package elasticsearch
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -41,7 +42,11 @@ func TestAddSingleAddress(t *testing.T) {
 
 	mockedClient.EXPECT().DoRequest(gomock.Any()) //for setup, not relevant to test
 	mockedClient.EXPECT().GetBulkHandler(ContractIndex).Return(mockedBulkIndexer)
-	mockedBulkIndexer.EXPECT().Add(gomock.Any(), ex)
+	mockedBulkIndexer.EXPECT().
+		Add(gomock.Any(), NewBulkIndexerItemMatcher(ex)).
+		Do(func(ctx context.Context, item esutil.BulkIndexerItem) {
+			item.OnSuccess(context.Background(), ex, esutil.BulkIndexerResponseItem{})
+		})
 
 	db, err := New(mockedClient)
 
@@ -85,8 +90,16 @@ func TestAddMultipleAddresses(t *testing.T) {
 
 	mockedClient.EXPECT().DoRequest(gomock.Any()) //for setup, not relevant to test
 	mockedClient.EXPECT().GetBulkHandler(ContractIndex).Return(mockedBulkIndexer)
-	mockedBulkIndexer.EXPECT().Add(gomock.Any(), req1)
-	mockedBulkIndexer.EXPECT().Add(gomock.Any(), req2)
+	mockedBulkIndexer.EXPECT().
+		Add(gomock.Any(), NewBulkIndexerItemMatcher(req1)).
+		Do(func(ctx context.Context, item esutil.BulkIndexerItem) {
+			item.OnSuccess(context.Background(), req1, esutil.BulkIndexerResponseItem{})
+		})
+	mockedBulkIndexer.EXPECT().
+		Add(gomock.Any(), NewBulkIndexerItemMatcher(req2)).
+		Do(func(ctx context.Context, item esutil.BulkIndexerItem) {
+			item.OnSuccess(context.Background(), req2, esutil.BulkIndexerResponseItem{})
+		})
 
 	db, _ := New(mockedClient)
 
@@ -136,7 +149,11 @@ func TestAddSingleAddressWithError(t *testing.T) {
 
 	mockedClient.EXPECT().DoRequest(gomock.Any()) //for setup, not relevant to test
 	mockedClient.EXPECT().GetBulkHandler(ContractIndex).Return(mockedBulkIndexer)
-	mockedBulkIndexer.EXPECT().Add(gomock.Any(), ex).Return(errors.New("test error"))
+	mockedBulkIndexer.EXPECT().
+		Add(gomock.Any(), NewBulkIndexerItemMatcher(ex)).
+		Do(func(ctx context.Context, item esutil.BulkIndexerItem) {
+			item.OnFailure(context.Background(), ex, esutil.BulkIndexerResponseItem{}, errors.New("test error"))
+		}).Return(errors.New("test error"))
 
 	db, _ := New(mockedClient)
 
