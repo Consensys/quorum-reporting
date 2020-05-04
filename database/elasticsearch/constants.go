@@ -13,10 +13,9 @@ const (
 	EventIndex       = "event"
 )
 
-// errors
 var (
+	AllIndexes = []string{MetaIndex, ContractIndex, BlockIndex, StorageIndex, StateIndex, TransactionIndex, EventIndex}
+	// errors
 	ErrCouldNotResolveResp = errors.New("could not resolve response body")
 	ErrIndexNotFound       = errors.New("index not found")
-
-	AllIndexes = []string{MetaIndex, ContractIndex, BlockIndex, StorageIndex, StateIndex, TransactionIndex, EventIndex}
 )
