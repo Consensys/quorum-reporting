@@ -72,6 +72,14 @@ Sample Response:
 {
     transactions: [common.Hash...],
     total: uint64,
+    options: {
+        beginBlockNumber: 0,
+        endBlockNumber: "latest",
+        beginTimestamp: 0,
+        endTimestamp: 9999999999,
+        pageSize: 10,
+        pageNumber: 0,
+    }
 }
 ```
 
@@ -97,6 +105,14 @@ Sample Response:
 {
     transactions: [common.Hash...],
     total: uint64,
+    options: {
+        beginBlockNumber: 0,
+        endBlockNumber: "latest",
+        beginTimestamp: 0,
+        endTimestamp: 9999999999,
+        pageSize: 10,
+        pageNumber: 0,
+    }
 }
 ```
 
@@ -124,6 +140,14 @@ Sample Response:
 {
     events: [eventObj...],
     total: uint64,
+    options: {
+        beginBlockNumber: 0,
+        endBlockNumber: "latest",
+        beginTimestamp: 0,
+        endTimestamp: 9999999999,
+        pageSize: 10,
+        pageNumber: 0,
+    }
 }
 ```
 
