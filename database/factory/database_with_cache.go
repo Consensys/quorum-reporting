@@ -238,3 +238,9 @@ func (cachingDB *DatabaseWithCache) GetLastFiltered(address common.Address) (uin
 	defer cachingDB.mux.RUnlock()
 	return cachingDB.db.GetLastFiltered(address)
 }
+
+func (cachingDB *DatabaseWithCache) Stop() {
+	cachingDB.mux.Lock()
+	defer cachingDB.mux.Unlock()
+	cachingDB.db.Stop()
+}

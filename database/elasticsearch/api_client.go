@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/elastic/go-elasticsearch/v7/esutil"
 	"io"
 	"io/ioutil"
 	"strings"
@@ -13,6 +12,7 @@ import (
 
 	elasticsearch7 "github.com/elastic/go-elasticsearch/v7"
 	"github.com/elastic/go-elasticsearch/v7/esapi"
+	"github.com/elastic/go-elasticsearch/v7/esutil"
 
 	"quorumengineering/quorum-report/types"
 )
@@ -21,14 +21,15 @@ import (
 //go:generate mockgen -destination=./mocks/bulkindexer_mock.go -package elasticsearch_mocks github.com/elastic/go-elasticsearch/v7/esutil BulkIndexer
 type APIClient interface {
 	ScrollAllResults(index string, query string) ([]interface{}, error)
-	//DoRequest executes any operation type for ElasticSearch
+	// DoRequest executes any operation type for ElasticSearch
 	DoRequest(req esapi.Request) ([]byte, error)
 	GetBulkHandler(index string) esutil.BulkIndexer
+	// CloseIndexers close all bulk update indexers
+	CloseIndexers()
 }
 
 type DefaultAPIClient struct {
-	client *elasticsearch7.Client
-
+	client   *elasticsearch7.Client
 	indexers map[string]esutil.BulkIndexer
 }
 
@@ -149,6 +150,12 @@ func (c *DefaultAPIClient) DoRequest(req esapi.Request) ([]byte, error) {
 
 func (c *DefaultAPIClient) GetBulkHandler(index string) esutil.BulkIndexer {
 	return c.indexers[index]
+}
+
+func (c *DefaultAPIClient) CloseIndexers() {
+	for _, index := range c.indexers {
+		index.Close(context.Background())
+	}
 }
 
 func (c *DefaultAPIClient) extractError(statusCode int, body io.ReadCloser) error {

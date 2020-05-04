@@ -5,15 +5,16 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
+	"strconv"
+	"strings"
+
 	"github.com/elastic/go-elasticsearch/v7/esapi"
 	"github.com/elastic/go-elasticsearch/v7/esutil"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/state"
-	"log"
+
 	"quorumengineering/quorum-report/types"
-	"strconv"
-	"strings"
-	"time"
 )
 
 type ElasticsearchDB struct {
@@ -87,7 +88,7 @@ func (es *ElasticsearchDB) AddAddresses(addresses []common.Address) error {
 	}
 
 	//temporary
-	time.Sleep(2 * time.Second)
+	//time.Sleep(2 * time.Second)
 
 	return nil
 }
@@ -517,4 +518,8 @@ func (es *ElasticsearchDB) createEvent(event *types.Event) error {
 	//TODO: check response
 	es.apiClient.DoRequest(req)
 	return nil
+}
+
+func (es *ElasticsearchDB) Stop() {
+	es.apiClient.CloseIndexers()
 }

@@ -4,13 +4,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	elasticsearch_mocks "quorumengineering/quorum-report/database/elasticsearch/mocks"
 	"testing"
 
 	"github.com/elastic/go-elasticsearch/v7/esapi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
+
+	elasticsearch_mocks "quorumengineering/quorum-report/database/elasticsearch/mocks"
 )
 
 func TestElasticsearchDB_GetContractCreationTransaction(t *testing.T) {

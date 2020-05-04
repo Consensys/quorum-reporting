@@ -4,15 +4,16 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/elastic/go-elasticsearch/v7/esutil"
-	elasticsearch_mocks "quorumengineering/quorum-report/database/elasticsearch/mocks"
-	"quorumengineering/quorum-report/types"
 	"testing"
 
 	"github.com/elastic/go-elasticsearch/v7/esapi"
+	"github.com/elastic/go-elasticsearch/v7/esutil"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
+
+	elasticsearch_mocks "quorumengineering/quorum-report/database/elasticsearch/mocks"
+	"quorumengineering/quorum-report/types"
 )
 
 //Tests

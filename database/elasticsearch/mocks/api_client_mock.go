@@ -34,6 +34,18 @@ func (m *MockAPIClient) EXPECT() *MockAPIClientMockRecorder {
 	return m.recorder
 }
 
+// CloseIndexers mocks base method
+func (m *MockAPIClient) CloseIndexers() {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "CloseIndexers")
+}
+
+// CloseIndexers indicates an expected call of CloseIndexers
+func (mr *MockAPIClientMockRecorder) CloseIndexers() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CloseIndexers", reflect.TypeOf((*MockAPIClient)(nil).CloseIndexers))
+}
+
 // DoRequest mocks base method
 func (m *MockAPIClient) DoRequest(arg0 esapi.Request) ([]byte, error) {
 	m.ctrl.T.Helper()

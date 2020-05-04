@@ -13,6 +13,7 @@ type Database interface {
 	BlockDB
 	TransactionDB
 	IndexDB
+	Stop()
 }
 
 // AddressDB stores registered addresses
