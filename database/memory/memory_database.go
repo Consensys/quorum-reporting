@@ -283,6 +283,8 @@ func (db *MemoryDB) GetLastFiltered(address common.Address) (uint64, error) {
 	return db.lastFiltered[address], nil
 }
 
+func (db *MemoryDB) Stop() {}
+
 // internal functions
 
 func (db *MemoryDB) addressIsRegistered(address common.Address) bool {

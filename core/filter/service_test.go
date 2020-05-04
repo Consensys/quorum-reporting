@@ -128,3 +128,5 @@ func (f *FakeDB) GetStorage(common.Address, uint64) (map[common.Hash]string, err
 func (f *FakeDB) GetLastFiltered(address common.Address) (uint64, error) {
 	return f.lastFiltered[address], nil
 }
+
+func (f *FakeDB) Stop() {}

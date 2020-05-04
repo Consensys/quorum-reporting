@@ -34,5 +34,9 @@ func (dbFactory *Factory) NewElasticsearchDatabase(config *types.ElasticsearchCo
 	if err != nil {
 		return nil, err
 	}
-	return elasticsearch.New(elasticsearch.NewAPIClient(client))
+	apiClient, err := elasticsearch.NewAPIClient(client)
+	if err != nil {
+		return nil, err
+	}
+	return elasticsearch.New(apiClient)
 }
