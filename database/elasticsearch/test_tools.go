@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/elastic/go-elasticsearch/v7/esapi"
+	"github.com/elastic/go-elasticsearch/v7/esutil"
 	"io/ioutil"
 )
 
@@ -112,4 +113,31 @@ func (rm *GetRequestMatcher) Matches(x interface{}) bool {
 
 func (rm *GetRequestMatcher) String() string {
 	return fmt.Sprintf("GetRequestMatcher{%s/%s}", rm.req.Index, rm.req.DocumentID)
+}
+
+type BulkIndexItemMatcher struct {
+	item esutil.BulkIndexerItem
+	body string
+}
+
+func NewBulkIndexerItemMatcher(item esutil.BulkIndexerItem) *BulkIndexItemMatcher {
+	data, _ := ioutil.ReadAll(item.Body)
+	return &BulkIndexItemMatcher{
+		item: item,
+		body: string(data),
+	}
+}
+
+func (bim *BulkIndexItemMatcher) Matches(x interface{}) bool {
+	if val, ok := x.(esutil.BulkIndexerItem); ok {
+		valBody, _ := ioutil.ReadAll(val.Body)
+		return val.Index == bim.item.Index &&
+			val.DocumentID == bim.item.DocumentID &&
+			string(valBody) == bim.body
+	}
+	return false
+}
+
+func (bim *BulkIndexItemMatcher) String() string {
+	return fmt.Sprintf("BulkIndexItemMatcher{%s/%s/%s}", bim.item.Index, bim.item.DocumentID, bim.body)
 }

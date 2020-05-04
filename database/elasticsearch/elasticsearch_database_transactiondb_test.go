@@ -4,14 +4,16 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/elastic/go-elasticsearch/v7/esutil"
-	"quorumengineering/quorum-report/types"
 	"testing"
 
 	"github.com/elastic/go-elasticsearch/v7/esapi"
+	"github.com/elastic/go-elasticsearch/v7/esutil"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
+
+	elasticsearch_mocks "quorumengineering/quorum-report/database/elasticsearch/mocks"
+	"quorumengineering/quorum-report/types"
 )
 
 //Tests
@@ -59,7 +61,7 @@ func TestElasticsearchDB_WriteTransaction_WithError(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockedClient := NewMockAPIClient(ctrl)
+	mockedClient := elasticsearch_mocks.NewMockAPIClient(ctrl)
 
 	var convertedTx Transaction
 	convertedTx.From(&testTransaction)
@@ -89,7 +91,7 @@ func TestElasticsearchDB_WriteTransaction(t *testing.T) {
 	var convertedTx Transaction
 	convertedTx.From(&testTransaction)
 
-	mockedClient := NewMockAPIClient(ctrl)
+	mockedClient := elasticsearch_mocks.NewMockAPIClient(ctrl)
 
 	req := esapi.IndexRequest{
 		Index:      TransactionIndex,
@@ -112,7 +114,7 @@ func TestElasticsearchDB_ReadTransaction_WithError(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockedClient := NewMockAPIClient(ctrl)
+	mockedClient := elasticsearch_mocks.NewMockAPIClient(ctrl)
 
 	req := esapi.GetRequest{
 		Index:      TransactionIndex,
@@ -134,7 +136,7 @@ func TestElasticsearchDB_ReadTransaction_WithErrorUnmarshalling(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockedClient := NewMockAPIClient(ctrl)
+	mockedClient := elasticsearch_mocks.NewMockAPIClient(ctrl)
 
 	req := esapi.GetRequest{
 		Index:      TransactionIndex,
@@ -160,7 +162,7 @@ func TestElasticsearchDB_ReadTransaction(t *testing.T) {
 	convertedTx.From(&testTransaction)
 	asJson, _ := json.Marshal(convertedTx)
 
-	mockedClient := NewMockAPIClient(ctrl)
+	mockedClient := elasticsearch_mocks.NewMockAPIClient(ctrl)
 
 	req := esapi.GetRequest{
 		Index:      TransactionIndex,

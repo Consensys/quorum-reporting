@@ -9,13 +9,15 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
+
+	elasticsearch_mocks "quorumengineering/quorum-report/database/elasticsearch/mocks"
 )
 
 func TestElasticsearchDB_AddContractABI(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockedClient := NewMockAPIClient(ctrl)
+	mockedClient := elasticsearch_mocks.NewMockAPIClient(ctrl)
 
 	addr := common.HexToAddress("0x1932c48b2bf8102ba33b4a6b545c32236e342f34")
 	abi := "test ABI string"
@@ -60,7 +62,7 @@ func TestElasticsearchDB_AddContractABI_WithError(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockedClient := NewMockAPIClient(ctrl)
+	mockedClient := elasticsearch_mocks.NewMockAPIClient(ctrl)
 
 	addr := common.HexToAddress("0x1932c48b2bf8102ba33b4a6b545c32236e342f34")
 	abi := "test ABI string"
@@ -105,7 +107,7 @@ func TestElasticsearchDB_AddContractABI_ContractDoesntExist(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockedClient := NewMockAPIClient(ctrl)
+	mockedClient := elasticsearch_mocks.NewMockAPIClient(ctrl)
 
 	addr := common.HexToAddress("0x1932c48b2bf8102ba33b4a6b545c32236e342f34")
 	abi := "test ABI string"
@@ -129,7 +131,7 @@ func TestElasticsearchDB_GetContractABI(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockedClient := NewMockAPIClient(ctrl)
+	mockedClient := elasticsearch_mocks.NewMockAPIClient(ctrl)
 
 	addr := common.HexToAddress("0x1932c48b2bf8102ba33b4a6b545c32236e342f34")
 
@@ -162,7 +164,7 @@ func TestElasticsearchDB_GetContractABI_ContractDoesntExist(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockedClient := NewMockAPIClient(ctrl)
+	mockedClient := elasticsearch_mocks.NewMockAPIClient(ctrl)
 
 	addr := common.HexToAddress("0x1932c48b2bf8102ba33b4a6b545c32236e342f34")
 
