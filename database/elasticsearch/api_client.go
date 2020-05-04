@@ -12,23 +12,49 @@ import (
 
 	elasticsearch7 "github.com/elastic/go-elasticsearch/v7"
 	"github.com/elastic/go-elasticsearch/v7/esapi"
+	"github.com/elastic/go-elasticsearch/v7/esutil"
 
 	"quorumengineering/quorum-report/types"
 )
 
-//go:generate mockgen -destination=./api_client_mock_test.go -package elasticsearch . APIClient
+//go:generate mockgen -destination=./mocks/api_client_mock.go -package elasticsearch_mocks . APIClient
+//go:generate mockgen -destination=./mocks/bulkindexer_mock.go -package elasticsearch_mocks github.com/elastic/go-elasticsearch/v7/esutil BulkIndexer
 type APIClient interface {
 	ScrollAllResults(index string, query string) ([]interface{}, error)
-	//DoRequest executes any operation type for ElasticSearch
+	// DoRequest executes any operation type for ElasticSearch
 	DoRequest(req esapi.Request) ([]byte, error)
+	GetBulkHandler(index string) esutil.BulkIndexer
+	// CloseIndexers close all bulk update indexers
+	CloseIndexers()
 }
 
 type DefaultAPIClient struct {
-	client *elasticsearch7.Client
+	client   *elasticsearch7.Client
+	indexers map[string]esutil.BulkIndexer
 }
 
-func NewAPIClient(client *elasticsearch7.Client) *DefaultAPIClient {
-	return &DefaultAPIClient{client: client}
+func NewAPIClient(client *elasticsearch7.Client) (*DefaultAPIClient, error) {
+	apiClient := &DefaultAPIClient{
+		client:   client,
+		indexers: make(map[string]esutil.BulkIndexer),
+	}
+
+	for _, idx := range AllIndexes {
+		indexer, err := esutil.NewBulkIndexer(esutil.BulkIndexerConfig{
+			Index:         idx,         // The default index name
+			Client:        client,      // The Elasticsearch client
+			NumWorkers:    1,           // The number of worker goroutines
+			FlushBytes:    1024 * 1024, // The flush threshold in bytes
+			FlushInterval: time.Second,
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		apiClient.indexers[idx] = indexer
+	}
+
+	return apiClient, nil
 }
 
 func NewClient(config elasticsearch7.Config) (*elasticsearch7.Client, error) {
@@ -120,6 +146,16 @@ func (c *DefaultAPIClient) DoRequest(req esapi.Request) ([]byte, error) {
 		return nil, c.extractError(res.StatusCode, res.Body)
 	}
 	return ioutil.ReadAll(res.Body)
+}
+
+func (c *DefaultAPIClient) GetBulkHandler(index string) esutil.BulkIndexer {
+	return c.indexers[index]
+}
+
+func (c *DefaultAPIClient) CloseIndexers() {
+	for _, index := range c.indexers {
+		index.Close(context.Background())
+	}
 }
 
 func (c *DefaultAPIClient) extractError(statusCode int, body io.ReadCloser) error {

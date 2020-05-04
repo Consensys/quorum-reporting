@@ -8,6 +8,7 @@ import (
 	"quorumengineering/quorum-report/core/filter"
 	"quorumengineering/quorum-report/core/monitor"
 	"quorumengineering/quorum-report/core/rpc"
+	"quorumengineering/quorum-report/database"
 	"quorumengineering/quorum-report/database/factory"
 	"quorumengineering/quorum-report/types"
 )
@@ -17,6 +18,7 @@ type Backend struct {
 	monitor *monitor.MonitorService
 	filter  *filter.FilterService
 	rpc     *rpc.RPCService
+	db      database.Database
 }
 
 func New(config types.ReportingConfig) (*Backend, error) {
@@ -54,6 +56,7 @@ func New(config types.ReportingConfig) (*Backend, error) {
 		monitor: monitor.NewMonitorService(db, quorumClient),
 		filter:  filter.NewFilterService(db, quorumClient),
 		rpc:     rpc.NewRPCService(db, config.Server.RPCAddr, config.Server.RPCVHosts, config.Server.RPCCorsList),
+		db:      db,
 	}, nil
 }
 
@@ -73,4 +76,5 @@ func (b *Backend) Stop() {
 	b.rpc.Stop()
 	b.filter.Stop()
 	b.monitor.Stop()
+	b.db.Stop()
 }
