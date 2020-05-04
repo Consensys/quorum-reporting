@@ -64,53 +64,77 @@ Transaction APIs query
 
 #### reporting_getAllTransactionsToAddress
 
-(Deprecated) `reporting_getAllTransactionsToAddress` currently returns all transactions sending to the address. It can 
-be a huge list. Switching to a set of new APIs with query condition.
+(Todo) `reporting_getAllTransactionsToAddress` returns a list of tx hash and total number matching the search criteria 
+provided.
 
-#### reporting_getAllTransactionsToAddressByNumber
+Sample Response:
+```$json
+{
+    transactions: [common.Hash...],
+    total: uint64,
+}
+```
 
-(Todo)
-
-#### reporting_getAllTransactionsToAddressByBlock
-
-(Todo)
-
-#### reporting_getAllTransactionsToAddressByTimestamp
-
-(Todo)
+Default Criteria:
+```$json
+{
+    beginBlockNumber: 0,
+    endBlockNumber: "latest",
+    beginTimestamp: 0,
+    endTimestamp: 9999999999,
+    pageSize: 10,
+    pageNumber: 0,
+}
+```
 
 #### reporting_getAllTransactionsInternalToAddress
 
-(Deprecated) `reporting_getAllTransactionsInternalToAddress` currently returns all transactions internally calling to 
-the address. Switching to a set of new APIs with query condition.
+(Todo) `reporting_getAllTransactionsInternalToAddress` returns a list of tx hash and total number matching the search 
+criteria provided.
 
-#### reporting_getAllTransactionsInternalToAddressByNumber
+Sample Response:
+```$json
+{
+    transactions: [common.Hash...],
+    total: uint64,
+}
+```
 
-(Todo)
-
-#### reporting_getAllTransactionsInternalToAddressByBlock
-
-(Todo)
-
-#### reporting_getAllTransactionsInternalToAddressByTimestamp
-
-(Todo)
+Default Criteria:
+```$json
+{
+    beginBlockNumber: 0,
+    endBlockNumber: "latest",
+    beginTimestamp: 0,
+    endTimestamp: 9999999999,
+    pageSize: 10,
+    pageNumber: 0,
+}
+```
 
 ### Event
 
 #### reporting_getAllEventsFromAddress
 
-(Deprecated) `reporting_getAllEventsFromAddress` currently returns all events emitted from the address. Switching to a 
-set of new APIs with query condition.
+(Todo) `reporting_getAllEventsFromAddress` returns a list of event objs and total number of events matching the search 
+criteria provided.
 
-#### reporting_getAllEventsFromAddressByNumber
+Sample Response:
+```$json
+{
+    events: [eventObj...],
+    total: uint64,
+}
+```
 
-(Todo)
-
-#### reporting_getAllEventsFromAddressByBlock
-
-(Todo)
-
-#### reporting_getAllEventsFromAddressByTimestamp
-
-(Todo)
+Default Criteria:
+```$json
+{
+    beginBlockNumber: 0,
+    endBlockNumber: "latest",
+    beginTimestamp: 0,
+    endTimestamp: 9999999999,
+    pageSize: 10,
+    pageNumber: 0,
+}
+```
