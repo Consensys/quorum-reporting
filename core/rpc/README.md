@@ -64,7 +64,7 @@ Transaction APIs query
 
 #### reporting_getAllTransactionsToAddress
 
-(Todo) `reporting_getAllTransactionsToAddress` returns a list of tx hash and total number matching the search criteria 
+(Todo) `reporting_getAllTransactionsToAddress` returns a list of tx hash and total number matching the search options 
 provided.
 
 Sample Response:
@@ -73,32 +73,17 @@ Sample Response:
     transactions: [common.Hash...],
     total: uint64,
     options: {
-        beginBlockNumber: 0,
-        endBlockNumber: "latest",
-        beginTimestamp: 0,
-        endTimestamp: 9999999999,
-        pageSize: 10,
-        pageNumber: 0,
+        beginBlockNumber, endBlockNumber,
+        beginTimestamp, endTimestamp,
+        pageSize, pageNumber,
     }
-}
-```
-
-Default Criteria:
-```$json
-{
-    beginBlockNumber: 0,
-    endBlockNumber: "latest",
-    beginTimestamp: 0,
-    endTimestamp: 9999999999,
-    pageSize: 10,
-    pageNumber: 0,
 }
 ```
 
 #### reporting_getAllTransactionsInternalToAddress
 
 (Todo) `reporting_getAllTransactionsInternalToAddress` returns a list of tx hash and total number matching the search 
-criteria provided.
+options provided.
 
 Sample Response:
 ```$json
@@ -106,25 +91,10 @@ Sample Response:
     transactions: [common.Hash...],
     total: uint64,
     options: {
-        beginBlockNumber: 0,
-        endBlockNumber: "latest",
-        beginTimestamp: 0,
-        endTimestamp: 9999999999,
-        pageSize: 10,
-        pageNumber: 0,
+        beginBlockNumber, endBlockNumber,
+        beginTimestamp, endTimestamp,
+        pageSize, pageNumber,
     }
-}
-```
-
-Default Criteria:
-```$json
-{
-    beginBlockNumber: 0,
-    endBlockNumber: "latest",
-    beginTimestamp: 0,
-    endTimestamp: 9999999999,
-    pageSize: 10,
-    pageNumber: 0,
 }
 ```
 
@@ -133,7 +103,7 @@ Default Criteria:
 #### reporting_getAllEventsFromAddress
 
 (Todo) `reporting_getAllEventsFromAddress` returns a list of event objs and total number of events matching the search 
-criteria provided.
+options provided.
 
 Sample Response:
 ```$json
@@ -141,23 +111,20 @@ Sample Response:
     events: [eventObj...],
     total: uint64,
     options: {
-        beginBlockNumber: 0,
-        endBlockNumber: "latest",
-        beginTimestamp: 0,
-        endTimestamp: 9999999999,
-        pageSize: 10,
-        pageNumber: 0,
+        beginBlockNumber, endBlockNumber,
+        beginTimestamp, endTimestamp,
+        pageSize, pageNumber,
     }
 }
 ```
 
-Default Criteria:
+### Default Query Options
 ```$json
 {
     beginBlockNumber: 0,
-    endBlockNumber: "latest",
+    endBlockNumber: -1("latest"),
     beginTimestamp: 0,
-    endTimestamp: 9999999999,
+    endTimestamp: -1("latest"),
     pageSize: 10,
     pageNumber: 0,
 }

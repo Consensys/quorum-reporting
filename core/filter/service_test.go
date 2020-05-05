@@ -109,15 +109,15 @@ func (f *FakeDB) GetContractCreationTransaction(common.Address) (common.Hash, er
 	return common.Hash{}, errors.New("not implemented")
 }
 
-func (f *FakeDB) GetAllTransactionsToAddress(common.Address) ([]common.Hash, error) {
+func (f *FakeDB) GetAllTransactionsToAddress(common.Address, *types.QueryOptions) ([]common.Hash, error) {
 	return nil, errors.New("not implemented")
 }
 
-func (f *FakeDB) GetAllTransactionsInternalToAddress(common.Address) ([]common.Hash, error) {
+func (f *FakeDB) GetAllTransactionsInternalToAddress(common.Address, *types.QueryOptions) ([]common.Hash, error) {
 	return nil, errors.New("not implemented")
 }
 
-func (f *FakeDB) GetAllEventsFromAddress(common.Address) ([]*types.Event, error) {
+func (f *FakeDB) GetAllEventsFromAddress(common.Address, *types.QueryOptions) ([]*types.Event, error) {
 	return nil, errors.New("not implemented")
 }
 

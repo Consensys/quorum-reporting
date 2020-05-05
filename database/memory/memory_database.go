@@ -237,7 +237,7 @@ func (db *MemoryDB) GetContractCreationTransaction(address common.Address) (comm
 	return db.txIndexDB[address].contractCreationTx, nil
 }
 
-func (db *MemoryDB) GetAllTransactionsToAddress(address common.Address) ([]common.Hash, error) {
+func (db *MemoryDB) GetAllTransactionsToAddress(address common.Address, options *types.QueryOptions) ([]common.Hash, error) {
 	db.mux.RLock()
 	defer db.mux.RUnlock()
 	if !db.addressIsRegistered(address) {
@@ -246,7 +246,7 @@ func (db *MemoryDB) GetAllTransactionsToAddress(address common.Address) ([]commo
 	return db.txIndexDB[address].txsTo, nil
 }
 
-func (db *MemoryDB) GetAllTransactionsInternalToAddress(address common.Address) ([]common.Hash, error) {
+func (db *MemoryDB) GetAllTransactionsInternalToAddress(address common.Address, options *types.QueryOptions) ([]common.Hash, error) {
 	db.mux.RLock()
 	defer db.mux.RUnlock()
 	if !db.addressIsRegistered(address) {
@@ -255,7 +255,7 @@ func (db *MemoryDB) GetAllTransactionsInternalToAddress(address common.Address) 
 	return db.txIndexDB[address].txsInternalTo, nil
 }
 
-func (db *MemoryDB) GetAllEventsFromAddress(address common.Address) ([]*types.Event, error) {
+func (db *MemoryDB) GetAllEventsFromAddress(address common.Address, options *types.QueryOptions) ([]*types.Event, error) {
 	db.mux.RLock()
 	defer db.mux.RUnlock()
 	if !db.addressIsRegistered(address) {

@@ -246,7 +246,7 @@ func testGetContractCreationTransaction(t *testing.T, db database.Database, addr
 }
 
 func testGetAllTransactionsToAddress(t *testing.T, db database.Database, address common.Address, expected int) {
-	txs, err := db.GetAllTransactionsToAddress(address)
+	txs, err := db.GetAllTransactionsToAddress(address, nil)
 	if err != nil {
 		t.Fatalf("expected no error, but got %v", err)
 	}
@@ -256,7 +256,7 @@ func testGetAllTransactionsToAddress(t *testing.T, db database.Database, address
 }
 
 func testGetAllTransactionsInternalToAddress(t *testing.T, db database.Database, address common.Address, expected int) {
-	txs, err := db.GetAllTransactionsInternalToAddress(address)
+	txs, err := db.GetAllTransactionsInternalToAddress(address, nil)
 	if err != nil {
 		t.Fatalf("expected no error, but got %v", err)
 	}
@@ -266,7 +266,7 @@ func testGetAllTransactionsInternalToAddress(t *testing.T, db database.Database,
 }
 
 func testGetAllEventsByAddress(t *testing.T, db database.Database, address common.Address, expected int) {
-	events, err := db.GetAllEventsFromAddress(address)
+	events, err := db.GetAllEventsFromAddress(address, nil)
 	if err != nil {
 		t.Fatalf("expected no error, but got %v", err)
 	}

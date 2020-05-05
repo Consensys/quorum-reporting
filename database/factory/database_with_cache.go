@@ -210,22 +210,22 @@ func (cachingDB *DatabaseWithCache) GetContractCreationTransaction(address commo
 	return hash, nil
 }
 
-func (cachingDB *DatabaseWithCache) GetAllTransactionsToAddress(address common.Address) ([]common.Hash, error) {
+func (cachingDB *DatabaseWithCache) GetAllTransactionsToAddress(address common.Address, options *types.QueryOptions) ([]common.Hash, error) {
 	cachingDB.mux.RLock()
 	defer cachingDB.mux.RUnlock()
-	return cachingDB.db.GetAllTransactionsToAddress(address)
+	return cachingDB.db.GetAllTransactionsToAddress(address, options)
 }
 
-func (cachingDB *DatabaseWithCache) GetAllTransactionsInternalToAddress(address common.Address) ([]common.Hash, error) {
+func (cachingDB *DatabaseWithCache) GetAllTransactionsInternalToAddress(address common.Address, options *types.QueryOptions) ([]common.Hash, error) {
 	cachingDB.mux.RLock()
 	defer cachingDB.mux.RUnlock()
-	return cachingDB.db.GetAllTransactionsInternalToAddress(address)
+	return cachingDB.db.GetAllTransactionsInternalToAddress(address, options)
 }
 
-func (cachingDB *DatabaseWithCache) GetAllEventsFromAddress(address common.Address) ([]*types.Event, error) {
+func (cachingDB *DatabaseWithCache) GetAllEventsFromAddress(address common.Address, options *types.QueryOptions) ([]*types.Event, error) {
 	cachingDB.mux.RLock()
 	defer cachingDB.mux.RUnlock()
-	return cachingDB.db.GetAllEventsFromAddress(address)
+	return cachingDB.db.GetAllEventsFromAddress(address, options)
 }
 
 func (cachingDB *DatabaseWithCache) GetStorage(address common.Address, blockNumber uint64) (map[common.Hash]string, error) {

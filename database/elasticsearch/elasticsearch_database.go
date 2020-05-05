@@ -322,7 +322,12 @@ func (es *ElasticsearchDB) GetContractCreationTransaction(address common.Address
 	return contract.CreationTransaction, nil
 }
 
-func (es *ElasticsearchDB) GetAllTransactionsToAddress(address common.Address) ([]common.Hash, error) {
+func (es *ElasticsearchDB) GetAllTransactionsToAddress(address common.Address, options *types.QueryOptions) ([]common.Hash, error) {
+	if options != nil {
+		options.SetDefaults()
+	} else {
+		options = types.DefaultQueryOptions
+	}
 	queryString := fmt.Sprintf(QueryByToAddressTemplate, address.String())
 	results, err := es.apiClient.ScrollAllResults(TransactionIndex, queryString)
 	if err != nil {
@@ -339,7 +344,12 @@ func (es *ElasticsearchDB) GetAllTransactionsToAddress(address common.Address) (
 	return converted, nil
 }
 
-func (es *ElasticsearchDB) GetAllTransactionsInternalToAddress(address common.Address) ([]common.Hash, error) {
+func (es *ElasticsearchDB) GetAllTransactionsInternalToAddress(address common.Address, options *types.QueryOptions) ([]common.Hash, error) {
+	if options != nil {
+		options.SetDefaults()
+	} else {
+		options = types.DefaultQueryOptions
+	}
 	queryString := fmt.Sprintf(QueryInternalTransactions, address.String())
 	results, _ := es.apiClient.ScrollAllResults(TransactionIndex, queryString)
 
@@ -353,7 +363,12 @@ func (es *ElasticsearchDB) GetAllTransactionsInternalToAddress(address common.Ad
 	return converted, nil
 }
 
-func (es *ElasticsearchDB) GetAllEventsFromAddress(address common.Address) ([]*types.Event, error) {
+func (es *ElasticsearchDB) GetAllEventsFromAddress(address common.Address, options *types.QueryOptions) ([]*types.Event, error) {
+	if options != nil {
+		options.SetDefaults()
+	} else {
+		options = types.DefaultQueryOptions
+	}
 	query := fmt.Sprintf(QueryByAddressTemplate, address.String())
 	results, err := es.apiClient.ScrollAllResults(EventIndex, query)
 	if err != nil {

@@ -3,11 +3,9 @@ package rpc
 import (
 	"errors"
 	"strings"
-	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/rpc"
 
 	"quorumengineering/quorum-report/database"
 	"quorumengineering/quorum-report/types"
@@ -15,17 +13,6 @@ import (
 
 type RPCAPIs struct {
 	db database.Database
-}
-
-type QueryOptions struct {
-	StartBlock *rpc.BlockNumber `json:"startBlock"`
-	EndBlock   *rpc.BlockNumber `json:"endBlock"`
-
-	BeginTimestamp time.Duration `json:"beginTimestamp"`
-	EndTimestamp   time.Duration `json:"endTimestamp"`
-
-	PageSize   uint64 `json:"pageSize"`
-	PageNumber uint64 `json:"pageNumber"`
 }
 
 func NewRPCAPIs(db database.Database) *RPCAPIs {
@@ -85,16 +72,16 @@ func (r *RPCAPIs) GetContractCreationTransaction(address common.Address) (common
 	return r.db.GetContractCreationTransaction(address)
 }
 
-func (r *RPCAPIs) GetAllTransactionsToAddress(address common.Address, options *QueryOptions) ([]common.Hash, error) {
-	return r.db.GetAllTransactionsToAddress(address)
+func (r *RPCAPIs) GetAllTransactionsToAddress(address common.Address, options *types.QueryOptions) ([]common.Hash, error) {
+	return r.db.GetAllTransactionsToAddress(address, options)
 }
 
-func (r *RPCAPIs) GetAllTransactionsInternalToAddress(address common.Address, options *QueryOptions) ([]common.Hash, error) {
-	return r.db.GetAllTransactionsInternalToAddress(address)
+func (r *RPCAPIs) GetAllTransactionsInternalToAddress(address common.Address, options *types.QueryOptions) ([]common.Hash, error) {
+	return r.db.GetAllTransactionsInternalToAddress(address, options)
 }
 
-func (r *RPCAPIs) GetAllEventsFromAddress(address common.Address, options *QueryOptions) ([]*types.ParsedEvent, error) {
-	events, err := r.db.GetAllEventsFromAddress(address)
+func (r *RPCAPIs) GetAllEventsFromAddress(address common.Address, options *types.QueryOptions) ([]*types.ParsedEvent, error) {
+	events, err := r.db.GetAllEventsFromAddress(address, options)
 	if err != nil {
 		return nil, err
 	}
