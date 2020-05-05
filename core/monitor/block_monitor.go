@@ -4,14 +4,12 @@ import (
 	"context"
 	"log"
 	"math/big"
-	"sync"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/event"
 	"github.com/mitchellh/mapstructure"
-
 	"quorumengineering/quorum-report/client"
 	"quorumengineering/quorum-report/database"
 	"quorumengineering/quorum-report/graphql"
@@ -26,9 +24,7 @@ type BlockMonitor struct {
 	stopFeed           event.Feed
 	// concurrent block processing
 	newBlockChan     chan *types.Block
-	newBlockQueue    []*types.Block
 	availableWorkers uint64
-	workerMux        sync.Mutex
 }
 
 func NewBlockMonitor(db database.Database, quorumClient client.Client) *BlockMonitor {
@@ -38,7 +34,6 @@ func NewBlockMonitor(db database.Database, quorumClient client.Client) *BlockMon
 		syncStart:          make(chan uint64, 1), // make channel buffered so that it does not block chain head listener
 		transactionMonitor: NewTransactionMonitor(db, quorumClient),
 		newBlockChan:       make(chan *types.Block),
-		newBlockQueue:      []*types.Block{},
 		availableWorkers:   10,
 	}
 }
@@ -50,27 +45,9 @@ func (bm *BlockMonitor) Start() error {
 	log.Println("Start to sync blocks...")
 
 	// 1. Start worker
-	go func() {
-		stopChan, stopSubscription := bm.subscribeStopEvent()
-		defer stopSubscription.Unsubscribe()
-		for {
-			select {
-			case newBlock := <-bm.newBlockChan:
-				bm.workerMux.Lock()
-				if bm.availableWorkers > 0 {
-					// spawn go routine to process if max worker not reached
-					bm.availableWorkers--
-					go bm.process(newBlock)
-				} else {
-					// push to queue if max worker reached
-					bm.newBlockQueue = append(bm.newBlockQueue, newBlock)
-				}
-				bm.workerMux.Unlock()
-			case <-stopChan:
-				return
-			}
-		}
-	}()
+	for i := uint64(0); i < bm.availableWorkers; i++ {
+		NewBlockProcessor(bm.newBlockChan, bm).Run()
+	}
 
 	// 2. Fetch the current block height.
 	currentBlockNumber, err := bm.currentBlockNumber()
@@ -188,30 +165,6 @@ func (bm *BlockMonitor) sync(start, end uint64) {
 	case <-stopChan:
 		return
 	}
-}
-
-func (bm *BlockMonitor) process(block *types.Block) {
-	// Transaction monitor pulls all transactions for the given block.
-	err := bm.transactionMonitor.PullTransactions(block)
-	if err != nil {
-		log.Panicf("process block %v error: %v", block.Number, err)
-	}
-
-	// Write block to DB.
-	err = bm.db.WriteBlock(block)
-	if err != nil {
-		log.Panicf("process block %v error: %v", block.Number, err)
-	}
-
-	// Pop from queue if a worker is released.
-	bm.workerMux.Lock()
-	bm.availableWorkers++
-	if len(bm.newBlockQueue) > 0 {
-		newBlock := bm.newBlockQueue[0]
-		bm.newBlockQueue = bm.newBlockQueue[1:]
-		bm.newBlockChan <- newBlock
-	}
-	bm.workerMux.Unlock()
 }
 
 func createBlock(block *ethTypes.Block) *types.Block {
