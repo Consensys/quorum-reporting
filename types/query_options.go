@@ -1,6 +1,8 @@
 package types
 
-import "math/big"
+import (
+	"math/big"
+)
 
 var defaultQueryOptions = &QueryOptions{
 	StartBlock:     big.NewInt(0),
@@ -12,8 +14,8 @@ var defaultQueryOptions = &QueryOptions{
 }
 
 type QueryOptions struct {
-	StartBlock *big.Int `json:"startBlock"`
-	EndBlock   *big.Int `json:"endBlock"`
+	StartBlock *big.Int `json:"beginBlockNumber"`
+	EndBlock   *big.Int `json:"endBlockNumber"`
 
 	BeginTimestamp *big.Int `json:"beginTimestamp"`
 	EndTimestamp   *big.Int `json:"endTimestamp"`

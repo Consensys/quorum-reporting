@@ -326,10 +326,9 @@ func (es *ElasticsearchDB) GetAllTransactionsToAddress(address common.Address, o
 	var queryString string
 	if options != nil {
 		options.SetDefaults()
-		queryString = QueryByToAddressWithOptionsTemplate(options)
+		queryString = fmt.Sprintf(QueryByToAddressWithOptionsTemplate(options), address.String())
 	} else {
 		queryString = fmt.Sprintf(QueryByToAddressTemplate, address.String())
-
 	}
 	results, err := es.apiClient.ScrollAllResults(TransactionIndex, queryString)
 	if err != nil {
@@ -350,12 +349,14 @@ func (es *ElasticsearchDB) GetAllTransactionsInternalToAddress(address common.Ad
 	var queryString string
 	if options != nil {
 		options.SetDefaults()
-		queryString = QueryInternalTransactionsWithOptionsTemplate(options)
+		queryString = fmt.Sprintf(QueryInternalTransactionsWithOptionsTemplate(options), address.String())
 	} else {
 		queryString = fmt.Sprintf(QueryInternalTransactionsTemplate, address.String())
-
 	}
-	results, _ := es.apiClient.ScrollAllResults(TransactionIndex, queryString)
+	results, err := es.apiClient.ScrollAllResults(TransactionIndex, queryString)
+	if err != nil {
+		return nil, err
+	}
 
 	converted := make([]common.Hash, len(results))
 	for i, result := range results {
@@ -371,10 +372,9 @@ func (es *ElasticsearchDB) GetAllEventsFromAddress(address common.Address, optio
 	var queryString string
 	if options != nil {
 		options.SetDefaults()
-		queryString = QueryByAddressWithOptionsTemplate(options)
+		queryString = fmt.Sprintf(QueryByAddressWithOptionsTemplate(options), address.String())
 	} else {
 		queryString = fmt.Sprintf(QueryByAddressTemplate, address.String())
-
 	}
 	results, err := es.apiClient.ScrollAllResults(EventIndex, queryString)
 	if err != nil {

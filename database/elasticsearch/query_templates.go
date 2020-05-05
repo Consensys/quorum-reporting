@@ -1,6 +1,9 @@
 package elasticsearch
 
-import "quorumengineering/quorum-report/types"
+import (
+	"math/big"
+	"quorumengineering/quorum-report/types"
+)
 
 // constant query template strings for ES
 const (
@@ -61,7 +64,7 @@ func QueryByToAddressWithOptionsTemplate(options *types.QueryOptions) string {
 		"bool": {
 			"must": [
 				{ "match": { "to": "%s" } },
-				{ "range": { "blockNumber": { "gte": ` + options.StartBlock.String() + `, "lte": ` + options.EndBlock.String() + `} } },
+` + createRangeQuery("blockNumber", options.StartBlock, options.EndBlock) + `
 			]
 		}
 	}
@@ -76,7 +79,7 @@ func QueryByAddressWithOptionsTemplate(options *types.QueryOptions) string {
 		"bool": {
 			"must": [
 				{ "match": { "address": "%s" } },
-				{ "range": { "blockNumber": { "gte": ` + options.StartBlock.String() + `, "lte": ` + options.EndBlock.String() + `} } },
+` + createRangeQuery("blockNumber", options.StartBlock, options.EndBlock) + `
 			]
 		}
 	}
@@ -88,18 +91,30 @@ func QueryInternalTransactionsWithOptionsTemplate(options *types.QueryOptions) s
 	return `
 {
 	"query": {
-		"nested": {
-			"path": "internalCalls",
-			"query": {
-				"bool": {
-					"must": [
-						{ "match": { "internalCalls.to": "%s" } },
-						{ "range": { "blockNumber": { "gte": ` + options.StartBlock.String() + `, "lte": ` + options.EndBlock.String() + `} } },
-					]
-				}
-			}
+		"bool": {
+			"must": [
+				{ "nested": {
+						"path": "internalCalls",
+						"query": {
+							"bool": {
+								"must": [
+									{ "match": { "internalCalls.to": "%s" } }
+								]
+							}
+						}
+					}
+				},
+` + createRangeQuery("blockNumber", options.StartBlock, options.EndBlock) + `	
+			]
 		}
 	}
 }
 `
+}
+
+func createRangeQuery(name string, start *big.Int, end *big.Int) string {
+	if end.Cmp(big.NewInt(-1)) == 0 {
+		return "{ \"range\": { \"" + name + "\": { \"gte\": " + start.String() + "} } }"
+	}
+	return "{ \"range\": { \"" + name + "\": { \"gte\": " + start.String() + ", \"lte\": " + end.String() + "} } }"
 }
