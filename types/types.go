@@ -37,6 +37,7 @@ type Transaction struct {
 	Data              hexutil.Bytes   `json:"data"`
 	PrivateData       hexutil.Bytes   `json:"privateData"`
 	IsPrivate         bool            `json:"isPrivate"`
+	Timestamp         uint64          `json:"timestamp"`
 	Events            []*Event        `json:"events"`
 	InternalCalls     []*InternalCall `json:"internalCalls"`
 }
@@ -61,4 +62,5 @@ type Event struct {
 	BlockHash        common.Hash    `json:"blockHash"`
 	TransactionHash  common.Hash    `json:"transactionHash"`
 	TransactionIndex uint64         `json:"transactionIndex"`
+	Timestamp        uint64         `json:"timestamp"`
 }

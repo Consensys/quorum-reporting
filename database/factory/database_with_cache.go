@@ -188,10 +188,10 @@ func (cachingDB *DatabaseWithCache) IndexBlock(addresses []common.Address, block
 	return cachingDB.db.IndexBlock(addresses, block)
 }
 
-func (cachingDB *DatabaseWithCache) IndexStorage(blockNumber uint64, rawStorage map[common.Address]*state.DumpAccount) error {
+func (cachingDB *DatabaseWithCache) IndexStorage(blockNumber uint64, timestamp uint64, rawStorage map[common.Address]*state.DumpAccount) error {
 	cachingDB.mux.Lock()
 	defer cachingDB.mux.Unlock()
-	return cachingDB.db.IndexStorage(blockNumber, rawStorage)
+	return cachingDB.db.IndexStorage(blockNumber, timestamp, rawStorage)
 }
 
 func (cachingDB *DatabaseWithCache) GetContractCreationTransaction(address common.Address) (common.Hash, error) {

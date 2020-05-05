@@ -29,17 +29,19 @@ type BlockMonitor struct {
 	newBlockQueue    []*types.Block
 	availableWorkers uint64
 	workerMux        sync.Mutex
+	consensus        string
 }
 
-func NewBlockMonitor(db database.Database, quorumClient client.Client) *BlockMonitor {
+func NewBlockMonitor(db database.Database, quorumClient client.Client, consensus string) *BlockMonitor {
 	return &BlockMonitor{
 		db:                 db,
 		quorumClient:       quorumClient,
 		syncStart:          make(chan uint64, 1), // make channel buffered so that it does not block chain head listener
-		transactionMonitor: NewTransactionMonitor(db, quorumClient),
+		transactionMonitor: NewTransactionMonitor(db, quorumClient, consensus),
 		newBlockChan:       make(chan *types.Block),
 		newBlockQueue:      []*types.Block{},
 		availableWorkers:   10,
+		consensus:          consensus,
 	}
 }
 
@@ -145,7 +147,7 @@ func (bm *BlockMonitor) listenToChainHead() error {
 					// TODO: if quorum node is down, reconnect?
 					log.Panicf("get block with hash %v error: %v", header.Hash(), err)
 				}
-				bm.newBlockChan <- createBlock(blockOrigin)
+				bm.newBlockChan <- bm.createBlock(blockOrigin)
 			case <-stopChan:
 				return
 			}
@@ -163,7 +165,7 @@ func (bm *BlockMonitor) syncBlocks(start, end uint64) error {
 			// TODO: if quorum node is down, reconnect?
 			return err
 		}
-		bm.newBlockChan <- createBlock(blockOrigin)
+		bm.newBlockChan <- bm.createBlock(blockOrigin)
 	}
 	return nil
 }
@@ -214,11 +216,17 @@ func (bm *BlockMonitor) process(block *types.Block) {
 	bm.workerMux.Unlock()
 }
 
-func createBlock(block *ethTypes.Block) *types.Block {
+func (bm *BlockMonitor) createBlock(block *ethTypes.Block) *types.Block {
 	txs := []common.Hash{}
 	for _, tx := range block.Transactions() {
 		txs = append(txs, tx.Hash())
 	}
+
+	timestamp := block.Time()
+	if bm.consensus == "raft" {
+		timestamp = timestamp / 1_000_000_000
+	}
+
 	return &types.Block{
 		Hash:         block.Hash(),
 		ParentHash:   block.ParentHash(),
@@ -228,7 +236,7 @@ func createBlock(block *ethTypes.Block) *types.Block {
 		Number:       block.NumberU64(),
 		GasLimit:     block.GasLimit(),
 		GasUsed:      block.GasUsed(),
-		Timestamp:    block.Time(),
+		Timestamp:    timestamp,
 		ExtraData:    block.Extra(),
 		Transactions: txs,
 	}

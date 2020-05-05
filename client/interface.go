@@ -2,6 +2,7 @@ package client
 
 import (
 	"context"
+	"github.com/ethereum/go-ethereum/core/state"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum"
@@ -17,4 +18,8 @@ type Client interface {
 	ExecuteGraphQLQuery(context.Context, interface{}, string) error
 	// rpc
 	RPCCall(context.Context, interface{}, string, ...interface{}) error
+
+	DumpAddress(address common.Address, blockNumber uint64) (*state.DumpAccount, error)
+	TraceTransaction(txHash common.Hash) (map[string]interface{}, error)
+	Consensus() (string, error)
 }
