@@ -68,36 +68,62 @@ func (es *ElasticsearchDB) init() error {
 
 //AddressDB
 func (es *ElasticsearchDB) AddAddresses(addresses []common.Address) error {
-	bi := es.apiClient.GetBulkHandler(ContractIndex)
+	if len(addresses) == 0 {
+		return nil
+	}
+	// Only use bulk update if more than one address is given
+	if len(addresses) > 1 {
+		bi := es.apiClient.GetBulkHandler(ContractIndex)
 
-	var wg sync.WaitGroup
-	for _, address := range addresses {
-		contract := Contract{
-			Address:             address,
-			ABI:                 "",
-			CreationTransaction: common.Hash{},
-			LastFiltered:        0,
-		}
-		wg.Add(1)
-		bi.Add(
-			context.Background(),
-			esutil.BulkIndexerItem{
-				Action:     "create",
-				DocumentID: address.String(),
-				Body:       esutil.NewJSONReader(contract),
-				OnSuccess: func(ctx context.Context, item esutil.BulkIndexerItem, item2 esutil.BulkIndexerResponseItem) {
-					wg.Done()
-				},
-				OnFailure: func(ctx context.Context, item esutil.BulkIndexerItem, item2 esutil.BulkIndexerResponseItem, err error) {
-					wg.Done()
-				},
-			},
+		var (
+			wg        sync.WaitGroup
+			returnErr error
 		)
+		for _, address := range addresses {
+			contract := Contract{
+				Address:             address,
+				ABI:                 "",
+				CreationTransaction: common.Hash{},
+				LastFiltered:        0,
+			}
+			wg.Add(1)
+			bi.Add(
+				context.Background(),
+				esutil.BulkIndexerItem{
+					Action:     "create",
+					DocumentID: address.String(),
+					Body:       esutil.NewJSONReader(contract),
+					OnSuccess: func(ctx context.Context, item esutil.BulkIndexerItem, item2 esutil.BulkIndexerResponseItem) {
+						wg.Done()
+					},
+					OnFailure: func(ctx context.Context, item esutil.BulkIndexerItem, item2 esutil.BulkIndexerResponseItem, err error) {
+						returnErr = err
+						wg.Done()
+					},
+				},
+			)
+		}
+
+		wg.Wait()
+		return returnErr
+	}
+	// add single address
+	contract := Contract{
+		Address:             addresses[0],
+		ABI:                 "",
+		CreationTransaction: common.Hash{},
+		LastFiltered:        0,
 	}
 
-	wg.Wait()
-
-	return nil
+	req := esapi.IndexRequest{
+		Index:      ContractIndex,
+		DocumentID: addresses[0].String(),
+		Body:       esutil.NewJSONReader(contract),
+		Refresh:    "true",
+		OpType:     "create", //This will only create if the contract does not exist
+	}
+	_, err := es.apiClient.DoRequest(req)
+	return err
 }
 
 func (es *ElasticsearchDB) DeleteAddress(address common.Address) error {
@@ -273,7 +299,10 @@ func (es *ElasticsearchDB) IndexBlock(addresses []common.Address, block *types.B
 	// index transactions and events
 	for _, txHash := range block.Transactions {
 		transaction, _ := es.ReadTransaction(txHash)
-		es.indexTransaction(filteredAddresses, transaction)
+		err := es.indexTransaction(filteredAddresses, transaction)
+		if err != nil {
+			return err
+		}
 	}
 
 	return es.updateAllLastFiltered(filteredAddresses, block.Number)
@@ -311,6 +340,7 @@ func (es *ElasticsearchDB) IndexStorage(blockNumber uint64, rawStorage map[commo
 			},
 		)
 	}
+	// TODO: must make sure bulk update is successful and also not blocking to slow down...
 	return nil
 }
 
@@ -450,20 +480,24 @@ func (es *ElasticsearchDB) addressIsRegistered(address common.Address) bool {
 	return false
 }
 
-func (es *ElasticsearchDB) indexTransaction(filteredAddresses map[common.Address]bool, tx *types.Transaction) {
+func (es *ElasticsearchDB) indexTransaction(filteredAddresses map[common.Address]bool, tx *types.Transaction) error {
 	// Compare the address with tx.To and tx.CreatedContract to check if the transaction is related.
 	if filteredAddresses[tx.CreatedContract] {
-		es.updateCreatedTx(tx.CreatedContract, tx.Hash)
+		err := es.updateCreatedTx(tx.CreatedContract, tx.Hash)
+		if err != nil {
+			return err
+		}
 		log.Printf("Index contract creation tx %v of registered address %v.\n", tx.Hash.Hex(), tx.CreatedContract.Hex())
 	}
 
 	// Index events emitted by the given address
+	pendingIndexEvents := []*types.Event{}
 	for _, event := range tx.Events {
 		if filteredAddresses[event.Address] {
-			es.createEvent(event)
-			log.Printf("Append event emitted in transaction %v to registered address %v.\n", event.TransactionHash.Hex(), event.Address.Hex())
+			pendingIndexEvents = append(pendingIndexEvents, event)
 		}
 	}
+	return es.createEvents(pendingIndexEvents)
 }
 
 func (es *ElasticsearchDB) updateCreatedTx(address common.Address, creationTxHash common.Hash) error {
@@ -473,14 +507,13 @@ func (es *ElasticsearchDB) updateCreatedTx(address common.Address, creationTxHas
 func (es *ElasticsearchDB) updateAllLastFiltered(addresses map[common.Address]bool, lastFiltered uint64) error {
 	bi := es.apiClient.GetBulkHandler(ContractIndex)
 
-	updateQuery := fmt.Sprintf(`{"doc":{"lastFiltered":%d}}`, lastFiltered)
 	for address := range addresses {
 		bi.Add(
 			context.Background(),
 			esutil.BulkIndexerItem{
 				Action:     "update",
 				DocumentID: address.String(),
-				Body:       strings.NewReader(updateQuery),
+				Body:       strings.NewReader(fmt.Sprintf(`{"doc":{"lastFiltered":%d}}`, lastFiltered)),
 			},
 		)
 	}
@@ -511,19 +544,22 @@ func (es *ElasticsearchDB) updateContract(address common.Address, property strin
 	return err
 }
 
-func (es *ElasticsearchDB) createEvent(event *types.Event) error {
-	var e Event
-	e.From(event)
+func (es *ElasticsearchDB) createEvents(events []*types.Event) error {
+	bi := es.apiClient.GetBulkHandler(EventIndex)
 
-	req := esapi.IndexRequest{
-		Index:      EventIndex,
-		DocumentID: strconv.FormatUint(event.BlockNumber, 10) + "-" + strconv.FormatUint(event.Index, 10),
-		Body:       esutil.NewJSONReader(e),
-		Refresh:    "true",
+	for _, event := range events {
+		var e Event
+		e.From(event)
+		bi.Add(
+			context.Background(),
+			esutil.BulkIndexerItem{
+				Action:     "create",
+				DocumentID: strconv.FormatUint(event.BlockNumber, 10) + "-" + strconv.FormatUint(event.Index, 10),
+				Body:       esutil.NewJSONReader(e),
+			},
+		)
 	}
-
-	//TODO: check response
-	es.apiClient.DoRequest(req)
+	// TODO: must make sure bulk update is successful and also not blocking to slow down...
 	return nil
 }
 
