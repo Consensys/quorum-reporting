@@ -323,12 +323,14 @@ func (es *ElasticsearchDB) GetContractCreationTransaction(address common.Address
 }
 
 func (es *ElasticsearchDB) GetAllTransactionsToAddress(address common.Address, options *types.QueryOptions) ([]common.Hash, error) {
+	var queryString string
 	if options != nil {
 		options.SetDefaults()
+		queryString = QueryByToAddressWithOptionsTemplate(options)
 	} else {
-		options = types.DefaultQueryOptions
+		queryString = fmt.Sprintf(QueryByToAddressTemplate, address.String())
+
 	}
-	queryString := fmt.Sprintf(QueryByToAddressTemplate, address.String())
 	results, err := es.apiClient.ScrollAllResults(TransactionIndex, queryString)
 	if err != nil {
 		return nil, err
@@ -345,12 +347,14 @@ func (es *ElasticsearchDB) GetAllTransactionsToAddress(address common.Address, o
 }
 
 func (es *ElasticsearchDB) GetAllTransactionsInternalToAddress(address common.Address, options *types.QueryOptions) ([]common.Hash, error) {
+	var queryString string
 	if options != nil {
 		options.SetDefaults()
+		queryString = QueryInternalTransactionsWithOptionsTemplate(options)
 	} else {
-		options = types.DefaultQueryOptions
+		queryString = fmt.Sprintf(QueryInternalTransactionsTemplate, address.String())
+
 	}
-	queryString := fmt.Sprintf(QueryInternalTransactions, address.String())
 	results, _ := es.apiClient.ScrollAllResults(TransactionIndex, queryString)
 
 	converted := make([]common.Hash, len(results))
@@ -364,13 +368,15 @@ func (es *ElasticsearchDB) GetAllTransactionsInternalToAddress(address common.Ad
 }
 
 func (es *ElasticsearchDB) GetAllEventsFromAddress(address common.Address, options *types.QueryOptions) ([]*types.Event, error) {
+	var queryString string
 	if options != nil {
 		options.SetDefaults()
+		queryString = QueryByAddressWithOptionsTemplate(options)
 	} else {
-		options = types.DefaultQueryOptions
+		queryString = fmt.Sprintf(QueryByAddressTemplate, address.String())
+
 	}
-	query := fmt.Sprintf(QueryByAddressTemplate, address.String())
-	results, err := es.apiClient.ScrollAllResults(EventIndex, query)
+	results, err := es.apiClient.ScrollAllResults(EventIndex, queryString)
 	if err != nil {
 		return nil, err
 	}

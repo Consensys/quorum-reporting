@@ -79,16 +79,7 @@ func TestElasticsearchDB_GetAllTransactionsToAddress_WithError(t *testing.T) {
 
 	addr := common.HexToAddress("0x1932c48b2bf8102ba33b4a6b545c32236e342f34")
 
-	expectedRequest := `
-{
-	"query": {
-		"bool": {
-			"must": [
-				{ "match": { "to": "0x1932c48b2bF8102Ba33B4A6B545C32236e342f34" } }
-			]
-		}
-	}
-}`
+	expectedRequest := fmt.Sprintf(QueryByToAddressTemplate, addr.String())
 
 	mockedClient.EXPECT().DoRequest(gomock.Any()) //for setup, not relevant to test
 	mockedClient.EXPECT().ScrollAllResults(TransactionIndex, expectedRequest).Return(nil, errors.New("test error"))

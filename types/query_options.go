@@ -2,7 +2,7 @@ package types
 
 import "math/big"
 
-var DefaultQueryOptions = &QueryOptions{
+var defaultQueryOptions = &QueryOptions{
 	StartBlock:     big.NewInt(0),
 	EndBlock:       big.NewInt(-1),
 	BeginTimestamp: big.NewInt(0),
@@ -24,21 +24,21 @@ type QueryOptions struct {
 
 func (opts *QueryOptions) SetDefaults() {
 	if opts.StartBlock == nil {
-		opts.StartBlock = DefaultQueryOptions.StartBlock
+		opts.StartBlock = defaultQueryOptions.StartBlock
 	}
 	if opts.EndBlock == nil {
-		opts.EndBlock = DefaultQueryOptions.EndBlock
+		opts.EndBlock = defaultQueryOptions.EndBlock
 	}
 	if opts.BeginTimestamp == nil {
-		opts.BeginTimestamp = DefaultQueryOptions.BeginTimestamp
+		opts.BeginTimestamp = defaultQueryOptions.BeginTimestamp
 	}
 	if opts.EndTimestamp == nil {
-		opts.EndTimestamp = DefaultQueryOptions.EndTimestamp
+		opts.EndTimestamp = defaultQueryOptions.EndTimestamp
 	}
 	if opts.PageSize == nil {
-		opts.PageSize = DefaultQueryOptions.PageSize
+		opts.PageSize = defaultQueryOptions.PageSize
 	}
 	if opts.PageNumber == nil {
-		opts.PageNumber = DefaultQueryOptions.PageNumber
+		opts.PageNumber = defaultQueryOptions.PageNumber
 	}
 }
