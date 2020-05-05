@@ -23,7 +23,6 @@ func TestAddSingleAddress(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockedClient := elasticsearch_mocks.NewMockAPIClient(ctrl)
-	mockedBulkIndexer := elasticsearch_mocks.NewMockBulkIndexer(ctrl)
 
 	addr := common.HexToAddress("0x1932c48b2bf8102ba33b4a6b545c32236e342f34")
 
@@ -34,19 +33,17 @@ func TestAddSingleAddress(t *testing.T) {
 		LastFiltered:        0,
 	}
 
-	ex := esutil.BulkIndexerItem{
-		Action:     "create",
+	ex := esapi.IndexRequest{
+		Index:      ContractIndex,
 		DocumentID: addr.String(),
 		Body:       esutil.NewJSONReader(contract),
+		Refresh:    "true",
 	}
 
 	mockedClient.EXPECT().DoRequest(gomock.Any()) //for setup, not relevant to test
-	mockedClient.EXPECT().GetBulkHandler(ContractIndex).Return(mockedBulkIndexer)
-	mockedBulkIndexer.EXPECT().
-		Add(gomock.Any(), NewBulkIndexerItemMatcher(ex)).
-		Do(func(ctx context.Context, item esutil.BulkIndexerItem) {
-			item.OnSuccess(context.Background(), ex, esutil.BulkIndexerResponseItem{})
-		})
+	mockedClient.EXPECT().DoRequest(NewIndexRequestMatcher(ex)).Do(func(input esapi.IndexRequest) {
+		assert.Equal(t, "create", input.OpType)
+	})
 
 	db, err := New(mockedClient)
 
@@ -113,10 +110,8 @@ func TestAddNoAddresses(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockedClient := elasticsearch_mocks.NewMockAPIClient(ctrl)
-	mockedBulkIndexer := elasticsearch_mocks.NewMockBulkIndexer(ctrl)
 
 	mockedClient.EXPECT().DoRequest(gomock.Any()) //for setup, not relevant to test
-	mockedClient.EXPECT().GetBulkHandler(ContractIndex).Return(mockedBulkIndexer)
 
 	db, _ := New(mockedClient)
 
@@ -130,7 +125,6 @@ func TestAddSingleAddressWithError(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockedClient := elasticsearch_mocks.NewMockAPIClient(ctrl)
-	mockedBulkIndexer := elasticsearch_mocks.NewMockBulkIndexer(ctrl)
 
 	addr := common.HexToAddress("0x1932c48b2bf8102ba33b4a6b545c32236e342f34")
 
@@ -141,25 +135,76 @@ func TestAddSingleAddressWithError(t *testing.T) {
 		LastFiltered:        0,
 	}
 
-	ex := esutil.BulkIndexerItem{
-		Action:     "create",
+	ex := esapi.IndexRequest{
+		Index:      ContractIndex,
 		DocumentID: addr.String(),
 		Body:       esutil.NewJSONReader(contract),
+		Refresh:    "true",
 	}
 
 	mockedClient.EXPECT().DoRequest(gomock.Any()) //for setup, not relevant to test
-	mockedClient.EXPECT().GetBulkHandler(ContractIndex).Return(mockedBulkIndexer)
-	mockedBulkIndexer.EXPECT().
-		Add(gomock.Any(), NewBulkIndexerItemMatcher(ex)).
-		Do(func(ctx context.Context, item esutil.BulkIndexerItem) {
-			item.OnFailure(context.Background(), ex, esutil.BulkIndexerResponseItem{}, errors.New("test error"))
-		}).Return(errors.New("test error"))
+	mockedClient.EXPECT().DoRequest(NewIndexRequestMatcher(ex)).Do(func(input esapi.IndexRequest) {
+		assert.Equal(t, "create", input.OpType)
+	}).Return(nil, errors.New("test error"))
 
 	db, _ := New(mockedClient)
 
 	err := db.AddAddresses([]common.Address{addr})
 
-	assert.Nil(t, err, "expected error to be nil")
+	assert.EqualError(t, err, "test error", "expected test error")
+}
+
+func TestAddMultipleAddressWithError(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockedClient := elasticsearch_mocks.NewMockAPIClient(ctrl)
+	mockedBulkIndexer := elasticsearch_mocks.NewMockBulkIndexer(ctrl)
+
+	addr1 := common.HexToAddress("0x1932c48b2bf8102ba33b4a6b545c32236e342f34")
+	addr2 := common.HexToAddress("0x1932c48b2bf8102ba33b4a6b545c32236e342f35")
+
+	contract1 := Contract{
+		Address:             addr1,
+		ABI:                 "",
+		CreationTransaction: common.Hash{},
+		LastFiltered:        0,
+	}
+	req1 := esutil.BulkIndexerItem{
+		Action:     "create",
+		DocumentID: addr1.String(),
+		Body:       esutil.NewJSONReader(contract1),
+	}
+	contract2 := Contract{
+		Address:             addr2,
+		ABI:                 "",
+		CreationTransaction: common.Hash{},
+		LastFiltered:        0,
+	}
+	req2 := esutil.BulkIndexerItem{
+		Action:     "create",
+		DocumentID: addr2.String(),
+		Body:       esutil.NewJSONReader(contract2),
+	}
+
+	mockedClient.EXPECT().DoRequest(gomock.Any()) //for setup, not relevant to test
+	mockedClient.EXPECT().GetBulkHandler(ContractIndex).Return(mockedBulkIndexer)
+	mockedBulkIndexer.EXPECT().
+		Add(gomock.Any(), NewBulkIndexerItemMatcher(req1)).
+		Do(func(ctx context.Context, item esutil.BulkIndexerItem) {
+			item.OnSuccess(context.Background(), req1, esutil.BulkIndexerResponseItem{})
+		})
+	mockedBulkIndexer.EXPECT().
+		Add(gomock.Any(), NewBulkIndexerItemMatcher(req2)).
+		Do(func(ctx context.Context, item esutil.BulkIndexerItem) {
+			item.OnFailure(context.Background(), req2, esutil.BulkIndexerResponseItem{}, errors.New("test error"))
+		}).Return(errors.New("test error"))
+
+	db, _ := New(mockedClient)
+
+	err := db.AddAddresses([]common.Address{addr1, addr2})
+
+	assert.EqualError(t, err, "test error", "expected test error")
 }
 
 func TestElasticsearchDB_DeleteAddress(t *testing.T) {
