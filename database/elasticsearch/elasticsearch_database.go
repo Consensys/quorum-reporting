@@ -262,7 +262,7 @@ func (es *ElasticsearchDB) WriteTransaction(transaction *types.Transaction) erro
 	}
 
 	_, err := es.apiClient.DoRequest(req)
-	return err //may be nil
+	return err
 }
 
 func (es *ElasticsearchDB) ReadTransaction(hash common.Hash) (*types.Transaction, error) {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"math/big"
+	"sync"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -23,6 +24,11 @@ type BlockMonitor struct {
 	syncStart          chan uint64
 	transactionMonitor *TransactionMonitor
 	stopFeed           event.Feed
+	// concurrent block processing
+	newBlockChan     chan *types.Block
+	newBlockQueue    []*types.Block
+	availableWorkers uint64
+	workerMux        sync.Mutex
 }
 
 func NewBlockMonitor(db database.Database, quorumClient client.Client) *BlockMonitor {
@@ -31,6 +37,9 @@ func NewBlockMonitor(db database.Database, quorumClient client.Client) *BlockMon
 		quorumClient:       quorumClient,
 		syncStart:          make(chan uint64, 1), // make channel buffered so that it does not block chain head listener
 		transactionMonitor: NewTransactionMonitor(db, quorumClient),
+		newBlockChan:       make(chan *types.Block),
+		newBlockQueue:      []*types.Block{},
+		availableWorkers:   10,
 	}
 }
 
@@ -40,21 +49,44 @@ func (bm *BlockMonitor) Start() error {
 
 	log.Println("Start to sync blocks...")
 
-	// 1. Fetch the current block height.
+	// 1. Start worker
+	go func() {
+		stopChan, stopSubscription := bm.subscribeStopEvent()
+		defer stopSubscription.Unsubscribe()
+		for {
+			select {
+			case newBlock := <-bm.newBlockChan:
+				bm.workerMux.Lock()
+				if bm.availableWorkers > 0 {
+					// spawn go routine to process if max worker not reached
+					bm.availableWorkers--
+					go bm.process(newBlock)
+				} else {
+					// push to queue if max worker reached
+					bm.newBlockQueue = append(bm.newBlockQueue, newBlock)
+				}
+				bm.workerMux.Unlock()
+			case <-stopChan:
+				return
+			}
+		}
+	}()
+
+	// 2. Fetch the current block height.
 	currentBlockNumber, err := bm.currentBlockNumber()
 	if err != nil {
 		return err
 	}
 	log.Printf("Current block head is: %v.\n", currentBlockNumber)
 
-	// 2. Sync from last persisted to current block height.
+	// 3. Sync from last persisted to current block height.
 	lastPersisted, err := bm.db.GetLastPersistedBlockNumber()
 	if err != nil {
 		return err
 	}
 	go bm.sync(lastPersisted, currentBlockNumber)
 
-	// 3. Listen to ChainHeadEvent and sync.
+	// 4. Listen to ChainHeadEvent and sync.
 	err = bm.listenToChainHead()
 	if err != nil {
 		return err
@@ -111,12 +143,9 @@ func (bm *BlockMonitor) listenToChainHead() error {
 				blockOrigin, err := bm.quorumClient.BlockByHash(context.Background(), header.Hash())
 				if err != nil {
 					// TODO: if quorum node is down, reconnect?
-					log.Panicf("get block %v error: %v", header.Hash(), err)
+					log.Panicf("get block with hash %v error: %v", header.Hash(), err)
 				}
-				err = bm.process(createBlock(blockOrigin))
-				if err != nil {
-					log.Panicf("process block %v error: %v", header.Hash(), err)
-				}
+				bm.newBlockChan <- createBlock(blockOrigin)
 			case <-stopChan:
 				return
 			}
@@ -134,10 +163,7 @@ func (bm *BlockMonitor) syncBlocks(start, end uint64) error {
 			// TODO: if quorum node is down, reconnect?
 			return err
 		}
-		err = bm.process(createBlock(blockOrigin))
-		if err != nil {
-			return err
-		}
+		bm.newBlockChan <- createBlock(blockOrigin)
 	}
 	return nil
 }
@@ -164,19 +190,28 @@ func (bm *BlockMonitor) sync(start, end uint64) {
 	}
 }
 
-func (bm *BlockMonitor) process(block *types.Block) error {
+func (bm *BlockMonitor) process(block *types.Block) {
 	// Transaction monitor pulls all transactions for the given block.
 	err := bm.transactionMonitor.PullTransactions(block)
 	if err != nil {
-		return err
+		log.Panicf("process block %v error: %v", block.Number, err)
 	}
 
 	// Write block to DB.
 	err = bm.db.WriteBlock(block)
 	if err != nil {
-		return err
+		log.Panicf("process block %v error: %v", block.Number, err)
 	}
-	return nil
+
+	// Pop from queue if a worker is released.
+	bm.workerMux.Lock()
+	bm.availableWorkers++
+	if len(bm.newBlockQueue) > 0 {
+		newBlock := bm.newBlockQueue[0]
+		bm.newBlockQueue = bm.newBlockQueue[1:]
+		bm.newBlockChan <- newBlock
+	}
+	bm.workerMux.Unlock()
 }
 
 func createBlock(block *ethTypes.Block) *types.Block {
