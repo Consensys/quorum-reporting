@@ -22,12 +22,12 @@ type MonitorService struct {
 	totalWorkers uint64
 }
 
-func NewMonitorService(db database.Database, quorumClient client.Client) *MonitorService {
+func NewMonitorService(db database.Database, quorumClient client.Client, consensus string) *MonitorService {
 	return &MonitorService{
 		db:           db,
 		quorumClient: quorumClient,
 		syncStart:    make(chan uint64, 1), // make channel buffered so that it does not block chain head listener
-		blockMonitor: NewBlockMonitor(db, quorumClient),
+		blockMonitor: NewBlockMonitor(db, quorumClient, consensus),
 		totalWorkers: 10,
 	}
 }

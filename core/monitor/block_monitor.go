@@ -21,14 +21,16 @@ type BlockMonitor struct {
 	quorumClient       client.Client
 	transactionMonitor *TransactionMonitor
 	newBlockChan       chan *types.Block // concurrent block processing
+	consensus        string
 }
 
-func NewBlockMonitor(db database.Database, quorumClient client.Client) *BlockMonitor {
+func NewBlockMonitor(db database.Database, quorumClient client.Client, consensus string) *BlockMonitor {
 	return &BlockMonitor{
 		db:                 db,
 		quorumClient:       quorumClient,
-		transactionMonitor: NewTransactionMonitor(db, quorumClient),
+		transactionMonitor: NewTransactionMonitor(db, quorumClient, consensus),
 		newBlockChan:       make(chan *types.Block),
+		consensus:          consensus,
 	}
 }
 
@@ -82,7 +84,7 @@ func (bm *BlockMonitor) syncBlocks(start, end uint64) error {
 				// TODO: if quorum node is down, reconnect?
 				return err
 			}
-			bm.newBlockChan <- createBlock(blockOrigin)
+			bm.newBlockChan <- bm.createBlock(blockOrigin)
 		}
 	}
 	return nil
@@ -94,14 +96,20 @@ func (bm *BlockMonitor) processChainHead(header *ethTypes.Header) {
 		// TODO: if quorum node is down, reconnect?
 		log.Panicf("get block with hash %v error: %v", header.Hash(), err)
 	}
-	bm.newBlockChan <- createBlock(blockOrigin)
+	bm.newBlockChan <- bm.createBlock(blockOrigin)
 }
 
-func createBlock(block *ethTypes.Block) *types.Block {
+func (bm *BlockMonitor) createBlock(block *ethTypes.Block) *types.Block {
 	txs := []common.Hash{}
 	for _, tx := range block.Transactions() {
 		txs = append(txs, tx.Hash())
 	}
+
+	timestamp := block.Time()
+	if bm.consensus == "raft" {
+		timestamp = timestamp / 1_000_000_000
+	}
+
 	return &types.Block{
 		Hash:         block.Hash(),
 		ParentHash:   block.ParentHash(),
@@ -111,7 +119,7 @@ func createBlock(block *ethTypes.Block) *types.Block {
 		Number:       block.NumberU64(),
 		GasLimit:     block.GasLimit(),
 		GasUsed:      block.GasUsed(),
-		Timestamp:    block.Time(),
+		Timestamp:    timestamp,
 		ExtraData:    block.Extra(),
 		Transactions: txs,
 	}

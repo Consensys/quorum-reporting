@@ -99,7 +99,7 @@ func (fs *FilterService) index(blockNumber uint64) error {
 	if err != nil {
 		return err
 	}
-	err = fs.storageFilter.IndexStorage(blockNumber, addresses)
+	err = fs.storageFilter.IndexStorage(block, addresses)
 	if err != nil {
 		return err
 	}

@@ -10,6 +10,7 @@ import (
 )
 
 type Client interface {
+	// from ethclient.Client
 	SubscribeNewHead(context.Context, chan<- *ethTypes.Header) (ethereum.Subscription, error)
 	BlockByHash(context.Context, common.Hash) (*ethTypes.Block, error)
 	BlockByNumber(context.Context, *big.Int) (*ethTypes.Block, error)
