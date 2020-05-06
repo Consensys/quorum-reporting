@@ -470,16 +470,6 @@ func (es *ElasticsearchDB) getContractByAddress(address common.Address) (*Contra
 	return &contract.Source, nil
 }
 
-func (es *ElasticsearchDB) addressIsRegistered(address common.Address) bool {
-	allAddresses, _ := es.GetAddresses()
-	for _, registeredAddress := range allAddresses {
-		if registeredAddress == address {
-			return true
-		}
-	}
-	return false
-}
-
 func (es *ElasticsearchDB) indexTransaction(filteredAddresses map[common.Address]bool, tx *types.Transaction) error {
 	// Compare the address with tx.To and tx.CreatedContract to check if the transaction is related.
 	if filteredAddresses[tx.CreatedContract] {
