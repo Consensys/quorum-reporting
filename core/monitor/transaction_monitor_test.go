@@ -13,7 +13,7 @@ var (
 	graphqlResp = map[string]interface{}{
 		"hash":              "0xe625ba9f14eed0671508966080fb01374d0a3a16b9cee545a324179b75f30aa8",
 		"status":            "0x1",
-		"block":             map[string]interface{}{"number": "0x2"},
+		"block":             map[string]interface{}{"number": "0x2", "timestamp": "0x1000"},
 		"index":             0,
 		"nonce":             "0x1",
 		"from":              map[string]interface{}{"address": "0xed9d02e382b34818e88b88a309c7fe71e65f419d"},
@@ -45,7 +45,7 @@ func TestCreateTransaction(t *testing.T) {
 		},
 	}
 	mockRPC := map[string]interface{}{
-		"debug_traceTransaction<common.Hash Value><*monitor.TraceConfig Value>": map[string]interface{}{
+		"debug_traceTransaction<common.Hash Value><*client.TraceConfig Value>": map[string]interface{}{
 			"calls": []interface{}{
 				map[string]interface{}{
 					"from":    "0x9d13c6d3afe1721beef56b55d303b09e021e27ab",
@@ -60,7 +60,7 @@ func TestCreateTransaction(t *testing.T) {
 			},
 		},
 	}
-	tm := NewTransactionMonitor(nil, client.NewStubQuorumClient(nil, mockGraphQL, mockRPC))
+	tm := NewTransactionMonitor(nil, client.NewStubQuorumClient(nil, mockGraphQL, mockRPC), "istanbul")
 	tx, err := tm.createTransaction(common.HexToHash("0xe625ba9f14eed0671508966080fb01374d0a3a16b9cee545a324179b75f30aa8"))
 	if err != nil {
 		t.Fatalf("expected no error, but got %v", err)

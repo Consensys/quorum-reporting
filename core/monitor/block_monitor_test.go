@@ -16,6 +16,7 @@ func TestCreateBlock(t *testing.T) {
 	cases := []struct {
 		originalBlock *ethTypes.Block
 		expectedBlock *types.Block
+		consensus     string
 	}{
 		{ethTypes.NewBlock(&ethTypes.Header{Number: big.NewInt(42)}, nil, nil, nil),
 			&types.Block{
@@ -23,6 +24,7 @@ func TestCreateBlock(t *testing.T) {
 				Number:       uint64(42),
 				Transactions: []common.Hash{},
 			},
+			"istanbul",
 		},
 		{ethTypes.NewBlock(&ethTypes.Header{Number: big.NewInt(42)}, []*ethTypes.Transaction{
 			ethTypes.NewTransaction(0, common.Address{0}, nil, 0, nil, nil),
@@ -32,11 +34,13 @@ func TestCreateBlock(t *testing.T) {
 				Number:       uint64(42),
 				Transactions: []common.Hash{common.BigToHash(big.NewInt(0))},
 			},
+			"istanbul",
 		},
 	}
 
 	for _, tc := range cases {
-		actual := createBlock(tc.originalBlock)
+		bm := NewBlockMonitor(nil, client.NewStubQuorumClient(nil, nil, nil), tc.consensus)
+		actual := bm.createBlock(tc.originalBlock)
 		if actual.Hash != tc.expectedBlock.Hash {
 			t.Fatalf("expected hash %v, but got %v", tc.expectedBlock.Hash.Hex(), actual.Hash.Hex())
 		}
@@ -53,7 +57,7 @@ func TestCurrentBlock(t *testing.T) {
 	mockGraphQL := map[string]map[string]interface{}{
 		graphql.CurrentBlockQuery(): {"block": interface{}(map[string]interface{}{"number": "0x10"})},
 	}
-	bm := NewBlockMonitor(nil, client.NewStubQuorumClient(nil, mockGraphQL, nil))
+	bm := NewBlockMonitor(nil, client.NewStubQuorumClient(nil, mockGraphQL, nil), "raft")
 	currentBlockNumber, err := bm.currentBlockNumber()
 	if err != nil {
 		t.Fatalf("expected no error, but got %v", err)
