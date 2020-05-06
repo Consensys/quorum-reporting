@@ -64,7 +64,8 @@ func QueryByToAddressWithOptionsTemplate(options *types.QueryOptions) string {
 		"bool": {
 			"must": [
 				{ "match": { "to": "%s" } },
-` + createRangeQuery("blockNumber", options.StartBlock, options.EndBlock) + `
+` + createRangeQuery("blockNumber", options.BeginBlockNumber, options.EndBlockNumber) + `,
+` + createRangeQuery("timestamp", options.BeginTimestamp, options.EndTimestamp) + `
 			]
 		}
 	}
@@ -79,7 +80,8 @@ func QueryByAddressWithOptionsTemplate(options *types.QueryOptions) string {
 		"bool": {
 			"must": [
 				{ "match": { "address": "%s" } },
-` + createRangeQuery("blockNumber", options.StartBlock, options.EndBlock) + `
+` + createRangeQuery("blockNumber", options.BeginBlockNumber, options.EndBlockNumber) + `,
+` + createRangeQuery("timestamp", options.BeginTimestamp, options.EndTimestamp) + `
 			]
 		}
 	}
@@ -104,7 +106,8 @@ func QueryInternalTransactionsWithOptionsTemplate(options *types.QueryOptions) s
 						}
 					}
 				},
-` + createRangeQuery("blockNumber", options.StartBlock, options.EndBlock) + `	
+` + createRangeQuery("blockNumber", options.BeginBlockNumber, options.EndBlockNumber) + `,
+` + createRangeQuery("timestamp", options.BeginTimestamp, options.EndTimestamp) + `
 			]
 		}
 	}

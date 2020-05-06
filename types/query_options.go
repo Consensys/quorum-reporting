@@ -5,17 +5,17 @@ import (
 )
 
 var defaultQueryOptions = &QueryOptions{
-	StartBlock:     big.NewInt(0),
-	EndBlock:       big.NewInt(-1),
-	BeginTimestamp: big.NewInt(0),
-	EndTimestamp:   big.NewInt(-1),
-	PageSize:       big.NewInt(10),
-	PageNumber:     big.NewInt(0),
+	BeginBlockNumber: big.NewInt(0),
+	EndBlockNumber:   big.NewInt(-1),
+	BeginTimestamp:   big.NewInt(0),
+	EndTimestamp:     big.NewInt(-1),
+	PageSize:         big.NewInt(10),
+	PageNumber:       big.NewInt(0),
 }
 
 type QueryOptions struct {
-	StartBlock *big.Int `json:"beginBlockNumber"`
-	EndBlock   *big.Int `json:"endBlockNumber"`
+	BeginBlockNumber *big.Int `json:"beginBlockNumber"`
+	EndBlockNumber   *big.Int `json:"endBlockNumber"`
 
 	BeginTimestamp *big.Int `json:"beginTimestamp"`
 	EndTimestamp   *big.Int `json:"endTimestamp"`
@@ -25,11 +25,11 @@ type QueryOptions struct {
 }
 
 func (opts *QueryOptions) SetDefaults() {
-	if opts.StartBlock == nil {
-		opts.StartBlock = defaultQueryOptions.StartBlock
+	if opts.BeginBlockNumber == nil {
+		opts.BeginBlockNumber = defaultQueryOptions.BeginBlockNumber
 	}
-	if opts.EndBlock == nil {
-		opts.EndBlock = defaultQueryOptions.EndBlock
+	if opts.EndBlockNumber == nil {
+		opts.EndBlockNumber = defaultQueryOptions.EndBlockNumber
 	}
 	if opts.BeginTimestamp == nil {
 		opts.BeginTimestamp = defaultQueryOptions.BeginTimestamp
