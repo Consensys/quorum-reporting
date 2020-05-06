@@ -219,7 +219,7 @@ func testIndexBlock(t *testing.T, db database.Database, address common.Address, 
 }
 
 func testIndexStorage(t *testing.T, db database.Database, blockNumber uint64, rawStorage map[common.Address]*state.DumpAccount) {
-	err := db.IndexStorage(blockNumber, rawStorage)
+	err := db.IndexStorage(rawStorage, blockNumber)
 	if err != nil {
 		t.Fatalf("expected no error, but got %v", err)
 	}

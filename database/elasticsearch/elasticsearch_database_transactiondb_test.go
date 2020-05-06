@@ -19,23 +19,6 @@ import (
 //Tests
 
 var (
-	//testTransaction = types.Block{
-	//	Hash:        common.HexToHash("0x4b603921305ebaa48d863b9f577059a63c653cd8e952372622923708fb657806"),
-	//	ParentHash:  common.HexToHash("0x5cde17410e3bb729f745870e166a767bcf07287c0f80bbcb38303eba8dbe5053"),
-	//	StateRoot:   common.HexToHash("0x309e12409dc1ff594e12ed7baf41a9190385bc7e32f9c0926dccd95f0a8f62f6"),
-	//	TxRoot:      common.HexToHash("0x6473d4f7a3a5638e56fec88a60f765ed321bd15dfade365f232d0b1250a42de0"),
-	//	ReceiptRoot: common.HexToHash("0xe65c3585a018f660d1457358967875d1526ebab3e1ce8198757585217fc013b8"),
-	//	Number:      10,
-	//	GasLimit:    50,
-	//	GasUsed:     50,
-	//	Timestamp:   100,
-	//	ExtraData:   hexutil.Bytes(common.Hex2Bytes("extradata")),
-	//	Transactions: []common.Hash{
-	//		common.HexToHash("0xf4f803b8d6c6b38e0b15d6cfe80fd1dcea4270ad24e93385fca36512bb9c2c59"),
-	//		common.HexToHash("0x693f3f411b7811eabc76d3fffa2c3760d9b8a3534fba8de5832a5dc06bcbc43a"),
-	//		common.HexToHash("0x5c83fa5955aff33c61813105851777bcd2adc85deb9af6286ba42c05cd768de0"),
-	//	},
-	//}
 	testTransaction = types.Transaction{
 		Hash:              common.HexToHash("0xf4f803b8d6c6b38e0b15d6cfe80fd1dcea4270ad24e93385fca36512bb9c2c59"),
 		Status:            true,
@@ -52,6 +35,7 @@ var (
 		Data:              common.Hex2Bytes("0x4ae157f8a703379222a96b5c01ec83b11b0a0a579b4abc68a10a4c0e7d"),
 		PrivateData:       common.Hex2Bytes("0x6060604052341561000f57600080fd5b60405160208061014983398101"),
 		IsPrivate:         true,
+		Timestamp:         1000,
 		Events:            nil,
 		InternalCalls:     nil,
 	}
