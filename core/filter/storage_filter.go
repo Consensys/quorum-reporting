@@ -8,7 +8,6 @@ import (
 
 	"quorumengineering/quorum-report/client"
 	"quorumengineering/quorum-report/database"
-	"quorumengineering/quorum-report/types"
 )
 
 type StorageFilter struct {
@@ -20,15 +19,15 @@ func NewStorageFilter(db database.Database, quorumClient client.Client) *Storage
 	return &StorageFilter{db, quorumClient}
 }
 
-func (sf *StorageFilter) IndexStorage(block *types.Block, addresses []common.Address) error {
+func (sf *StorageFilter) IndexStorage(addresses []common.Address, blockNumber uint64) error {
 	rawStorage := make(map[common.Address]*state.DumpAccount)
 	for _, address := range addresses {
-		log.Printf("Pull registered contract %v storage at block %v.\n", address.Hex(), block.Number)
-		dumpAccount, err := client.DumpAddress(sf.quorumClient, address, block.Number)
+		log.Printf("Pull registered contract %v storage at block %v.\n", address.Hex(), blockNumber)
+		dumpAccount, err := client.DumpAddress(sf.quorumClient, address, blockNumber)
 		rawStorage[address] = dumpAccount
 		if err != nil {
 			return err
 		}
 	}
-	return sf.db.IndexStorage(block.Number, rawStorage)
+	return sf.db.IndexStorage(rawStorage, blockNumber)
 }

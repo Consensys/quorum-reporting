@@ -92,7 +92,7 @@ func (f *FakeDB) ReadTransaction(common.Hash) (*types.Transaction, error) {
 	return nil, errors.New("not implemented")
 }
 
-func (f *FakeDB) IndexStorage(uint64, map[common.Address]*state.DumpAccount) error {
+func (f *FakeDB) IndexStorage(map[common.Address]*state.DumpAccount, uint64) error {
 	return nil
 }
 
