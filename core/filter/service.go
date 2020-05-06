@@ -47,6 +47,7 @@ func (fs *FilterService) Start() error {
 				}
 				//log.Printf("Last filtered block %v.\n", lastFiltered)
 				for current > lastFiltered {
+					log.Printf("Index registered addresses at block %v.\n", lastFiltered+1)
 					err := fs.index(lastFiltered + 1)
 					if err != nil {
 						log.Panicf("index block %v failed: %v", lastFiltered, err)
