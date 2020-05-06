@@ -3,9 +3,6 @@ package client
 import (
 	"context"
 	"errors"
-	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/ethereum/go-ethereum/core/state"
-	"github.com/ethereum/go-ethereum/p2p"
 	"math/big"
 	"reflect"
 
@@ -56,42 +53,6 @@ func (qc *QuorumClient) ExecuteGraphQLQuery(ctx context.Context, result interfac
 // Execute customized rpc call.
 func (qc *QuorumClient) RPCCall(ctx context.Context, result interface{}, method string, args ...interface{}) error {
 	return qc.rpcClient.CallContext(ctx, result, method, args...)
-}
-
-func (qc *QuorumClient) DumpAddress(address common.Address, blockNumber uint64) (*state.DumpAccount, error) {
-	dumpAccount := &state.DumpAccount{}
-	err := qc.RPCCall(context.Background(), &dumpAccount, "debug_dumpAddress", address, hexutil.EncodeUint64(blockNumber))
-	if err != nil {
-		return nil, err
-	}
-	return dumpAccount, nil
-}
-
-func (qc *QuorumClient) TraceTransaction(txHash common.Hash) (map[string]interface{}, error) {
-	// Trace internal calls of the transaction
-	// Reference: https://github.com/ethereum/go-ethereum/issues/3128
-	var resp map[string]interface{}
-	type TraceConfig struct {
-		Tracer string
-	}
-	err := qc.RPCCall(context.Background(), &resp, "debug_traceTransaction", txHash, &TraceConfig{Tracer: "callTracer"})
-	if err != nil {
-		return nil, err
-	}
-	return resp, nil
-}
-
-func (qc *QuorumClient) Consensus() (string, error) {
-	var resp p2p.NodeInfo
-	err := qc.RPCCall(context.Background(), &resp, "admin_nodeInfo")
-	if err != nil {
-		return "", err
-	}
-	if resp.Protocols["istanbul"] != nil {
-		return "istanbul", nil
-	}
-	protocol := resp.Protocols["eth"].(map[string]interface{})
-	return protocol["consensus"].(string), nil
 }
 
 // StubQuorumClient is used for unit test.
@@ -152,16 +113,4 @@ func (qc *StubQuorumClient) RPCCall(ctx context.Context, result interface{}, met
 		return nil
 	}
 	return errors.New("not found")
-}
-
-func (qc *StubQuorumClient) DumpAddress(address common.Address, blockNumber uint64) (*state.DumpAccount, error) {
-	return nil, errors.New("not implemented")
-}
-
-func (qc *StubQuorumClient) TraceTransaction(txHash common.Hash) (map[string]interface{}, error) {
-	return nil, errors.New("not implemented")
-}
-
-func (qc *StubQuorumClient) Consensus() (string, error) {
-	return "", errors.New("not implemented")
 }

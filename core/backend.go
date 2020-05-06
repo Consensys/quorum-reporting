@@ -40,7 +40,7 @@ func New(config types.ReportingConfig) (*Backend, error) {
 		}
 	}
 
-	consensus, err := quorumClient.Consensus()
+	consensus, err := client.Consensus(quorumClient)
 	if err != nil {
 		return nil, err
 	}

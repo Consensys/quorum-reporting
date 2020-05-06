@@ -134,7 +134,7 @@ func (tm *TransactionMonitor) createTransaction(hash common.Hash) (*types.Transa
 	}
 	tx.Events = events
 
-	resp, err = tm.quorumClient.TraceTransaction(tx.Hash)
+	resp, err = client.TraceTransaction(tm.quorumClient, tx.Hash)
 	if resp["calls"] != nil {
 		respCalls := resp["calls"].([]interface{})
 		tx.InternalCalls = make([]*types.InternalCall, len(respCalls))
