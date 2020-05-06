@@ -40,6 +40,11 @@ func New(config types.ReportingConfig) (*Backend, error) {
 		}
 	}
 
+	consensus, err := client.Consensus(quorumClient)
+	if err != nil {
+		return nil, err
+	}
+
 	dbFactory := factory.NewFactory()
 	db, err := dbFactory.Database(config.Database)
 	if err != nil {
@@ -53,7 +58,7 @@ func New(config types.ReportingConfig) (*Backend, error) {
 	}
 
 	return &Backend{
-		monitor: monitor.NewMonitorService(db, quorumClient),
+		monitor: monitor.NewMonitorService(db, quorumClient, consensus),
 		filter:  filter.NewFilterService(db, quorumClient),
 		rpc:     rpc.NewRPCService(db, config.Server.RPCAddr, config.Server.RPCVHosts, config.Server.RPCCorsList),
 		db:      db,
@@ -67,7 +72,7 @@ func (b *Backend) Start() {
 		b.rpc.Start,     // RPC service
 	} {
 		if err := f(); err != nil {
-			log.Panicf("start up failed: %v.\n", err)
+			log.Panicf("start up failed: %v", err)
 		}
 	}
 }

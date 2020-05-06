@@ -195,7 +195,7 @@ func (db *MemoryDB) ReadTransaction(hash common.Hash) (*types.Transaction, error
 	return nil, errors.New("transaction does not exist")
 }
 
-func (db *MemoryDB) IndexStorage(blockNumber uint64, rawStorage map[common.Address]*state.DumpAccount) error {
+func (db *MemoryDB) IndexStorage(rawStorage map[common.Address]*state.DumpAccount, blockNumber uint64) error {
 	for address, dumpAccount := range rawStorage {
 		db.storageIndexDB[address].root[blockNumber] = dumpAccount.Root
 		if _, ok := db.storageIndexDB[address].storage[dumpAccount.Root]; !ok {

@@ -1,11 +1,7 @@
 package filter
 
 import (
-	"context"
-	"log"
-
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/state"
 
 	"quorumengineering/quorum-report/client"
@@ -21,16 +17,15 @@ func NewStorageFilter(db database.Database, quorumClient client.Client) *Storage
 	return &StorageFilter{db, quorumClient}
 }
 
-func (sf *StorageFilter) IndexStorage(blockNumber uint64, addresses []common.Address) error {
+func (sf *StorageFilter) IndexStorage(addresses []common.Address, blockNumber uint64) error {
 	rawStorage := make(map[common.Address]*state.DumpAccount)
 	for _, address := range addresses {
-		log.Printf("Pull registered contract %v storage at block %v.\n", address.Hex(), blockNumber)
-		dumpAccount := &state.DumpAccount{}
-		err := sf.quorumClient.RPCCall(context.Background(), &dumpAccount, "debug_dumpAddress", address, hexutil.EncodeUint64(blockNumber))
+		//log.Printf("Pull registered contract %v storage at block %v.\n", address.Hex(), blockNumber)
+		dumpAccount, err := client.DumpAddress(sf.quorumClient, address, blockNumber)
 		rawStorage[address] = dumpAccount
 		if err != nil {
 			return err
 		}
 	}
-	return sf.db.IndexStorage(blockNumber, rawStorage)
+	return sf.db.IndexStorage(rawStorage, blockNumber)
 }

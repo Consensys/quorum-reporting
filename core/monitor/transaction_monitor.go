@@ -15,12 +15,13 @@ import (
 )
 
 type TransactionMonitor struct {
+	consensus    string
 	db           database.Database
 	quorumClient client.Client
 }
 
-func NewTransactionMonitor(db database.Database, quorumClient client.Client) *TransactionMonitor {
-	return &TransactionMonitor{db, quorumClient}
+func NewTransactionMonitor(db database.Database, quorumClient client.Client, consensus string) *TransactionMonitor {
+	return &TransactionMonitor{consensus, db, quorumClient}
 }
 
 func (tm *TransactionMonitor) PullTransactions(block *types.Block) error {
@@ -32,7 +33,7 @@ func (tm *TransactionMonitor) PullTransactions(block *types.Block) error {
 		if err != nil {
 			return err
 		}
-		log.Println(tx.Hash.Hex())
+		//log.Println(tx.Hash.Hex())
 		// 2. Write transactions to DB.
 		err = tm.db.WriteTransaction(tx)
 		if err != nil {
@@ -87,6 +88,11 @@ func (tm *TransactionMonitor) createTransaction(hash common.Hash) (*types.Transa
 		return nil, err
 	}
 
+	timestamp := hexutil.MustDecodeUint64(txOrigin.Block.Timestamp)
+	if tm.consensus == "raft" {
+		timestamp = timestamp / 1_000_000_000
+	}
+
 	tx := &types.Transaction{
 		Hash:              common.HexToHash(txOrigin.Hash),
 		Status:            txOrigin.Status == "0x1",
@@ -105,6 +111,7 @@ func (tm *TransactionMonitor) createTransaction(hash common.Hash) (*types.Transa
 		Data:              hexutil.MustDecode(txOrigin.InputData),
 		PrivateData:       hexutil.MustDecode(txOrigin.PrivateInputData),
 		IsPrivate:         txOrigin.IsPrivate,
+		Timestamp:         timestamp,
 	}
 	events := []*types.Event{}
 	for _, l := range txOrigin.Logs {
@@ -121,20 +128,13 @@ func (tm *TransactionMonitor) createTransaction(hash common.Hash) (*types.Transa
 			BlockHash:        common.HexToHash(txOrigin.Block.Hash),
 			TransactionHash:  tx.Hash,
 			TransactionIndex: txOrigin.Index,
+			Timestamp:        hexutil.MustDecodeUint64(txOrigin.Block.Timestamp),
 		}
 		events = append(events, e)
 	}
 	tx.Events = events
 
-	// Trace internal calls of the transaction
-	// Reference: https://github.com/ethereum/go-ethereum/issues/3128
-	type TraceConfig struct {
-		Tracer string
-	}
-	err = tm.quorumClient.RPCCall(context.Background(), &resp, "debug_traceTransaction", tx.Hash, &TraceConfig{Tracer: "callTracer"})
-	if err != nil {
-		return nil, err
-	}
+	resp, err = client.TraceTransaction(tm.quorumClient, tx.Hash)
 	if resp["calls"] != nil {
 		respCalls := resp["calls"].([]interface{})
 		tx.InternalCalls = make([]*types.InternalCall, len(respCalls))
