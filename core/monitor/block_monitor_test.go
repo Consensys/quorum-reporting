@@ -18,23 +18,45 @@ func TestCreateBlock(t *testing.T) {
 		expectedBlock *types.Block
 		consensus     string
 	}{
-		{ethTypes.NewBlock(&ethTypes.Header{Number: big.NewInt(42)}, nil, nil, nil),
+		{ethTypes.NewBlock(&ethTypes.Header{Number: big.NewInt(42), Time: 1_000_000_000}, nil, nil, nil),
 			&types.Block{
-				Hash:         common.HexToHash("0xc8e9124049353943a45cc95f07bc7cfdffb27e8ea2eb44167393181903d7ef3a"),
+				Hash:         common.HexToHash("0x1e492b9b3fceea83d5a94abf3486f2ee03b609ab7a8500af28d90f02ddbce7b9"),
 				Number:       uint64(42),
 				Transactions: []common.Hash{},
+				Timestamp:    1_000_000_000,
 			},
 			"istanbul",
 		},
-		{ethTypes.NewBlock(&ethTypes.Header{Number: big.NewInt(42)}, []*ethTypes.Transaction{
+		{ethTypes.NewBlock(&ethTypes.Header{Number: big.NewInt(42), Time: 1_000_000_000}, []*ethTypes.Transaction{
 			ethTypes.NewTransaction(0, common.Address{0}, nil, 0, nil, nil),
 		}, nil, nil),
 			&types.Block{
-				Hash:         common.HexToHash("0x6d7b7e0605ca6afef8b8f811ce922019d15eda90230e36d8d2391f5023d67f1f"),
+				Hash:         common.HexToHash("0x58e58dae7e4bbcb4459b0ee01c2e87d2840b12bfdd3f26dd2f9b3b5b0f4f23cd"),
 				Number:       uint64(42),
 				Transactions: []common.Hash{common.BigToHash(big.NewInt(0))},
+				Timestamp:    1_000_000_000,
 			},
 			"istanbul",
+		},
+		{ethTypes.NewBlock(&ethTypes.Header{Number: big.NewInt(42), Time: 1_000_000_000}, nil, nil, nil),
+			&types.Block{
+				Hash:         common.HexToHash("0x1e492b9b3fceea83d5a94abf3486f2ee03b609ab7a8500af28d90f02ddbce7b9"),
+				Number:       uint64(42),
+				Transactions: []common.Hash{},
+				Timestamp:    1,
+			},
+			"raft",
+		},
+		{ethTypes.NewBlock(&ethTypes.Header{Number: big.NewInt(42), Time: 1_000_000_000}, []*ethTypes.Transaction{
+			ethTypes.NewTransaction(0, common.Address{0}, nil, 0, nil, nil),
+		}, nil, nil),
+			&types.Block{
+				Hash:         common.HexToHash("0x58e58dae7e4bbcb4459b0ee01c2e87d2840b12bfdd3f26dd2f9b3b5b0f4f23cd"),
+				Number:       uint64(42),
+				Transactions: []common.Hash{common.BigToHash(big.NewInt(0))},
+				Timestamp:    1,
+			},
+			"raft",
 		},
 	}
 
@@ -49,6 +71,11 @@ func TestCreateBlock(t *testing.T) {
 		}
 		if len(actual.Transactions) != len(tc.expectedBlock.Transactions) {
 			t.Fatalf("expected %v transactions, but got %v", len(tc.expectedBlock.Transactions), len(actual.Transactions))
+		}
+		if tc.consensus == "raft" && actual.Timestamp != tc.expectedBlock.Timestamp {
+			t.Fatalf("expected timestamp %d for raft, but got %v", tc.expectedBlock.Timestamp, actual.Timestamp)
+		} else if actual.Timestamp != tc.expectedBlock.Timestamp {
+			t.Fatalf("expected timestamp %d for %s, but got %v", tc.expectedBlock.Timestamp, tc.consensus, actual.Timestamp)
 		}
 	}
 }
