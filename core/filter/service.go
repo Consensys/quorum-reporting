@@ -40,10 +40,12 @@ func (fs *FilterService) Start() error {
 				if err != nil {
 					log.Panicf("get last persisted block number failed: %v", err)
 				}
+				//log.Printf("Last persisted block %v.\n", current)
 				lastFiltered, err := fs.getLastFiltered(current)
 				if err != nil {
 					log.Panicf("get last filtered failed: %v", err)
 				}
+				//log.Printf("Last filtered block %v.\n", lastFiltered)
 				for current > lastFiltered {
 					err := fs.index(lastFiltered + 1)
 					if err != nil {

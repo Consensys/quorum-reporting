@@ -1,34 +1,147 @@
 package monitor
 
 import (
+	"context"
 	"log"
+
+	ethTypes "github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/event"
 
 	"quorumengineering/quorum-report/client"
 	"quorumengineering/quorum-report/database"
+	"quorumengineering/quorum-report/types"
 )
 
 // MonitorService starts all monitors. It pulls data from Quorum node and update the database.
 type MonitorService struct {
+	db           database.Database
+	quorumClient client.Client
+	syncStart    chan uint64
 	blockMonitor *BlockMonitor
+	stopFeed     event.Feed
+	totalWorkers uint64
 }
 
 func NewMonitorService(db database.Database, quorumClient client.Client, consensus string) *MonitorService {
 	return &MonitorService{
+		db:           db,
+		quorumClient: quorumClient,
+		syncStart:    make(chan uint64, 1), // make channel buffered so that it does not block chain head listener
 		blockMonitor: NewBlockMonitor(db, quorumClient, consensus),
+		totalWorkers: 10,
 	}
 }
 
 func (m *MonitorService) Start() error {
 	log.Println("Start monitor service...")
 
-	// BlockMonitor will sync all new blocks and historical blocks.
-	// It will invoke TransactionMonitor internally.
-	return m.blockMonitor.Start()
+	// Pulling historical blocks since the last persisted while continuously listening to ChainHeadEvent.
+	// For every block received, pull transactions/ events related to the registered contracts.
+
+	log.Println("Start to sync blocks...")
+
+	// 1. Start workers
+	m.startWorkers()
+
+	// 2. Sync from last persisted to current block height.
+	err := m.syncHistoricBlocks()
+	if err != nil {
+		return err
+	}
+
+	// 3. Listen to ChainHeadEvent and sync.
+	err = m.listenToChainHead()
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (m *MonitorService) Stop() {
-	// BlockMonitor will sync all new blocks and historical blocks.
-	// It will invoke TransactionMonitor internally.
-	m.blockMonitor.Stop()
+	m.stopFeed.Send(types.StopEvent{})
 	log.Println("Monitor service stopped.")
+}
+
+func (m *MonitorService) subscribeStopEvent() (chan types.StopEvent, event.Subscription) {
+	c := make(chan types.StopEvent)
+	s := m.stopFeed.Subscribe(c)
+	return c, s
+}
+
+func (m *MonitorService) startWorkers() {
+	for i := uint64(0); i < m.totalWorkers; i++ {
+		go func() {
+			stopChan, stopSubscription := m.subscribeStopEvent()
+			defer stopSubscription.Unsubscribe()
+			m.blockMonitor.startWorker(stopChan)
+		}()
+	}
+}
+
+func (m *MonitorService) syncHistoricBlocks() error {
+	currentBlockNumber, err := m.blockMonitor.currentBlockNumber()
+	if err != nil {
+		return err
+	}
+	log.Printf("Current block head is: %v.\n", currentBlockNumber)
+	lastPersisted, err := m.db.GetLastPersistedBlockNumber()
+	if err != nil {
+		return err
+	}
+
+	// Sync is called in a go routine so that it doesn't block main process.
+	go func() {
+		err = m.blockMonitor.syncBlocks(lastPersisted+1, currentBlockNumber)
+		if err != nil {
+			log.Panicf("sync historic blocks from %v to %v failed: %v", lastPersisted, currentBlockNumber, err)
+		}
+
+		// Sync from currentBlockNumber + 1 to the first ChainHeadEvent if there is any gap.
+		stopChan, stopSubscription := m.subscribeStopEvent()
+		defer stopSubscription.Unsubscribe()
+
+		select {
+		case latestChainHead := <-m.syncStart:
+			close(m.syncStart)
+			err := m.blockMonitor.syncBlocks(currentBlockNumber+1, latestChainHead-1)
+			if err != nil {
+				log.Panicf("sync historic blocks from %v to %v failed: %v", currentBlockNumber, latestChainHead-1, err)
+			}
+		case <-stopChan:
+			return
+		}
+	}()
+
+	return nil
+}
+
+func (m *MonitorService) listenToChainHead() error {
+	headers := make(chan *ethTypes.Header)
+	sub, err := m.quorumClient.SubscribeNewHead(context.Background(), headers)
+	if err != nil {
+		return err
+	}
+
+	go func() {
+		stopChan, stopSubscription := m.subscribeStopEvent()
+		defer stopSubscription.Unsubscribe()
+		syncStarted := false
+		for {
+			select {
+			case err := <-sub.Err():
+				log.Panicf("chain head event subscription error: %v", err)
+			case header := <-headers:
+				if !syncStarted {
+					m.syncStart <- header.Number.Uint64()
+					syncStarted = true
+				}
+				m.blockMonitor.processChainHead(header)
+			case <-stopChan:
+				return
+			}
+		}
+	}()
+
+	return nil
 }

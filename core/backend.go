@@ -72,7 +72,7 @@ func (b *Backend) Start() {
 		b.rpc.Start,     // RPC service
 	} {
 		if err := f(); err != nil {
-			log.Panicf("start up failed: %v.\n", err)
+			log.Panicf("start up failed: %v", err)
 		}
 	}
 }
