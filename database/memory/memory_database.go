@@ -58,16 +58,14 @@ func NewTxIndexer() *TxIndexer {
 }
 
 type StorageIndexer struct {
-	root      map[uint64]string
-	storage   map[string]map[common.Hash]string
-	timestamp map[uint64]uint64
+	root    map[uint64]string
+	storage map[string]map[common.Hash]string
 }
 
 func NewStorageIndexer() *StorageIndexer {
 	return &StorageIndexer{
-		root:      make(map[uint64]string),
-		storage:   make(map[string]map[common.Hash]string),
-		timestamp: make(map[uint64]uint64),
+		root:    make(map[uint64]string),
+		storage: make(map[string]map[common.Hash]string),
 	}
 }
 
@@ -197,10 +195,9 @@ func (db *MemoryDB) ReadTransaction(hash common.Hash) (*types.Transaction, error
 	return nil, errors.New("transaction does not exist")
 }
 
-func (db *MemoryDB) IndexStorage(blockNumber uint64, timestamp uint64, rawStorage map[common.Address]*state.DumpAccount) error {
+func (db *MemoryDB) IndexStorage(blockNumber uint64, rawStorage map[common.Address]*state.DumpAccount) error {
 	for address, dumpAccount := range rawStorage {
 		db.storageIndexDB[address].root[blockNumber] = dumpAccount.Root
-		db.storageIndexDB[address].timestamp[blockNumber] = timestamp
 		if _, ok := db.storageIndexDB[address].storage[dumpAccount.Root]; !ok {
 			db.storageIndexDB[address].storage[dumpAccount.Root] = dumpAccount.Storage
 		}

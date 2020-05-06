@@ -30,5 +30,5 @@ func (sf *StorageFilter) IndexStorage(block *types.Block, addresses []common.Add
 			return err
 		}
 	}
-	return sf.db.IndexStorage(block.Number, block.Timestamp, rawStorage)
+	return sf.db.IndexStorage(block.Number, rawStorage)
 }

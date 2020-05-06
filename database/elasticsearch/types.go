@@ -17,7 +17,6 @@ type State struct {
 	Address     common.Address `json:"address"`
 	BlockNumber uint64         `json:"blockNumber"`
 	StorageRoot common.Hash    `json:"storageRoot"`
-	Timestamp   uint64         `json:"timestamp"`
 }
 
 type Storage struct {

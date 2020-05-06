@@ -308,7 +308,7 @@ func (es *ElasticsearchDB) IndexBlock(addresses []common.Address, block *types.B
 	return es.updateAllLastFiltered(filteredAddresses, block.Number)
 }
 
-func (es *ElasticsearchDB) IndexStorage(blockNumber uint64, timestamp uint64, rawStorage map[common.Address]*state.DumpAccount) error {
+func (es *ElasticsearchDB) IndexStorage(blockNumber uint64, rawStorage map[common.Address]*state.DumpAccount) error {
 	biState := es.apiClient.GetBulkHandler(StateIndex)
 	biStorage := es.apiClient.GetBulkHandler(StorageIndex)
 
@@ -317,7 +317,6 @@ func (es *ElasticsearchDB) IndexStorage(blockNumber uint64, timestamp uint64, ra
 			Address:     address,
 			BlockNumber: blockNumber,
 			StorageRoot: common.HexToHash(dumpAccount.Root),
-			Timestamp:   timestamp,
 		}
 		storageMap := Storage{
 			StorageRoot: common.HexToHash(dumpAccount.Root),

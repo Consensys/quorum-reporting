@@ -88,7 +88,7 @@ func TestMemoryDB(t *testing.T) {
 	testGetLastPersistedBlockNumeber(t, db, 1)
 	// 5. Index block and check last filtered. Retrieve all transactions/ events.
 	testGetLastFiltered(t, db, address, 0)
-	testIndexStorage(t, db, 1, 1000, rawStorage)
+	testIndexStorage(t, db, 1, rawStorage)
 	testIndexBlock(t, db, address, block)
 	testGetLastFiltered(t, db, address, 1)
 	testGetContractCreationTransaction(t, db, address, common.BytesToHash([]byte("tx1")))
@@ -218,8 +218,8 @@ func testIndexBlock(t *testing.T, db database.Database, address common.Address, 
 	}
 }
 
-func testIndexStorage(t *testing.T, db database.Database, blockNumber uint64, timestamp uint64, rawStorage map[common.Address]*state.DumpAccount) {
-	err := db.IndexStorage(blockNumber, timestamp, rawStorage)
+func testIndexStorage(t *testing.T, db database.Database, blockNumber uint64, rawStorage map[common.Address]*state.DumpAccount) {
+	err := db.IndexStorage(blockNumber, rawStorage)
 	if err != nil {
 		t.Fatalf("expected no error, but got %v", err)
 	}
