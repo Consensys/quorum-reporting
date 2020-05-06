@@ -20,7 +20,7 @@ type BlockMonitor struct {
 	db                 database.Database
 	quorumClient       client.Client
 	transactionMonitor *TransactionMonitor
-	newBlockChan       chan *types.Block
+	newBlockChan       chan *types.Block // concurrent block processing
 }
 
 func NewBlockMonitor(db database.Database, quorumClient client.Client) *BlockMonitor {
@@ -36,7 +36,7 @@ func (bm *BlockMonitor) startWorker(stopChan <-chan types.StopEvent) {
 	for {
 		select {
 		case block := <-bm.newBlockChan:
-			// listening to new block channel and process if new block comes
+			// Listen to new block channel and process if new block comes.
 			err := bm.process(block)
 			if err != nil {
 				log.Panicf("process block %v error: %v", block.Number, err)

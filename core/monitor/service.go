@@ -19,7 +19,6 @@ type MonitorService struct {
 	syncStart    chan uint64
 	blockMonitor *BlockMonitor
 	stopFeed     event.Feed
-	// concurrent block processing
 	totalWorkers uint64
 }
 
@@ -90,13 +89,14 @@ func (m *MonitorService) syncHistoricBlocks() error {
 	if err != nil {
 		return err
 	}
-	err = m.blockMonitor.syncBlocks(lastPersisted+1, currentBlockNumber)
-	if err != nil {
-		log.Printf("Sync historic blocks from %v to %v failed: %v.\n", lastPersisted, currentBlockNumber, err)
-		return err
-	}
 
+	// Sync is called in a go routine so that it doesn't block main process.
 	go func() {
+		err = m.blockMonitor.syncBlocks(lastPersisted+1, currentBlockNumber)
+		if err != nil {
+			log.Panicf("sync historic blocks from %v to %v failed: %v", lastPersisted, currentBlockNumber, err)
+		}
+
 		// Sync from currentBlockNumber + 1 to the first ChainHeadEvent if there is any gap.
 		stopChan, stopSubscription := m.subscribeStopEvent()
 		defer stopSubscription.Unsubscribe()
