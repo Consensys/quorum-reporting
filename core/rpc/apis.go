@@ -73,14 +73,29 @@ func (r *RPCAPIs) GetContractCreationTransaction(address common.Address) (common
 }
 
 func (r *RPCAPIs) GetAllTransactionsToAddress(address common.Address, options *types.QueryOptions) ([]common.Hash, error) {
+	if options == nil {
+		options = &types.QueryOptions{}
+	}
+	options.SetDefaults()
+
 	return r.db.GetAllTransactionsToAddress(address, options)
 }
 
 func (r *RPCAPIs) GetAllTransactionsInternalToAddress(address common.Address, options *types.QueryOptions) ([]common.Hash, error) {
+	if options == nil {
+		options = &types.QueryOptions{}
+	}
+	options.SetDefaults()
+
 	return r.db.GetAllTransactionsInternalToAddress(address, options)
 }
 
 func (r *RPCAPIs) GetAllEventsFromAddress(address common.Address, options *types.QueryOptions) ([]*types.ParsedEvent, error) {
+	if options == nil {
+		options = &types.QueryOptions{}
+	}
+	options.SetDefaults()
+
 	events, err := r.db.GetAllEventsFromAddress(address, options)
 	if err != nil {
 		return nil, err

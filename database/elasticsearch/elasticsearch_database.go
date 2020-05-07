@@ -353,22 +353,24 @@ func (es *ElasticsearchDB) GetContractCreationTransaction(address common.Address
 }
 
 func (es *ElasticsearchDB) GetAllTransactionsToAddress(address common.Address, options *types.QueryOptions) ([]common.Hash, error) {
-	var queryString string
-	if options != nil {
-		options.SetDefaults()
-		queryString = fmt.Sprintf(QueryByToAddressWithOptionsTemplate(options), address.String())
-	} else {
-		queryString = fmt.Sprintf(QueryByToAddressTemplate, address.String())
+	queryString := fmt.Sprintf(QueryByToAddressWithOptionsTemplate(options), address.String())
+
+	from := options.PageSize * options.PageNumber
+	req := esapi.SearchRequest{
+		Index: []string{TransactionIndex},
+		Body:  strings.NewReader(queryString),
+		From:  &from,
+		Size:  &options.PageSize,
+		Sort:  []string{"blockNumber:asc", "index:asc"},
 	}
-	results, err := es.apiClient.ScrollAllResults(TransactionIndex, queryString)
+	results, err := es.doSearchRequest(req)
 	if err != nil {
 		return nil, err
 	}
 
-	converted := make([]common.Hash, len(results))
-	for i, result := range results {
-		data := result.(map[string]interface{})["_source"].(map[string]interface{})
-		addr := data["hash"].(string)
+	converted := make([]common.Hash, len(results.Hits.Hits))
+	for i, result := range results.Hits.Hits {
+		addr := result.Source["hash"].(string)
 		converted[i] = common.HexToHash(addr)
 	}
 
@@ -376,22 +378,24 @@ func (es *ElasticsearchDB) GetAllTransactionsToAddress(address common.Address, o
 }
 
 func (es *ElasticsearchDB) GetAllTransactionsInternalToAddress(address common.Address, options *types.QueryOptions) ([]common.Hash, error) {
-	var queryString string
-	if options != nil {
-		options.SetDefaults()
-		queryString = fmt.Sprintf(QueryInternalTransactionsWithOptionsTemplate(options), address.String())
-	} else {
-		queryString = fmt.Sprintf(QueryInternalTransactionsTemplate, address.String())
+	queryString := fmt.Sprintf(QueryInternalTransactionsWithOptionsTemplate(options), address.String())
+
+	from := options.PageSize * options.PageNumber
+	req := esapi.SearchRequest{
+		Index: []string{TransactionIndex},
+		Body:  strings.NewReader(queryString),
+		From:  &from,
+		Size:  &options.PageSize,
+		Sort:  []string{"blockNumber:asc", "index:asc"},
 	}
-	results, err := es.apiClient.ScrollAllResults(TransactionIndex, queryString)
+	results, err := es.doSearchRequest(req)
 	if err != nil {
 		return nil, err
 	}
 
-	converted := make([]common.Hash, len(results))
-	for i, result := range results {
-		data := result.(map[string]interface{})["_source"].(map[string]interface{})
-		addr := data["hash"].(string)
+	converted := make([]common.Hash, len(results.Hits.Hits))
+	for i, result := range results.Hits.Hits {
+		addr := result.Source["hash"].(string)
 		converted[i] = common.HexToHash(addr)
 	}
 
@@ -399,23 +403,24 @@ func (es *ElasticsearchDB) GetAllTransactionsInternalToAddress(address common.Ad
 }
 
 func (es *ElasticsearchDB) GetAllEventsFromAddress(address common.Address, options *types.QueryOptions) ([]*types.Event, error) {
-	var queryString string
-	if options != nil {
-		options.SetDefaults()
-		queryString = fmt.Sprintf(QueryByAddressWithOptionsTemplate(options), address.String())
-	} else {
-		queryString = fmt.Sprintf(QueryByAddressTemplate, address.String())
+	queryString := fmt.Sprintf(QueryByAddressWithOptionsTemplate(options), address.String())
+
+	from := options.PageSize * options.PageNumber
+	req := esapi.SearchRequest{
+		Index: []string{EventIndex},
+		Body:  strings.NewReader(queryString),
+		From:  &from,
+		Size:  &options.PageSize,
+		Sort:  []string{"blockNumber:asc", "logIndex:asc"},
 	}
-	results, err := es.apiClient.ScrollAllResults(EventIndex, queryString)
+	results, err := es.doSearchRequest(req)
 	if err != nil {
 		return nil, err
 	}
 
-	convertedList := make([]*types.Event, len(results))
-	for i, result := range results {
-		data := result.(map[string]interface{})["_source"].(map[string]interface{})
-
-		marshalled, _ := json.Marshal(data)
+	convertedList := make([]*types.Event, len(results.Hits.Hits))
+	for i, result := range results.Hits.Hits {
+		marshalled, _ := json.Marshal(result.Source)
 		var event Event
 		json.Unmarshal(marshalled, &event)
 
@@ -576,4 +581,18 @@ func (es *ElasticsearchDB) createEvents(events []*types.Event) error {
 
 func (es *ElasticsearchDB) Stop() {
 	es.apiClient.CloseIndexers()
+}
+
+func (es *ElasticsearchDB) doSearchRequest(req esapi.SearchRequest) (*SearchQueryResult, error) {
+	body, err := es.apiClient.DoRequest(req)
+	if err != nil {
+		return nil, err
+	}
+
+	var ret SearchQueryResult
+	err = json.Unmarshal(body, &ret)
+	if err != nil {
+		return nil, err
+	}
+	return &ret, nil
 }

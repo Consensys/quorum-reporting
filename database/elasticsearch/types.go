@@ -263,3 +263,14 @@ type LastPersistedResult struct {
 		LastPersisted uint64 `json:"lastPersisted"`
 	} `json:"_source"`
 }
+
+type SearchQueryResult struct {
+	Hits struct {
+		Hits []IndividualResult `json:"hits"`
+	} `json:"hits"`
+}
+
+type IndividualResult struct {
+	Id     string                 `json:"_id"`
+	Source map[string]interface{} `json:"_source"`
+}

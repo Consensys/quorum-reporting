@@ -37,24 +37,6 @@ const (
 	}
 }
 `
-	QueryInternalTransactionsTemplate = `
-{
-  "query": {
-    "nested": {
-      "path": "internalCalls",
-      "query": {
-        "bool": {
-          "must": [
-            {
-              "match": { "internalCalls.to": "%s" }
-            }
-          ]
-        }
-      }
-    }
-  }
-}
-`
 )
 
 func QueryByToAddressWithOptionsTemplate(options *types.QueryOptions) string {
