@@ -32,26 +32,30 @@ func (rm *IndexRequestMatcher) String() string {
 }
 
 type SearchRequestMatcher struct {
-	req esapi.SearchRequest
+	req  esapi.SearchRequest
+	body string
 }
 
 func NewSearchRequestMatcher(req esapi.SearchRequest) *SearchRequestMatcher {
-	return &SearchRequestMatcher{req: req}
+	body, _ := ioutil.ReadAll(req.Body)
+	return &SearchRequestMatcher{req: req, body: string(body)}
 }
 
 func (rm *SearchRequestMatcher) Matches(x interface{}) bool {
 	if val, ok := x.(esapi.SearchRequest); ok {
 		actualBody, _ := ioutil.ReadAll(val.Body)
-		expectedBody, _ := ioutil.ReadAll(rm.req.Body)
 		//only ever expect one item here, and to always be populated
 		return val.Index[0] == rm.req.Index[0] &&
-			bytes.Compare(actualBody, expectedBody) == 0
+			*val.From == *rm.req.From &&
+			*val.Size == *rm.req.Size &&
+			// check contents of "sort" field
+			string(actualBody) == rm.body
 	}
 	return false
 }
 
 func (rm *SearchRequestMatcher) String() string {
-	return fmt.Sprintf("SearchRequestMatcher{%s}", rm.req.Index)
+	return fmt.Sprintf("SearchRequestMatcher{%s/%d/%d/%s/%s}", rm.req.Index, rm.req.From, rm.req.Size, rm.req.Sort, rm.body)
 }
 
 type DeleteRequestMatcher struct {
