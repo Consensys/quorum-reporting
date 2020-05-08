@@ -107,18 +107,6 @@ func TestStubQuorumClient(t *testing.T) {
 	if err == nil || err.Error() != "not found" {
 		t.Fatalf("expected error %v, but got %v", "not found", err)
 	}
-	// test BlockByHash
-	block, err = c.BlockByHash(context.Background(), common.HexToHash("0xe9a9676da1a84a448e698de377f74e257659a1c063195f7a170310ab6baca831"))
-	if err != nil {
-		t.Fatalf("expected no error, but got %v", err)
-	}
-	if block.NumberU64() != 1 {
-		t.Fatalf("expected block number %v, but got %v", 1, block.NumberU64())
-	}
-	block, err = c.BlockByHash(context.Background(), common.BytesToHash([]byte("random")))
-	if err == nil || err.Error() != "not found" {
-		t.Fatalf("expected error %v, but got %v", "not found", err)
-	}
 	// test mock GraphQL
 	var resp map[string]interface{}
 	err = c.ExecuteGraphQLQuery(context.Background(), &resp, "query")

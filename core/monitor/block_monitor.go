@@ -21,7 +21,7 @@ type BlockMonitor struct {
 	quorumClient       client.Client
 	transactionMonitor *TransactionMonitor
 	newBlockChan       chan *types.Block // concurrent block processing
-	consensus        string
+	consensus          string
 }
 
 func NewBlockMonitor(db database.Database, quorumClient client.Client, consensus string) *BlockMonitor {
@@ -91,7 +91,7 @@ func (bm *BlockMonitor) syncBlocks(start, end uint64) error {
 }
 
 func (bm *BlockMonitor) processChainHead(header *ethTypes.Header) {
-	blockOrigin, err := bm.quorumClient.BlockByHash(context.Background(), header.Hash())
+	blockOrigin, err := bm.quorumClient.BlockByNumber(context.Background(), header.Number)
 	if err != nil {
 		// TODO: if quorum node is down, reconnect?
 		log.Panicf("get block with hash %v error: %v", header.Hash(), err)
