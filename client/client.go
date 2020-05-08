@@ -7,7 +7,6 @@ import (
 	"reflect"
 
 	"github.com/ethereum/go-ethereum"
-	"github.com/ethereum/go-ethereum/common"
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	ethRPC "github.com/ethereum/go-ethereum/rpc"
@@ -74,14 +73,6 @@ func NewStubQuorumClient(blocks []*ethTypes.Block, mockGraphQL map[string]map[st
 
 func (qc *StubQuorumClient) SubscribeNewHead(context.Context, chan<- *ethTypes.Header) (ethereum.Subscription, error) {
 	return nil, errors.New("not implemented")
-}
-func (qc *StubQuorumClient) BlockByHash(ctx context.Context, hash common.Hash) (*ethTypes.Block, error) {
-	for _, b := range qc.blocks {
-		if b.Hash() == hash {
-			return b, nil
-		}
-	}
-	return nil, errors.New("not found")
 }
 
 func (qc *StubQuorumClient) BlockByNumber(ctx context.Context, blockNumber *big.Int) (*ethTypes.Block, error) {
