@@ -10,7 +10,7 @@ var defaultQueryOptions = &QueryOptions{
 	BeginTimestamp:   big.NewInt(0),
 	EndTimestamp:     big.NewInt(-1),
 	PageSize:         10,
-	PageNumber:       0,
+	ExtraOpts:        []string{},
 }
 
 type QueryOptions struct {
@@ -20,8 +20,8 @@ type QueryOptions struct {
 	BeginTimestamp *big.Int `json:"beginTimestamp"`
 	EndTimestamp   *big.Int `json:"endTimestamp"`
 
-	PageSize   int `json:"pageSize"`
-	PageNumber int `json:"pageNumber"`
+	PageSize  int      `json:"pageSize"`
+	ExtraOpts []string `json:"lastResult"`
 }
 
 func (opts *QueryOptions) SetDefaults() {
@@ -40,7 +40,7 @@ func (opts *QueryOptions) SetDefaults() {
 	if opts.PageSize == 0 {
 		opts.PageSize = defaultQueryOptions.PageSize
 	}
-	if opts.PageNumber == 0 {
-		opts.PageNumber = defaultQueryOptions.PageNumber
+	if opts.ExtraOpts == nil {
+		opts.ExtraOpts = defaultQueryOptions.ExtraOpts
 	}
 }

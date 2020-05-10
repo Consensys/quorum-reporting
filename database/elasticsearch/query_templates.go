@@ -1,8 +1,10 @@
 package elasticsearch
 
 import (
+	"fmt"
 	"math/big"
 	"quorumengineering/quorum-report/types"
+	"strings"
 )
 
 // constant query template strings for ES
@@ -15,33 +17,12 @@ const (
 	}
 }
 `
-	QueryByToAddressTemplate = `
-{
-	"query": {
-		"bool": {
-			"must": [
-				{ "match": { "to": "%s" } }
-			]
-		}
-	}
-}
-`
-	QueryByAddressTemplate = `
-{
-	"query": {
-		"bool": {
-			"must": [
-				{ "match": { "address": "%s" } }
-			]
-		}
-	}
-}
-`
 )
 
 func QueryByToAddressWithOptionsTemplate(options *types.QueryOptions) string {
 	return `
 {
+	` + createSearchAfter(options.ExtraOpts) + `
 	"query": {
 		"bool": {
 			"must": [
@@ -58,6 +39,7 @@ func QueryByToAddressWithOptionsTemplate(options *types.QueryOptions) string {
 func QueryByAddressWithOptionsTemplate(options *types.QueryOptions) string {
 	return `
 {
+	` + createSearchAfter(options.ExtraOpts) + `
 	"query": {
 		"bool": {
 			"must": [
@@ -74,6 +56,7 @@ func QueryByAddressWithOptionsTemplate(options *types.QueryOptions) string {
 func QueryInternalTransactionsWithOptionsTemplate(options *types.QueryOptions) string {
 	return `
 {
+	` + createSearchAfter(options.ExtraOpts) + `
 	"query": {
 		"bool": {
 			"must": [
@@ -102,4 +85,12 @@ func createRangeQuery(name string, start *big.Int, end *big.Int) string {
 		return "{ \"range\": { \"" + name + "\": { \"gte\": " + start.String() + "} } }"
 	}
 	return "{ \"range\": { \"" + name + "\": { \"gte\": " + start.String() + ", \"lte\": " + end.String() + "} } }"
+}
+
+func createSearchAfter(params []string) string {
+	if len(params) == 0 {
+		return ""
+	}
+	joined := strings.Join(params, ", ")
+	return fmt.Sprintf(`"search_after": [%s],`, joined)
 }

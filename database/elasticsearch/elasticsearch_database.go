@@ -353,13 +353,17 @@ func (es *ElasticsearchDB) GetContractCreationTransaction(address common.Address
 }
 
 func (es *ElasticsearchDB) GetAllTransactionsToAddress(address common.Address, options *types.QueryOptions) ([]common.Hash, error) {
+	if len(options.ExtraOpts) != 0 {
+		lastTx := options.ExtraOpts[0]
+		tx, _ := es.ReadTransaction(common.HexToHash(lastTx))
+		options.ExtraOpts = []string{strconv.FormatUint(tx.BlockNumber, 10), strconv.FormatUint(tx.Index, 10)}
+	}
 	queryString := fmt.Sprintf(QueryByToAddressWithOptionsTemplate(options), address.String())
 
-	from := options.PageSize * options.PageNumber
+	fmt.Println(queryString)
 	req := esapi.SearchRequest{
 		Index: []string{TransactionIndex},
 		Body:  strings.NewReader(queryString),
-		From:  &from,
 		Size:  &options.PageSize,
 		Sort:  []string{"blockNumber:asc", "index:asc"},
 	}
@@ -378,13 +382,16 @@ func (es *ElasticsearchDB) GetAllTransactionsToAddress(address common.Address, o
 }
 
 func (es *ElasticsearchDB) GetAllTransactionsInternalToAddress(address common.Address, options *types.QueryOptions) ([]common.Hash, error) {
+	if len(options.ExtraOpts) != 0 {
+		lastTx := options.ExtraOpts[0]
+		tx, _ := es.ReadTransaction(common.HexToHash(lastTx))
+		options.ExtraOpts = []string{strconv.FormatUint(tx.BlockNumber, 10), strconv.FormatUint(tx.Index, 10)}
+	}
 	queryString := fmt.Sprintf(QueryInternalTransactionsWithOptionsTemplate(options), address.String())
 
-	from := options.PageSize * options.PageNumber
 	req := esapi.SearchRequest{
 		Index: []string{TransactionIndex},
 		Body:  strings.NewReader(queryString),
-		From:  &from,
 		Size:  &options.PageSize,
 		Sort:  []string{"blockNumber:asc", "index:asc"},
 	}
@@ -405,7 +412,7 @@ func (es *ElasticsearchDB) GetAllTransactionsInternalToAddress(address common.Ad
 func (es *ElasticsearchDB) GetAllEventsFromAddress(address common.Address, options *types.QueryOptions) ([]*types.Event, error) {
 	queryString := fmt.Sprintf(QueryByAddressWithOptionsTemplate(options), address.String())
 
-	from := options.PageSize * options.PageNumber
+	from := 0 //options.PageSize * options.PageNumber
 	req := esapi.SearchRequest{
 		Index: []string{EventIndex},
 		Body:  strings.NewReader(queryString),
