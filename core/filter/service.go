@@ -4,6 +4,7 @@ import (
 	"log"
 	"time"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/event"
 
 	"quorumengineering/quorum-report/client"
@@ -41,14 +42,13 @@ func (fs *FilterService) Start() error {
 					log.Panicf("get last persisted block number failed: %v", err)
 				}
 				//log.Printf("Last persisted block %v.\n", current)
-				lastFiltered, err := fs.getLastFiltered(current)
+				lastFilteredAll, lastFiltered, err := fs.getLastFiltered(current)
 				if err != nil {
 					log.Panicf("get last filtered failed: %v", err)
 				}
 				//log.Printf("Last filtered block %v.\n", lastFiltered)
 				for current > lastFiltered {
-					log.Printf("Index registered addresses at block %v.\n", lastFiltered+1)
-					err := fs.index(lastFiltered + 1)
+					err := fs.index(lastFilteredAll, lastFiltered+1)
 					if err != nil {
 						log.Panicf("index block %v failed: %v", lastFiltered, err)
 					}
@@ -74,31 +74,36 @@ func (fs *FilterService) subscribeStopEvent() (chan types.StopEvent, event.Subsc
 }
 
 // getLastFiltered finds the minimum value of "lastFiltered" across all addresses
-func (fs *FilterService) getLastFiltered(lastFiltered uint64) (uint64, error) {
+func (fs *FilterService) getLastFiltered(current uint64) (map[common.Address]uint64, uint64, error) {
+	lastFiltered := make(map[common.Address]uint64)
 	addresses, err := fs.db.GetAddresses()
 	if err != nil {
-		return 0, err
+		return lastFiltered, current, err
 	}
 	for _, address := range addresses {
 		curLastFiltered, err := fs.db.GetLastFiltered(address)
 		if err != nil {
-			return 0, err
+			return lastFiltered, current, err
 		}
-		if curLastFiltered < lastFiltered {
-			lastFiltered = curLastFiltered
+		if curLastFiltered < current {
+			current = curLastFiltered
 		}
+		lastFiltered[address] = curLastFiltered
 	}
-	return lastFiltered, nil
+	return lastFiltered, current, nil
 }
 
-func (fs *FilterService) index(blockNumber uint64) error {
+func (fs *FilterService) index(lastFiltered map[common.Address]uint64, blockNumber uint64) error {
 	block, err := fs.db.ReadBlock(blockNumber)
 	if err != nil {
 		return err
 	}
-	addresses, err := fs.db.GetAddresses()
-	if err != nil {
-		return err
+	addresses := []common.Address{}
+	for address, curLastFiltered := range lastFiltered {
+		if curLastFiltered < blockNumber {
+			addresses = append(addresses, address)
+			log.Printf("Index registered addresses %v at block %v.\n", address.Hex(), blockNumber)
+		}
 	}
 	err = fs.storageFilter.IndexStorage(addresses, blockNumber)
 	if err != nil {
