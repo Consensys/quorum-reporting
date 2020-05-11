@@ -72,16 +72,31 @@ func (r *RPCAPIs) GetContractCreationTransaction(address common.Address) (common
 	return r.db.GetContractCreationTransaction(address)
 }
 
-func (r *RPCAPIs) GetAllTransactionsToAddress(address common.Address) ([]common.Hash, error) {
-	return r.db.GetAllTransactionsToAddress(address)
+func (r *RPCAPIs) GetAllTransactionsToAddress(address common.Address, options *types.QueryOptions) ([]common.Hash, error) {
+	if options == nil {
+		options = &types.QueryOptions{}
+	}
+	options.SetDefaults()
+
+	return r.db.GetAllTransactionsToAddress(address, options)
 }
 
-func (r *RPCAPIs) GetAllTransactionsInternalToAddress(address common.Address) ([]common.Hash, error) {
-	return r.db.GetAllTransactionsInternalToAddress(address)
+func (r *RPCAPIs) GetAllTransactionsInternalToAddress(address common.Address, options *types.QueryOptions) ([]common.Hash, error) {
+	if options == nil {
+		options = &types.QueryOptions{}
+	}
+	options.SetDefaults()
+
+	return r.db.GetAllTransactionsInternalToAddress(address, options)
 }
 
-func (r *RPCAPIs) GetAllEventsFromAddress(address common.Address) ([]*types.ParsedEvent, error) {
-	events, err := r.db.GetAllEventsFromAddress(address)
+func (r *RPCAPIs) GetAllEventsFromAddress(address common.Address, options *types.QueryOptions) ([]*types.ParsedEvent, error) {
+	if options == nil {
+		options = &types.QueryOptions{}
+	}
+	options.SetDefaults()
+
+	events, err := r.db.GetAllEventsFromAddress(address, options)
 	if err != nil {
 		return nil, err
 	}

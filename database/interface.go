@@ -47,9 +47,9 @@ type IndexDB interface {
 	IndexBlock([]common.Address, *types.Block) error
 	IndexStorage(map[common.Address]*state.DumpAccount, uint64) error
 	GetContractCreationTransaction(common.Address) (common.Hash, error)
-	GetAllTransactionsToAddress(common.Address) ([]common.Hash, error)
-	GetAllTransactionsInternalToAddress(common.Address) ([]common.Hash, error)
-	GetAllEventsFromAddress(common.Address) ([]*types.Event, error)
+	GetAllTransactionsToAddress(common.Address, *types.QueryOptions) ([]common.Hash, error)
+	GetAllTransactionsInternalToAddress(common.Address, *types.QueryOptions) ([]common.Hash, error)
+	GetAllEventsFromAddress(common.Address, *types.QueryOptions) ([]*types.Event, error)
 	GetStorage(common.Address, uint64) (map[common.Hash]string, error)
 	GetLastFiltered(common.Address) (uint64, error)
 }

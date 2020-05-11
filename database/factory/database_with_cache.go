@@ -188,16 +188,16 @@ func (cachingDB *DatabaseWithCache) GetContractCreationTransaction(address commo
 	return hash, nil
 }
 
-func (cachingDB *DatabaseWithCache) GetAllTransactionsToAddress(address common.Address) ([]common.Hash, error) {
-	return cachingDB.db.GetAllTransactionsToAddress(address)
+func (cachingDB *DatabaseWithCache) GetAllTransactionsToAddress(address common.Address, options *types.QueryOptions) ([]common.Hash, error) {
+	return cachingDB.db.GetAllTransactionsToAddress(address, options)
 }
 
-func (cachingDB *DatabaseWithCache) GetAllTransactionsInternalToAddress(address common.Address) ([]common.Hash, error) {
-	return cachingDB.db.GetAllTransactionsInternalToAddress(address)
+func (cachingDB *DatabaseWithCache) GetAllTransactionsInternalToAddress(address common.Address, options *types.QueryOptions) ([]common.Hash, error) {
+	return cachingDB.db.GetAllTransactionsInternalToAddress(address, options)
 }
 
-func (cachingDB *DatabaseWithCache) GetAllEventsFromAddress(address common.Address) ([]*types.Event, error) {
-	return cachingDB.db.GetAllEventsFromAddress(address)
+func (cachingDB *DatabaseWithCache) GetAllEventsFromAddress(address common.Address, options *types.QueryOptions) ([]*types.Event, error) {
+	return cachingDB.db.GetAllEventsFromAddress(address, options)
 }
 
 func (cachingDB *DatabaseWithCache) GetStorage(address common.Address, blockNumber uint64) (map[common.Hash]string, error) {

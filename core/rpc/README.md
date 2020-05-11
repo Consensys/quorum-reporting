@@ -64,53 +64,68 @@ Transaction APIs query
 
 #### reporting_getAllTransactionsToAddress
 
-(Deprecated) `reporting_getAllTransactionsToAddress` currently returns all transactions sending to the address. It can 
-be a huge list. Switching to a set of new APIs with query condition.
+(Todo) `reporting_getAllTransactionsToAddress` returns a list of tx hash and total number matching the search options 
+provided.
 
-#### reporting_getAllTransactionsToAddressByNumber
-
-(Todo)
-
-#### reporting_getAllTransactionsToAddressByBlock
-
-(Todo)
-
-#### reporting_getAllTransactionsToAddressByTimestamp
-
-(Todo)
+Sample Response:
+```$json
+{
+    transactions: [common.Hash...],
+    total: uint64,
+    options: {
+        beginBlockNumber, endBlockNumber,
+        beginTimestamp, endTimestamp,
+        pageSize, pageNumber,
+    }
+}
+```
 
 #### reporting_getAllTransactionsInternalToAddress
 
-(Deprecated) `reporting_getAllTransactionsInternalToAddress` currently returns all transactions internally calling to 
-the address. Switching to a set of new APIs with query condition.
+(Todo) `reporting_getAllTransactionsInternalToAddress` returns a list of tx hash and total number matching the search 
+options provided.
 
-#### reporting_getAllTransactionsInternalToAddressByNumber
-
-(Todo)
-
-#### reporting_getAllTransactionsInternalToAddressByBlock
-
-(Todo)
-
-#### reporting_getAllTransactionsInternalToAddressByTimestamp
-
-(Todo)
+Sample Response:
+```$json
+{
+    transactions: [common.Hash...],
+    total: uint64,
+    options: {
+        beginBlockNumber, endBlockNumber,
+        beginTimestamp, endTimestamp,
+        pageSize, pageNumber,
+    }
+}
+```
 
 ### Event
 
 #### reporting_getAllEventsFromAddress
 
-(Deprecated) `reporting_getAllEventsFromAddress` currently returns all events emitted from the address. Switching to a 
-set of new APIs with query condition.
+(Todo) `reporting_getAllEventsFromAddress` returns a list of event objs and total number of events matching the search 
+options provided.
 
-#### reporting_getAllEventsFromAddressByNumber
+Sample Response:
+```$json
+{
+    events: [eventObj...],
+    total: uint64,
+    options: {
+        beginBlockNumber, endBlockNumber,
+        beginTimestamp, endTimestamp,
+        pageSize, pageNumber,
+    }
+}
+```
 
-(Todo)
-
-#### reporting_getAllEventsFromAddressByBlock
-
-(Todo)
-
-#### reporting_getAllEventsFromAddressByTimestamp
-
-(Todo)
+### Default Query Options
+```$json
+{
+    beginBlockNumber: 0,
+    endBlockNumber: -1("latest"),
+    beginTimestamp: 0,
+    endTimestamp: -1("latest"),
+    pageSize: 10,
+    pageNumber: 0,
+}
+```

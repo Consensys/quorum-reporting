@@ -16,6 +16,7 @@ const (
 var (
 	AllIndexes = []string{MetaIndex, ContractIndex, BlockIndex, StorageIndex, StateIndex, TransactionIndex, EventIndex}
 	// errors
-	ErrCouldNotResolveResp = errors.New("could not resolve response body")
-	ErrIndexNotFound       = errors.New("index not found")
+	ErrCouldNotResolveResp     = errors.New("could not resolve response body")
+	ErrIndexNotFound           = errors.New("index not found")
+	ErrPaginationLimitExceeded = errors.New("pagination limit exceeded")
 )

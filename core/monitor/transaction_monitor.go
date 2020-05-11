@@ -128,7 +128,7 @@ func (tm *TransactionMonitor) createTransaction(hash common.Hash) (*types.Transa
 			BlockHash:        common.HexToHash(txOrigin.Block.Hash),
 			TransactionHash:  tx.Hash,
 			TransactionIndex: txOrigin.Index,
-			Timestamp:        hexutil.MustDecodeUint64(txOrigin.Block.Timestamp),
+			Timestamp:        timestamp,
 		}
 		events = append(events, e)
 	}
