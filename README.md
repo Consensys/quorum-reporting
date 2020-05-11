@@ -1,6 +1,6 @@
 # Quorum Reporting
 
-## Requirements
+## Requirements (original draft)
 Number | Area | Requirement 
 :---: | :---: | :--- 
 1 | Admin | Ability for an admin to register a contract address for monitoring and reporting
@@ -11,7 +11,7 @@ Number | Area | Requirement
 6 | Data storage | Reporting tool to have its own reporting database with a well defined data schema for easy querying and reporting. The data fetched from Quorum geth node to be stored here
 7 | Dashboard and UI | UI for the following activities <ul><li>Registration of contracts for monitoring with ability to select subset of contract events and storage attributes</li><li>UI displaying all contract transactions, related event logs, internal transactions and state changes with drill down capability</ul>
 
-## Approach
+## Approach (original draft)
 * To build the tool on top of 1.9.7 version as 1.9.7 supports `graphql` and provides a flexible querying mechanism
 * Registration
     * The solidity contract code of the contract to be monitored to be given as input and parsed for attributes, functions and events
@@ -39,7 +39,7 @@ go build
 ```bash
 ./quorum-report --help
 ```
-* Start `quorum-report` tool with default config.toml file
+* Start `quorum-report` tool with `config.toml` in the current path
 ```
 ./quorum-report
 ```
@@ -51,18 +51,20 @@ go build
 ```
 Quorum Reporting -----> [ Backend ] ----------> [ RPC Service ]
                            |   |                       |
-                           |   |                       |
-                           |   +--> [ Filter Service ] |
-                           |                    |      |
-                           |                    |      |
-                           V                    |      |
-                  [ Monitor Service ]           |      |
-                           |                    |      |
-                           |                    |      |
-                           |                    |      |
-                           |                    |      |
-                           |                    |      |
-                           V                    V      V
+                           |   +---------+             |
+                           |             |             |
+                           |             V             |
+   +-----------------------+---+--> [ Filter Service ] |
+   |                       |                    |      |
+   |                       |                    |      |
+   |                       V                    |      |
+   |              [ Monitor Service ]           |      |
+   |                       |                    |      |
+   |                       |                    |      |
+   |                       |                    |      |
+   |                       |                    |      |
+   |                       |                    |      |
+   V                       V                    V      V
 Quorum <--------- [ Block Monitor ] ----------> Database <---------- Visualization (e.g. Cakeshop)
    ^                       |                       ^
    |                       |                       |
@@ -73,14 +75,13 @@ Quorum <--------- [ Block Monitor ] ----------> Database <---------- Visualizati
    +------- [ Transaction/Storage Monitor ] -------+
 ```
 
-#### Items Required in Persistent Database
+#### Database Schema
 
-- All blocks
-- All transactions
-- Registered addresses and Contract ABIs
-- Storage at each block for registered contract addresses
-- **optional:** Indices (transactions/ events linked to registered contract addresses). While this may be implicitly 
-achieved by database, we may still store the indices result for easier query of transactions/ events.
+ElasticsearchDB Schema [Reference](database/elasticsearch/README.md)
+
+#### RPC API Specification
+
+[Reference](core/rpc/README.md)
 
 ## Roadmap
 
@@ -92,7 +93,7 @@ achieved by database, we may still store the indices result for easier query of 
 - Filter events by registered addresses
 - Dynamically change registered addresses, clean up and refilter
 - Expose basic RPC endpoints to serve queries
-- Unit tests & CI/CD
+- Unit tests & Github Actions CI
 
 #### Phase 1 (done)
 
@@ -100,18 +101,20 @@ achieved by database, we may still store the indices result for easier query of 
 - Filter contract detailed storage by registered addresses (with dumpAccount available on geth side)
 - Resolve internal calls (incoming/ outgoing) for transactions of registered addresses
 
-#### Phase 2 (in progress)
+#### Phase 2 (done)
 
-- Integrate persistent database
+- Design database schema & Integrate
 - Handle restart & recover from fail-stop scenarios
 - Extend RPC APIs with complex queries
 
 #### Phase 3 (todo)
 
-- Fully functional reporting tool with all raw data parsing
+- Enhance performance
 - Integrate UI for visualization
-- Docker file & make file support
+- Define reporting templates
+- Support Docker
+- Enforce Security
 
 #### Future Items
 
-- Convert Quorum to go module and use it instead of ethereum 1.9.8
+- After Quorum supports go module, we should use Quorum module instead of ethereum 1.9.8
