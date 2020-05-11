@@ -159,6 +159,16 @@ func (db *MemoryDB) WriteBlock(block *types.Block) error {
 	return errors.New("block is nil")
 }
 
+func (db *MemoryDB) WriteBlocks(blocks []*types.Block) error {
+	for _, block := range blocks {
+		err := db.WriteBlock(block)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (db *MemoryDB) ReadBlock(blockNumber uint64) (*types.Block, error) {
 	db.mux.RLock()
 	defer db.mux.RUnlock()
@@ -184,6 +194,16 @@ func (db *MemoryDB) WriteTransaction(transaction *types.Transaction) error {
 		return nil
 	}
 	return errors.New("transaction is nil")
+}
+
+func (db *MemoryDB) WriteTransactions(transactions []*types.Transaction) error {
+	for _, tx := range transactions {
+		err := db.WriteTransaction(tx)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (db *MemoryDB) ReadTransaction(hash common.Hash) (*types.Transaction, error) {

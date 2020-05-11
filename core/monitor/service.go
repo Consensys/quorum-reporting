@@ -3,6 +3,7 @@ package monitor
 import (
 	"context"
 	"log"
+	"runtime"
 
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/event"
@@ -14,21 +15,25 @@ import (
 
 // MonitorService starts all monitors. It pulls data from Quorum node and update the database.
 type MonitorService struct {
-	db           database.Database
-	quorumClient client.Client
-	syncStart    chan uint64
-	blockMonitor *BlockMonitor
-	stopFeed     event.Feed
-	totalWorkers uint64
+	db             database.Database
+	quorumClient   client.Client
+	syncStart      chan uint64
+	blockMonitor   *BlockMonitor
+	blockPersister *BlockPersister
+	stopFeed       event.Feed
+	totalWorkers   int
 }
 
 func NewMonitorService(db database.Database, quorumClient client.Client, consensus string) *MonitorService {
+	persisterChan := make(chan *BlockAndTransactions)
+
 	return &MonitorService{
-		db:           db,
-		quorumClient: quorumClient,
-		syncStart:    make(chan uint64, 1), // make channel buffered so that it does not block chain head listener
-		blockMonitor: NewBlockMonitor(db, quorumClient, consensus),
-		totalWorkers: 10,
+		db:             db,
+		quorumClient:   quorumClient,
+		syncStart:      make(chan uint64, 1), // make channel buffered so that it does not block chain head listener
+		blockMonitor:   NewBlockMonitor(db, quorumClient, consensus, persisterChan),
+		blockPersister: NewBlockPersister(persisterChan, db),
+		totalWorkers:   3 * runtime.NumCPU(),
 	}
 }
 
@@ -41,6 +46,7 @@ func (m *MonitorService) Start() error {
 	log.Println("Start to sync blocks...")
 
 	// 1. Start workers
+	m.startPersister()
 	m.startWorkers()
 
 	// 2. Sync from last persisted to current block height.
@@ -59,7 +65,11 @@ func (m *MonitorService) Start() error {
 }
 
 func (m *MonitorService) Stop() {
+	log.Println("Monitor service stopping...")
 	m.stopFeed.Send(types.StopEvent{})
+
+	m.blockPersister.Stop()
+	//close(m.blockPersister.toPersistChan)
 	log.Println("Monitor service stopped.")
 }
 
@@ -69,8 +79,12 @@ func (m *MonitorService) subscribeStopEvent() (chan types.StopEvent, event.Subsc
 	return c, s
 }
 
+func (m *MonitorService) startPersister() {
+	go m.blockPersister.Run()
+}
+
 func (m *MonitorService) startWorkers() {
-	for i := uint64(0); i < m.totalWorkers; i++ {
+	for i := 0; i < m.totalWorkers; i++ {
 		go func() {
 			stopChan, stopSubscription := m.subscribeStopEvent()
 			defer stopSubscription.Unsubscribe()
