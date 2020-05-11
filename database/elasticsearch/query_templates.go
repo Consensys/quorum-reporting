@@ -2,12 +2,12 @@ package elasticsearch
 
 import (
 	"math/big"
+
 	"quorumengineering/quorum-report/types"
 )
 
 // constant query template strings for ES
-const (
-	QueryAllAddressesTemplate = `
+const QueryAllAddressesTemplate = `
 {
 	"_source": ["address"],
 	"query": {
@@ -15,29 +15,6 @@ const (
 	}
 }
 `
-	QueryByToAddressTemplate = `
-{
-	"query": {
-		"bool": {
-			"must": [
-				{ "match": { "to": "%s" } }
-			]
-		}
-	}
-}
-`
-	QueryByAddressTemplate = `
-{
-	"query": {
-		"bool": {
-			"must": [
-				{ "match": { "address": "%s" } }
-			]
-		}
-	}
-}
-`
-)
 
 func QueryByToAddressWithOptionsTemplate(options *types.QueryOptions) string {
 	return `

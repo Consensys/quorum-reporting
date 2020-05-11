@@ -356,6 +356,9 @@ func (es *ElasticsearchDB) GetAllTransactionsToAddress(address common.Address, o
 	queryString := fmt.Sprintf(QueryByToAddressWithOptionsTemplate(options), address.String())
 
 	from := options.PageSize * options.PageNumber
+	if from+options.PageSize > 1000 {
+		return nil, ErrPaginationLimitExceeded
+	}
 	req := esapi.SearchRequest{
 		Index: []string{TransactionIndex},
 		Body:  strings.NewReader(queryString),
@@ -381,6 +384,9 @@ func (es *ElasticsearchDB) GetAllTransactionsInternalToAddress(address common.Ad
 	queryString := fmt.Sprintf(QueryInternalTransactionsWithOptionsTemplate(options), address.String())
 
 	from := options.PageSize * options.PageNumber
+	if from+options.PageSize > 1000 {
+		return nil, ErrPaginationLimitExceeded
+	}
 	req := esapi.SearchRequest{
 		Index: []string{TransactionIndex},
 		Body:  strings.NewReader(queryString),
@@ -406,6 +412,9 @@ func (es *ElasticsearchDB) GetAllEventsFromAddress(address common.Address, optio
 	queryString := fmt.Sprintf(QueryByAddressWithOptionsTemplate(options), address.String())
 
 	from := options.PageSize * options.PageNumber
+	if from+options.PageSize > 1000 {
+		return nil, ErrPaginationLimitExceeded
+	}
 	req := esapi.SearchRequest{
 		Index: []string{EventIndex},
 		Body:  strings.NewReader(queryString),
