@@ -1,11 +1,13 @@
 package monitor
 
 import (
-	"github.com/ethereum/go-ethereum/event"
 	"log"
+	"time"
+
+	"github.com/ethereum/go-ethereum/event"
+
 	"quorumengineering/quorum-report/database"
 	"quorumengineering/quorum-report/types"
-	"time"
 )
 
 type BlockAndTransactions struct {

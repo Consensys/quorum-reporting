@@ -39,12 +39,12 @@ func NewMonitorService(db database.Database, quorumClient client.Client, consens
 func (m *MonitorService) Start() error {
 	log.Println("Start monitor service...")
 
-	// Pulling historical block since the last persisted while continuously listening to ChainHeadEvent.
+	// Pulling historical blocks since the last persisted while continuously listening to ChainHeadEvent.
 	// For every block received, pull transactions/ events related to the registered contracts.
 
-	log.Println("Start to sync block...")
+	log.Println("Start to sync blocks...")
 
-	// 1. Start workers
+	// 1. Start batch writer and workers
 	m.startBatchWriter()
 	m.startWorkers()
 
@@ -105,7 +105,7 @@ func (m *MonitorService) syncHistoricBlocks() error {
 	go func() {
 		err = m.blockMonitor.syncBlocks(lastPersisted+1, currentBlockNumber)
 		if err != nil {
-			log.Panicf("sync historic block from %v to %v failed: %v", lastPersisted, currentBlockNumber, err)
+			log.Panicf("sync historic blocks from %v to %v failed: %v", lastPersisted, currentBlockNumber, err)
 		}
 
 		// Sync from currentBlockNumber + 1 to the first ChainHeadEvent if there is any gap.
@@ -117,7 +117,7 @@ func (m *MonitorService) syncHistoricBlocks() error {
 			close(m.syncStart)
 			err := m.blockMonitor.syncBlocks(currentBlockNumber+1, latestChainHead-1)
 			if err != nil {
-				log.Panicf("sync historic block from %v to %v failed: %v", currentBlockNumber, latestChainHead-1, err)
+				log.Panicf("sync historic blocks from %v to %v failed: %v", currentBlockNumber, latestChainHead-1, err)
 			}
 		case <-stopChan:
 			return

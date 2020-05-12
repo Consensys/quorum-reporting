@@ -87,7 +87,7 @@ func (bm *BlockMonitor) currentBlockNumber() (uint64, error) {
 
 func (bm *BlockMonitor) syncBlocks(start, end uint64) error {
 	if start <= end {
-		log.Printf("Start to sync historic block from %v to %v. \n", start, end)
+		log.Printf("Start to sync historic blocks from %v to %v. \n", start, end)
 		for i := start; i <= end; i++ {
 			blockOrigin, err := bm.quorumClient.BlockByNumber(context.Background(), big.NewInt(int64(i)))
 			if err != nil {

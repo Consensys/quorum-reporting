@@ -1,14 +1,14 @@
 package monitor
 
 import (
-	"github.com/stretchr/testify/assert"
-	"quorumengineering/quorum-report/types"
 	"testing"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/stretchr/testify/assert"
 
 	"quorumengineering/quorum-report/client"
 	"quorumengineering/quorum-report/graphql"
+	"quorumengineering/quorum-report/types"
 )
 
 var (

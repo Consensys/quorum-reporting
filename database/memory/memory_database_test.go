@@ -1,13 +1,13 @@
 package memory
 
 import (
-	"github.com/stretchr/testify/assert"
 	"strings"
 	"testing"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/state"
+	"github.com/stretchr/testify/assert"
 
 	"quorumengineering/quorum-report/database"
 	"quorumengineering/quorum-report/types"
