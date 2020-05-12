@@ -112,21 +112,24 @@ Elasticsearch Database Schema [Reference](database/elasticsearch/README.md)
 
 - Parse transaction/ event data inputs from contract ABI
 - Filter contract detailed storage by registered addresses (with dumpAccount available on geth side)
-- Resolve internal calls (incoming/ outgoing) for transactions of registered addresses
+- Resolve transactions with internal calls to registered addresses
 
 #### Phase 2 (done)
 
 - Design database schema & Integrate
-- Handle restart & recover from fail-stop scenarios
 - Extend RPC APIs with complex queries
+- Dockerize reporting
 
 #### Phase 3 (todo)
 
+- Handle fail recover scenarios
 - Enhance performance
 - Integrate UI for visualization
 - Define reporting templates
-- Support Docker
-- Enforce Security
+- Use Docker-compose/Kubernetes for orchestration
+- Security
+  - configurable secure connection with Elasticsearch
+  - configurable secure connection with RPC endpoint
 
 #### Future Items
 
