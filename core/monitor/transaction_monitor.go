@@ -24,22 +24,19 @@ func NewTransactionMonitor(db database.Database, quorumClient client.Client, con
 	return &TransactionMonitor{consensus, db, quorumClient}
 }
 
-func (tm *TransactionMonitor) PullTransactions(block *types.Block) error {
+func (tm *TransactionMonitor) PullTransactions(block *types.Block) ([]*types.Transaction, error) {
 	log.Printf("Pull all transactions for block %v.\n", block.Number)
 
+	fetchedTransactions := make([]*types.Transaction, 0, len(block.Transactions))
 	for _, txHash := range block.Transactions {
 		// 1. Query transaction details by graphql.
 		tx, err := tm.createTransaction(txHash)
 		if err != nil {
-			return err
+			return nil, err
 		}
-		//log.Println(tx.Hash.Hex())
-		// 2. Write transactions to DB.
-		if err = tm.db.WriteTransaction(tx); err != nil {
-			return err
-		}
+		fetchedTransactions = append(fetchedTransactions, tx)
 	}
-	return nil
+	return fetchedTransactions, nil
 }
 
 func (tm *TransactionMonitor) createTransaction(hash common.Hash) (*types.Transaction, error) {

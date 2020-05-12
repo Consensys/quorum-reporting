@@ -4,9 +4,11 @@ import (
 	"testing"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/stretchr/testify/assert"
 
 	"quorumengineering/quorum-report/client"
 	"quorumengineering/quorum-report/graphql"
+	"quorumengineering/quorum-report/types"
 )
 
 var (
@@ -65,6 +67,82 @@ func TestCreateTransaction(t *testing.T) {
 	if err != nil {
 		t.Fatalf("expected no error, but got %v", err)
 	}
+	if tx.Hash != common.HexToHash("0xe625ba9f14eed0671508966080fb01374d0a3a16b9cee545a324179b75f30aa8") {
+		t.Fatalf("expected hash %v, but got %v", "0xe625ba9f14eed0671508966080fb01374d0a3a16b9cee545a324179b75f30aa8", tx.Hash.Hex())
+	}
+	if !tx.Status {
+		t.Fatalf("expected status to be true, but got false")
+	}
+	if tx.BlockNumber != 2 {
+		t.Fatalf("expected block number %v, but got %v", 2, tx.BlockNumber)
+	}
+	if tx.Index != 0 {
+		t.Fatalf("expected index %v, but got %v", 0, tx.Index)
+	}
+	if tx.From != common.HexToAddress("0xed9d02e382b34818e88b88a309c7fe71e65f419d") {
+		t.Fatalf("expected from %v, but got %v", "0xed9d02e382b34818e88b88a309c7fe71e65f419d", tx.From.Hex())
+	}
+	if tx.Gas != 4700000 {
+		t.Fatalf("expected gas %v, but got %v", 4700000, tx.Gas)
+	}
+	if len(tx.Data) != 449 {
+		t.Fatalf("expected data length %v, but got %v", 449, len(tx.Data))
+	}
+	if len(tx.PrivateData) != 0 {
+		t.Fatalf("expected private data length %v, but got %v", 0, len(tx.PrivateData))
+	}
+	if tx.IsPrivate {
+		t.Fatalf("expected isPrivate to be false, but got true")
+	}
+	if len(tx.Events) != 1 {
+		t.Fatalf("expected %v events, but got %v", 1, len(tx.Events))
+	}
+	if tx.Events[0].Topics[0] != common.HexToHash("0xefe5cb8d23d632b5d2cdd9f0a151c4b1a84ccb7afa1c57331009aa922d5e4f36") {
+		t.Fatalf("expected event topic %v, but got %v", "0xefe5cb8d23d632b5d2cdd9f0a151c4b1a84ccb7afa1c57331009aa922d5e4f36", tx.Events[0].Topics[0].Hex())
+	}
+	if len(tx.InternalCalls) != 1 {
+		t.Fatalf("expected %v internal calls, but got %v", 1, len(tx.InternalCalls))
+	}
+}
+
+func TestTransactionMonitor_PullTransactions(t *testing.T) {
+	mockGraphQL := map[string]map[string]interface{}{
+		graphql.TransactionDetailQuery(common.HexToHash("0xe625ba9f14eed0671508966080fb01374d0a3a16b9cee545a324179b75f30aa8")): {
+			"transaction": interface{}(graphqlResp),
+		},
+	}
+	mockRPC := map[string]interface{}{
+		"debug_traceTransaction<common.Hash Value><*client.TraceConfig Value>": map[string]interface{}{
+			"calls": []interface{}{
+				map[string]interface{}{
+					"from":    "0x9d13c6d3afe1721beef56b55d303b09e021e27ab",
+					"gas":     "0x279e",
+					"gasUsed": "0x18aa",
+					"input":   "0x60fe47b10000000000000000000000000000000000000000000000000000000000000042",
+					"output":  "0x",
+					"to":      "0x1932c48b2bf8102ba33b4a6b545c32236e342f34",
+					"type":    "CALL",
+					"value":   "0x0",
+				},
+			},
+		},
+	}
+	block := &types.Block{
+		Hash:   common.BytesToHash([]byte("dummy")),
+		Number: 1,
+		Transactions: []common.Hash{
+			common.HexToHash("0xe625ba9f14eed0671508966080fb01374d0a3a16b9cee545a324179b75f30aa8"),
+		},
+	}
+
+	tm := NewTransactionMonitor(nil, client.NewStubQuorumClient(nil, mockGraphQL, mockRPC), "istanbul")
+
+	txs, err := tm.PullTransactions(block)
+	assert.Nil(t, err, "unexpected error")
+	assert.Equal(t, 1, len(txs), "unexpected number of transactions")
+
+	tx := txs[0]
+
 	if tx.Hash != common.HexToHash("0xe625ba9f14eed0671508966080fb01374d0a3a16b9cee545a324179b75f30aa8") {
 		t.Fatalf("expected hash %v, but got %v", "0xe625ba9f14eed0671508966080fb01374d0a3a16b9cee545a324179b75f30aa8", tx.Hash.Hex())
 	}

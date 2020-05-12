@@ -186,31 +186,57 @@ func (es *ElasticsearchDB) WriteBlock(block *types.Block) error {
 		return err
 	}
 
-	// Update last persisted block number.
-	last, err := es.GetLastPersistedBlockNumber()
-	if err != nil {
-		return err
+	return es.updateLastPersisted(block.Number)
+}
+
+func (es *ElasticsearchDB) WriteBlocks(blocks []*types.Block) error {
+	if len(blocks) == 0 {
+		return nil
+	}
+	if len(blocks) == 1 {
+		return es.WriteBlock(blocks[0])
 	}
 
-	blockNumber := block.Number
-	if blockNumber == last+1 {
-		for {
-			if _, err := es.ReadBlock(blockNumber + 1); err == nil {
-				blockNumber++
-			} else {
-				break
-			}
+	bi := es.apiClient.GetBulkHandler(BlockIndex)
+	var (
+		wg        sync.WaitGroup
+		returnErr error
+	)
+	wg.Add(len(blocks))
+	for _, block := range blocks {
+		var dbBlock Block
+		dbBlock.From(block)
+		err := bi.Add(
+			context.Background(),
+			esutil.BulkIndexerItem{
+				Action:     "create",
+				DocumentID: strconv.FormatUint(block.Number, 10),
+				Body:       esutil.NewJSONReader(dbBlock),
+				OnSuccess: func(ctx context.Context, item esutil.BulkIndexerItem, item2 esutil.BulkIndexerResponseItem) {
+					wg.Done()
+				},
+				OnFailure: func(ctx context.Context, item esutil.BulkIndexerItem, item2 esutil.BulkIndexerResponseItem, err error) {
+					returnErr = err
+					wg.Done()
+				},
+			})
+		if err != nil {
+			return err
 		}
-		req := esapi.IndexRequest{
-			Index:      MetaIndex,
-			DocumentID: "lastPersisted",
-			Body:       strings.NewReader(fmt.Sprintf(`{"lastPersisted": %d}`, blockNumber)),
-			Refresh:    "true",
-		}
-		_, err := es.apiClient.DoRequest(req)
-		return err //may be nil
 	}
-	return nil
+	wg.Wait()
+	if returnErr != nil {
+		return returnErr
+	}
+
+	//find lowest block number
+	lowest := blocks[0].Number
+	for _, block := range blocks {
+		if block.Number < lowest {
+			lowest = block.Number
+		}
+	}
+	return es.updateLastPersisted(lowest)
 }
 
 func (es *ElasticsearchDB) ReadBlock(number uint64) (*types.Block, error) {
@@ -262,6 +288,40 @@ func (es *ElasticsearchDB) WriteTransaction(transaction *types.Transaction) erro
 
 	_, err := es.apiClient.DoRequest(req)
 	return err
+}
+
+func (es *ElasticsearchDB) WriteTransactions(transactions []*types.Transaction) error {
+	bi := es.apiClient.GetBulkHandler(TransactionIndex)
+
+	var (
+		wg        sync.WaitGroup
+		returnErr error
+	)
+	wg.Add(len(transactions))
+	for _, transaction := range transactions {
+		var tx Transaction
+		tx.From(transaction)
+		err := bi.Add(
+			context.Background(),
+			esutil.BulkIndexerItem{
+				Action:     "create",
+				DocumentID: transaction.Hash.String(),
+				Body:       esutil.NewJSONReader(tx),
+				OnSuccess: func(ctx context.Context, item esutil.BulkIndexerItem, item2 esutil.BulkIndexerResponseItem) {
+					wg.Done()
+				},
+				OnFailure: func(ctx context.Context, item esutil.BulkIndexerItem, item2 esutil.BulkIndexerResponseItem, err error) {
+					returnErr = err
+					wg.Done()
+				},
+			})
+		if err != nil {
+			return err
+		}
+	}
+
+	wg.Wait()
+	return returnErr
 }
 
 func (es *ElasticsearchDB) ReadTransaction(hash common.Hash) (*types.Transaction, error) {
@@ -603,4 +663,31 @@ func (es *ElasticsearchDB) doSearchRequest(req esapi.SearchRequest) (*SearchQuer
 		return nil, err
 	}
 	return &ret, nil
+}
+
+func (es *ElasticsearchDB) updateLastPersisted(startingBlockNumber uint64) error {
+	last, err := es.GetLastPersistedBlockNumber()
+	if err != nil {
+		return err
+	}
+
+	blockNumber := startingBlockNumber
+	if blockNumber == last+1 {
+		for {
+			if block, _ := es.ReadBlock(blockNumber + 1); block != nil {
+				blockNumber++
+			} else {
+				break
+			}
+		}
+		req := esapi.IndexRequest{
+			Index:      MetaIndex,
+			DocumentID: "lastPersisted",
+			Body:       strings.NewReader(fmt.Sprintf(`{"lastPersisted": %d}`, blockNumber)),
+			Refresh:    "true",
+		}
+		_, err := es.apiClient.DoRequest(req)
+		return err
+	}
+	return nil
 }

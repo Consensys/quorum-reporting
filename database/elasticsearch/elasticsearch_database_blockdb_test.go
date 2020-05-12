@@ -1,6 +1,7 @@
 package elasticsearch
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -332,4 +333,103 @@ func TestElasticsearchDB_ReadBlock(t *testing.T) {
 
 	assert.Nil(t, err, "unexpected block returned")
 	assert.Equal(t, &testBlock, block, "unexpected block output")
+}
+
+func TestElasticsearchDB_WriteBlocks_NoBlock(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockedClient := elasticsearch_mocks.NewMockAPIClient(ctrl)
+	mockedClient.EXPECT().DoRequest(gomock.Any()) //for setup, not relevant to test
+
+	db, _ := New(mockedClient)
+
+	err := db.WriteBlocks([]*types.Block{})
+
+	assert.Nil(t, err, "unexpected error")
+}
+
+func TestElasticsearchDB_WriteBlocks_SingleBlock(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockedClient := elasticsearch_mocks.NewMockAPIClient(ctrl)
+
+	req := esapi.IndexRequest{
+		Index:      BlockIndex,
+		DocumentID: "10",
+		Body:       esutil.NewJSONReader(testBlock),
+		Refresh:    "true",
+	}
+	lastPersistedRequest := esapi.GetRequest{
+		Index:      MetaIndex,
+		DocumentID: "lastPersisted",
+	}
+
+	mockedClient.EXPECT().DoRequest(gomock.Any()) //for setup, not relevant to test
+	mockedClient.EXPECT().DoRequest(NewIndexRequestMatcher(req)).Return(nil, nil)
+	mockedClient.EXPECT().
+		DoRequest(NewGetRequestMatcher(lastPersistedRequest)).
+		Return([]byte(`{"_source": {"lastPersisted": 1}}`), nil)
+
+	db, _ := New(mockedClient)
+
+	err := db.WriteBlocks([]*types.Block{&testBlock})
+
+	assert.Nil(t, err, "unexpected error")
+}
+
+func TestElasticsearchDB_WriteBlocks_MultipleBlocks(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockedClient := elasticsearch_mocks.NewMockAPIClient(ctrl)
+	mockedBulkIndexer := elasticsearch_mocks.NewMockBulkIndexer(ctrl)
+
+	var (
+		dbBlockOne Block
+		dbBlockTwo Block
+	)
+	blockTwo := testBlock
+	p := &blockTwo
+	p.Number = testBlock.Number + 1
+	dbBlockOne.From(&testBlock)
+	dbBlockTwo.From(p)
+
+	req := esutil.BulkIndexerItem{
+		Action:     "create",
+		DocumentID: "10",
+		Body:       esutil.NewJSONReader(dbBlockOne),
+	}
+	req2 := esutil.BulkIndexerItem{
+		Action:     "create",
+		DocumentID: "11",
+		Body:       esutil.NewJSONReader(dbBlockTwo),
+	}
+	lastPersistedRequest := esapi.GetRequest{
+		Index:      MetaIndex,
+		DocumentID: "lastPersisted",
+	}
+
+	mockedClient.EXPECT().DoRequest(gomock.Any()) //for setup, not relevant to test
+	mockedClient.EXPECT().GetBulkHandler(BlockIndex).Return(mockedBulkIndexer)
+	mockedBulkIndexer.EXPECT().
+		Add(gomock.Any(), NewBulkIndexerItemMatcher(req)).
+		Do(func(ctx context.Context, item esutil.BulkIndexerItem) {
+			item.OnSuccess(context.Background(), req, esutil.BulkIndexerResponseItem{})
+		})
+	mockedBulkIndexer.EXPECT().
+		Add(gomock.Any(), NewBulkIndexerItemMatcher(req2)).
+		Do(func(ctx context.Context, item esutil.BulkIndexerItem) {
+			item.OnSuccess(context.Background(), req2, esutil.BulkIndexerResponseItem{})
+		})
+	mockedClient.EXPECT().
+		DoRequest(NewGetRequestMatcher(lastPersistedRequest)).
+		Return([]byte(`{"_source": {"lastPersisted": 1}}`), nil)
+
+	db, _ := New(mockedClient)
+
+	err := db.WriteBlocks([]*types.Block{&testBlock, p})
+
+	assert.Nil(t, err, "unexpected error")
 }

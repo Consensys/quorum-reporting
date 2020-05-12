@@ -3,6 +3,7 @@ package monitor
 import (
 	"context"
 	"log"
+	"runtime"
 
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/event"
@@ -18,17 +19,20 @@ type MonitorService struct {
 	quorumClient client.Client
 	syncStart    chan uint64
 	blockMonitor *BlockMonitor
+	batchWriter  *BatchWriter
 	stopFeed     event.Feed
 	totalWorkers uint64
 }
 
 func NewMonitorService(db database.Database, quorumClient client.Client, consensus string) *MonitorService {
+	batchWriteChan := make(chan *BlockAndTransactions)
 	return &MonitorService{
 		db:           db,
 		quorumClient: quorumClient,
 		syncStart:    make(chan uint64, 1), // make channel buffered so that it does not block chain head listener
-		blockMonitor: NewBlockMonitor(db, quorumClient, consensus),
-		totalWorkers: 10,
+		blockMonitor: NewBlockMonitor(db, quorumClient, consensus, batchWriteChan),
+		batchWriter:  NewBatchWriter(batchWriteChan, db),
+		totalWorkers: 3 * uint64(runtime.NumCPU()),
 	}
 }
 
@@ -40,7 +44,8 @@ func (m *MonitorService) Start() error {
 
 	log.Println("Start to sync blocks...")
 
-	// 1. Start workers
+	// 1. Start batch writer and workers
+	m.startBatchWriter()
 	m.startWorkers()
 
 	// 2. Sync from last persisted to current block height.
@@ -65,6 +70,14 @@ func (m *MonitorService) subscribeStopEvent() (chan types.StopEvent, event.Subsc
 	c := make(chan types.StopEvent)
 	s := m.stopFeed.Subscribe(c)
 	return c, s
+}
+
+func (m *MonitorService) startBatchWriter() {
+	go func() {
+		stopChan, stopSubscription := m.subscribeStopEvent()
+		defer stopSubscription.Unsubscribe()
+		m.batchWriter.Run(stopChan)
+	}()
 }
 
 func (m *MonitorService) startWorkers() {

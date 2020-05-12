@@ -127,6 +127,18 @@ func (cachingDB *DatabaseWithCache) WriteBlock(block *types.Block) error {
 	return nil
 }
 
+func (cachingDB *DatabaseWithCache) WriteBlocks(blocks []*types.Block) error {
+	// make sure write block is mutual exclusive so that last persisted is updated correctly
+	err := cachingDB.db.WriteBlocks(blocks)
+	if err != nil {
+		return err
+	}
+	for _, block := range blocks {
+		cachingDB.blockCache.Add(block.Number, block)
+	}
+	return nil
+}
+
 func (cachingDB *DatabaseWithCache) ReadBlock(blockNumber uint64) (*types.Block, error) {
 	if cachedBlock, ok := cachingDB.blockCache.Get(blockNumber); ok {
 		return cachedBlock.(*types.Block), nil
@@ -151,6 +163,17 @@ func (cachingDB *DatabaseWithCache) WriteTransaction(tx *types.Transaction) erro
 		return err
 	}
 	cachingDB.transactionCache.Add(tx.Hash, tx)
+	return nil
+}
+
+func (cachingDB *DatabaseWithCache) WriteTransactions(txns []*types.Transaction) error {
+	err := cachingDB.db.WriteTransactions(txns)
+	if err != nil {
+		return err
+	}
+	for _, tx := range txns {
+		cachingDB.transactionCache.Add(tx.Hash, tx)
+	}
 	return nil
 }
 

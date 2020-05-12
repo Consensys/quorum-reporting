@@ -2,6 +2,7 @@ package monitor
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"math/big"
 
@@ -20,16 +21,18 @@ type BlockMonitor struct {
 	db                 database.Database
 	quorumClient       client.Client
 	transactionMonitor *TransactionMonitor
-	newBlockChan       chan *types.Block // concurrent block processing
+	newBlockChan       chan *types.Block          // concurrent block processing
+	batchWriteChan     chan *BlockAndTransactions // concurrent block processing
 	consensus          string
 }
 
-func NewBlockMonitor(db database.Database, quorumClient client.Client, consensus string) *BlockMonitor {
+func NewBlockMonitor(db database.Database, quorumClient client.Client, consensus string, batchWriteChan chan *BlockAndTransactions) *BlockMonitor {
 	return &BlockMonitor{
 		db:                 db,
 		quorumClient:       quorumClient,
 		transactionMonitor: NewTransactionMonitor(db, quorumClient, consensus),
 		newBlockChan:       make(chan *types.Block),
+		batchWriteChan:     batchWriteChan,
 		consensus:          consensus,
 	}
 }
@@ -41,7 +44,8 @@ func (bm *BlockMonitor) startWorker(stopChan <-chan types.StopEvent) {
 			// Listen to new block channel and process if new block comes.
 			err := bm.process(block)
 			if err != nil {
-				log.Panicf("process block %v error: %v", block.Number, err)
+				fmt.Printf("process block %v error: %v\n", block.Number, err)
+				bm.newBlockChan <- block
 			}
 		case <-stopChan:
 			return
@@ -51,11 +55,18 @@ func (bm *BlockMonitor) startWorker(stopChan <-chan types.StopEvent) {
 
 func (bm *BlockMonitor) process(block *types.Block) error {
 	// Transaction monitor pulls all transactions for the given block.
-	if err := bm.transactionMonitor.PullTransactions(block); err != nil {
+	fetchedTxns, err := bm.transactionMonitor.PullTransactions(block)
+	if err != nil {
 		return err
 	}
-	// Write block to DB.
-	return bm.db.WriteBlock(block)
+
+	workunit := &BlockAndTransactions{
+		block: block,
+		txs:   fetchedTxns,
+	}
+
+	bm.batchWriteChan <- workunit
+	return nil
 }
 
 func (bm *BlockMonitor) currentBlockNumber() (uint64, error) {
