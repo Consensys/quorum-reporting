@@ -76,10 +76,10 @@ func (es *ElasticsearchDB) AddAddresses(addresses []common.Address) error {
 		bi := es.apiClient.GetBulkHandler(ContractIndex)
 
 		var (
-			wg        sync.WaitGroup
-			returnErr error
+			wg sync.WaitGroup
 		)
-		for _, address := range addresses {
+		returnErr := make([]error, len(addresses))
+		for idx, address := range addresses {
 			contract := Contract{
 				Address:             address,
 				ABI:                 "",
@@ -97,7 +97,7 @@ func (es *ElasticsearchDB) AddAddresses(addresses []common.Address) error {
 						wg.Done()
 					},
 					OnFailure: func(ctx context.Context, item esutil.BulkIndexerItem, item2 esutil.BulkIndexerResponseItem, err error) {
-						returnErr = err
+						returnErr[idx] = err
 						wg.Done()
 					},
 				},
@@ -105,7 +105,12 @@ func (es *ElasticsearchDB) AddAddresses(addresses []common.Address) error {
 		}
 
 		wg.Wait()
-		return returnErr
+		for _, e := range returnErr {
+			if e != nil {
+				return e
+			}
+		}
+		return nil
 	}
 	// add single address
 	contract := Contract{
