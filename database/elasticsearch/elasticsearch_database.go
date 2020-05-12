@@ -75,9 +75,11 @@ func (es *ElasticsearchDB) AddAddresses(addresses []common.Address) error {
 	if len(addresses) > 1 {
 		bi := es.apiClient.GetBulkHandler(ContractIndex)
 
-		var wg sync.WaitGroup
-		returnErr := make([]error, len(addresses))
-		for idx, address := range addresses {
+		var (
+			wg        sync.WaitGroup
+			returnErr error
+		)
+		for _, address := range addresses {
 			contract := Contract{
 				Address:             address,
 				ABI:                 "",
@@ -95,7 +97,7 @@ func (es *ElasticsearchDB) AddAddresses(addresses []common.Address) error {
 						wg.Done()
 					},
 					OnFailure: func(ctx context.Context, item esutil.BulkIndexerItem, item2 esutil.BulkIndexerResponseItem, err error) {
-						returnErr[idx] = err
+						returnErr = err
 						wg.Done()
 					},
 				},
@@ -103,12 +105,7 @@ func (es *ElasticsearchDB) AddAddresses(addresses []common.Address) error {
 		}
 
 		wg.Wait()
-		for _, e := range returnErr {
-			if e != nil {
-				return e
-			}
-		}
-		return nil
+		return returnErr
 	}
 	// add single address
 	contract := Contract{
@@ -198,14 +195,10 @@ func (es *ElasticsearchDB) WriteBlock(block *types.Block) error {
 	blockNumber := block.Number
 	if blockNumber == last+1 {
 		for {
-			if block, err := es.ReadBlock(blockNumber + 1); err == nil {
-				if block != nil {
-					blockNumber++
-				} else {
-					break
-				}
+			if _, err := es.ReadBlock(blockNumber + 1); err == nil {
+				blockNumber++
 			} else {
-				return err
+				break
 			}
 		}
 		req := esapi.IndexRequest{
