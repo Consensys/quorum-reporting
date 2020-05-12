@@ -1,10 +1,15 @@
 package database
 
 import (
+	"errors"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/state"
 
 	"quorumengineering/quorum-report/types"
+)
+
+var (
+	ErrNotFound = errors.New("not found")
 )
 
 type Database interface {
