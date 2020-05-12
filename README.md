@@ -15,19 +15,19 @@ Number | Area | Requirement
 
 Reporting engine is built on top of Quorum 2.6.0 as it supports `graphql` with a flexible querying mechanism
 
-* Data Fetch
+* Fetch Data
    * Reporting engine subscribes to `newChainHead` event of geth node on websocket connection
    * Reporting engine pulls all blocks and transactions from geth node
    * Reporting engine index transactions/ events/ storage based on registered addresses
    * Endpoints used:
       * GraphQL
       * RPC APIs
-* Data Storage
+* Store Data
    * Memory Database (for dev only)
    * Elasticsearch Database
-* Data Parsing
+* Parse Data
    * Reporting engine can store contract ABI and parse transaction/ event signature and params based on the ABI information
-* User Interface 
+* Display Data 
    * Dashboard and configuration options to be added on Cakeshop UI for the first version
 
 ## Up and Running
@@ -118,7 +118,7 @@ Elasticsearch Database Schema [Reference](database/elasticsearch/README.md)
 
 - Design database schema & Integrate
 - Extend RPC APIs with complex queries
-- Dockerize reporting
+- Containerize reporting
 
 #### Phase 3 (todo)
 
