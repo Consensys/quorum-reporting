@@ -31,7 +31,7 @@ func New(config types.ReportingConfig) (*Backend, error) {
 				if i == config.Connection.MaxReconnectTries {
 					return nil, err
 				}
-				log.Printf("Connection error: %v. Trying to reconnect in 3 second...\n", err)
+				log.Printf("Connection error: %v. Trying to reconnect in %d second...\n", err, config.Connection.ReconnectInterval)
 				time.Sleep(time.Duration(config.Connection.ReconnectInterval) * time.Second)
 				quorumClient, err = client.NewQuorumClient(config.Connection.WSUrl, config.Connection.GraphQLUrl)
 			}

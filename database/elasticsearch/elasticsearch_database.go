@@ -182,8 +182,7 @@ func (es *ElasticsearchDB) WriteBlock(block *types.Block) error {
 		Refresh:    "true",
 	}
 
-	_, err := es.apiClient.DoRequest(req)
-	if err != nil {
+	if _, err := es.apiClient.DoRequest(req); err != nil {
 		return err
 	}
 
@@ -196,7 +195,7 @@ func (es *ElasticsearchDB) WriteBlock(block *types.Block) error {
 	blockNumber := block.Number
 	if blockNumber == last+1 {
 		for {
-			if block, _ := es.ReadBlock(blockNumber + 1); block != nil {
+			if _, err := es.ReadBlock(blockNumber + 1); err == nil {
 				blockNumber++
 			} else {
 				break

@@ -51,8 +51,7 @@ func (bm *BlockMonitor) startWorker(stopChan <-chan types.StopEvent) {
 
 func (bm *BlockMonitor) process(block *types.Block) error {
 	// Transaction monitor pulls all transactions for the given block.
-	err := bm.transactionMonitor.PullTransactions(block)
-	if err != nil {
+	if err := bm.transactionMonitor.PullTransactions(block); err != nil {
 		return err
 	}
 	// Write block to DB.
