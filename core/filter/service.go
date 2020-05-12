@@ -31,10 +31,11 @@ func (fs *FilterService) Start() error {
 
 	stopChan, stopSubscription := fs.subscribeStopEvent()
 	defer stopSubscription.Unsubscribe()
-	// Filter tick every second to index transactions/ storage
-	ticker := time.NewTicker(time.Second)
-	defer ticker.Stop()
+
 	go func() {
+		// Filter tick every second to index transactions/ storage
+		ticker := time.NewTicker(time.Second)
+		defer ticker.Stop()
 		for {
 			select {
 			case <-ticker.C:
