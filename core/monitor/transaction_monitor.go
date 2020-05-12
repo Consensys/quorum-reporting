@@ -35,8 +35,7 @@ func (tm *TransactionMonitor) PullTransactions(block *types.Block) error {
 		}
 		//log.Println(tx.Hash.Hex())
 		// 2. Write transactions to DB.
-		err = tm.db.WriteTransaction(tx)
-		if err != nil {
+		if err = tm.db.WriteTransaction(tx); err != nil {
 			return err
 		}
 	}
