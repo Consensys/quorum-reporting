@@ -46,14 +46,12 @@ func (m *MonitorService) Start() error {
 	m.startWorkers()
 
 	// 2. Sync from last persisted to current block height.
-	err := m.syncHistoricBlocks()
-	if err != nil {
+	if err := m.syncHistoricBlocks(); err != nil {
 		return err
 	}
 
 	// 3. Listen to ChainHeadEvent and sync.
-	err = m.listenToChainHead()
-	if err != nil {
+	if err := m.listenToChainHead(); err != nil {
 		return err
 	}
 
