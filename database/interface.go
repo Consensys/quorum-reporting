@@ -45,11 +45,11 @@ type TransactionDB interface {
 // IndexDB stores the location to find all transactions/ events/ storage for a contract.
 type IndexDB interface {
 	IndexBlock([]common.Address, *types.Block) error
-	IndexStorage(uint64, map[common.Address]*state.DumpAccount) error
+	IndexStorage(map[common.Address]*state.DumpAccount, uint64) error
 	GetContractCreationTransaction(common.Address) (common.Hash, error)
-	GetAllTransactionsToAddress(common.Address) ([]common.Hash, error)
-	GetAllTransactionsInternalToAddress(common.Address) ([]common.Hash, error)
-	GetAllEventsFromAddress(common.Address) ([]*types.Event, error)
+	GetAllTransactionsToAddress(common.Address, *types.QueryOptions) ([]common.Hash, error)
+	GetAllTransactionsInternalToAddress(common.Address, *types.QueryOptions) ([]common.Hash, error)
+	GetAllEventsFromAddress(common.Address, *types.QueryOptions) ([]*types.Event, error)
 	GetStorage(common.Address, uint64) (map[common.Hash]string, error)
 	GetLastFiltered(common.Address) (uint64, error)
 }

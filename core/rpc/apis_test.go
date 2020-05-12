@@ -146,7 +146,7 @@ func TestAPIParsing(t *testing.T) {
 	if err != nil {
 		t.Fatalf("expected no error, but got %v", err)
 	}
-	parsedEvents, err := apis.GetAllEventsFromAddress(address)
+	parsedEvents, err := apis.GetAllEventsFromAddress(address, nil)
 	if err != nil {
 		t.Fatalf("expected no error, but got %v", err)
 	}

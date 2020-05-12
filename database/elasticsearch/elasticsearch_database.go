@@ -68,36 +68,62 @@ func (es *ElasticsearchDB) init() error {
 
 //AddressDB
 func (es *ElasticsearchDB) AddAddresses(addresses []common.Address) error {
-	bi := es.apiClient.GetBulkHandler(ContractIndex)
+	if len(addresses) == 0 {
+		return nil
+	}
+	// Only use bulk update if more than one address is given
+	if len(addresses) > 1 {
+		bi := es.apiClient.GetBulkHandler(ContractIndex)
 
-	var wg sync.WaitGroup
-	for _, address := range addresses {
-		contract := Contract{
-			Address:             address,
-			ABI:                 "",
-			CreationTransaction: common.Hash{},
-			LastFiltered:        0,
-		}
-		wg.Add(1)
-		bi.Add(
-			context.Background(),
-			esutil.BulkIndexerItem{
-				Action:     "create",
-				DocumentID: address.String(),
-				Body:       esutil.NewJSONReader(contract),
-				OnSuccess: func(ctx context.Context, item esutil.BulkIndexerItem, item2 esutil.BulkIndexerResponseItem) {
-					wg.Done()
-				},
-				OnFailure: func(ctx context.Context, item esutil.BulkIndexerItem, item2 esutil.BulkIndexerResponseItem, err error) {
-					wg.Done()
-				},
-			},
+		var (
+			wg        sync.WaitGroup
+			returnErr error
 		)
+		for _, address := range addresses {
+			contract := Contract{
+				Address:             address,
+				ABI:                 "",
+				CreationTransaction: common.Hash{},
+				LastFiltered:        0,
+			}
+			wg.Add(1)
+			bi.Add(
+				context.Background(),
+				esutil.BulkIndexerItem{
+					Action:     "create",
+					DocumentID: address.String(),
+					Body:       esutil.NewJSONReader(contract),
+					OnSuccess: func(ctx context.Context, item esutil.BulkIndexerItem, item2 esutil.BulkIndexerResponseItem) {
+						wg.Done()
+					},
+					OnFailure: func(ctx context.Context, item esutil.BulkIndexerItem, item2 esutil.BulkIndexerResponseItem, err error) {
+						returnErr = err
+						wg.Done()
+					},
+				},
+			)
+		}
+
+		wg.Wait()
+		return returnErr
+	}
+	// add single address
+	contract := Contract{
+		Address:             addresses[0],
+		ABI:                 "",
+		CreationTransaction: common.Hash{},
+		LastFiltered:        0,
 	}
 
-	wg.Wait()
-
-	return nil
+	req := esapi.IndexRequest{
+		Index:      ContractIndex,
+		DocumentID: addresses[0].String(),
+		Body:       esutil.NewJSONReader(contract),
+		Refresh:    "true",
+		OpType:     "create", //This will only create if the contract does not exist
+	}
+	_, err := es.apiClient.DoRequest(req)
+	return err
 }
 
 func (es *ElasticsearchDB) DeleteAddress(address common.Address) error {
@@ -236,7 +262,7 @@ func (es *ElasticsearchDB) WriteTransaction(transaction *types.Transaction) erro
 	}
 
 	_, err := es.apiClient.DoRequest(req)
-	return err //may be nil
+	return err
 }
 
 func (es *ElasticsearchDB) ReadTransaction(hash common.Hash) (*types.Transaction, error) {
@@ -273,13 +299,16 @@ func (es *ElasticsearchDB) IndexBlock(addresses []common.Address, block *types.B
 	// index transactions and events
 	for _, txHash := range block.Transactions {
 		transaction, _ := es.ReadTransaction(txHash)
-		es.indexTransaction(filteredAddresses, transaction)
+		err := es.indexTransaction(filteredAddresses, transaction)
+		if err != nil {
+			return err
+		}
 	}
 
 	return es.updateAllLastFiltered(filteredAddresses, block.Number)
 }
 
-func (es *ElasticsearchDB) IndexStorage(blockNumber uint64, rawStorage map[common.Address]*state.DumpAccount) error {
+func (es *ElasticsearchDB) IndexStorage(rawStorage map[common.Address]*state.DumpAccount, blockNumber uint64) error {
 	biState := es.apiClient.GetBulkHandler(StateIndex)
 	biStorage := es.apiClient.GetBulkHandler(StorageIndex)
 
@@ -311,6 +340,7 @@ func (es *ElasticsearchDB) IndexStorage(blockNumber uint64, rawStorage map[commo
 			},
 		)
 	}
+	// TODO: must make sure bulk update is successful and also not blocking to slow down...
 	return nil
 }
 
@@ -322,49 +352,84 @@ func (es *ElasticsearchDB) GetContractCreationTransaction(address common.Address
 	return contract.CreationTransaction, nil
 }
 
-func (es *ElasticsearchDB) GetAllTransactionsToAddress(address common.Address) ([]common.Hash, error) {
-	queryString := fmt.Sprintf(QueryByToAddressTemplate, address.String())
-	results, err := es.apiClient.ScrollAllResults(TransactionIndex, queryString)
+func (es *ElasticsearchDB) GetAllTransactionsToAddress(address common.Address, options *types.QueryOptions) ([]common.Hash, error) {
+	queryString := fmt.Sprintf(QueryByToAddressWithOptionsTemplate(options), address.String())
+
+	from := options.PageSize * options.PageNumber
+	if from+options.PageSize > 1000 {
+		return nil, ErrPaginationLimitExceeded
+	}
+	req := esapi.SearchRequest{
+		Index: []string{TransactionIndex},
+		Body:  strings.NewReader(queryString),
+		From:  &from,
+		Size:  &options.PageSize,
+		Sort:  []string{"blockNumber:asc", "index:asc"},
+	}
+	results, err := es.doSearchRequest(req)
 	if err != nil {
 		return nil, err
 	}
 
-	converted := make([]common.Hash, len(results))
-	for i, result := range results {
-		data := result.(map[string]interface{})["_source"].(map[string]interface{})
-		addr := data["hash"].(string)
+	converted := make([]common.Hash, len(results.Hits.Hits))
+	for i, result := range results.Hits.Hits {
+		addr := result.Source["hash"].(string)
 		converted[i] = common.HexToHash(addr)
 	}
 
 	return converted, nil
 }
 
-func (es *ElasticsearchDB) GetAllTransactionsInternalToAddress(address common.Address) ([]common.Hash, error) {
-	queryString := fmt.Sprintf(QueryInternalTransactions, address.String())
-	results, _ := es.apiClient.ScrollAllResults(TransactionIndex, queryString)
+func (es *ElasticsearchDB) GetAllTransactionsInternalToAddress(address common.Address, options *types.QueryOptions) ([]common.Hash, error) {
+	queryString := fmt.Sprintf(QueryInternalTransactionsWithOptionsTemplate(options), address.String())
 
-	converted := make([]common.Hash, len(results))
-	for i, result := range results {
-		data := result.(map[string]interface{})["_source"].(map[string]interface{})
-		addr := data["hash"].(string)
+	from := options.PageSize * options.PageNumber
+	if from+options.PageSize > 1000 {
+		return nil, ErrPaginationLimitExceeded
+	}
+	req := esapi.SearchRequest{
+		Index: []string{TransactionIndex},
+		Body:  strings.NewReader(queryString),
+		From:  &from,
+		Size:  &options.PageSize,
+		Sort:  []string{"blockNumber:asc", "index:asc"},
+	}
+	results, err := es.doSearchRequest(req)
+	if err != nil {
+		return nil, err
+	}
+
+	converted := make([]common.Hash, len(results.Hits.Hits))
+	for i, result := range results.Hits.Hits {
+		addr := result.Source["hash"].(string)
 		converted[i] = common.HexToHash(addr)
 	}
 
 	return converted, nil
 }
 
-func (es *ElasticsearchDB) GetAllEventsFromAddress(address common.Address) ([]*types.Event, error) {
-	query := fmt.Sprintf(QueryByAddressTemplate, address.String())
-	results, err := es.apiClient.ScrollAllResults(EventIndex, query)
+func (es *ElasticsearchDB) GetAllEventsFromAddress(address common.Address, options *types.QueryOptions) ([]*types.Event, error) {
+	queryString := fmt.Sprintf(QueryByAddressWithOptionsTemplate(options), address.String())
+
+	from := options.PageSize * options.PageNumber
+	if from+options.PageSize > 1000 {
+		return nil, ErrPaginationLimitExceeded
+	}
+	req := esapi.SearchRequest{
+		Index: []string{EventIndex},
+		Body:  strings.NewReader(queryString),
+		From:  &from,
+		Size:  &options.PageSize,
+		Sort:  []string{"blockNumber:asc", "logIndex:asc"},
+	}
+	results, err := es.doSearchRequest(req)
 	if err != nil {
 		return nil, err
 	}
 
-	convertedList := make([]*types.Event, len(results))
-	for i, result := range results {
-		data := result.(map[string]interface{})["_source"].(map[string]interface{})
-
-		marshalled, _ := json.Marshal(data)
+	convertedList := make([]*types.Event, len(results.Hits.Hits))
+	for i, result := range results.Hits.Hits {
+		marshalled, _ := json.Marshal(result.Source)
 		var event Event
 		json.Unmarshal(marshalled, &event)
 
@@ -440,30 +505,24 @@ func (es *ElasticsearchDB) getContractByAddress(address common.Address) (*Contra
 	return &contract.Source, nil
 }
 
-func (es *ElasticsearchDB) addressIsRegistered(address common.Address) bool {
-	allAddresses, _ := es.GetAddresses()
-	for _, registeredAddress := range allAddresses {
-		if registeredAddress == address {
-			return true
-		}
-	}
-	return false
-}
-
-func (es *ElasticsearchDB) indexTransaction(filteredAddresses map[common.Address]bool, tx *types.Transaction) {
+func (es *ElasticsearchDB) indexTransaction(filteredAddresses map[common.Address]bool, tx *types.Transaction) error {
 	// Compare the address with tx.To and tx.CreatedContract to check if the transaction is related.
 	if filteredAddresses[tx.CreatedContract] {
-		es.updateCreatedTx(tx.CreatedContract, tx.Hash)
+		err := es.updateCreatedTx(tx.CreatedContract, tx.Hash)
+		if err != nil {
+			return err
+		}
 		log.Printf("Index contract creation tx %v of registered address %v.\n", tx.Hash.Hex(), tx.CreatedContract.Hex())
 	}
 
 	// Index events emitted by the given address
+	pendingIndexEvents := []*types.Event{}
 	for _, event := range tx.Events {
 		if filteredAddresses[event.Address] {
-			es.createEvent(event)
-			log.Printf("Append event emitted in transaction %v to registered address %v.\n", event.TransactionHash.Hex(), event.Address.Hex())
+			pendingIndexEvents = append(pendingIndexEvents, event)
 		}
 	}
+	return es.createEvents(pendingIndexEvents)
 }
 
 func (es *ElasticsearchDB) updateCreatedTx(address common.Address, creationTxHash common.Hash) error {
@@ -473,14 +532,13 @@ func (es *ElasticsearchDB) updateCreatedTx(address common.Address, creationTxHas
 func (es *ElasticsearchDB) updateAllLastFiltered(addresses map[common.Address]bool, lastFiltered uint64) error {
 	bi := es.apiClient.GetBulkHandler(ContractIndex)
 
-	updateQuery := fmt.Sprintf(`{"doc":{"lastFiltered":%d}}`, lastFiltered)
 	for address := range addresses {
 		bi.Add(
 			context.Background(),
 			esutil.BulkIndexerItem{
 				Action:     "update",
 				DocumentID: address.String(),
-				Body:       strings.NewReader(updateQuery),
+				Body:       strings.NewReader(fmt.Sprintf(`{"doc":{"lastFiltered":%d}}`, lastFiltered)),
 			},
 		)
 	}
@@ -511,22 +569,39 @@ func (es *ElasticsearchDB) updateContract(address common.Address, property strin
 	return err
 }
 
-func (es *ElasticsearchDB) createEvent(event *types.Event) error {
-	var e Event
-	e.From(event)
+func (es *ElasticsearchDB) createEvents(events []*types.Event) error {
+	bi := es.apiClient.GetBulkHandler(EventIndex)
 
-	req := esapi.IndexRequest{
-		Index:      EventIndex,
-		DocumentID: strconv.FormatUint(event.BlockNumber, 10) + "-" + strconv.FormatUint(event.Index, 10),
-		Body:       esutil.NewJSONReader(e),
-		Refresh:    "true",
+	for _, event := range events {
+		var e Event
+		e.From(event)
+		bi.Add(
+			context.Background(),
+			esutil.BulkIndexerItem{
+				Action:     "create",
+				DocumentID: strconv.FormatUint(event.BlockNumber, 10) + "-" + strconv.FormatUint(event.Index, 10),
+				Body:       esutil.NewJSONReader(e),
+			},
+		)
 	}
-
-	//TODO: check response
-	es.apiClient.DoRequest(req)
+	// TODO: must make sure bulk update is successful and also not blocking to slow down...
 	return nil
 }
 
 func (es *ElasticsearchDB) Stop() {
 	es.apiClient.CloseIndexers()
+}
+
+func (es *ElasticsearchDB) doSearchRequest(req esapi.SearchRequest) (*SearchQueryResult, error) {
+	body, err := es.apiClient.DoRequest(req)
+	if err != nil {
+		return nil, err
+	}
+
+	var ret SearchQueryResult
+	err = json.Unmarshal(body, &ret)
+	if err != nil {
+		return nil, err
+	}
+	return &ret, nil
 }

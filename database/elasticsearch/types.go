@@ -33,6 +33,7 @@ type Event struct {
 	Topics           []common.Hash  `json:"topics"`
 	TransactionHash  common.Hash    `json:"transactionHash"`
 	TransactionIndex uint64         `json:"transactionIndex"`
+	Timestamp        uint64         `json:"timestamp"`
 }
 
 func (e *Event) From(event *types.Event) {
@@ -44,6 +45,7 @@ func (e *Event) From(event *types.Event) {
 	e.TransactionHash = event.TransactionHash
 	e.BlockHash = event.BlockHash
 	e.TransactionIndex = event.TransactionIndex
+	e.Timestamp = event.Timestamp
 }
 
 func (e *Event) To() *types.Event {
@@ -56,6 +58,7 @@ func (e *Event) To() *types.Event {
 		TransactionHash:  e.TransactionHash,
 		BlockHash:        e.BlockHash,
 		TransactionIndex: e.TransactionIndex,
+		Timestamp:        e.Timestamp,
 	}
 }
 
@@ -79,6 +82,7 @@ type Transaction struct {
 	IsPrivate         bool            `json:"isPrivate"`
 	Events            []*Event        `json:"events"`
 	InternalCalls     []*InternalCall `json:"internalCalls"`
+	Timestamp         uint64          `json:"timestamp"`
 }
 
 func (t *Transaction) To() *types.Transaction {
@@ -110,6 +114,7 @@ func (t *Transaction) To() *types.Transaction {
 		Data:              t.Data,
 		PrivateData:       t.PrivateData,
 		IsPrivate:         t.IsPrivate,
+		Timestamp:         t.Timestamp,
 		Events:            events,
 		InternalCalls:     internalCalls,
 	}
@@ -147,6 +152,7 @@ func (t *Transaction) From(tx *types.Transaction) {
 	t.Data = tx.Data
 	t.PrivateData = tx.PrivateData
 	t.IsPrivate = tx.IsPrivate
+	t.Timestamp = tx.Timestamp
 	t.Events = events
 	t.InternalCalls = internalCalls
 }
@@ -256,4 +262,15 @@ type LastPersistedResult struct {
 	Source struct {
 		LastPersisted uint64 `json:"lastPersisted"`
 	} `json:"_source"`
+}
+
+type SearchQueryResult struct {
+	Hits struct {
+		Hits []IndividualResult `json:"hits"`
+	} `json:"hits"`
+}
+
+type IndividualResult struct {
+	Id     string                 `json:"_id"`
+	Source map[string]interface{} `json:"_source"`
 }

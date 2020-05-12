@@ -20,15 +20,21 @@ func TestIndexBlock(t *testing.T) {
 	db := &FakeDB{[]common.Address{{1}, {2}}, map[common.Address]uint64{{1}: 3, {2}: 5}}
 	fs := NewFilterService(db, client.NewStubQuorumClient(nil, nil, mockRPC))
 	// test fs.getLastFiltered
-	lastFiltered, err := fs.getLastFiltered(6)
+	lastFilteredAll, lastFiltered, err := fs.getLastFiltered(6)
 	if err != nil {
 		t.Fatalf("expected no error, but got %v", err)
+	}
+	if lastFilteredAll[common.Address{1}] != 3 {
+		t.Fatalf("expected last filtered of %v is %v, but got %v", common.Address{1}.Hex(), 3, lastFiltered)
+	}
+	if lastFilteredAll[common.Address{2}] != 5 {
+		t.Fatalf("expected last filtered of %v is %v, but got %v", common.Address{1}.Hex(), 5, lastFiltered)
 	}
 	if lastFiltered != 3 {
 		t.Fatalf("expected last filtered %v, but got %v", 3, lastFiltered)
 	}
 	// test fs.index
-	err = fs.index(4)
+	err = fs.index(lastFilteredAll, 4)
 	if err != nil {
 		t.Fatalf("expected no error, but got %v", err)
 	}
@@ -38,7 +44,7 @@ func TestIndexBlock(t *testing.T) {
 	if db.lastFiltered[common.Address{2}] != 5 {
 		t.Fatalf("expected common.Address{2} last filtered %v, but got %v", 5, db.lastFiltered[common.Address{2}])
 	}
-	err = fs.index(6)
+	err = fs.index(lastFilteredAll, 6)
 	if db.lastFiltered[common.Address{1}] != 6 {
 		t.Fatalf("expected common.Address{1} last filtered %v, but got %v", 6, db.lastFiltered[common.Address{1}])
 	}
@@ -92,7 +98,7 @@ func (f *FakeDB) ReadTransaction(common.Hash) (*types.Transaction, error) {
 	return nil, errors.New("not implemented")
 }
 
-func (f *FakeDB) IndexStorage(uint64, map[common.Address]*state.DumpAccount) error {
+func (f *FakeDB) IndexStorage(map[common.Address]*state.DumpAccount, uint64) error {
 	return nil
 }
 
@@ -109,15 +115,15 @@ func (f *FakeDB) GetContractCreationTransaction(common.Address) (common.Hash, er
 	return common.Hash{}, errors.New("not implemented")
 }
 
-func (f *FakeDB) GetAllTransactionsToAddress(common.Address) ([]common.Hash, error) {
+func (f *FakeDB) GetAllTransactionsToAddress(common.Address, *types.QueryOptions) ([]common.Hash, error) {
 	return nil, errors.New("not implemented")
 }
 
-func (f *FakeDB) GetAllTransactionsInternalToAddress(common.Address) ([]common.Hash, error) {
+func (f *FakeDB) GetAllTransactionsInternalToAddress(common.Address, *types.QueryOptions) ([]common.Hash, error) {
 	return nil, errors.New("not implemented")
 }
 
-func (f *FakeDB) GetAllEventsFromAddress(common.Address) ([]*types.Event, error) {
+func (f *FakeDB) GetAllEventsFromAddress(common.Address, *types.QueryOptions) ([]*types.Event, error) {
 	return nil, errors.New("not implemented")
 }
 

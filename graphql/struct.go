@@ -1,8 +1,9 @@
 package graphql
 
 type CurrentBlock struct {
-	Number string
-	Hash   string
+	Number    string
+	Hash      string
+	Timestamp string
 }
 
 type Transaction struct {

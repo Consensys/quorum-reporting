@@ -1,6 +1,6 @@
 # Quorum Reporting
 
-## Requirements
+## Requirements (draft)
 Number | Area | Requirement 
 :---: | :---: | :--- 
 1 | Admin | Ability for an admin to register a contract address for monitoring and reporting
@@ -12,22 +12,23 @@ Number | Area | Requirement
 7 | Dashboard and UI | UI for the following activities <ul><li>Registration of contracts for monitoring with ability to select subset of contract events and storage attributes</li><li>UI displaying all contract transactions, related event logs, internal transactions and state changes with drill down capability</ul>
 
 ## Approach
-* To build the tool on top of 1.9.7 version as 1.9.7 supports `graphql` and provides a flexible querying mechanism
-* Registration
-    * The solidity contract code of the contract to be monitored to be given as input and parsed for attributes, functions and events
-    * The events, attributes to be displayed on UI for user to select subset for monitoring
-    * User selection is stored in reporting DB
-* Data fetch
-    * `go` routine which will subscribe to `newChainHead` event of 
-    geth node on a websocket connection
-    * The routine checks if the state of the registered contracts has changed for each new block and if yes fetch all applicable data
-    * Data fetch to use the following:
-        * `graphql` queries
-        * RPC APIs
-* Data storage
-    * *yet to finalize on storage schema and database*
-* User interface 
-    * Dashboard and configuration options to be added current Cakeshop UI for the first version
+
+Reporting engine is built on top of Quorum 2.6.0 as it supports `graphql` with a flexible querying mechanism
+
+* Data Fetch
+   * Reporting engine subscribes to `newChainHead` event of geth node on websocket connection
+   * Reporting engine pulls all blocks and transactions from geth node
+   * Reporting engine index transactions/ events/ storage based on registered addresses
+   * Endpoints used:
+      * GraphQL
+      * RPC APIs
+* Data Storage
+   * Memory Database (for dev only)
+   * Elasticsearch Database
+* Data Parsing
+   * Reporting engine can store contract ABI and parse transaction/ event signature and params based on the ABI information
+* User Interface 
+   * Dashboard and configuration options to be added on Cakeshop UI for the first version
 
 ## Up and Running
 
@@ -39,7 +40,7 @@ go build
 ```bash
 ./quorum-report --help
 ```
-* Start `quorum-report` tool with default config.toml file
+* Start `quorum-report` tool with `config.toml` in the current path
 ```
 ./quorum-report
 ```
@@ -51,18 +52,20 @@ go build
 ```
 Quorum Reporting -----> [ Backend ] ----------> [ RPC Service ]
                            |   |                       |
-                           |   |                       |
-                           |   +--> [ Filter Service ] |
-                           |                    |      |
-                           |                    |      |
-                           V                    |      |
-                  [ Monitor Service ]           |      |
-                           |                    |      |
-                           |                    |      |
-                           |                    |      |
-                           |                    |      |
-                           |                    |      |
-                           V                    V      V
+                           |   +---------+             |
+                           |             |             |
+                           |             V             |
+   +-----------------------+------- [ Filter Service ] |
+   |                       |                    |      |
+   |                       |                    |      |
+   |                       V                    |      |
+   |              [ Monitor Service ]           |      |
+   |                       |                    |      |
+   |                       |                    |      |
+   |                       |                    |      |
+   |                       |                    |      |
+   |                       |                    |      |
+   V                       V                    V      V
 Quorum <--------- [ Block Monitor ] ----------> Database <---------- Visualization (e.g. Cakeshop)
    ^                       |                       ^
    |                       |                       |
@@ -73,14 +76,13 @@ Quorum <--------- [ Block Monitor ] ----------> Database <---------- Visualizati
    +------- [ Transaction/Storage Monitor ] -------+
 ```
 
-#### Items Required in Persistent Database
+#### Database Schema
 
-- All blocks
-- All transactions
-- Registered addresses and Contract ABIs
-- Storage at each block for registered contract addresses
-- **optional:** Indices (transactions/ events linked to registered contract addresses). While this may be implicitly 
-achieved by database, we may still store the indices result for easier query of transactions/ events.
+Elasticsearch Database Schema [Reference](database/elasticsearch/README.md)
+
+#### RPC API Specification
+
+[Reference](core/rpc/README.md)
 
 ## Roadmap
 
@@ -92,7 +94,7 @@ achieved by database, we may still store the indices result for easier query of 
 - Filter events by registered addresses
 - Dynamically change registered addresses, clean up and refilter
 - Expose basic RPC endpoints to serve queries
-- Unit tests & CI/CD
+- Unit tests & Github Actions CI
 
 #### Phase 1 (done)
 
@@ -100,18 +102,20 @@ achieved by database, we may still store the indices result for easier query of 
 - Filter contract detailed storage by registered addresses (with dumpAccount available on geth side)
 - Resolve internal calls (incoming/ outgoing) for transactions of registered addresses
 
-#### Phase 2 (in progress)
+#### Phase 2 (done)
 
-- Integrate persistent database
+- Design database schema & Integrate
 - Handle restart & recover from fail-stop scenarios
 - Extend RPC APIs with complex queries
 
 #### Phase 3 (todo)
 
-- Fully functional reporting tool with all raw data parsing
+- Enhance performance
 - Integrate UI for visualization
-- Docker file & make file support
+- Define reporting templates
+- Support Docker
+- Enforce Security
 
 #### Future Items
 
-- Convert Quorum to go module and use it instead of ethereum 1.9.8
+- After Quorum supports go module, we should use Quorum module instead of ethereum 1.9.8
