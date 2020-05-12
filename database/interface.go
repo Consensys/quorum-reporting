@@ -31,6 +31,7 @@ type ABIDB interface {
 
 // BlockDB stores the block details for all blocks.
 type BlockDB interface {
+	// Deprecated: Always use WriteBlocks
 	WriteBlock(*types.Block) error
 	WriteBlocks([]*types.Block) error
 	ReadBlock(uint64) (*types.Block, error)
@@ -39,6 +40,7 @@ type BlockDB interface {
 
 // TransactionDB stores all transactions change a contract's state.
 type TransactionDB interface {
+	// Deprecated: Always use WriteTransactions
 	WriteTransaction(*types.Transaction) error
 	WriteTransactions([]*types.Transaction) error
 	ReadTransaction(common.Hash) (*types.Transaction, error)
