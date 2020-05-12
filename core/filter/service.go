@@ -33,6 +33,7 @@ func (fs *FilterService) Start() error {
 	defer stopSubscription.Unsubscribe()
 	// Filter tick every second to index transactions/ storage
 	ticker := time.NewTicker(time.Second)
+	defer ticker.Stop()
 	go func() {
 		for {
 			select {
