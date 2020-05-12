@@ -1,0 +1,21 @@
+# This is sample config file for quorum reporting running in docker for MacOS
+title = "Quorum reporting confg example"
+addresses = ["0x1932c48b2bf8102ba33b4a6b545c32236e342f34"]
+
+[database]
+
+    cacheSize = 10
+#    [database.elasticsearch]
+
+[server]
+
+    rpcAddr = "0.0.0.0:6666"
+    rpcCorsList = ["*"]
+    rpcvHosts = ["*"]
+
+[connection]
+
+    wsUrl = "ws://host.docker.internal:23000"
+    graphQLUrl = "http://host.docker.internal:8547/graphql"
+    reconnectInterval = 5
+    maxReconnectTries = 5

@@ -32,6 +32,9 @@ Reporting engine is built on top of Quorum 2.6.0 as it supports `graphql` with a
 
 ## Up and Running
 
+**Notes:** In order to avoid missing state for storage fetching, Quorum node should run with `--gcmode archive`
+
+#### Build Executable
 * After clone the repo, build `quorum-report` tool
 ```bash
 go build
@@ -44,7 +47,16 @@ go build
 ```
 ./quorum-report
 ```
-**Notes:** In order to avoid missing state for storage fetching, Quorum node should run with `--gcmode archive`
+
+#### Run with Docker
+* Build docker image
+```bash
+docker build . -t quorum-reporting
+```
+* Run with local config (e.g. `config.docker.sample.toml`)
+```bash
+docker run --rm -p 6666:6666 --mount type=bind,source=$(pwd)/config.docker.sample.toml,target=/config.toml quorum-reporting:latest
+```
 
 ## Architecture & Design
 
