@@ -7,7 +7,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/mitchellh/mapstructure"
-
 	"quorumengineering/quorum-report/client"
 	"quorumengineering/quorum-report/database"
 	"quorumengineering/quorum-report/graphql"
@@ -52,8 +51,8 @@ func (tm *TransactionMonitor) createTransaction(hash common.Hash) (*types.Transa
 		// TODO: if quorum node is down, reconnect?
 		return nil, err
 	}
-	err = mapstructure.Decode(resp["transaction"].(map[string]interface{}), &txOrigin)
-	if err != nil {
+
+	if err = mapstructure.Decode(resp["transaction"].(map[string]interface{}), &txOrigin); err != nil {
 		return nil, err
 	}
 
