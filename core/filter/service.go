@@ -107,8 +107,8 @@ func (fs *FilterService) index(lastFiltered map[common.Address]uint64, blockNumb
 			log.Printf("Index registered addresses %v at block %v.\n", address.Hex(), blockNumber)
 		}
 	}
-	err = fs.storageFilter.IndexStorage(addresses, blockNumber)
-	if err != nil {
+
+	if err = fs.storageFilter.IndexStorage(addresses, blockNumber); err != nil {
 		return err
 	}
 	// if IndexStorage has an error, IndexBlock is never called, last filtered will not be updated
