@@ -1,6 +1,7 @@
 package memory
 
 import (
+	"github.com/stretchr/testify/assert"
 	"strings"
 	"testing"
 
@@ -18,28 +19,11 @@ const jsondata = `
 	{ "type" : "function", "name" : "send", "constant" : false, "inputs" : [ { "name" : "amount", "type" : "uint256" } ] }
 ]`
 
-func TestMemoryDB(t *testing.T) {
-	// test data
-	db := NewMemoryDB()
-	address := common.HexToAddress("0x0000000000000000000000000000000000000001")
-	uselessAddress := common.HexToAddress("0x0000000000000000000000000000000000000002")
-	testABI, _ := abi.JSON(strings.NewReader(jsondata))
-	block := &types.Block{
-		Hash:   common.BytesToHash([]byte("dummy")),
-		Number: 1,
-		Transactions: []common.Hash{
-			common.BytesToHash([]byte("tx1")), common.BytesToHash([]byte("tx2")), common.BytesToHash([]byte("tx3")),
-		},
-	}
-	rawStorage := map[common.Address]*state.DumpAccount{
-		address: {
-			Storage: map[common.Hash]string{
-				common.HexToHash("0x0000000000000000000000000000000000000000000000000000000000000000"): "2a",
-				common.HexToHash("0x0000000000000000000000000000000000000000000000000000000000000001"): "2b",
-			},
-		},
-	}
-	tx1 := &types.Transaction{
+var (
+	address        = common.HexToAddress("0x0000000000000000000000000000000000000001")
+	uselessAddress = common.HexToAddress("0x0000000000000000000000000000000000000002")
+
+	tx1 = &types.Transaction{
 		Hash:            common.BytesToHash([]byte("tx1")),
 		BlockNumber:     1,
 		From:            common.HexToAddress("0x0000000000000000000000000000000000000009"),
@@ -47,7 +31,7 @@ func TestMemoryDB(t *testing.T) {
 		Value:           666,
 		CreatedContract: address,
 	}
-	tx2 := &types.Transaction{
+	tx2 = &types.Transaction{
 		Hash:        common.BytesToHash([]byte("tx2")),
 		BlockNumber: 1,
 		From:        common.HexToAddress("0x0000000000000000000000000000000000000009"),
@@ -59,7 +43,7 @@ func TestMemoryDB(t *testing.T) {
 			},
 		},
 	}
-	tx3 := &types.Transaction{
+	tx3 = &types.Transaction{
 		Hash:        common.BytesToHash([]byte("tx3")),
 		BlockNumber: 1,
 		From:        common.HexToAddress("0x0000000000000000000000000000000000000010"),
@@ -68,6 +52,59 @@ func TestMemoryDB(t *testing.T) {
 		Events: []*types.Event{
 			{}, // dummy event
 			{Address: address},
+		},
+	}
+	block = &types.Block{
+		Hash:   common.BytesToHash([]byte("dummy")),
+		Number: 1,
+		Transactions: []common.Hash{
+			common.BytesToHash([]byte("tx1")), common.BytesToHash([]byte("tx2")), common.BytesToHash([]byte("tx3")),
+		},
+	}
+)
+
+func TestMemoryDB_WriteTransactions(t *testing.T) {
+	db := NewMemoryDB()
+
+	err := db.WriteTransactions([]*types.Transaction{tx1, tx2, tx3})
+
+	assert.Nil(t, err, "unexpected err")
+
+	retrievedTx1, err := db.ReadTransaction(tx1.Hash)
+	assert.Nil(t, err, "unexpected err")
+	assert.Equal(t, tx1, retrievedTx1, "unexpected tx from db: %s", retrievedTx1)
+
+	retrievedTx2, err := db.ReadTransaction(tx2.Hash)
+	assert.Nil(t, err, "unexpected err")
+	assert.Equal(t, tx2, retrievedTx2, "unexpected tx from db: %s", retrievedTx2)
+
+	retrievedTx3, err := db.ReadTransaction(tx3.Hash)
+	assert.Nil(t, err, "unexpected err")
+	assert.Equal(t, tx3, retrievedTx3, "unexpected tx from db: %s", retrievedTx3)
+}
+
+func TestMemoryDB_WriteBlocks(t *testing.T) {
+	db := NewMemoryDB()
+
+	err := db.WriteBlocks([]*types.Block{block})
+
+	assert.Nil(t, err, "unexpected err")
+
+	retrievedblock, err := db.ReadBlock(block.Number)
+	assert.Nil(t, err, "unexpected err")
+	assert.Equal(t, block, retrievedblock, "unexpected block from db: %s", retrievedblock)
+}
+
+func TestMemoryDB(t *testing.T) {
+	// test data
+	db := NewMemoryDB()
+	testABI, _ := abi.JSON(strings.NewReader(jsondata))
+	rawStorage := map[common.Address]*state.DumpAccount{
+		address: {
+			Storage: map[common.Hash]string{
+				common.HexToHash("0x0000000000000000000000000000000000000000000000000000000000000000"): "2a",
+				common.HexToHash("0x0000000000000000000000000000000000000000000000000000000000000001"): "2b",
+			},
 		},
 	}
 	// 1. Add an address and get it.
