@@ -1,6 +1,6 @@
 # RPC API Specs
 
-### Contract
+## Contract
 
 Contract APIs register/ deregister contracts to be reported. Complex queries can be run for the registered contract list.
 
@@ -29,7 +29,7 @@ Contract APIs register/ deregister contracts to be reported. Complex queries can
 (Implemented) `reporting_getLastFiltered` gets the last block number before which storage & txs & events of a contract 
 is filtered and stored.
 
-### Block
+## Block
 
 Block APIs returns basic block information.
 
@@ -42,7 +42,7 @@ Block APIs returns basic block information.
 (Implemented) `reporting_getLastPersistedBlockNumber` gets the last block number before which all blocks are available 
 and properly indexed.
 
-### Storage
+## Storage
 
 Storage APIs can query account storage for a given contract at any block
 
@@ -50,7 +50,7 @@ Storage APIs can query account storage for a given contract at any block
 
 (Implemented)
 
-### Transaction
+## Transaction
 
 Transaction APIs query 
 
@@ -64,7 +64,7 @@ Transaction APIs query
 
 #### reporting_getAllTransactionsToAddress
 
-(Todo) `reporting_getAllTransactionsToAddress` returns a list of tx hash and total number matching the search options 
+(Implemented) `reporting_getAllTransactionsToAddress` returns a list of tx hash and total number matching the search options 
 provided.
 
 Sample Response:
@@ -82,7 +82,7 @@ Sample Response:
 
 #### reporting_getAllTransactionsInternalToAddress
 
-(Todo) `reporting_getAllTransactionsInternalToAddress` returns a list of tx hash and total number matching the search 
+(Implemented) `reporting_getAllTransactionsInternalToAddress` returns a list of tx hash and total number matching the search 
 options provided.
 
 Sample Response:
@@ -98,11 +98,11 @@ Sample Response:
 }
 ```
 
-### Event
+## Event
 
 #### reporting_getAllEventsFromAddress
 
-(Todo) `reporting_getAllEventsFromAddress` returns a list of event objs and total number of events matching the search 
+(Implemented) `reporting_getAllEventsFromAddress` returns a list of event objs and total number of events matching the search 
 options provided.
 
 Sample Response:
@@ -118,7 +118,7 @@ Sample Response:
 }
 ```
 
-### Default Query Options
+## Default Query Options
 ```$json
 {
     beginBlockNumber: 0,

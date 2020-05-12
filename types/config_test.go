@@ -45,8 +45,8 @@ func TestConfigFile(t *testing.T) {
 	if err := ioutil.WriteFile(fileName, blob, 0644); err != nil {
 		t.Fatal("error writing new node info to file", "fileName", fileName, "error", err)
 	}
-	if _, err := ReadConfig(fileName); err.Error() != "reconnection details not set properly in the config file" {
-		t.Fatalf("expected %v, but got %v", "reconnection details not set properly in the config file", err)
+	if _, err := ReadConfig(fileName); err.Error() != "ReconnectInterval should be greater than zero if MaxReconnectTries is set" {
+		t.Fatalf("expected %v, but got %v", "ReconnectInterval should be greater than zero if MaxReconnectTries is set", err)
 	}
 
 	tmpConfigData.Connection.ReconnectInterval = 10

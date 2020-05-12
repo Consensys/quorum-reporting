@@ -31,9 +31,11 @@ func (fs *FilterService) Start() error {
 
 	stopChan, stopSubscription := fs.subscribeStopEvent()
 	defer stopSubscription.Unsubscribe()
-	// Filter tick every second to index transactions/ storage
-	ticker := time.NewTicker(time.Second)
+
 	go func() {
+		// Filter tick every second to index transactions/ storage
+		ticker := time.NewTicker(time.Second)
+		defer ticker.Stop()
 		for {
 			select {
 			case <-ticker.C:
@@ -105,8 +107,8 @@ func (fs *FilterService) index(lastFiltered map[common.Address]uint64, blockNumb
 			log.Printf("Index registered addresses %v at block %v.\n", address.Hex(), blockNumber)
 		}
 	}
-	err = fs.storageFilter.IndexStorage(addresses, blockNumber)
-	if err != nil {
+
+	if err = fs.storageFilter.IndexStorage(addresses, blockNumber); err != nil {
 		return err
 	}
 	// if IndexStorage has an error, IndexBlock is never called, last filtered will not be updated

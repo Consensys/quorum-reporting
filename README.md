@@ -1,6 +1,6 @@
 # Quorum Reporting
 
-## Requirements (original draft)
+## Requirements (draft)
 Number | Area | Requirement 
 :---: | :---: | :--- 
 1 | Admin | Ability for an admin to register a contract address for monitoring and reporting
@@ -11,26 +11,30 @@ Number | Area | Requirement
 6 | Data storage | Reporting tool to have its own reporting database with a well defined data schema for easy querying and reporting. The data fetched from Quorum geth node to be stored here
 7 | Dashboard and UI | UI for the following activities <ul><li>Registration of contracts for monitoring with ability to select subset of contract events and storage attributes</li><li>UI displaying all contract transactions, related event logs, internal transactions and state changes with drill down capability</ul>
 
-## Approach (original draft)
-* To build the tool on top of 1.9.7 version as 1.9.7 supports `graphql` and provides a flexible querying mechanism
-* Registration
-    * The solidity contract code of the contract to be monitored to be given as input and parsed for attributes, functions and events
-    * The events, attributes to be displayed on UI for user to select subset for monitoring
-    * User selection is stored in reporting DB
-* Data fetch
-    * `go` routine which will subscribe to `newChainHead` event of 
-    geth node on a websocket connection
-    * The routine checks if the state of the registered contracts has changed for each new block and if yes fetch all applicable data
-    * Data fetch to use the following:
-        * `graphql` queries
-        * RPC APIs
-* Data storage
-    * *yet to finalize on storage schema and database*
-* User interface 
-    * Dashboard and configuration options to be added current Cakeshop UI for the first version
+## Approach
+
+Reporting engine is built on top of Quorum 2.6.0 as it supports `graphql` with a flexible querying mechanism
+
+* Data Fetch
+   * Reporting engine subscribes to `newChainHead` event of geth node on websocket connection
+   * Reporting engine pulls all blocks and transactions from geth node
+   * Reporting engine index transactions/ events/ storage based on registered addresses
+   * Endpoints used:
+      * GraphQL
+      * RPC APIs
+* Data Storage
+   * Memory Database (for dev only)
+   * Elasticsearch Database
+* Data Parsing
+   * Reporting engine can store contract ABI and parse transaction/ event signature and params based on the ABI information
+* User Interface 
+   * Dashboard and configuration options to be added on Cakeshop UI for the first version
 
 ## Up and Running
 
+**Notes:** In order to avoid missing state for storage fetching, Quorum node should run with `--gcmode archive`
+
+#### Build Executable
 * After clone the repo, build `quorum-report` tool
 ```bash
 go build
@@ -43,7 +47,16 @@ go build
 ```
 ./quorum-report
 ```
-**Notes:** In order to avoid missing state for storage fetching, Quorum node should run with `--gcmode archive`
+
+#### Run with Docker
+* Build docker image
+```bash
+docker build . -t quorum-reporting
+```
+* Run with local config (e.g. `config.docker.sample.toml`)
+```bash
+docker run --rm -p 6666:6666 --mount type=bind,source=$(pwd)/config.docker.sample.toml,target=/config.toml quorum-reporting:latest
+```
 
 ## Architecture & Design
 
@@ -54,7 +67,7 @@ Quorum Reporting -----> [ Backend ] ----------> [ RPC Service ]
                            |   +---------+             |
                            |             |             |
                            |             V             |
-   +-----------------------+---+--> [ Filter Service ] |
+   +-----------------------+------- [ Filter Service ] |
    |                       |                    |      |
    |                       |                    |      |
    |                       V                    |      |
@@ -77,7 +90,7 @@ Quorum <--------- [ Block Monitor ] ----------> Database <---------- Visualizati
 
 #### Database Schema
 
-ElasticsearchDB Schema [Reference](database/elasticsearch/README.md)
+Elasticsearch Database Schema [Reference](database/elasticsearch/README.md)
 
 #### RPC API Specification
 
@@ -99,21 +112,24 @@ ElasticsearchDB Schema [Reference](database/elasticsearch/README.md)
 
 - Parse transaction/ event data inputs from contract ABI
 - Filter contract detailed storage by registered addresses (with dumpAccount available on geth side)
-- Resolve internal calls (incoming/ outgoing) for transactions of registered addresses
+- Resolve transactions with internal calls to registered addresses
 
 #### Phase 2 (done)
 
 - Design database schema & Integrate
-- Handle restart & recover from fail-stop scenarios
 - Extend RPC APIs with complex queries
+- Dockerize reporting
 
 #### Phase 3 (todo)
 
+- Handle fail recover scenarios
 - Enhance performance
 - Integrate UI for visualization
 - Define reporting templates
-- Support Docker
-- Enforce Security
+- Use Docker-compose/Kubernetes for orchestration
+- Security
+  - configurable secure connection with Elasticsearch
+  - configurable secure connection with RPC endpoint
 
 #### Future Items
 

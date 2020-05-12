@@ -59,14 +59,14 @@ func ReadConfig(configFile string) (ReportingConfig, error) {
 	}
 	defer f.Close()
 	var input ReportingConfig
-	if err := toml.NewDecoder(f).Decode(&input); err != nil {
+	if err = toml.NewDecoder(f).Decode(&input); err != nil {
 		return ReportingConfig{}, err
 	}
 
 	// if AlwaysReconnect is set to true, check if ReconnectInterval
 	// and MaxReconnectTries are given or not. If not throw error
 	if input.Connection.MaxReconnectTries > 0 && input.Connection.ReconnectInterval == 0 {
-		return ReportingConfig{}, errors.New("reconnection details not set properly in the config file")
+		return ReportingConfig{}, errors.New("ReconnectInterval should be greater than zero if MaxReconnectTries is set")
 	}
 	return input, nil
 }

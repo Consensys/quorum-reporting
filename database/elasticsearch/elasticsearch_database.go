@@ -182,8 +182,7 @@ func (es *ElasticsearchDB) WriteBlock(block *types.Block) error {
 		Refresh:    "true",
 	}
 
-	_, err := es.apiClient.DoRequest(req)
-	if err != nil {
+	if _, err := es.apiClient.DoRequest(req); err != nil {
 		return err
 	}
 

@@ -49,8 +49,8 @@ func (tm *TransactionMonitor) createTransaction(hash common.Hash) (*types.Transa
 		// TODO: if quorum node is down, reconnect?
 		return nil, err
 	}
-	err = mapstructure.Decode(resp["transaction"].(map[string]interface{}), &txOrigin)
-	if err != nil {
+
+	if err = mapstructure.Decode(resp["transaction"].(map[string]interface{}), &txOrigin); err != nil {
 		return nil, err
 	}
 
@@ -131,6 +131,9 @@ func (tm *TransactionMonitor) createTransaction(hash common.Hash) (*types.Transa
 	tx.Events = events
 
 	resp, err = client.TraceTransaction(tm.quorumClient, tx.Hash)
+	if err != nil {
+		return nil, err
+	}
 	if resp["calls"] != nil {
 		respCalls := resp["calls"].([]interface{})
 		tx.InternalCalls = make([]*types.InternalCall, len(respCalls))
