@@ -75,9 +75,7 @@ func (es *ElasticsearchDB) AddAddresses(addresses []common.Address) error {
 	if len(addresses) > 1 {
 		bi := es.apiClient.GetBulkHandler(ContractIndex)
 
-		var (
-			wg sync.WaitGroup
-		)
+		var wg sync.WaitGroup
 		returnErr := make([]error, len(addresses))
 		for idx, address := range addresses {
 			contract := Contract{
