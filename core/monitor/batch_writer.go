@@ -66,8 +66,8 @@ func (bw *BatchWriter) Run(stopChan <-chan types.StopEvent) {
 }
 
 func (bw *BatchWriter) BatchWrite() error {
-	allTxns := make([]*types.Transaction, 0, 1000)
-	allBlocks := make([]*types.Block, 0, 1000)
+	allTxns := make([]*types.Transaction, 0, bw.currentTransactionCount)
+	allBlocks := make([]*types.Block, 0, len(bw.currentWorkUnits))
 	for _, workunit := range bw.currentWorkUnits {
 		allTxns = append(allTxns, workunit.txs...)
 		allBlocks = append(allBlocks, workunit.block)
@@ -83,7 +83,7 @@ func (bw *BatchWriter) BatchWrite() error {
 	}
 
 	// reset
-	bw.currentTransactionCount = bw.maxTransactions
+	bw.currentTransactionCount = 0
 	bw.currentWorkUnits = make([]*BlockAndTransactions, 0, bw.maxBlocks)
 	return nil
 }
