@@ -22,21 +22,22 @@ type Backend struct {
 }
 
 func New(config types.ReportingConfig) (*Backend, error) {
-	i := 1
-	var err error
-	var quorumClient *client.QuorumClient
-	for i <= config.Connection.MaxReconnectTries {
-		quorumClient, err = client.NewQuorumClient(config.Connection.WSUrl, config.Connection.GraphQLUrl)
-		if err == nil {
-			break
-		}
-		log.Printf("Connection error: %v. Trying to reconnect in %d second...\n", err, config.Connection.ReconnectInterval)
-		time.Sleep(time.Duration(config.Connection.ReconnectInterval) * time.Second)
-		i++
-	}
-
+	quorumClient, err := client.NewQuorumClient(config.Connection.WSUrl, config.Connection.GraphQLUrl)
 	if err != nil {
-		return nil, err
+		if config.Connection.MaxReconnectTries > 0 {
+			i := 0
+			for err != nil {
+				i++
+				if i == config.Connection.MaxReconnectTries {
+					return nil, err
+				}
+				log.Printf("Connection error: %v. Trying to reconnect in %d second...\n", err, config.Connection.ReconnectInterval)
+				time.Sleep(time.Duration(config.Connection.ReconnectInterval) * time.Second)
+				quorumClient, err = client.NewQuorumClient(config.Connection.WSUrl, config.Connection.GraphQLUrl)
+			}
+		} else {
+			return nil, err
+		}
 	}
 
 	consensus, err := client.Consensus(quorumClient)
