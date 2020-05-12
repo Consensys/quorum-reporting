@@ -30,7 +30,7 @@ func New(config types.ReportingConfig) (*Backend, error) {
 		if err == nil {
 			break
 		}
-		log.Printf("Connection error: %v. Trying to reconnect in 3 second...\n", err)
+		log.Printf("Connection error: %v. Trying to reconnect in %d second...\n", err, config.Connection.ReconnectInterval)
 		time.Sleep(time.Duration(config.Connection.ReconnectInterval) * time.Second)
 		i++
 	}
