@@ -82,6 +82,10 @@ func (f *FakeDB) WriteBlock(*types.Block) error {
 	return errors.New("not implemented")
 }
 
+func (f *FakeDB) WriteBlocks([]*types.Block) error {
+	return errors.New("not implemented")
+}
+
 func (f *FakeDB) ReadBlock(blockNumber uint64) (*types.Block, error) {
 	return &types.Block{Number: blockNumber}, nil
 }
@@ -91,6 +95,10 @@ func (f *FakeDB) GetLastPersistedBlockNumber() (uint64, error) {
 }
 
 func (f *FakeDB) WriteTransaction(*types.Transaction) error {
+	return errors.New("not implemented")
+}
+
+func (f *FakeDB) WriteTransactions([]*types.Transaction) error {
 	return errors.New("not implemented")
 }
 

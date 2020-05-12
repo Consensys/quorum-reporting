@@ -22,17 +22,17 @@ type BlockMonitor struct {
 	quorumClient       client.Client
 	transactionMonitor *TransactionMonitor
 	newBlockChan       chan *types.Block          // concurrent block processing
-	persisterWorkChan  chan *BlockAndTransactions // concurrent block processing
+	batchWriteChan     chan *BlockAndTransactions // concurrent block processing
 	consensus          string
 }
 
-func NewBlockMonitor(db database.Database, quorumClient client.Client, consensus string, persisterChan chan *BlockAndTransactions) *BlockMonitor {
+func NewBlockMonitor(db database.Database, quorumClient client.Client, consensus string, batchWriteChan chan *BlockAndTransactions) *BlockMonitor {
 	return &BlockMonitor{
 		db:                 db,
 		quorumClient:       quorumClient,
 		transactionMonitor: NewTransactionMonitor(db, quorumClient, consensus),
 		newBlockChan:       make(chan *types.Block),
-		persisterWorkChan:  persisterChan,
+		batchWriteChan:     batchWriteChan,
 		consensus:          consensus,
 	}
 }
@@ -62,10 +62,10 @@ func (bm *BlockMonitor) process(block *types.Block) error {
 
 	workunit := &BlockAndTransactions{
 		block: block,
-		txns:  fetchedTxns,
+		txs:   fetchedTxns,
 	}
 
-	bm.persisterWorkChan <- workunit
+	bm.batchWriteChan <- workunit
 	return nil
 }
 
@@ -87,7 +87,7 @@ func (bm *BlockMonitor) currentBlockNumber() (uint64, error) {
 
 func (bm *BlockMonitor) syncBlocks(start, end uint64) error {
 	if start <= end {
-		log.Printf("Start to sync historic blocks from %v to %v. \n", start, end)
+		log.Printf("Start to sync historic block from %v to %v. \n", start, end)
 		for i := start; i <= end; i++ {
 			blockOrigin, err := bm.quorumClient.BlockByNumber(context.Background(), big.NewInt(int64(i)))
 			if err != nil {

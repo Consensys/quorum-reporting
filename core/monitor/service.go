@@ -15,38 +15,37 @@ import (
 
 // MonitorService starts all monitors. It pulls data from Quorum node and update the database.
 type MonitorService struct {
-	db             database.Database
-	quorumClient   client.Client
-	syncStart      chan uint64
-	blockMonitor   *BlockMonitor
-	blockPersister *BlockPersister
-	stopFeed       event.Feed
-	totalWorkers   int
+	db           database.Database
+	quorumClient client.Client
+	syncStart    chan uint64
+	blockMonitor *BlockMonitor
+	batchWriter  *BatchWriter
+	stopFeed     event.Feed
+	totalWorkers uint64
 }
 
 func NewMonitorService(db database.Database, quorumClient client.Client, consensus string) *MonitorService {
-	persisterChan := make(chan *BlockAndTransactions)
-
+	batchWriteChan := make(chan *BlockAndTransactions)
 	return &MonitorService{
-		db:             db,
-		quorumClient:   quorumClient,
-		syncStart:      make(chan uint64, 1), // make channel buffered so that it does not block chain head listener
-		blockMonitor:   NewBlockMonitor(db, quorumClient, consensus, persisterChan),
-		blockPersister: NewBlockPersister(persisterChan, db),
-		totalWorkers:   3 * runtime.NumCPU(),
+		db:           db,
+		quorumClient: quorumClient,
+		syncStart:    make(chan uint64, 1), // make channel buffered so that it does not block chain head listener
+		blockMonitor: NewBlockMonitor(db, quorumClient, consensus, batchWriteChan),
+		batchWriter:  NewBatchWriter(batchWriteChan, db),
+		totalWorkers: 3 * uint64(runtime.NumCPU()),
 	}
 }
 
 func (m *MonitorService) Start() error {
 	log.Println("Start monitor service...")
 
-	// Pulling historical blocks since the last persisted while continuously listening to ChainHeadEvent.
+	// Pulling historical block since the last persisted while continuously listening to ChainHeadEvent.
 	// For every block received, pull transactions/ events related to the registered contracts.
 
-	log.Println("Start to sync blocks...")
+	log.Println("Start to sync block...")
 
 	// 1. Start workers
-	m.startPersister()
+	m.startBatchWriter()
 	m.startWorkers()
 
 	// 2. Sync from last persisted to current block height.
@@ -65,11 +64,7 @@ func (m *MonitorService) Start() error {
 }
 
 func (m *MonitorService) Stop() {
-	log.Println("Monitor service stopping...")
 	m.stopFeed.Send(types.StopEvent{})
-
-	m.blockPersister.Stop()
-	//close(m.blockPersister.toPersistChan)
 	log.Println("Monitor service stopped.")
 }
 
@@ -79,12 +74,16 @@ func (m *MonitorService) subscribeStopEvent() (chan types.StopEvent, event.Subsc
 	return c, s
 }
 
-func (m *MonitorService) startPersister() {
-	go m.blockPersister.Run()
+func (m *MonitorService) startBatchWriter() {
+	go func() {
+		stopChan, stopSubscription := m.subscribeStopEvent()
+		defer stopSubscription.Unsubscribe()
+		m.batchWriter.Run(stopChan)
+	}()
 }
 
 func (m *MonitorService) startWorkers() {
-	for i := 0; i < m.totalWorkers; i++ {
+	for i := uint64(0); i < m.totalWorkers; i++ {
 		go func() {
 			stopChan, stopSubscription := m.subscribeStopEvent()
 			defer stopSubscription.Unsubscribe()
@@ -108,7 +107,7 @@ func (m *MonitorService) syncHistoricBlocks() error {
 	go func() {
 		err = m.blockMonitor.syncBlocks(lastPersisted+1, currentBlockNumber)
 		if err != nil {
-			log.Panicf("sync historic blocks from %v to %v failed: %v", lastPersisted, currentBlockNumber, err)
+			log.Panicf("sync historic block from %v to %v failed: %v", lastPersisted, currentBlockNumber, err)
 		}
 
 		// Sync from currentBlockNumber + 1 to the first ChainHeadEvent if there is any gap.
@@ -120,7 +119,7 @@ func (m *MonitorService) syncHistoricBlocks() error {
 			close(m.syncStart)
 			err := m.blockMonitor.syncBlocks(currentBlockNumber+1, latestChainHead-1)
 			if err != nil {
-				log.Panicf("sync historic blocks from %v to %v failed: %v", currentBlockNumber, latestChainHead-1, err)
+				log.Panicf("sync historic block from %v to %v failed: %v", currentBlockNumber, latestChainHead-1, err)
 			}
 		case <-stopChan:
 			return
