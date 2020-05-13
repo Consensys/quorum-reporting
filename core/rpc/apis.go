@@ -39,7 +39,7 @@ func (r *RPCAPIs) GetTransaction(hash common.Hash) (*types.ParsedTransaction, er
 		address = tx.CreatedContract
 	}
 	contractABI, err := r.db.GetContractABI(address)
-	if err != nil && err != database.ErrNotFound {
+	if err != nil {
 		return nil, err
 	}
 	parsedTx := &types.ParsedTransaction{

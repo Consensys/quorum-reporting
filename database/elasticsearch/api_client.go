@@ -13,7 +13,6 @@ import (
 	"github.com/elastic/go-elasticsearch/v7/esapi"
 	"github.com/elastic/go-elasticsearch/v7/esutil"
 
-	"quorumengineering/quorum-report/database"
 	"quorumengineering/quorum-report/types"
 )
 
@@ -182,6 +181,5 @@ func (c *DefaultAPIClient) extractError(statusCode int, body io.ReadCloser) erro
 		}
 	}
 	// This was a search request that had no result
-	// TODO: Feels like "not found" is not an intuitive error message...
-	return database.ErrNotFound
+	return ErrNotFound
 }

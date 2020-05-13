@@ -19,4 +19,5 @@ var (
 	ErrCouldNotResolveResp     = errors.New("could not resolve response body")
 	ErrIndexNotFound           = errors.New("index not found")
 	ErrPaginationLimitExceeded = errors.New("pagination limit exceeded")
+	ErrNotFound                = errors.New("not found")
 )
