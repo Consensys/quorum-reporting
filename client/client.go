@@ -3,17 +3,11 @@ package client
 import (
 	"context"
 	"errors"
-	"math/big"
-	"reflect"
+	graphqlQuery "quorumengineering/quorum-report/graphql"
 
-	"github.com/ethereum/go-ethereum"
-	ethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	ethRPC "github.com/ethereum/go-ethereum/rpc"
 	"github.com/machinebox/graphql"
-	"github.com/mitchellh/mapstructure"
-
-	graphqlQuery "quorumengineering/quorum-report/graphql"
 )
 
 // QuorumClient is a wrapper to Ethereum client and provides Quorum specific access to blockchain.
@@ -23,15 +17,15 @@ type QuorumClient struct {
 	graphqlClient *graphql.Client
 }
 
-func NewQuorumClient(rawurl, qgurl string) (quorumClient *QuorumClient, err error) {
+func NewQuorumClient(rawurl, qgurl string) (*QuorumClient, error) {
 	rpcClient, err := ethRPC.Dial(rawurl)
 	if err != nil {
-		return
+		return nil, err
 	}
 	rawClient := ethclient.NewClient(rpcClient)
 	// Create a client. (safe to share across requests)
 	graphqlClient := graphql.NewClient(qgurl)
-	quorumClient = &QuorumClient{rawClient, rpcClient, graphqlClient}
+	quorumClient := &QuorumClient{rawClient, rpcClient, graphqlClient}
 	// Test graphql endpoint connection.
 	var resp map[string]interface{}
 	err = quorumClient.ExecuteGraphQLQuery(context.Background(), &resp, graphqlQuery.CurrentBlockQuery())
@@ -52,56 +46,4 @@ func (qc *QuorumClient) ExecuteGraphQLQuery(ctx context.Context, result interfac
 // Execute customized rpc call.
 func (qc *QuorumClient) RPCCall(ctx context.Context, result interface{}, method string, args ...interface{}) error {
 	return qc.rpcClient.CallContext(ctx, result, method, args...)
-}
-
-// StubQuorumClient is used for unit test.
-type StubQuorumClient struct {
-	blocks      []*ethTypes.Block
-	mockGraphQL map[string]map[string]interface{}
-	mockRPC     map[string]interface{}
-}
-
-func NewStubQuorumClient(blocks []*ethTypes.Block, mockGraphQL map[string]map[string]interface{}, mockRPC map[string]interface{}) Client {
-	if mockGraphQL == nil {
-		mockGraphQL = map[string]map[string]interface{}{}
-	}
-	if mockRPC == nil {
-		mockRPC = map[string]interface{}{}
-	}
-	return &StubQuorumClient{blocks, mockGraphQL, mockRPC}
-}
-
-func (qc *StubQuorumClient) SubscribeNewHead(context.Context, chan<- *ethTypes.Header) (ethereum.Subscription, error) {
-	return nil, errors.New("not implemented")
-}
-
-func (qc *StubQuorumClient) BlockByNumber(ctx context.Context, blockNumber *big.Int) (*ethTypes.Block, error) {
-	for _, b := range qc.blocks {
-		if b.Number().Cmp(blockNumber) == 0 {
-			return b, nil
-		}
-	}
-	return nil, errors.New("not found")
-}
-
-func (qc *StubQuorumClient) ExecuteGraphQLQuery(ctx context.Context, result interface{}, query string) error {
-	if resp, ok := qc.mockGraphQL[query]; ok {
-		err := mapstructure.Decode(resp, &result)
-		if err != nil {
-			return err
-		}
-		return nil
-	}
-	return errors.New("not found")
-}
-
-func (qc *StubQuorumClient) RPCCall(ctx context.Context, result interface{}, method string, args ...interface{}) error {
-	for _, arg := range args {
-		method += reflect.ValueOf(arg).String()
-	}
-	if resp, ok := qc.mockRPC[method]; ok {
-		reflect.ValueOf(result).Elem().Set(reflect.ValueOf(resp))
-		return nil
-	}
-	return errors.New("not found")
 }
