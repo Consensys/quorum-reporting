@@ -164,10 +164,13 @@ func (es *ElasticsearchDB) AddContractABI(address common.Address, abi string) er
 
 func (es *ElasticsearchDB) GetContractABI(address common.Address) (string, error) {
 	contract, err := es.getContractByAddress(address)
-	if err != nil {
+	if err != nil && err != ErrNotFound {
 		return "", err
 	}
-	return contract.ABI, nil
+	if contract != nil {
+		return contract.ABI, nil
+	}
+	return "", nil
 }
 
 // BlockDB

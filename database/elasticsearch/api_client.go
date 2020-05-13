@@ -3,7 +3,6 @@ package elasticsearch
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -182,6 +181,5 @@ func (c *DefaultAPIClient) extractError(statusCode int, body io.ReadCloser) erro
 		}
 	}
 	// This was a search request that had no result
-	// TODO: Feels like "not found" is not an intuitive error message...
-	return errors.New("not found")
+	return ErrNotFound
 }
