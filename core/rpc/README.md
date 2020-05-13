@@ -50,6 +50,20 @@ Storage APIs can query account storage for a given contract at any block
 
 (Implemented)
 
+#### reporting_getStorageHistory
+
+(Todo) `reporting_getStorageHistory` provides extended feature on top of simply getting raw storage. It can search by 
+block range, and provides a list of historical state formatted by the given template.
+
+##### Example Template
+```json
+{
+	"name": "storedData",
+	"index": 0,
+	"type": "uint256"
+}
+```
+
 ## Transaction
 
 Transaction APIs query 

@@ -2,6 +2,7 @@ package rpc
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
@@ -120,6 +121,33 @@ func (r *RPCAPIs) GetAllEventsFromAddress(address common.Address, options *types
 
 func (r *RPCAPIs) GetStorage(address common.Address, blockNumber uint64) (map[common.Hash]string, error) {
 	return r.db.GetStorage(address, blockNumber)
+}
+
+func (r *RPCAPIs) GetStorageHistory(address common.Address, startBlockNumber, endBlockNumber uint64, template ReportingRequestTemplate) (*ReportingResponseTemplate, error) {
+	// TODO: implement GetStorageRoot to reduce the response list
+	historicStates := []*ParsedState{}
+	for i := startBlockNumber; i <= endBlockNumber; i++ {
+		rawStorage, err := r.db.GetStorage(address, i)
+		if err != nil {
+			return nil, err
+		}
+		if rawStorage == nil {
+			continue
+		}
+		fmt.Println("hello")
+		historicStorage, err := parseRawStorage(rawStorage, template)
+		if err != nil {
+			return nil, err
+		}
+		historicStates = append(historicStates, &ParsedState{
+			BlockNumber:     i,
+			HistoricStorage: historicStorage,
+		})
+	}
+	return &ReportingResponseTemplate{
+		Address:       address,
+		HistoricState: historicStates,
+	}, nil
 }
 
 func (r *RPCAPIs) AddAddress(address common.Address) error {

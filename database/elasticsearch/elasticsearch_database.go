@@ -507,8 +507,11 @@ func (es *ElasticsearchDB) GetStorage(address common.Address, blockNumber uint64
 		DocumentID: address.String() + "-" + strconv.FormatUint(blockNumber, 10),
 	}
 	body, err := es.apiClient.DoRequest(fetchReq)
-	if err != nil {
+	if err != nil && err != ErrNotFound {
 		return nil, err
+	}
+	if err == ErrNotFound {
+		return nil, nil
 	}
 	var stateResult StateQueryResult
 	json.Unmarshal(body, &stateResult)
@@ -518,8 +521,11 @@ func (es *ElasticsearchDB) GetStorage(address common.Address, blockNumber uint64
 		DocumentID: stateResult.Source.StorageRoot.String(),
 	}
 	body, err = es.apiClient.DoRequest(storageFetchReq)
-	if err != nil {
+	if err != nil && err != ErrNotFound {
 		return nil, err
+	}
+	if err == ErrNotFound {
+		return nil, nil
 	}
 	var storageResult StorageQueryResult
 	json.Unmarshal(body, &storageResult)
