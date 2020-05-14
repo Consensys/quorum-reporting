@@ -150,6 +150,33 @@ func (r *RPCAPIs) GetStorageHistory(address common.Address, startBlockNumber, en
 	}, nil
 }
 
+func (r *RPCAPIs) GetStorageHistoryTwo(address common.Address) (*ReportingResponseTemplate, error) {
+	// TODO: implement GetStorageRoot to reduce the response list
+	historicStates := []*ParsedState{}
+	for i := 1; i <= 1; i++ {
+		rawStorage, err := r.db.GetStorage(address, uint64(i))
+		if err != nil {
+			return nil, err
+		}
+		if rawStorage == nil {
+			continue
+		}
+		fmt.Println("hello")
+		historicStorage, err := parseRawStorageTwo(rawStorage)
+		if err != nil {
+			return nil, err
+		}
+		historicStates = append(historicStates, &ParsedState{
+			BlockNumber:     uint64(i),
+			HistoricStorage: historicStorage,
+		})
+	}
+	return &ReportingResponseTemplate{
+		Address:       address,
+		HistoricState: historicStates,
+	}, nil
+}
+
 func (r *RPCAPIs) AddAddress(address common.Address) error {
 	if address == (common.Address{0}) {
 		return errors.New("invalid input")

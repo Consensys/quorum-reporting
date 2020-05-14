@@ -8,6 +8,9 @@ contract SimpleStorage {
   uint8 b;
   uint8 c;
   int d;
+  int d2;
+  int8 d3;
+  int24 d4;
   bool e;
 
   address f;
@@ -39,11 +42,16 @@ contract SimpleStorage {
   Funder[2] fundersFixed;
   Funder[] fundersDyn;
 
+  mapping(uint => uint) map;
+
   constructor() public {
     a = 42;
     b = 6;
     c = 9;
     d = -42;
+    d2 = 65;
+    d3 = 120;
+    d4 = -5445445;
     e = true;
 
     f = 0xdCad3a6d3569DF655070DEd06cb7A1b2Ccd1D3AF;
