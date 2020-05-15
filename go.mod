@@ -13,4 +13,5 @@ require (
 	github.com/mitchellh/mapstructure v1.2.0
 	github.com/naoina/toml v0.1.2-0.20170918210437-9fafd6967416
 	github.com/stretchr/testify v1.4.0
+	golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2
 )

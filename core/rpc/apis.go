@@ -3,6 +3,7 @@ package rpc
 import (
 	"errors"
 	"fmt"
+	"quorumengineering/quorum-report/core/storage_parsing"
 	"strings"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
@@ -162,7 +163,7 @@ func (r *RPCAPIs) GetStorageHistoryTwo(address common.Address) (*ReportingRespon
 			continue
 		}
 		fmt.Println("hello")
-		historicStorage, err := parseRawStorageTwo(rawStorage)
+		historicStorage, err := storage_parsing.ParseRawStorageTwo(rawStorage)
 		if err != nil {
 			return nil, err
 		}

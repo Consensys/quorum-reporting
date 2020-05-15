@@ -2,6 +2,7 @@ package rpc
 
 import (
 	"math/big"
+	"quorumengineering/quorum-report/core/storage_parsing/types"
 	"strings"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -25,24 +26,15 @@ type StorageItemTemplate struct {
 }
 
 type ParsedState struct {
-	BlockNumber     uint64         `json:"blockNumber"`
-	HistoricStorage []*StorageItem `json:"historicStorage"`
+	BlockNumber     uint64               `json:"blockNumber"`
+	HistoricStorage []*types.StorageItem `json:"historicStorage"`
 }
 
-type StorageItem struct {
-	VarName  string      `json:"name"`
-	VarIndex uint64      `json:"index"`
-	VarType  string      `json:"type"`
-	Value    interface{} `json:"value,omitempty"`
-	// for map only
-	Values map[string]interface{} `json:"values,omitempty"`
-}
-
-func parseRawStorage(rawStorage map[common.Hash]string, template []*StorageItemTemplate) ([]*StorageItem, error) {
-	parsedStorage := []*StorageItem{}
+func parseRawStorage(rawStorage map[common.Hash]string, template []*StorageItemTemplate) ([]*types.StorageItem, error) {
+	parsedStorage := []*types.StorageItem{}
 	for _, storageItemTemplate := range template {
 		//fmt.Println(storageItemTemplate)
-		parsedStorageItem := &StorageItem{
+		parsedStorageItem := &types.StorageItem{
 			VarName:  storageItemTemplate.VarName,
 			VarIndex: storageItemTemplate.VarIndex,
 			VarType:  storageItemTemplate.VarType,
