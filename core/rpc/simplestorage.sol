@@ -26,7 +26,10 @@ contract SimpleStorage {
   ActionChoices choice;
 
   //Arrays
-  bytes i1;
+  bytes lessThan31;
+  bytes exactly31;
+  bytes exactly32;
+  bytes moreThan31;
   string i2;
   string i5;
   byte[] h6;
@@ -72,11 +75,22 @@ contract SimpleStorage {
 
     choice = ActionChoices.GoLeft;
 
-    i1.push(0x01);
-    i1.push(0x02);
-    i1.push(0x03);
-    i1.push(0x04);
-    i1.push(0x05);
+    for (uint8 i = 0; i < 20; i++) {
+        lessThan31.push(byte(i));
+    }
+
+    for (uint8 i = 0; i < 100; i++) {
+        moreThan31.push(byte(i));
+    }
+
+    for (uint8 i = 0; i < 31; i++) {
+        exactly31.push(byte(i));
+    }
+
+    for (uint8 i = 0; i < 32; i++) {
+        exactly32.push(byte(i));
+    }
+
     i2 = "mystring";
     i5 = "my really long string that is definitely longer than the 32 byte limit";
 
