@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-func ParseArray(rawStorage map[common.Hash]string, allTypes map[string]types.SolidityTypeEntry,
+func ParseArray(sm types.StorageManager, allTypes map[string]types.SolidityTypeEntry,
 	entry types.SolidityStorageEntry, namedType types.SolidityTypeEntry) error {
 
 	sizeOfArray, err := determineSize(entry)
@@ -20,29 +20,23 @@ func ParseArray(rawStorage map[common.Hash]string, allTypes map[string]types.Sol
 
 	// fixed array size
 	if sizeOfArray != 0 {
-		handleFixedArray(sizeOfArray, size, rawStorage, entry, namedType)
+		handleFixedArray(sizeOfArray, size, sm, entry, namedType)
 	} else {
-		handleDynamicArray(size, rawStorage, entry, namedType)
+		handleDynamicArray(size, sm, entry, namedType)
 	}
 
 	return nil
 }
 
-func handleFixedArray(numberOfElements uint64, sizeOfType uint64, rawStorage map[common.Hash]string, entry types.SolidityStorageEntry, namedType types.SolidityTypeEntry) {
+func handleFixedArray(numberOfElements uint64, sizeOfType uint64, sm types.StorageManager, entry types.SolidityStorageEntry, namedType types.SolidityTypeEntry) {
 	totalBytesToRead := roundUp(numberOfElements * sizeOfType)
 
 	startSlot := entry.Slot
 
-	relevantSlots := make([]string, 0)
-
 	allItems := ""
 	for totalBytesToRead > 0 {
 		currentSlot := common.BigToHash(new(big.Int).SetUint64(startSlot))
-		relevantSlots = append(relevantSlots, rawStorage[currentSlot])
-		if rawStorage[currentSlot] == "" {
-			rawStorage[currentSlot] = "0000000000000000000000000000000000000000000000000000000000000000"
-		}
-		allItems = rawStorage[currentSlot] + allItems
+		allItems = sm.Get(currentSlot) + allItems
 
 		totalBytesToRead -= 32
 		startSlot++
@@ -60,9 +54,9 @@ func handleFixedArray(numberOfElements uint64, sizeOfType uint64, rawStorage map
 	//subhandler for type
 }
 
-func handleDynamicArray(sizeOfType uint64, rawStorage map[common.Hash]string, entry types.SolidityStorageEntry, namedType types.SolidityTypeEntry) {
+func handleDynamicArray(sizeOfType uint64, sm types.StorageManager, entry types.SolidityStorageEntry, namedType types.SolidityTypeEntry) {
 	startSlotNumber := entry.Slot
-	numberOfElementsHex := rawStorage[common.BigToHash(new(big.Int).SetUint64(startSlotNumber))]
+	numberOfElementsHex := sm.Get(common.BigToHash(new(big.Int).SetUint64(startSlotNumber)))
 
 	numberAsBytes := common.Hex2Bytes(numberOfElementsHex)
 	numberOfElements := new(big.Int).SetBytes(numberAsBytes).Uint64()
@@ -70,16 +64,11 @@ func handleDynamicArray(sizeOfType uint64, rawStorage map[common.Hash]string, en
 	startSlotAsBig := hash(startSlotNumber).Big()
 
 	totalBytesToRead := roundUp(numberOfElements * sizeOfType)
-	relevantSlots := make([]string, 0)
 
 	allItems := ""
 	for totalBytesToRead > 0 {
 		currentSlot := common.BigToHash(startSlotAsBig)
-		relevantSlots = append(relevantSlots, rawStorage[currentSlot])
-		if rawStorage[currentSlot] == "" {
-			rawStorage[currentSlot] = "0000000000000000000000000000000000000000000000000000000000000000"
-		}
-		allItems = rawStorage[currentSlot] + allItems
+		allItems = sm.Get(currentSlot) + allItems
 
 		totalBytesToRead -= 32
 		startSlotAsBig.Add(startSlotAsBig, new(big.Int).SetUint64(1))

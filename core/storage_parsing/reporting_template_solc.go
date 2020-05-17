@@ -104,7 +104,7 @@ func ParseRawStorageTwo(rawStorage map[common.Hash]string) ([]*types.StorageItem
 			}
 			result = str
 			//case strings.HasPrefix(storageItem.Type, arrayPrefix):
-			//	parsers.ParseArray(rawStorage, Template.Types, storageItem, namedType)
+			//	parsers.ParseArray(storageManager, Template.Types, storageItem, namedType)
 			//case strings.HasPrefix(storageItem.Type, structPrefix):
 			//	parsers.ParseStruct()
 		}
