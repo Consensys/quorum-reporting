@@ -32,10 +32,16 @@ contract SimpleStorage {
   bytes moreThan31;
   string i2;
   string i5;
+
   byte[] h6;
+  byte[] h6long;
   byte[10] h7;
+  byte[60] h7long;
+
   address[] i3;
   SimpleStorage[] i4;
+
+  int[][] doubleArray;
 
   struct Funder {
       string addr;
@@ -44,6 +50,15 @@ contract SimpleStorage {
   Funder funder1;
   Funder[2] fundersFixed;
   Funder[] fundersDyn;
+
+  struct LongerStruct {
+      string addr;
+      uint amount;
+      int8 val;
+      uint8 otherval;
+      string custommessage;
+  }
+  LongerStruct longstruct;
 
   mapping(uint => uint) map;
 
@@ -67,11 +82,17 @@ contract SimpleStorage {
     h5 = 0x1000000000000000000000000000000000000000000000000000000000000000;
 
     h6.push(0x01);
+    for (uint8 i = 0; i < 40; i++) {
+        h6long.push(byte(i));
+    }
     h7[0] = 0x01;
     h7[2] = 0x01;
     h7[3] = 0x01;
     h7[4] = 0x01;
     h7[9] = 0x01;
+    for (uint8 i = 0; i < 59; i++) {
+        h7long[i] = byte(i);
+    }
 
     choice = ActionChoices.GoLeft;
 
@@ -101,5 +122,13 @@ contract SimpleStorage {
     fundersDyn.push(Funder("some addr fixed 4", 5876));
     fundersDyn.push(Funder("some addr fixed 5", 4875443));
 
+    int[] memory arr1 = new int[](7);
+    arr1[0] = 10;
+    int[] memory arr2 = new int[](7);
+    arr2[0] = 20;
+    doubleArray.push(arr1);
+    doubleArray.push(arr2);
+
+    longstruct = LongerStruct("some addr fixed 6", 4875443, -6, 8, "custom message");
   }
 }

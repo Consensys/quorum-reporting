@@ -1,10 +1,7 @@
 package parsers
 
 import (
-	"encoding/binary"
-	"fmt"
 	"github.com/ethereum/go-ethereum/common"
-	"golang.org/x/crypto/sha3"
 	"math/big"
 	"quorumengineering/quorum-report/core/storage_parsing/types"
 	"strconv"
@@ -87,7 +84,6 @@ func handleLargeByteArray(storageEntry string, rawStorage map[common.Hash]string
 	}
 
 	currentStorageSlot := hash(slot)
-	fmt.Println(currentStorageSlot.String())
 
 	allResults := make([]byte, 0)
 	maxElementsInRow := new(big.Int).SetUint64(32)
@@ -116,15 +112,4 @@ func handleLargeByteArray(storageEntry string, rawStorage map[common.Hash]string
 	}
 
 	return allResults, nil
-}
-
-func hash(input uint64) common.Hash {
-	buf := make([]byte, 32)
-	n := binary.PutUvarint(buf, input)
-	b := buf[:n]
-	a := common.LeftPadBytes(b, 32)
-
-	hasher := sha3.NewLegacyKeccak256()
-	hasher.Write(a)
-	return common.BytesToHash(hasher.Sum(nil))
 }
