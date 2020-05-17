@@ -32,7 +32,7 @@ func ParseArray(rawStorage map[common.Hash]string, allTypes map[string]types.Sol
 func handleFixedArray(numberOfElements uint64, sizeOfType uint64, rawStorage map[common.Hash]string, entry types.SolidityStorageEntry, namedType types.SolidityTypeEntry) {
 	totalBytesToRead := roundUp(numberOfElements * sizeOfType)
 
-	startSlot, _ := strconv.ParseUint(entry.Slot, 10, 0)
+	startSlot := entry.Slot
 
 	relevantSlots := make([]string, 0)
 
@@ -62,7 +62,7 @@ func handleFixedArray(numberOfElements uint64, sizeOfType uint64, rawStorage map
 }
 
 func handleDynamicArray(sizeOfType uint64, rawStorage map[common.Hash]string, entry types.SolidityStorageEntry, namedType types.SolidityTypeEntry) {
-	startSlotNumber, _ := strconv.ParseUint(entry.Slot, 10, 0)
+	startSlotNumber := entry.Slot
 	numberOfElementsHex := rawStorage[common.BigToHash(new(big.Int).SetUint64(startSlotNumber))]
 
 	numberAsBytes := common.Hex2Bytes(numberOfElementsHex)

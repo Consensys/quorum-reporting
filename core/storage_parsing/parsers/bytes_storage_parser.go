@@ -7,9 +7,9 @@ import (
 	"strconv"
 )
 
-func ParseStringStorage(storageEntry string, rawStorage map[common.Hash]string, entry types.SolidityStorageEntry) (string, error) {
+func ParseStringStorage(storageEntry string, sm types.StorageManager, entry types.SolidityStorageEntry) (string, error) {
 	//determine if this is long or short
-	arrResult, err := parseBytes(storageEntry, rawStorage, entry)
+	arrResult, err := parseBytes(storageEntry, sm, entry)
 	if err != nil {
 		return "", err
 	}
@@ -17,9 +17,9 @@ func ParseStringStorage(storageEntry string, rawStorage map[common.Hash]string, 
 	return string(arrResult), nil
 }
 
-func ParseBytesStorage(storageEntry string, rawStorage map[common.Hash]string, entry types.SolidityStorageEntry) ([]string, error) {
+func ParseBytesStorage(storageEntry string, sm types.StorageManager, entry types.SolidityStorageEntry) ([]string, error) {
 	//determine if this is long or short
-	arrResult, err := parseBytes(storageEntry, rawStorage, entry)
+	arrResult, err := parseBytes(storageEntry, sm, entry)
 	if err != nil {
 		return nil, err
 	}
@@ -32,7 +32,7 @@ func ParseBytesStorage(storageEntry string, rawStorage map[common.Hash]string, e
 	return resultBytes, nil
 }
 
-func parseBytes(storageEntry string, rawStorage map[common.Hash]string, entry types.SolidityStorageEntry) ([]byte, error) {
+func parseBytes(storageEntry string, sm types.StorageManager, entry types.SolidityStorageEntry) ([]byte, error) {
 	//determine if this is long or short
 	bytes, err := ExtractFromSingleStorage(0, "1", storageEntry)
 	if err != nil {
@@ -47,7 +47,7 @@ func parseBytes(storageEntry string, rawStorage map[common.Hash]string, entry ty
 			return nil, err
 		}
 	} else {
-		arrResult, err = handleLargeByteArray(storageEntry, rawStorage, entry)
+		arrResult, err = handleLargeByteArray(storageEntry, sm, entry)
 		if err != nil {
 			return nil, err
 		}
@@ -69,7 +69,7 @@ func handleShortByteArray(storageEntry string, numberOfElements byte) ([]byte, e
 	return bytes, err
 }
 
-func handleLargeByteArray(storageEntry string, rawStorage map[common.Hash]string, entry types.SolidityStorageEntry) ([]byte, error) {
+func handleLargeByteArray(storageEntry string, sm types.StorageManager, entry types.SolidityStorageEntry) ([]byte, error) {
 	bytes, err := ExtractFromSingleStorage(0, "1", storageEntry)
 	if err != nil {
 		return nil, err
@@ -78,12 +78,7 @@ func handleLargeByteArray(storageEntry string, rawStorage map[common.Hash]string
 	numberOfElements.Sub(numberOfElements, new(big.Int).SetUint64(1))
 	numberOfElements.Div(numberOfElements, new(big.Int).SetUint64(2))
 
-	slot, err := strconv.ParseUint(entry.Slot, 10, 0)
-	if err != nil {
-		return nil, err
-	}
-
-	currentStorageSlot := hash(slot)
+	currentStorageSlot := hash(entry.Slot)
 
 	allResults := make([]byte, 0)
 	maxElementsInRow := new(big.Int).SetUint64(32)
@@ -93,7 +88,7 @@ func handleLargeByteArray(storageEntry string, rawStorage map[common.Hash]string
 		isFullRow := resultsLeft.Cmp(maxElementsInRow) > 0
 
 		if isFullRow {
-			currentResults, err := handleShortByteArray(rawStorage[currentStorageSlot], 64)
+			currentResults, err := handleShortByteArray(sm.Get(currentStorageSlot), 64)
 			if err != nil {
 				return nil, err
 			}
@@ -103,7 +98,7 @@ func handleLargeByteArray(storageEntry string, rawStorage map[common.Hash]string
 			asBig.Add(asBig, new(big.Int).SetUint64(1))
 			currentStorageSlot = common.BigToHash(asBig)
 		} else {
-			currentResults, err := handleShortByteArray(rawStorage[currentStorageSlot], byte(resultsLeft.Uint64())*2)
+			currentResults, err := handleShortByteArray(sm.Get(currentStorageSlot), byte(resultsLeft.Uint64())*2)
 			if err != nil {
 				return nil, err
 			}

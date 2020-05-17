@@ -38,16 +38,13 @@ func ParseRawStorageTwo(rawStorage map[common.Hash]string) ([]*types.StorageItem
 
 	sort.Sort(Template.Storage)
 
-	//pad all the storage
-	for hsh, storage := range rawStorage {
-		rawStorage[hsh] = PadLeft(storage, "0", 64)
-	}
+	storageManager := types.NewDefaultStorageHandler(rawStorage)
 
 	//sort the storage based on
 	for _, storageItem := range Template.Storage {
 		namedType := Template.Types[storageItem.Type]
-		startingSlot := DecimalStringToHash(storageItem.Slot)
-		directStorageSlot := rawStorage[startingSlot] //the storage this variable uses by its "Slot"
+		startingSlot := common.BigToHash(new(big.Int).SetUint64(storageItem.Slot))
+		directStorageSlot := storageManager.Get(startingSlot) //the storage this variable uses by its "Slot"
 
 		var result interface{}
 
@@ -95,13 +92,13 @@ func ParseRawStorageTwo(rawStorage map[common.Hash]string) ([]*types.StorageItem
 			}
 			result = uint64(bytes[0])
 		case strings.HasPrefix(storageItem.Type, bytesStoragePrefix):
-			bytes, err := parsers.ParseBytesStorage(directStorageSlot, rawStorage, storageItem)
+			bytes, err := parsers.ParseBytesStorage(directStorageSlot, storageManager, storageItem)
 			if err != nil {
 				return nil, err
 			}
 			result = bytes
 		case strings.HasPrefix(storageItem.Type, stringPrefix):
-			str, err := parsers.ParseStringStorage(directStorageSlot, rawStorage, storageItem)
+			str, err := parsers.ParseStringStorage(directStorageSlot, storageManager, storageItem)
 			if err != nil {
 				return nil, err
 			}
@@ -124,22 +121,4 @@ func ParseRawStorageTwo(rawStorage map[common.Hash]string) ([]*types.StorageItem
 	}
 
 	return parsedStorage, nil
-}
-
-// Helper functions
-
-//TODO: check how this errors on invalid input
-func DecimalStringToHash(decimal string) common.Hash {
-	i := new(big.Int)
-	i.SetString(decimal, 10)
-	return common.BigToHash(i)
-}
-
-func PadLeft(str, pad string, length int) string {
-	for {
-		str = pad + str
-		if len(str) > length {
-			return str[1:]
-		}
-	}
 }
