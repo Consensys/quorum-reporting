@@ -16,8 +16,7 @@ func ParseArray(rawStorage map[common.Hash]string, allTypes map[string]types.Sol
 		return err
 	}
 
-	sizeOfType := allTypes[namedType.Base].NumberOfBytes
-	size, _ := strconv.ParseUint(sizeOfType, 10, 0)
+	size := allTypes[namedType.Base].NumberOfBytes
 
 	// fixed array size
 	if sizeOfArray != 0 {

@@ -55,7 +55,7 @@ type SolidityTypeEntry struct {
 	Encoding      string                 `json:"encoding"`
 	Key           string                 `json:"key"`
 	Label         string                 `json:"label"`
-	NumberOfBytes string                 `json:"numberOfBytes"`
+	NumberOfBytes uint64                 `json:"numberOfBytes"`
 	Value         string                 `json:"value"`
 	Base          string                 `json:"base"`
 	Members       SolidityStorageEntries `json:"members"`
@@ -71,6 +71,38 @@ func (sse SolidityStorageEntries) Less(i, j int) bool {
 
 func (sse SolidityStorageEntries) Swap(i, j int) {
 	sse[i], sse[j] = sse[j], sse[i]
+}
+
+func (sse SolidityTypeEntry) UnmarshalJSON(b []byte) error {
+	var simple struct {
+		Encoding      string                 `json:"encoding"`
+		Key           string                 `json:"key"`
+		Label         string                 `json:"label"`
+		NumberOfBytes string                 `json:"numberOfBytes"`
+		Value         string                 `json:"value"`
+		Base          string                 `json:"base"`
+		Members       SolidityStorageEntries `json:"members"`
+	}
+	err := json.Unmarshal(b, &simple)
+	if err != nil {
+		return err
+	}
+	sse.Encoding = simple.Encoding
+	sse.Key = simple.Key
+	sse.Label = simple.Label
+	sse.Value = simple.Value
+	sse.Members = simple.Members
+
+	if simple.NumberOfBytes == "" {
+		return errors.New("numberofbytes not set")
+	}
+	numBytesAsUint64, err := strconv.ParseUint(simple.NumberOfBytes, 10, 0)
+	if err != nil {
+		return err
+	}
+	sse.NumberOfBytes = numBytesAsUint64
+
+	return nil
 }
 
 type StorageItem struct {
