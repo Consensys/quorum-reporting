@@ -2,6 +2,7 @@ package types
 
 import (
 	"encoding/json"
+	"github.com/ethereum/go-ethereum/common"
 	"strconv"
 )
 
@@ -105,4 +106,25 @@ type StorageItem struct {
 	Value    interface{} `json:"value,omitempty"`
 	// for map only
 	Values map[string]interface{} `json:"values,omitempty"`
+}
+
+type ReportingRequestTemplate []*StorageItemTemplate
+
+type ReportingResponseTemplate struct {
+	Address       common.Address `json:"address"`
+	HistoricState []*ParsedState `json:"historicState"`
+}
+
+type StorageItemTemplate struct {
+	VarName  string `json:"name"`
+	VarIndex uint64 `json:"index"`
+	VarType  string `json:"type"`
+	// for map only
+	KeyType string   `json:"keyType,omitempty"`
+	Keys    []string `json:"keys,omitempty"`
+}
+
+type ParsedState struct {
+	BlockNumber     uint64         `json:"blockNumber"`
+	HistoricStorage []*StorageItem `json:"historicStorage"`
 }

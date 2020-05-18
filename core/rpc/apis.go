@@ -3,7 +3,6 @@ package rpc
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"quorumengineering/quorum-report/core/storageparsing"
 	types2 "quorumengineering/quorum-report/core/storageparsing/types"
 	"strings"
@@ -126,36 +125,9 @@ func (r *RPCAPIs) GetStorage(address common.Address, blockNumber uint64) (map[co
 	return r.db.GetStorage(address, blockNumber)
 }
 
-func (r *RPCAPIs) GetStorageHistory(address common.Address, startBlockNumber, endBlockNumber uint64, template ReportingRequestTemplate) (*ReportingResponseTemplate, error) {
+func (r *RPCAPIs) GetStorageHistory(address common.Address) (*types2.ReportingResponseTemplate, error) {
 	// TODO: implement GetStorageRoot to reduce the response list
-	historicStates := []*ParsedState{}
-	for i := startBlockNumber; i <= endBlockNumber; i++ {
-		rawStorage, err := r.db.GetStorage(address, i)
-		if err != nil {
-			return nil, err
-		}
-		if rawStorage == nil {
-			continue
-		}
-		fmt.Println("hello")
-		historicStorage, err := parseRawStorage(rawStorage, template)
-		if err != nil {
-			return nil, err
-		}
-		historicStates = append(historicStates, &ParsedState{
-			BlockNumber:     i,
-			HistoricStorage: historicStorage,
-		})
-	}
-	return &ReportingResponseTemplate{
-		Address:       address,
-		HistoricState: historicStates,
-	}, nil
-}
-
-func (r *RPCAPIs) GetStorageHistoryTwo(address common.Address) (*ReportingResponseTemplate, error) {
-	// TODO: implement GetStorageRoot to reduce the response list
-	historicStates := []*ParsedState{}
+	historicStates := []*types2.ParsedState{}
 	for i := 1; i <= 1; i++ {
 		rawStorage, err := r.db.GetStorage(address, uint64(i))
 		if err != nil {
@@ -168,12 +140,12 @@ func (r *RPCAPIs) GetStorageHistoryTwo(address common.Address) (*ReportingRespon
 		if err != nil {
 			return nil, err
 		}
-		historicStates = append(historicStates, &ParsedState{
+		historicStates = append(historicStates, &types2.ParsedState{
 			BlockNumber:     uint64(i),
 			HistoricStorage: historicStorage,
 		})
 	}
-	return &ReportingResponseTemplate{
+	return &types2.ReportingResponseTemplate{
 		Address:       address,
 		HistoricState: historicStates,
 	}, nil
