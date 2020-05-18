@@ -1,13 +1,16 @@
-package storage_parsing
+package storageparsing
 
 import (
 	"encoding/json"
-	"github.com/ethereum/go-ethereum/common"
 	"math/big"
-	"quorumengineering/quorum-report/core/storage_parsing/parsers"
-	"quorumengineering/quorum-report/core/storage_parsing/types"
 	"sort"
 	"strings"
+
+	"github.com/ethereum/go-ethereum/common"
+
+	"quorumengineering/quorum-report/core/storageparsing/parsers"
+	"quorumengineering/quorum-report/core/storageparsing/types"
+	types2 "quorumengineering/quorum-report/core/storageparsing/types"
 )
 
 var (
@@ -38,7 +41,7 @@ func ParseRawStorage(rawStorage map[common.Hash]string) ([]*types.StorageItem, e
 
 	sort.Sort(Template.Storage)
 
-	storageManager := types.NewDefaultStorageHandler(rawStorage)
+	storageManager := types2.NewDefaultStorageHandler(rawStorage)
 
 	//sort the storage based on
 	for _, storageItem := range Template.Storage {

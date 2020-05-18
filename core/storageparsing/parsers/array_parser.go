@@ -4,11 +4,12 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"math/big"
 	"quorumengineering/quorum-report/core/storage_parsing/types"
+	types2 "quorumengineering/quorum-report/core/storageparsing/types"
 	"strconv"
 	"strings"
 )
 
-func ParseArray(sm types.StorageManager, allTypes map[string]types.SolidityTypeEntry,
+func ParseArray(sm types2.StorageManager, allTypes map[string]types.SolidityTypeEntry,
 	entry types.SolidityStorageEntry, namedType types.SolidityTypeEntry) error {
 
 	sizeOfArray, err := determineSize(entry)
@@ -28,7 +29,7 @@ func ParseArray(sm types.StorageManager, allTypes map[string]types.SolidityTypeE
 	return nil
 }
 
-func handleFixedArray(numberOfElements uint64, sizeOfType uint64, sm types.StorageManager, entry types.SolidityStorageEntry, namedType types.SolidityTypeEntry) {
+func handleFixedArray(numberOfElements uint64, sizeOfType uint64, sm types2.StorageManager, entry types.SolidityStorageEntry, namedType types.SolidityTypeEntry) {
 	totalBytesToRead := roundUp(numberOfElements * sizeOfType)
 
 	startSlot := entry.Slot
@@ -54,7 +55,7 @@ func handleFixedArray(numberOfElements uint64, sizeOfType uint64, sm types.Stora
 	//subhandler for type
 }
 
-func handleDynamicArray(sizeOfType uint64, sm types.StorageManager, entry types.SolidityStorageEntry, namedType types.SolidityTypeEntry) {
+func handleDynamicArray(sizeOfType uint64, sm types2.StorageManager, entry types.SolidityStorageEntry, namedType types.SolidityTypeEntry) {
 	startSlotNumber := entry.Slot
 	numberOfElementsHex := sm.Get(common.BigToHash(new(big.Int).SetUint64(startSlotNumber)))
 

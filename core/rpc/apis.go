@@ -3,9 +3,9 @@ package rpc
 import (
 	"encoding/json"
 	"errors"
-	types2 "quorumengineering/quorum-report/core/storageparsing/types"
 	"fmt"
-	"quorumengineering/quorum-report/core/storage_parsing"
+	"quorumengineering/quorum-report/core/storageparsing"
+	types2 "quorumengineering/quorum-report/core/storageparsing/types"
 	"strings"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
@@ -164,7 +164,7 @@ func (r *RPCAPIs) GetStorageHistoryTwo(address common.Address) (*ReportingRespon
 		if rawStorage == nil {
 			continue
 		}
-		historicStorage, err := storage_parsing.ParseRawStorage(rawStorage)
+		historicStorage, err := storageparsing.ParseRawStorage(rawStorage)
 		if err != nil {
 			return nil, err
 		}

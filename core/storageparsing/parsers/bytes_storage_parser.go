@@ -4,10 +4,11 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"math/big"
 	"quorumengineering/quorum-report/core/storage_parsing/types"
+	types2 "quorumengineering/quorum-report/core/storageparsing/types"
 	"strconv"
 )
 
-func ParseStringStorage(storageEntry string, sm types.StorageManager, entry types.SolidityStorageEntry) (string, error) {
+func ParseStringStorage(storageEntry string, sm types2.StorageManager, entry types.SolidityStorageEntry) (string, error) {
 	//determine if this is long or short
 	arrResult, err := parseBytes(storageEntry, sm, entry)
 	if err != nil {
@@ -17,7 +18,7 @@ func ParseStringStorage(storageEntry string, sm types.StorageManager, entry type
 	return string(arrResult), nil
 }
 
-func ParseBytesStorage(storageEntry string, sm types.StorageManager, entry types.SolidityStorageEntry) ([]string, error) {
+func ParseBytesStorage(storageEntry string, sm types2.StorageManager, entry types.SolidityStorageEntry) ([]string, error) {
 	//determine if this is long or short
 	arrResult, err := parseBytes(storageEntry, sm, entry)
 	if err != nil {
@@ -32,7 +33,7 @@ func ParseBytesStorage(storageEntry string, sm types.StorageManager, entry types
 	return resultBytes, nil
 }
 
-func parseBytes(storageEntry string, sm types.StorageManager, entry types.SolidityStorageEntry) ([]byte, error) {
+func parseBytes(storageEntry string, sm types2.StorageManager, entry types.SolidityStorageEntry) ([]byte, error) {
 	//determine if this is long or short
 	bytes, err := ExtractFromSingleStorage(0, 1, storageEntry)
 	if err != nil {
@@ -69,7 +70,7 @@ func handleShortByteArray(storageEntry string, numberOfElements byte) ([]byte, e
 	return bytes, err
 }
 
-func handleLargeByteArray(storageEntry string, sm types.StorageManager, entry types.SolidityStorageEntry) ([]byte, error) {
+func handleLargeByteArray(storageEntry string, sm types2.StorageManager, entry types.SolidityStorageEntry) ([]byte, error) {
 	bytes, err := ExtractFromSingleStorage(0, 1, storageEntry)
 	if err != nil {
 		return nil, err
