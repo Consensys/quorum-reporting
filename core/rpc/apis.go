@@ -126,6 +126,19 @@ func (r *RPCAPIs) GetStorage(address common.Address, blockNumber uint64) (map[co
 }
 
 func (r *RPCAPIs) GetStorageHistory(address common.Address) (*types2.ReportingResponseTemplate, error) {
+	rawAbi, err := r.db.GetStorageABI(address)
+	if err != nil {
+		return nil, err
+	}
+	if rawAbi == "" {
+		return nil, errors.New("no storage ABI present to parse with")
+	}
+	var parsedAbi types2.SolidityStorageDocument
+	err = json.Unmarshal([]byte(rawAbi), &parsedAbi)
+	if err != nil {
+		return nil, errors.New("unable to decode storage ABI: " + err.Error())
+	}
+
 	// TODO: implement GetStorageRoot to reduce the response list
 	historicStates := []*types2.ParsedState{}
 	for i := 1; i <= 1; i++ {
@@ -136,7 +149,7 @@ func (r *RPCAPIs) GetStorageHistory(address common.Address) (*types2.ReportingRe
 		if rawStorage == nil {
 			continue
 		}
-		historicStorage, err := storageparsing.ParseRawStorage(rawStorage)
+		historicStorage, err := storageparsing.ParseRawStorage(rawStorage, parsedAbi)
 		if err != nil {
 			return nil, err
 		}
