@@ -125,7 +125,7 @@ func (r *RPCAPIs) GetStorage(address common.Address, blockNumber uint64) (map[co
 	return r.db.GetStorage(address, blockNumber)
 }
 
-func (r *RPCAPIs) GetStorageHistory(address common.Address) (*types2.ReportingResponseTemplate, error) {
+func (r *RPCAPIs) GetStorageHistory(address common.Address, startBlockNumber, endBlockNumber uint64) (*types2.ReportingResponseTemplate, error) {
 	rawAbi, err := r.db.GetStorageABI(address)
 	if err != nil {
 		return nil, err
@@ -141,8 +141,8 @@ func (r *RPCAPIs) GetStorageHistory(address common.Address) (*types2.ReportingRe
 
 	// TODO: implement GetStorageRoot to reduce the response list
 	historicStates := []*types2.ParsedState{}
-	for i := 1; i <= 1; i++ {
-		rawStorage, err := r.db.GetStorage(address, uint64(i))
+	for i := startBlockNumber; i <= endBlockNumber; i++ {
+		rawStorage, err := r.db.GetStorage(address, i)
 		if err != nil {
 			return nil, err
 		}
@@ -154,7 +154,7 @@ func (r *RPCAPIs) GetStorageHistory(address common.Address) (*types2.ReportingRe
 			return nil, err
 		}
 		historicStates = append(historicStates, &types2.ParsedState{
-			BlockNumber:     uint64(i),
+			BlockNumber:     i,
 			HistoricStorage: historicStorage,
 		})
 	}
