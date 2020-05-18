@@ -149,3 +149,12 @@ func (r *RPCAPIs) AddABI(address common.Address, data string) error {
 func (r *RPCAPIs) GetABI(address common.Address) (string, error) {
 	return r.db.GetContractABI(address)
 }
+
+func (r *RPCAPIs) AddStorageABI(address common.Address, data string) error {
+	//TODO: check storage ABI is valid
+	return r.db.AddStorageABI(address, data)
+}
+
+func (r *RPCAPIs) GetStorageABI(address common.Address) (string, error) {
+	return r.db.GetStorageABI(address)
+}

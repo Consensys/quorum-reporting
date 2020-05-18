@@ -9,6 +9,7 @@ import (
 type Contract struct {
 	Address             common.Address `json:"address"`
 	ABI                 string         `json:"abi"`
+	StorageABI          string         `json:"storageAbi"`
 	CreationTransaction common.Hash    `json:"creationTx"`
 	LastFiltered        uint64         `json:"lastFiltered"`
 }
