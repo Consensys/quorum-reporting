@@ -78,6 +78,14 @@ func (f *FakeDB) GetContractABI(common.Address) (string, error) {
 	return "", errors.New("not implemented")
 }
 
+func (f *FakeDB) AddStorageABI(common.Address, string) error {
+	return errors.New("not implemented")
+}
+
+func (f *FakeDB) GetStorageABI(common.Address) (string, error) {
+	return "", errors.New("not implemented")
+}
+
 func (f *FakeDB) WriteBlock(*types.Block) error {
 	return errors.New("not implemented")
 }

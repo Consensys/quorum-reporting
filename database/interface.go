@@ -27,6 +27,8 @@ type AddressDB interface {
 type ABIDB interface {
 	AddContractABI(common.Address, string) error
 	GetContractABI(common.Address) (string, error)
+	AddStorageABI(common.Address, string) error
+	GetStorageABI(common.Address) (string, error)
 }
 
 // BlockDB stores the block details for all blocks.

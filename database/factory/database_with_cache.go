@@ -115,6 +115,14 @@ func (cachingDB *DatabaseWithCache) GetContractABI(address common.Address) (stri
 	return cachingDB.db.GetContractABI(address)
 }
 
+func (cachingDB *DatabaseWithCache) AddStorageABI(address common.Address, abi string) error {
+	return cachingDB.db.AddStorageABI(address, abi)
+}
+
+func (cachingDB *DatabaseWithCache) GetStorageABI(address common.Address) (string, error) {
+	return cachingDB.db.GetStorageABI(address)
+}
+
 func (cachingDB *DatabaseWithCache) WriteBlock(block *types.Block) error {
 	// make sure write block is mutual exclusive so that last persisted is updated correctly
 	cachingDB.blockMux.Lock()
