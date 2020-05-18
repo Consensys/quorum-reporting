@@ -33,7 +33,7 @@ var (
 	structPrefix = "t_struct"
 )
 
-func ParseRawStorageTwo(rawStorage map[common.Hash]string) ([]*types.StorageItem, error) {
+func ParseRawStorage(rawStorage map[common.Hash]string) ([]*types.StorageItem, error) {
 	parsedStorage := []*types.StorageItem{}
 
 	sort.Sort(Template.Storage)
@@ -105,8 +105,8 @@ func ParseRawStorageTwo(rawStorage map[common.Hash]string) ([]*types.StorageItem
 			result = str
 			//case strings.HasPrefix(storageItem.Type, arrayPrefix):
 			//	parsers.ParseArray(storageManager, Template.Types, storageItem, namedType)
-			//case strings.HasPrefix(storageItem.Type, structPrefix):
-			//	parsers.ParseStruct()
+		case strings.HasPrefix(storageItem.Type, structPrefix):
+			parsers.ParseStruct(storageManager, storageItem, namedType)
 		}
 
 		if result != nil {

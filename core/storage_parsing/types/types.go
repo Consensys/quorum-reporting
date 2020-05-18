@@ -20,29 +20,25 @@ type SolidityStorageEntry struct {
 	Type   string `json:"type"`
 }
 
-func (sse SolidityStorageEntry) UnmarshalJSON(b []byte) error {
-	var simple map[string]string
+func (sse *SolidityStorageEntry) UnmarshalJSON(b []byte) error {
+	var simple struct {
+		Label  string `json:"label"`
+		Offset uint64 `json:"offset"`
+		Slot   string `json:"slot"`
+		Type   string `json:"type"`
+	}
 	err := json.Unmarshal(b, &simple)
 	if err != nil {
 		return err
 	}
-	sse.Label = simple["label"]
-	sse.Type = simple["type"]
+	sse.Label = simple.Label
+	sse.Type = simple.Type
+	sse.Offset = simple.Offset
 
-	if simple["offset"] == "" {
-		return errors.New("offset not set")
-	}
-	offsetAsUint64, err := strconv.ParseUint(simple["offset"], 10, 0)
-	if err != nil {
-		return err
-	}
-	sse.Offset = offsetAsUint64
-
-	if simple["slot"] == "" {
+	if simple.Slot == "" {
 		return errors.New("slot not set")
 	}
-
-	slotAsUint64, err := strconv.ParseUint(simple["slot"], 10, 0)
+	slotAsUint64, err := strconv.ParseUint(simple.Slot, 10, 0)
 	if err != nil {
 		return err
 	}
@@ -73,7 +69,7 @@ func (sse SolidityStorageEntries) Swap(i, j int) {
 	sse[i], sse[j] = sse[j], sse[i]
 }
 
-func (sse SolidityTypeEntry) UnmarshalJSON(b []byte) error {
+func (sse *SolidityTypeEntry) UnmarshalJSON(b []byte) error {
 	var simple struct {
 		Encoding      string                 `json:"encoding"`
 		Key           string                 `json:"key"`

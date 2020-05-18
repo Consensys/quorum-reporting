@@ -162,8 +162,7 @@ func (r *RPCAPIs) GetStorageHistoryTwo(address common.Address) (*ReportingRespon
 		if rawStorage == nil {
 			continue
 		}
-		fmt.Println("hello")
-		historicStorage, err := storage_parsing.ParseRawStorageTwo(rawStorage)
+		historicStorage, err := storage_parsing.ParseRawStorage(rawStorage)
 		if err != nil {
 			return nil, err
 		}
