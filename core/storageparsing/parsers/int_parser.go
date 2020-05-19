@@ -2,7 +2,8 @@ package parsers
 
 import "math/big"
 
-func ParseInt(bytes []byte) *big.Int {
+func (p *Parser) ParseInt(bytes []byte) *big.Int {
+	//2s complement, so negative is Most Significant Bit is set
 	isPositive := bytes[0] < 128
 
 	if isPositive {
@@ -11,7 +12,7 @@ func ParseInt(bytes []byte) *big.Int {
 		return i
 	}
 
-	//
+	// negative, so invert all the bits, add 1 and flip the sign
 	for i := 0; i < len(bytes); i++ {
 		bytes[i] = ^bytes[i]
 	}
@@ -24,6 +25,6 @@ func ParseInt(bytes []byte) *big.Int {
 	return i
 }
 
-func ParseUint(bytes []byte) *big.Int {
+func (p *Parser) ParseUint(bytes []byte) *big.Int {
 	return new(big.Int).SetBytes(bytes)
 }

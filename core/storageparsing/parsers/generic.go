@@ -10,3 +10,12 @@ func ExtractFromSingleStorage(offset uint64, numberOfBytes uint64, storageEntry 
 
 	return extractedBytes, nil
 }
+
+func ResolveSlot(offsetSlot common.Hash, givenSlot common.Hash) common.Hash {
+	offsetBig := offsetSlot.Big()
+	givenBig := givenSlot.Big()
+
+	combined := offsetBig.Add(offsetBig, givenBig)
+
+	return common.BigToHash(combined)
+}
