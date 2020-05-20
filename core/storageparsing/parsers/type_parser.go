@@ -2,7 +2,7 @@ package parsers
 
 import (
 	"github.com/ethereum/go-ethereum/common"
-	"quorumengineering/quorum-report/core/storageparsing/types"
+	"quorumengineering/quorum-report/types"
 	"sort"
 	"strings"
 )
@@ -24,13 +24,13 @@ var (
 )
 
 type Parser struct {
-	storageManager types.StorageManager
+	storageManager StorageManager
 	template       types.SolidityStorageDocument
 
 	slotOffset common.Hash
 }
 
-func NewParser(sm types.StorageManager, template types.SolidityStorageDocument, slotOffset common.Hash) *Parser {
+func NewParser(sm StorageManager, template types.SolidityStorageDocument, slotOffset common.Hash) *Parser {
 	sort.Sort(template.Storage)
 
 	parser := &Parser{

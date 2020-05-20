@@ -2,7 +2,8 @@ package parsers
 
 import (
 	"github.com/ethereum/go-ethereum/common"
-	"quorumengineering/quorum-report/core/storageparsing/types"
+
+	"quorumengineering/quorum-report/types"
 )
 
 func (p *Parser) ParseStruct(entry types.SolidityStorageEntry, namedType types.SolidityTypeEntry) ([]*types.StorageItem, error) {

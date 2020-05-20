@@ -124,7 +124,7 @@ func (r *RPCAPIs) GetStorage(address common.Address, blockNumber uint64) (map[co
 	return r.db.GetStorage(address, blockNumber)
 }
 
-func (r *RPCAPIs) GetStorageHistory(address common.Address, startBlockNumber, endBlockNumber uint64) (*types2.ReportingResponseTemplate, error) {
+func (r *RPCAPIs) GetStorageHistory(address common.Address, startBlockNumber, endBlockNumber uint64) (*types.ReportingResponseTemplate, error) {
 	rawAbi, err := r.db.GetStorageABI(address)
 	if err != nil {
 		return nil, err
@@ -132,14 +132,14 @@ func (r *RPCAPIs) GetStorageHistory(address common.Address, startBlockNumber, en
 	if rawAbi == "" {
 		return nil, errors.New("no storage ABI present to parse with")
 	}
-	var parsedAbi types2.SolidityStorageDocument
+	var parsedAbi types.SolidityStorageDocument
 	err = json.Unmarshal([]byte(rawAbi), &parsedAbi)
 	if err != nil {
 		return nil, errors.New("unable to decode storage ABI: " + err.Error())
 	}
 
 	// TODO: implement GetStorageRoot to reduce the response list
-	historicStates := []*types2.ParsedState{}
+	historicStates := []*types.ParsedState{}
 	for i := startBlockNumber; i <= endBlockNumber; i++ {
 		rawStorage, err := r.db.GetStorage(address, i)
 		if err != nil {
@@ -152,12 +152,12 @@ func (r *RPCAPIs) GetStorageHistory(address common.Address, startBlockNumber, en
 		if err != nil {
 			return nil, err
 		}
-		historicStates = append(historicStates, &types2.ParsedState{
+		historicStates = append(historicStates, &types.ParsedState{
 			BlockNumber:     i,
 			HistoricStorage: historicStorage,
 		})
 	}
-	return &types2.ReportingResponseTemplate{
+	return &types.ReportingResponseTemplate{
 		Address:       address,
 		HistoricState: historicStates,
 	}, nil

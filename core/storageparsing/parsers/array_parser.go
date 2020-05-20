@@ -1,11 +1,13 @@
 package parsers
 
 import (
-	"github.com/ethereum/go-ethereum/common"
 	"math/big"
-	"quorumengineering/quorum-report/core/storageparsing/types"
 	"strconv"
 	"strings"
+
+	"github.com/ethereum/go-ethereum/common"
+
+	"quorumengineering/quorum-report/types"
 )
 
 func (p *Parser) ParseArray(entry types.SolidityStorageEntry, namedType types.SolidityTypeEntry) ([]interface{}, error) {

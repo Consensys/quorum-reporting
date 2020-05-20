@@ -2,7 +2,8 @@ package parsers
 
 import (
 	"math/big"
-	"quorumengineering/quorum-report/core/storageparsing/types"
+
+	"quorumengineering/quorum-report/types"
 )
 
 func (p *Parser) ParseInt(bytes []byte) *big.Int {
