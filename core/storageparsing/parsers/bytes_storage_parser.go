@@ -7,6 +7,8 @@ import (
 	"strconv"
 )
 
+var maxElementsInRow = BigThirtyTwo
+
 func (p *Parser) ParseStringStorage(storageEntry string, entry types.SolidityStorageEntry) string {
 	//determine if this is long or short
 	arrResult := p.parseBytes(storageEntry, entry)
@@ -51,13 +53,11 @@ func (p *Parser) handleLargeByteArray(storageEntry string, entry types.SolidityS
 	bytes := ExtractFromSingleStorage(0, 32, storageEntry)
 
 	numberOfElements := p.ParseUint(bytes)
-	numberOfElements.Sub(numberOfElements, BigOne)
-	numberOfElements.Div(numberOfElements, BigTwo)
+	numberOfElements.Sub(numberOfElements, BigOne).Div(numberOfElements, BigTwo)
 
-	currentStorageSlot := hash(bigN(entry.Slot).Bytes())
+	currentStorageSlot := hash(p.ResolveSlot(bigN(entry.Slot)).Big())
 
 	allResults := make([]byte, 0)
-	maxElementsInRow := BigThirtyTwo
 	for i := bigN(0); i.Cmp(numberOfElements) < 0; i.Add(i, maxElementsInRow) {
 		//read row
 		resultsLeft := new(big.Int).Sub(numberOfElements, i)

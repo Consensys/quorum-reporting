@@ -1,18 +1,15 @@
 package parsers
 
 import (
-	"math/big"
 	"strconv"
 	"strings"
-
-	"github.com/ethereum/go-ethereum/common"
 
 	"quorumengineering/quorum-report/types"
 )
 
 func (p *Parser) ParseArray(entry types.SolidityStorageEntry, namedType types.SolidityTypeEntry) ([]interface{}, error) {
 	isDynamic := namedType.Encoding == "dynamic_array"
-	sizeOfArray, err := p.determineSize(entry)
+	sizeOfArray, err := p.determineSize(entry, isDynamic)
 	if err != nil {
 		return nil, err
 	}
@@ -22,7 +19,7 @@ func (p *Parser) ParseArray(entry types.SolidityStorageEntry, namedType types.So
 	startSlotNumber := entry.Slot
 	storageSlot := p.ResolveSlot(bigN(startSlotNumber))
 	if isDynamic {
-		storageSlot = hash(storageSlot.Big().Bytes())
+		storageSlot = hash(storageSlot.Big())
 	}
 
 	//build up array of fake storage elements the array has
@@ -65,23 +62,19 @@ func (p *Parser) ParseArray(entry types.SolidityStorageEntry, namedType types.So
 	return extractedResults, nil
 }
 
-func (p *Parser) determineSize(storageItem types.SolidityStorageEntry) (uint64, error) {
-	name := storageItem.Type
+func (p *Parser) determineSize(storageItem types.SolidityStorageEntry, isDynamic bool) (uint64, error) {
+	if isDynamic {
+		storageSlot := p.ResolveSlot(bigN(storageItem.Slot))
+		extracted := ExtractFromSingleStorage(0, 32, p.storageManager.Get(storageSlot))
+		numberOfElements := p.ParseUint(extracted).Uint64()
+		return numberOfElements, nil
+	}
 
+	name := storageItem.Type
 	// determine the position the size starts from
 	startOfAmount := strings.LastIndex(name, ")")
 	endOfAmount := strings.LastIndex(name, "_")
-
 	size := name[startOfAmount+1 : endOfAmount]
 
-	if size == "dyn" {
-		//fetch it from the storage slot
-		startSlotNumber := storageItem.Slot
-		storageSlot := p.ResolveSlot(bigN(startSlotNumber))
-		numberOfElementsHex := p.storageManager.Get(storageSlot)
-		numberAsBytes := common.Hex2Bytes(numberOfElementsHex)
-		numberOfElements := new(big.Int).SetBytes(numberAsBytes).Uint64()
-		return numberOfElements, nil
-	}
 	return strconv.ParseUint(size, 10, 0)
 }
