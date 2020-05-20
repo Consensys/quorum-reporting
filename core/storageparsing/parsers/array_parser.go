@@ -22,7 +22,7 @@ func (p *Parser) ParseArray(entry types.SolidityStorageEntry, namedType types.So
 	startSlotNumber := entry.Slot
 	storageSlot := ResolveSlot(p.slotOffset.Big(), bigN(startSlotNumber))
 	if isDynamic {
-		storageSlot = hashBytes(common.LeftPadBytes(storageSlot.Big().Bytes(), 32))
+		storageSlot = hash(common.LeftPadBytes(storageSlot.Big().Bytes(), 32))
 	}
 
 	//build up array of fake storage elements the array has
