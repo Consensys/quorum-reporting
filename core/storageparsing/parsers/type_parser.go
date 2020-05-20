@@ -78,66 +78,39 @@ func (p *Parser) parseSingle(storageItem types.SolidityStorageEntry) (interface{
 
 	switch {
 	case strings.HasPrefix(storageItem.Type, intPrefix):
-		bytes, err := ExtractFromSingleStorage(storageItem.Offset, namedType.NumberOfBytes, directStorageSlot)
-		if err != nil {
-			return nil, err
-		}
+		bytes := ExtractFromSingleStorage(storageItem.Offset, namedType.NumberOfBytes, directStorageSlot)
 		result = p.ParseInt(bytes).String()
 
 	case strings.HasPrefix(storageItem.Type, uintPrefix):
-		bytes, err := ExtractFromSingleStorage(storageItem.Offset, namedType.NumberOfBytes, directStorageSlot)
-		if err != nil {
-			return nil, err
-		}
+		bytes := ExtractFromSingleStorage(storageItem.Offset, namedType.NumberOfBytes, directStorageSlot)
 		result = p.ParseUint(bytes).String()
 
 	case strings.HasPrefix(storageItem.Type, boolPrefix):
-		bytes, err := ExtractFromSingleStorage(storageItem.Offset, namedType.NumberOfBytes, directStorageSlot)
-		if err != nil {
-			return nil, err
-		}
+		bytes := ExtractFromSingleStorage(storageItem.Offset, namedType.NumberOfBytes, directStorageSlot)
 		result = bytes[0] == 1
 
 	case strings.HasPrefix(storageItem.Type, addressPrefix):
-		bytes, err := ExtractFromSingleStorage(storageItem.Offset, namedType.NumberOfBytes, directStorageSlot)
-		if err != nil {
-			return nil, err
-		}
+		bytes := ExtractFromSingleStorage(storageItem.Offset, namedType.NumberOfBytes, directStorageSlot)
 		result = common.BytesToAddress(bytes).String()
 
 	case strings.HasPrefix(storageItem.Type, contractPrefix): //TODO: recurse down contracts?
-		bytes, err := ExtractFromSingleStorage(storageItem.Offset, namedType.NumberOfBytes, directStorageSlot)
-		if err != nil {
-			return nil, err
-		}
+		bytes := ExtractFromSingleStorage(storageItem.Offset, namedType.NumberOfBytes, directStorageSlot)
 		result = common.BytesToAddress(bytes).String()
 
 	case strings.HasPrefix(storageItem.Type, bytesPrefix) && !strings.HasPrefix(storageItem.Type, bytesStoragePrefix):
-		bytes, err := ExtractFromSingleStorage(storageItem.Offset, namedType.NumberOfBytes, directStorageSlot)
-		if err != nil {
-			return nil, err
-		}
+		bytes := ExtractFromSingleStorage(storageItem.Offset, namedType.NumberOfBytes, directStorageSlot)
 		result = "0x" + common.Bytes2Hex(bytes)
 
 	case strings.HasPrefix(storageItem.Type, enumPrefix):
-		bytes, err := ExtractFromSingleStorage(storageItem.Offset, namedType.NumberOfBytes, directStorageSlot)
-		if err != nil {
-			return nil, err
-		}
+		bytes := ExtractFromSingleStorage(storageItem.Offset, namedType.NumberOfBytes, directStorageSlot)
 		result = uint64(bytes[0])
 
 	case strings.HasPrefix(storageItem.Type, bytesStoragePrefix):
-		bytes, err := p.ParseBytesStorage(directStorageSlot, storageItem)
-		if err != nil {
-			return nil, err
-		}
+		bytes := p.ParseBytesStorage(directStorageSlot, storageItem)
 		result = bytes
 
 	case strings.HasPrefix(storageItem.Type, stringPrefix):
-		str, err := p.ParseStringStorage(directStorageSlot, storageItem)
-		if err != nil {
-			return nil, err
-		}
+		str := p.ParseStringStorage(directStorageSlot, storageItem)
 		result = str
 
 	case strings.HasPrefix(storageItem.Type, arrayPrefix):

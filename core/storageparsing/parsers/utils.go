@@ -13,11 +13,11 @@ func hash(input []byte) common.Hash {
 	return common.BytesToHash(hasher.Sum(nil))
 }
 
-func ExtractFromSingleStorage(offset uint64, numberOfBytes uint64, storageEntry string) ([]byte, error) {
+func ExtractFromSingleStorage(offset uint64, numberOfBytes uint64, storageEntry string) []byte {
 	bytes := common.Hex2Bytes(storageEntry)
 	extractedBytes := bytes[32-offset-numberOfBytes : 32-offset]
 
-	return extractedBytes, nil
+	return extractedBytes
 }
 
 func (p *Parser) ResolveSlot(givenSlot *big.Int) common.Hash {
