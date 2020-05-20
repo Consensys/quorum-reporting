@@ -26,11 +26,6 @@ func ExtractFromSingleStorage(offset uint64, numberOfBytes uint64, storageEntry 
 	return extractedBytes
 }
 
-func (p *Parser) ResolveSlot(givenSlot *big.Int) common.Hash {
-	combined := bigN(0).Add(p.slotOffset.Big(), givenSlot)
-	return common.BigToHash(combined)
-}
-
 //rounds up to nearest multiple of 32
 func roundUpTo32(n uint64) uint64 {
 	return ((n + 31) / 32) * 32

@@ -1,10 +1,13 @@
 package parsers
 
 import (
-	"github.com/ethereum/go-ethereum/common"
-	"quorumengineering/quorum-report/types"
+	"math/big"
 	"sort"
 	"strings"
+
+	"github.com/ethereum/go-ethereum/common"
+
+	"quorumengineering/quorum-report/types"
 )
 
 var (
@@ -56,10 +59,9 @@ func (p *Parser) ParseRawStorage() ([]*types.StorageItem, error) {
 
 		if result != nil {
 			parsedStorageItem := &types.StorageItem{
-				VarName:  storageItem.Label,
-				VarIndex: 0,
-				VarType:  namedType.Label,
-				Value:    result,
+				VarName: storageItem.Label,
+				VarType: namedType.Label,
+				Value:   result,
 			}
 			parsedStorage = append(parsedStorage, parsedStorageItem)
 		}
@@ -129,4 +131,9 @@ func (p *Parser) parseSingle(storageItem types.SolidityStorageEntry) (interface{
 	}
 
 	return result, nil
+}
+
+func (p *Parser) ResolveSlot(givenSlot *big.Int) common.Hash {
+	combined := bigN(0).Add(p.slotOffset.Big(), givenSlot)
+	return common.BigToHash(combined)
 }

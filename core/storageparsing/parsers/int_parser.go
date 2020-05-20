@@ -9,9 +9,7 @@ func (p *Parser) ParseInt(bytes []byte) *big.Int {
 	isPositive := bytes[0] < 128
 
 	if isPositive {
-		i := new(big.Int)
-		i.SetBytes(bytes)
-		return i
+		return p.ParseUint(bytes)
 	}
 
 	// negative, so invert all the bits, add 1 and flip the sign
