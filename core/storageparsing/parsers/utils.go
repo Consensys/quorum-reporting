@@ -6,6 +6,12 @@ import (
 	"math/big"
 )
 
+var (
+	BigOne       = new(big.Int).SetUint64(1)
+	BigTwo       = new(big.Int).SetUint64(2)
+	BigThirtyTwo = new(big.Int).SetUint64(32)
+)
+
 func hash(input []byte) common.Hash {
 	out := common.LeftPadBytes(input, 32)
 	hasher := sha3.NewLegacyKeccak256()

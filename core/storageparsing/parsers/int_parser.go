@@ -2,8 +2,6 @@ package parsers
 
 import (
 	"math/big"
-
-	"quorumengineering/quorum-report/types"
 )
 
 func (p *Parser) ParseInt(bytes []byte) *big.Int {
@@ -23,7 +21,7 @@ func (p *Parser) ParseInt(bytes []byte) *big.Int {
 
 	i := new(big.Int)
 	i.SetBytes(bytes)
-	i.Add(i, types.BigOne)
+	i.Add(i, BigOne)
 	i.Neg(i)
 
 	return i

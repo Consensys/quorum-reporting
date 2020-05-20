@@ -3,14 +3,7 @@ package types
 import (
 	"encoding/json"
 	"github.com/ethereum/go-ethereum/common"
-	"math/big"
 	"strconv"
-)
-
-var (
-	BigOne       = new(big.Int).SetUint64(1)
-	BigTwo       = new(big.Int).SetUint64(2)
-	BigThirtyTwo = new(big.Int).SetUint64(32)
 )
 
 type SolidityStorageEntries []SolidityStorageEntry
