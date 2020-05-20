@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"quorumengineering/quorum-report/core/storageparsing"
-	types2 "quorumengineering/quorum-report/core/storageparsing/types"
 	"strings"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
@@ -193,7 +192,7 @@ func (r *RPCAPIs) GetABI(address common.Address) (string, error) {
 }
 
 func (r *RPCAPIs) AddStorageABI(address common.Address, data string) error {
-	var storageAbi types2.SolidityStorageDocument
+	var storageAbi types.SolidityStorageDocument
 	err := json.Unmarshal([]byte(data), &storageAbi)
 	if err != nil {
 		return errors.New("invalid JSON: " + err.Error())
