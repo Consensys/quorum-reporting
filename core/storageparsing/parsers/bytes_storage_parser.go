@@ -24,7 +24,7 @@ func (p *Parser) ParseBytesStorage(storageEntry string, entry types.SolidityStor
 		return nil, err
 	}
 
-	resultBytes := make([]string, 0)
+	resultBytes := make([]string, 0, len(arrResult))
 	for _, resultByte := range arrResult {
 		strVersion := strconv.FormatUint(uint64(resultByte), 16)
 		resultBytes = append(resultBytes, strVersion)
@@ -33,27 +33,18 @@ func (p *Parser) ParseBytesStorage(storageEntry string, entry types.SolidityStor
 }
 
 func (p *Parser) parseBytes(storageEntry string, entry types.SolidityStorageEntry) ([]byte, error) {
-	//determine if this is long or short
 	bytes, err := ExtractFromSingleStorage(0, 1, storageEntry)
 	if err != nil {
 		return nil, err
 	}
+
+	//If the LSB is 0, then the whole array fits into a single storage slot
 	isShort := (bytes[0] % 2) == 0
 
-	var arrResult []byte
 	if isShort {
-		arrResult, err = p.handleShortByteArray(storageEntry, bytes[0])
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		arrResult, err = p.handleLargeByteArray(storageEntry, entry)
-		if err != nil {
-			return nil, err
-		}
+		return p.handleShortByteArray(storageEntry, bytes[0])
 	}
-
-	return arrResult, nil
+	return p.handleLargeByteArray(storageEntry, entry)
 }
 
 func (p *Parser) handleShortByteArray(storageEntry string, numberOfElements byte) ([]byte, error) {
@@ -62,11 +53,7 @@ func (p *Parser) handleShortByteArray(storageEntry string, numberOfElements byte
 	// To handle a short bytes_storage entry, entries start from the left (offset 32), and take 1 byte per entry
 	offset := 32 - trueNumberOfElements //skip the right-most byte, as that stores the length
 
-	bytes, err := ExtractFromSingleStorage(offset, trueNumberOfElements, storageEntry)
-	if err != nil {
-		return nil, err
-	}
-	return bytes, err
+	return ExtractFromSingleStorage(offset, trueNumberOfElements, storageEntry)
 }
 
 func (p *Parser) handleLargeByteArray(storageEntry string, entry types.SolidityStorageEntry) ([]byte, error) {

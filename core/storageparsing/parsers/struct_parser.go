@@ -7,9 +7,8 @@ import (
 )
 
 func (p *Parser) ParseStruct(entry types.SolidityStorageEntry, namedType types.SolidityTypeEntry) ([]*types.StorageItem, error) {
-	existingOffset := p.slotOffset
 	currentSlot := common.BigToHash(bigN(entry.Slot))
-	newOffset := ResolveSlot(existingOffset.Big(), currentSlot.Big())
+	newOffset := p.ResolveSlot(currentSlot.Big())
 
 	newTemplate := types.SolidityStorageDocument{
 		Storage: namedType.Members,

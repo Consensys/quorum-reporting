@@ -20,9 +20,9 @@ func (p *Parser) ParseArray(entry types.SolidityStorageEntry, namedType types.So
 	sizeOfElement := p.template.Types[namedType.Base].NumberOfBytes
 
 	startSlotNumber := entry.Slot
-	storageSlot := ResolveSlot(p.slotOffset.Big(), bigN(startSlotNumber))
+	storageSlot := p.ResolveSlot(bigN(startSlotNumber))
 	if isDynamic {
-		storageSlot = hash(common.LeftPadBytes(storageSlot.Big().Bytes(), 32))
+		storageSlot = hash(storageSlot.Big().Bytes())
 	}
 
 	//build up array of fake storage elements the array has
@@ -77,7 +77,7 @@ func (p *Parser) determineSize(storageItem types.SolidityStorageEntry) (uint64, 
 	if size == "dyn" {
 		//fetch it from the storage slot
 		startSlotNumber := storageItem.Slot
-		storageSlot := ResolveSlot(p.slotOffset.Big(), bigN(startSlotNumber))
+		storageSlot := p.ResolveSlot(bigN(startSlotNumber))
 		numberOfElementsHex := p.storageManager.Get(storageSlot)
 		numberAsBytes := common.Hex2Bytes(numberOfElementsHex)
 		numberOfElements := new(big.Int).SetBytes(numberAsBytes).Uint64()

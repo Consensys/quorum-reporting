@@ -71,7 +71,7 @@ func (p *Parser) ParseRawStorage() ([]*types.StorageItem, error) {
 func (p *Parser) parseSingle(storageItem types.SolidityStorageEntry) (interface{}, error) {
 
 	namedType := p.template.Types[storageItem.Type]
-	startingSlot := ResolveSlot(p.slotOffset.Big(), bigN(storageItem.Slot))
+	startingSlot := p.ResolveSlot(bigN(storageItem.Slot))
 	directStorageSlot := p.storageManager.Get(startingSlot) //the storage this variable uses by its "Slot"
 
 	var result interface{}
