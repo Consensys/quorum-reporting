@@ -1,10 +1,10 @@
 package parsers
 
 import (
+	"github.com/ethereum/go-ethereum/common"
 	"math/big"
 	"strconv"
-
-	"github.com/ethereum/go-ethereum/common"
+	"strings"
 
 	"quorumengineering/quorum-report/types"
 )
@@ -74,7 +74,8 @@ func (p *Parser) handleShortByteArray(storageEntry string, numberOfElements byte
 func (p *Parser) handleLargeByteArray(storageEntry string, entry types.SolidityStorageEntry) ([]byte, error) {
 	sm := p.storageManager
 
-	bytes, err := ExtractFromSingleStorage(0, 1, storageEntry)
+	storageEntryLength := len(strings.TrimLeft(storageEntry, "0"))
+	bytes, err := ExtractFromSingleStorage(0, uint64(storageEntryLength), storageEntry)
 	if err != nil {
 		return nil, err
 	}
