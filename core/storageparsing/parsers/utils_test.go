@@ -1,9 +1,11 @@
 package parsers
 
 import (
-	"github.com/stretchr/testify/assert"
 	"math/big"
 	"testing"
+
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/stretchr/testify/assert"
 )
 
 func Test_RoundUp32_0(t *testing.T) {
@@ -38,4 +40,20 @@ func Test_Hash_LargeInt(t *testing.T) {
 	result := hash(input)
 
 	assert.Equal(t, "0xafc64d4667876823fbd3f2510daa71752dbb32dda014f138587218722b444b5a", result.String(), "wrong hash output")
+}
+
+func Test_ExtractFromSingleStorage_NoOffset(t *testing.T) {
+	in := common.Hex2Bytes("0000000000000000000000000000000000000000000000000000001023456789")
+	expected := common.Hex2Bytes("00000000001023456789")
+
+	out := ExtractFromSingleStorage(0, 10, in)
+	assert.Equal(t, expected, out)
+}
+
+func Test_ExtractFromSingleStorage_WithOffset(t *testing.T) {
+	in := common.Hex2Bytes("0000000000000000000000000000000000000000000010234567890000000000")
+	expected := common.Hex2Bytes("00000000001023456789")
+
+	out := ExtractFromSingleStorage(10, 10, in)
+	assert.Equal(t, expected, out)
 }

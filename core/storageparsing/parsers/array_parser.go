@@ -16,8 +16,7 @@ func (p *Parser) ParseArray(entry types.SolidityStorageEntry, namedType types.So
 
 	sizeOfElement := p.template.Types[namedType.Base].NumberOfBytes
 
-	startSlotNumber := entry.Slot
-	storageSlot := p.ResolveSlot(bigN(startSlotNumber))
+	storageSlot := p.ResolveSlot(bigN(entry.Slot))
 	if isDynamic {
 		storageSlot = hash(storageSlot.Big())
 	}
@@ -27,22 +26,19 @@ func (p *Parser) ParseArray(entry types.SolidityStorageEntry, namedType types.So
 
 	currentSlot := uint64(0)
 	currentOffset := uint64(0)
-
 	for i := uint64(0); i < sizeOfArray; i++ {
 		nextEntry := types.SolidityStorageEntry{
-			Label:  strconv.FormatUint(i, 10),
 			Offset: currentOffset,
 			Slot:   currentSlot,
 			Type:   namedType.Base,
 		}
+		storageElements = append(storageElements, nextEntry)
 
 		currentOffset += sizeOfElement
 		if currentOffset >= 32 {
 			currentSlot += roundUpTo32(currentOffset) / 32
 			currentOffset = 0
 		}
-
-		storageElements = append(storageElements, nextEntry)
 	}
 
 	newTemplate := types.SolidityStorageDocument{
