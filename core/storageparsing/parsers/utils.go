@@ -12,8 +12,8 @@ var (
 	BigThirtyTwo = new(big.Int).SetUint64(32)
 )
 
-func hash(input []byte) common.Hash {
-	out := common.LeftPadBytes(input, 32)
+func hash(input *big.Int) common.Hash {
+	out := common.LeftPadBytes(input.Bytes(), 32)
 	hasher := sha3.NewLegacyKeccak256()
 	hasher.Write(out)
 	return common.BytesToHash(hasher.Sum(nil))
