@@ -82,7 +82,7 @@ func (p *Parser) handleLargeByteArray(storageEntry string, entry types.SolidityS
 	numberOfElements.Sub(numberOfElements, types.BigOne)
 	numberOfElements.Div(numberOfElements, types.BigTwo)
 
-	currentStorageSlot := hash(entry.Slot)
+	currentStorageSlot := hash(bigN(entry.Slot).Bytes())
 
 	allResults := make([]byte, 0)
 	maxElementsInRow := types.BigThirtyTwo
