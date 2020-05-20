@@ -113,6 +113,8 @@ func TestMemoryDB(t *testing.T) {
 	// 2. Add Contract ABI and get it.
 	testAddContractABI(t, db, address, jsondata, false)
 	testGetContractABI(t, db, address, &testABI)
+	testAddStorageABI(t, db, address, "some storage abi data", false)
+	testGetStorageABI(t, db, address, "some storage abi data")
 	// 3. Write transaction and get it.
 	testWriteTransaction(t, db, tx1, false)
 	testWriteTransaction(t, db, tx2, false)
@@ -189,6 +191,26 @@ func testGetContractABI(t *testing.T, db database.Database, address common.Addre
 	}
 	if len(parsed.Methods) != len(expected.Methods) {
 		t.Fatalf("expected %v methods, but got %v", len(expected.Methods), len(parsed.Methods))
+	}
+}
+
+func testAddStorageABI(t *testing.T, db database.Database, address common.Address, contractABI string, expectedErr bool) {
+	err := db.AddContractABI(address, contractABI)
+	if err != nil && !expectedErr {
+		t.Fatalf("expected no error, but got %v", err)
+	}
+	if err == nil && expectedErr {
+		t.Fatalf("expected error but got nil")
+	}
+}
+
+func testGetStorageABI(t *testing.T, db database.Database, address common.Address, expected string) {
+	retrieved, err := db.GetContractABI(address)
+	if err != nil {
+		t.Fatalf("expected no error, but got %v", err)
+	}
+	if retrieved != expected {
+		t.Fatalf("expected %v events, but got %v", expected, retrieved)
 	}
 }
 

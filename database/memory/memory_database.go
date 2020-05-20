@@ -14,8 +14,9 @@ import (
 // MemoryDB is a sample memory database for dev only.
 type MemoryDB struct {
 	// registered contract data
-	addressDB []common.Address
-	abiDB     map[common.Address]string
+	addressDB    []common.Address
+	abiDB        map[common.Address]string
+	storageAbiDB map[common.Address]string
 	// blockchain data
 	blockDB                  map[uint64]*types.Block
 	txDB                     map[common.Hash]*types.Transaction
@@ -33,6 +34,7 @@ func NewMemoryDB() *MemoryDB {
 	return &MemoryDB{
 		addressDB:                []common.Address{},
 		abiDB:                    make(map[common.Address]string),
+		storageAbiDB:             make(map[common.Address]string),
 		blockDB:                  make(map[uint64]*types.Block),
 		txDB:                     make(map[common.Hash]*types.Transaction),
 		txIndexDB:                make(map[common.Address]*TxIndexer),
@@ -132,6 +134,19 @@ func (db *MemoryDB) GetContractABI(address common.Address) (string, error) {
 	db.mux.RLock()
 	defer db.mux.RUnlock()
 	return db.abiDB[address], nil
+}
+
+func (db *MemoryDB) AddStorageABI(address common.Address, abi string) error {
+	db.mux.Lock()
+	defer db.mux.Unlock()
+	db.storageAbiDB[address] = abi
+	return nil
+}
+
+func (db *MemoryDB) GetStorageABI(address common.Address) (string, error) {
+	db.mux.RLock()
+	defer db.mux.RUnlock()
+	return db.storageAbiDB[address], nil
 }
 
 func (db *MemoryDB) WriteBlock(block *types.Block) error {

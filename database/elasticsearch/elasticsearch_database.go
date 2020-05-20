@@ -83,6 +83,7 @@ func (es *ElasticsearchDB) AddAddresses(addresses []common.Address) error {
 			contract := Contract{
 				Address:             address,
 				ABI:                 "",
+				StorageABI:          "",
 				CreationTransaction: common.Hash{},
 				LastFiltered:        0,
 			}
@@ -169,6 +170,21 @@ func (es *ElasticsearchDB) GetContractABI(address common.Address) (string, error
 	}
 	if contract != nil {
 		return contract.ABI, nil
+	}
+	return "", nil
+}
+
+func (es *ElasticsearchDB) AddStorageABI(address common.Address, abi string) error {
+	return es.updateContract(address, "storageAbi", abi)
+}
+
+func (es *ElasticsearchDB) GetStorageABI(address common.Address) (string, error) {
+	contract, err := es.getContractByAddress(address)
+	if err != nil && err != ErrNotFound {
+		return "", err
+	}
+	if contract != nil {
+		return contract.StorageABI, nil
 	}
 	return "", nil
 }

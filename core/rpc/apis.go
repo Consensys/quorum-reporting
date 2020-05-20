@@ -1,6 +1,7 @@
 package rpc
 
 import (
+	"encoding/json"
 	"errors"
 	"strings"
 
@@ -148,4 +149,17 @@ func (r *RPCAPIs) AddABI(address common.Address, data string) error {
 
 func (r *RPCAPIs) GetABI(address common.Address) (string, error) {
 	return r.db.GetContractABI(address)
+}
+
+func (r *RPCAPIs) AddStorageABI(address common.Address, data string) error {
+	var storageAbi types.SolidityStorageDocument
+	err := json.Unmarshal([]byte(data), &storageAbi)
+	if err != nil {
+		return errors.New("invalid JSON: " + err.Error())
+	}
+	return r.db.AddStorageABI(address, data)
+}
+
+func (r *RPCAPIs) GetStorageABI(address common.Address) (string, error) {
+	return r.db.GetStorageABI(address)
 }
