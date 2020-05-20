@@ -4,7 +4,7 @@ import "github.com/ethereum/go-ethereum/common"
 
 type StorageManager interface {
 	//Get retrieves the value for a given storage slot, padding as needed
-	Get(hash common.Hash) string
+	Get(hash common.Hash) []byte
 }
 
 type DefaultStorageManager struct {
@@ -15,8 +15,8 @@ func NewDefaultStorageHandler(rawStorage map[common.Hash]string) StorageManager 
 	return &DefaultStorageManager{rawStorage: rawStorage}
 }
 
-func (dms *DefaultStorageManager) Get(hash common.Hash) string {
-	return PadLeft(dms.rawStorage[hash], "0", 64)
+func (dms *DefaultStorageManager) Get(hash common.Hash) []byte {
+	return common.Hex2Bytes(PadLeft(dms.rawStorage[hash], "0", 64))
 }
 
 func PadLeft(str, pad string, length int) string {

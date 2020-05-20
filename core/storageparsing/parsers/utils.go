@@ -19,9 +19,8 @@ func hash(input *big.Int) common.Hash {
 	return common.BytesToHash(hasher.Sum(nil))
 }
 
-func ExtractFromSingleStorage(offset uint64, numberOfBytes uint64, storageEntry string) []byte {
-	bytes := common.Hex2Bytes(storageEntry)
-	extractedBytes := bytes[32-offset-numberOfBytes : 32-offset]
+func ExtractFromSingleStorage(offset uint64, numberOfBytes uint64, storageEntry []byte) []byte {
+	extractedBytes := storageEntry[32-offset-numberOfBytes : 32-offset]
 
 	return extractedBytes
 }

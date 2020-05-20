@@ -9,14 +9,14 @@ import (
 
 var maxElementsInRow = BigThirtyTwo
 
-func (p *Parser) ParseStringStorage(storageEntry string, entry types.SolidityStorageEntry) string {
+func (p *Parser) ParseStringStorage(storageEntry []byte, entry types.SolidityStorageEntry) string {
 	//determine if this is long or short
 	arrResult := p.parseBytes(storageEntry, entry)
 
 	return string(arrResult)
 }
 
-func (p *Parser) ParseBytesStorage(storageEntry string, entry types.SolidityStorageEntry) []string {
+func (p *Parser) ParseBytesStorage(storageEntry []byte, entry types.SolidityStorageEntry) []string {
 	//determine if this is long or short
 	arrResult := p.parseBytes(storageEntry, entry)
 
@@ -28,7 +28,7 @@ func (p *Parser) ParseBytesStorage(storageEntry string, entry types.SolidityStor
 	return resultBytes
 }
 
-func (p *Parser) parseBytes(storageEntry string, entry types.SolidityStorageEntry) []byte {
+func (p *Parser) parseBytes(storageEntry []byte, entry types.SolidityStorageEntry) []byte {
 	bytes := ExtractFromSingleStorage(0, 1, storageEntry)
 
 	//If the LSB is 0, then the whole array fits into a single storage slot
@@ -40,14 +40,14 @@ func (p *Parser) parseBytes(storageEntry string, entry types.SolidityStorageEntr
 	return p.handleLargeByteArray(storageEntry, entry)
 }
 
-func (p *Parser) handleShortByteArray(storageEntry string, numberOfElements byte) []byte {
+func (p *Parser) handleShortByteArray(storageEntry []byte, numberOfElements byte) []byte {
 	// To handle a short bytes_storage entry, entries start from the left (offset 32), and take 1 byte per entry
 	offset := 32 - numberOfElements //skip the right-most byte, as that stores the length
 
 	return ExtractFromSingleStorage(uint64(offset), uint64(numberOfElements), storageEntry)
 }
 
-func (p *Parser) handleLargeByteArray(storageEntry string, entry types.SolidityStorageEntry) []byte {
+func (p *Parser) handleLargeByteArray(storageEntry []byte, entry types.SolidityStorageEntry) []byte {
 	sm := p.storageManager
 
 	bytes := ExtractFromSingleStorage(0, 32, storageEntry)
