@@ -2,14 +2,13 @@ package parsers
 
 import (
 	"github.com/ethereum/go-ethereum/common"
-	"math/big"
 	"quorumengineering/quorum-report/core/storageparsing/types"
 )
 
 func (p *Parser) ParseStruct(entry types.SolidityStorageEntry, namedType types.SolidityTypeEntry) ([]*types.StorageItem, error) {
 	existingOffset := p.slotOffset
-	currentSlot := common.BigToHash(new(big.Int).SetUint64(entry.Slot))
-	newOffset := ResolveSlot(existingOffset, currentSlot)
+	currentSlot := common.BigToHash(bigN(entry.Slot))
+	newOffset := ResolveSlot(existingOffset.Big(), currentSlot.Big())
 
 	newTemplate := types.SolidityStorageDocument{
 		Storage: namedType.Members,

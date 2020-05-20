@@ -2,6 +2,7 @@ package parsers
 
 import (
 	"github.com/ethereum/go-ethereum/common"
+	"math/big"
 )
 
 func ExtractFromSingleStorage(offset uint64, numberOfBytes uint64, storageEntry string) ([]byte, error) {
@@ -11,11 +12,16 @@ func ExtractFromSingleStorage(offset uint64, numberOfBytes uint64, storageEntry 
 	return extractedBytes, nil
 }
 
-func ResolveSlot(offsetSlot common.Hash, givenSlot common.Hash) common.Hash {
-	offsetBig := offsetSlot.Big()
-	givenBig := givenSlot.Big()
-
-	combined := offsetBig.Add(offsetBig, givenBig)
-
+func ResolveSlot(offsetSlot *big.Int, givenSlot *big.Int) common.Hash {
+	combined := offsetSlot.Add(offsetSlot, givenSlot)
 	return common.BigToHash(combined)
+}
+
+//rounds up to nearest multiple of 32
+func roundUpTo32(n uint64) uint64 {
+	return ((n + 31) / 32) * 32
+}
+
+func bigN(n uint64) *big.Int {
+	return new(big.Int).SetUint64(n)
 }

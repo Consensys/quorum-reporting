@@ -2,7 +2,6 @@ package parsers
 
 import (
 	"github.com/ethereum/go-ethereum/common"
-	"math/big"
 	"quorumengineering/quorum-report/core/storageparsing/types"
 	"sort"
 	"strings"
@@ -72,7 +71,7 @@ func (p *Parser) ParseRawStorage() ([]*types.StorageItem, error) {
 func (p *Parser) parseSingle(storageItem types.SolidityStorageEntry) (interface{}, error) {
 
 	namedType := p.template.Types[storageItem.Type]
-	startingSlot := ResolveSlot(p.slotOffset, common.BigToHash(new(big.Int).SetUint64(storageItem.Slot)))
+	startingSlot := ResolveSlot(p.slotOffset.Big(), bigN(storageItem.Slot))
 	directStorageSlot := p.storageManager.Get(startingSlot) //the storage this variable uses by its "Slot"
 
 	var result interface{}
@@ -141,8 +140,13 @@ func (p *Parser) parseSingle(storageItem types.SolidityStorageEntry) (interface{
 		}
 		result = str
 
-		//case strings.HasPrefix(storageItem.Type, arrayPrefix):
-		//	parsers.ParseArray(storageManager, Template.Types, storageItem, namedType)
+	case strings.HasPrefix(storageItem.Type, arrayPrefix):
+		res, err := p.ParseArray(storageItem, namedType)
+		if err != nil {
+			return nil, err
+		}
+		result = res
+
 	case strings.HasPrefix(storageItem.Type, structPrefix):
 		res, err := p.ParseStruct(storageItem, namedType)
 		if err != nil {

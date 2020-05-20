@@ -77,14 +77,14 @@ func (p *Parser) handleLargeByteArray(storageEntry string, entry types.SolidityS
 		return nil, err
 	}
 	numberOfElements := p.ParseUint(bytes)
-	numberOfElements.Sub(numberOfElements, new(big.Int).SetUint64(1))
-	numberOfElements.Div(numberOfElements, new(big.Int).SetUint64(2))
+	numberOfElements.Sub(numberOfElements, types.BigOne)
+	numberOfElements.Div(numberOfElements, types.BigTwo)
 
 	currentStorageSlot := hash(entry.Slot)
 
 	allResults := make([]byte, 0)
-	maxElementsInRow := new(big.Int).SetUint64(32)
-	for i := new(big.Int); i.Cmp(numberOfElements) < 0; i.Add(i, maxElementsInRow) {
+	maxElementsInRow := types.BigThirtyTwo
+	for i := bigN(0); i.Cmp(numberOfElements) < 0; i.Add(i, maxElementsInRow) {
 		//read row
 		resultsLeft := new(big.Int).Sub(numberOfElements, i)
 		isFullRow := resultsLeft.Cmp(maxElementsInRow) > 0
@@ -97,7 +97,7 @@ func (p *Parser) handleLargeByteArray(storageEntry string, entry types.SolidityS
 			allResults = append(allResults, currentResults...)
 
 			asBig := currentStorageSlot.Big()
-			asBig.Add(asBig, new(big.Int).SetUint64(1))
+			asBig.Add(asBig, types.BigOne)
 			currentStorageSlot = common.BigToHash(asBig)
 		} else {
 			currentResults, err := p.handleShortByteArray(sm.Get(currentStorageSlot), byte(resultsLeft.Uint64())*2)

@@ -3,7 +3,14 @@ package types
 import (
 	"encoding/json"
 	"github.com/ethereum/go-ethereum/common"
+	"math/big"
 	"strconv"
+)
+
+var (
+	BigOne       = new(big.Int).SetUint64(1)
+	BigTwo       = new(big.Int).SetUint64(2)
+	BigThirtyTwo = new(big.Int).SetUint64(32)
 )
 
 type SolidityStorageEntries []SolidityStorageEntry
@@ -61,7 +68,13 @@ func (sse SolidityStorageEntries) Len() int {
 }
 
 func (sse SolidityStorageEntries) Less(i, j int) bool {
-	return (sse[i].Slot < sse[j].Slot) || (sse[i].Offset < sse[j].Offset)
+	if sse[i].Slot < sse[j].Slot {
+		return true
+	}
+	if sse[i].Slot == sse[j].Slot {
+		return sse[i].Offset < sse[j].Offset
+	}
+	return false
 }
 
 func (sse SolidityStorageEntries) Swap(i, j int) {
@@ -87,6 +100,7 @@ func (sse *SolidityTypeEntry) UnmarshalJSON(b []byte) error {
 	sse.Label = simple.Label
 	sse.Value = simple.Value
 	sse.Members = simple.Members
+	sse.Base = simple.Base
 
 	if simple.NumberOfBytes != "" {
 		numBytesAsUint64, err := strconv.ParseUint(simple.NumberOfBytes, 10, 0)

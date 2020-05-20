@@ -1,6 +1,9 @@
 package parsers
 
-import "math/big"
+import (
+	"math/big"
+	"quorumengineering/quorum-report/core/storageparsing/types"
+)
 
 func (p *Parser) ParseInt(bytes []byte) *big.Int {
 	//2s complement, so negative is Most Significant Bit is set
@@ -19,7 +22,7 @@ func (p *Parser) ParseInt(bytes []byte) *big.Int {
 
 	i := new(big.Int)
 	i.SetBytes(bytes)
-	i.Add(i, new(big.Int).SetUint64(1))
+	i.Add(i, types.BigOne)
 	i.Neg(i)
 
 	return i

@@ -8,85 +8,62 @@ import (
 	"strings"
 )
 
-func ParseArray(sm types.StorageManager, allTypes map[string]types.SolidityTypeEntry,
-	entry types.SolidityStorageEntry, namedType types.SolidityTypeEntry) error {
-
-	sizeOfArray, err := determineSize(entry)
+func (p *Parser) ParseArray(entry types.SolidityStorageEntry, namedType types.SolidityTypeEntry) ([]interface{}, error) {
+	isDynamic := namedType.Encoding == "dynamic_array"
+	sizeOfArray, err := p.determineSize(entry)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	size := allTypes[namedType.Base].NumberOfBytes
+	sizeOfElement := p.template.Types[namedType.Base].NumberOfBytes
 
-	// fixed array size
-	if sizeOfArray != 0 {
-		handleFixedArray(sizeOfArray, size, sm, entry, namedType)
-	} else {
-		handleDynamicArray(size, sm, entry, namedType)
-	}
-
-	return nil
-}
-
-func handleFixedArray(numberOfElements uint64, sizeOfType uint64, sm types.StorageManager, entry types.SolidityStorageEntry, namedType types.SolidityTypeEntry) {
-	totalBytesToRead := roundUp(numberOfElements * sizeOfType)
-
-	startSlot := entry.Slot
-
-	allItems := ""
-	for totalBytesToRead > 0 {
-		currentSlot := common.BigToHash(new(big.Int).SetUint64(startSlot))
-		allItems = sm.Get(currentSlot) + allItems
-
-		totalBytesToRead -= 32
-		startSlot++
-	}
-
-	splitItems := make([]string, 0)
-	for allItems != "" {
-		nextItem := allItems[uint64(len(allItems))-(sizeOfType*2):]
-		splitItems = append(splitItems, nextItem)
-		allItems = allItems[:uint64(len(allItems))-(sizeOfType*2)]
-	}
-
-	splitItems = splitItems[:numberOfElements]
-
-	//subhandler for type
-}
-
-func handleDynamicArray(sizeOfType uint64, sm types.StorageManager, entry types.SolidityStorageEntry, namedType types.SolidityTypeEntry) {
 	startSlotNumber := entry.Slot
-	numberOfElementsHex := sm.Get(common.BigToHash(new(big.Int).SetUint64(startSlotNumber)))
-
-	numberAsBytes := common.Hex2Bytes(numberOfElementsHex)
-	numberOfElements := new(big.Int).SetBytes(numberAsBytes).Uint64()
-
-	startSlotAsBig := hash(startSlotNumber).Big()
-
-	totalBytesToRead := roundUp(numberOfElements * sizeOfType)
-
-	allItems := ""
-	for totalBytesToRead > 0 {
-		currentSlot := common.BigToHash(startSlotAsBig)
-		allItems = sm.Get(currentSlot) + allItems
-
-		totalBytesToRead -= 32
-		startSlotAsBig.Add(startSlotAsBig, new(big.Int).SetUint64(1))
+	storageSlot := ResolveSlot(p.slotOffset.Big(), bigN(startSlotNumber))
+	if isDynamic {
+		storageSlot = hashBytes(common.LeftPadBytes(storageSlot.Big().Bytes(), 32))
 	}
 
-	splitItems := make([]string, 0)
-	for allItems != "" {
-		nextItem := allItems[uint64(len(allItems))-(sizeOfType*2):]
-		splitItems = append(splitItems, nextItem)
-		allItems = allItems[:uint64(len(allItems))-(sizeOfType*2)]
+	//build up array of fake storage elements the array has
+	storageElements := make([]types.SolidityStorageEntry, 0)
+
+	currentSlot := uint64(0)
+	currentOffset := uint64(0)
+
+	for i := uint64(0); i < sizeOfArray; i++ {
+		nextEntry := types.SolidityStorageEntry{
+			Label:  strconv.FormatUint(i, 10),
+			Offset: currentOffset,
+			Slot:   currentSlot,
+			Type:   namedType.Base,
+		}
+
+		currentOffset += sizeOfElement
+		if currentOffset >= 32 {
+			currentSlot += roundUpTo32(currentOffset) / 32
+			currentOffset = 0
+		}
+
+		storageElements = append(storageElements, nextEntry)
 	}
 
-	splitItems = splitItems[:numberOfElements]
+	newTemplate := types.SolidityStorageDocument{
+		Storage: storageElements,
+		Types:   p.template.Types,
+	}
 
-	//handle items
+	arrayParser := NewParser(p.storageManager, newTemplate, storageSlot)
+	out, err := arrayParser.ParseRawStorage()
+	if err != nil {
+		return nil, err
+	}
+	extractedResults := make([]interface{}, 0, len(out))
+	for _, result := range out {
+		extractedResults = append(extractedResults, result.Value)
+	}
+	return extractedResults, nil
 }
 
-func determineSize(storageItem types.SolidityStorageEntry) (uint64, error) {
+func (p *Parser) determineSize(storageItem types.SolidityStorageEntry) (uint64, error) {
 	name := storageItem.Type
 
 	// determine the position the size starts from
@@ -96,12 +73,13 @@ func determineSize(storageItem types.SolidityStorageEntry) (uint64, error) {
 	size := name[startOfAmount+1 : endOfAmount]
 
 	if size == "dyn" {
-		return 0, nil
+		//fetch it from the storage slot
+		startSlotNumber := storageItem.Slot
+		storageSlot := ResolveSlot(p.slotOffset.Big(), bigN(startSlotNumber))
+		numberOfElementsHex := p.storageManager.Get(storageSlot)
+		numberAsBytes := common.Hex2Bytes(numberOfElementsHex)
+		numberOfElements := new(big.Int).SetBytes(numberAsBytes).Uint64()
+		return numberOfElements, nil
 	}
 	return strconv.ParseUint(size, 10, 0)
-}
-
-//rounds up to nearest multiple of 32
-func roundUp(n uint64) uint64 {
-	return ((n + 31) / 32) * 32
 }
