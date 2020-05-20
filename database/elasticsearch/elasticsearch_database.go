@@ -426,7 +426,7 @@ func (es *ElasticsearchDB) GetAllTransactionsToAddress(address common.Address, o
 		Body:  strings.NewReader(queryString),
 		From:  &from,
 		Size:  &options.PageSize,
-		Sort:  []string{"blockNumber:asc", "index:asc"},
+		Sort:  []string{"blockNumber:desc", "index:asc"},
 	}
 	results, err := es.doSearchRequest(req)
 	if err != nil {
@@ -454,7 +454,7 @@ func (es *ElasticsearchDB) GetAllTransactionsInternalToAddress(address common.Ad
 		Body:  strings.NewReader(queryString),
 		From:  &from,
 		Size:  &options.PageSize,
-		Sort:  []string{"blockNumber:asc", "index:asc"},
+		Sort:  []string{"blockNumber:desc", "index:asc"},
 	}
 	results, err := es.doSearchRequest(req)
 	if err != nil {
@@ -482,7 +482,7 @@ func (es *ElasticsearchDB) GetAllEventsFromAddress(address common.Address, optio
 		Body:  strings.NewReader(queryString),
 		From:  &from,
 		Size:  &options.PageSize,
-		Sort:  []string{"blockNumber:asc", "logIndex:asc"},
+		Sort:  []string{"blockNumber:desc", "logIndex:asc"},
 	}
 	results, err := es.doSearchRequest(req)
 	if err != nil {
