@@ -27,8 +27,7 @@ func ExtractFromSingleStorage(offset uint64, numberOfBytes uint64, storageEntry 
 }
 
 func (p *Parser) ResolveSlot(givenSlot *big.Int) common.Hash {
-	combined := bigN(0).
-		Add(p.slotOffset.Big(), givenSlot)
+	combined := bigN(0).Add(p.slotOffset.Big(), givenSlot)
 	return common.BigToHash(combined)
 }
 

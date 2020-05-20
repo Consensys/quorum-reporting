@@ -33,18 +33,16 @@ func (p *Parser) parseBytes(storageEntry string, entry types.SolidityStorageEntr
 	isShort := (bytes[0] % 2) == 0
 
 	if isShort {
-		return p.handleShortByteArray(storageEntry, bytes[0])
+		return p.handleShortByteArray(storageEntry, bytes[0]/2)
 	}
 	return p.handleLargeByteArray(storageEntry, entry)
 }
 
 func (p *Parser) handleShortByteArray(storageEntry string, numberOfElements byte) []byte {
-	trueNumberOfElements := uint64(numberOfElements / 2)
-
 	// To handle a short bytes_storage entry, entries start from the left (offset 32), and take 1 byte per entry
-	offset := 32 - trueNumberOfElements //skip the right-most byte, as that stores the length
+	offset := 32 - numberOfElements //skip the right-most byte, as that stores the length
 
-	return ExtractFromSingleStorage(offset, trueNumberOfElements, storageEntry)
+	return ExtractFromSingleStorage(uint64(offset), uint64(numberOfElements), storageEntry)
 }
 
 func (p *Parser) handleLargeByteArray(storageEntry string, entry types.SolidityStorageEntry) []byte {
@@ -66,7 +64,7 @@ func (p *Parser) handleLargeByteArray(storageEntry string, entry types.SolidityS
 		isFullRow := resultsLeft.Cmp(maxElementsInRow) > 0
 
 		if isFullRow {
-			currentResults := p.handleShortByteArray(sm.Get(currentStorageSlot), 64)
+			currentResults := p.handleShortByteArray(sm.Get(currentStorageSlot), 32)
 
 			allResults = append(allResults, currentResults...)
 
@@ -74,7 +72,7 @@ func (p *Parser) handleLargeByteArray(storageEntry string, entry types.SolidityS
 			asBig.Add(asBig, BigOne)
 			currentStorageSlot = common.BigToHash(asBig)
 		} else {
-			currentResults := p.handleShortByteArray(sm.Get(currentStorageSlot), byte(resultsLeft.Uint64())*2)
+			currentResults := p.handleShortByteArray(sm.Get(currentStorageSlot), byte(resultsLeft.Uint64()))
 			allResults = append(allResults, currentResults...)
 		}
 	}
