@@ -118,24 +118,11 @@ type StorageItem struct {
 	VarIndex uint64      `json:"index"`
 	VarType  string      `json:"type"`
 	Value    interface{} `json:"value,omitempty"`
-	// for map only
-	Values map[string]interface{} `json:"values,omitempty"`
 }
-
-type ReportingRequestTemplate []*StorageItemTemplate
 
 type ReportingResponseTemplate struct {
 	Address       common.Address `json:"address"`
 	HistoricState []*ParsedState `json:"historicState"`
-}
-
-type StorageItemTemplate struct {
-	VarName  string `json:"name"`
-	VarIndex uint64 `json:"index"`
-	VarType  string `json:"type"`
-	// for map only
-	KeyType string   `json:"keyType,omitempty"`
-	Keys    []string `json:"keys,omitempty"`
 }
 
 type ParsedState struct {
