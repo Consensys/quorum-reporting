@@ -1,4 +1,4 @@
-package parsers
+package storageparsing
 
 import "github.com/ethereum/go-ethereum/common"
 
