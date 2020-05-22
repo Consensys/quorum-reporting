@@ -17,8 +17,7 @@ func (p *Parser) ParseInt(bytes []byte) *big.Int {
 		bytes[i] = ^bytes[i]
 	}
 
-	i := new(big.Int)
-	i.SetBytes(bytes)
+	i := p.ParseUint(bytes)
 	i.Add(i, BigOne)
 	i.Neg(i)
 

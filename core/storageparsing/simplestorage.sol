@@ -32,6 +32,7 @@ contract SimpleStorage {
   bytes moreThan31;
   string i2;
   string i5;
+  string i6;
 
   byte[] h6;
   byte[] h6long;
@@ -57,8 +58,12 @@ contract SimpleStorage {
       int8 val;
       uint8 otherval;
       string custommessage;
+      Funder otherStruct;
+      int[] bigIntArray;
   }
   LongerStruct longstruct;
+  LongerStruct longstruct2;
+  LongerStruct longstruct3;
 
   mapping(uint => uint) map;
 
@@ -114,6 +119,7 @@ contract SimpleStorage {
 
     i2 = "mystring";
     i5 = "my really long string that is definitely longer than the 32 byte limit";
+    i6 = "my really long string that is definitely longer than the 32 byte limit. my really long string that is definitely longer than the 32 byte limit. my really long string that is definitely longer than the 32 byte limit.";
 
     funder1 = Funder("some addr", 56);
     fundersFixed[0] = Funder("some addr fixed 1", 85);
@@ -129,6 +135,13 @@ contract SimpleStorage {
     doubleArray.push(arr1);
     doubleArray.push(arr2);
 
-    longstruct = LongerStruct("some addr fixed 6", 4875443, -6, 8, "custom message");
+    int[] memory longArr1 = new int[](7);
+    longArr1[0] = 56; longArr1[3] = 43; longArr1[4] = 32; longArr1[6] = 65;
+    int[] memory longArr2 = new int[](7);
+    longArr2[0] = 1; longArr2[3] = 2; longArr2[4] = 1; longArr2[6] = 1;
+
+    longstruct = LongerStruct("some addr fixed 6", 4875443, -6, 8, "custom message", funder1, longArr1);
+    longstruct2 = LongerStruct("some addr fixed 6", 4875443, -6, 8, "custom message", fundersFixed[0], longArr1);
+    longstruct3 = LongerStruct("some addr fixed 6", 4875443, -6, 8, "custom message", Funder("mystr", 877), longArr2);
   }
 }
