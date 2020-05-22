@@ -54,6 +54,6 @@ func Test_ExtractFromSingleStorage_WithOffset(t *testing.T) {
 	in := common.Hex2Bytes("0000000000000000000000000000000000000000000010234567890000000000")
 	expected := common.Hex2Bytes("00000000001023456789")
 
-	out := ExtractFromSingleStorage(10, 10, in)
+	out := ExtractFromSingleStorage(5, 10, in)
 	assert.Equal(t, expected, out)
 }

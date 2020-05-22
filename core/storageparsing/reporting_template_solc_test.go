@@ -2,6 +2,7 @@ package storageparsing
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/assert"
 	"quorumengineering/quorum-report/types"
@@ -103,6 +104,8 @@ func TestCorrectParsing(t *testing.T) {
 	assert.Nil(t, err, "unexpected error")
 
 	encoded, err := json.Marshal(output)
+
+	fmt.Println(string(encoded))
 
 	assert.Equal(t, expectedOutput, string(encoded), "output was incorrect. Expected %s, but got %s", expectedOutput, encoded)
 }

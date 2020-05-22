@@ -16,14 +16,5 @@ func NewDefaultStorageHandler(rawStorage map[common.Hash]string) StorageManager 
 }
 
 func (dms *DefaultStorageManager) Get(hash common.Hash) []byte {
-	return common.Hex2Bytes(PadLeft(dms.rawStorage[hash], "0", 64))
-}
-
-func PadLeft(str, pad string, length int) string {
-	for {
-		str = pad + str
-		if len(str) > length {
-			return str[1:]
-		}
-	}
+	return common.LeftPadBytes(common.Hex2Bytes(dms.rawStorage[hash]), 32)
 }

@@ -48,8 +48,6 @@ func (p *Parser) handleShortByteArray(storageEntry []byte, numberOfElements byte
 }
 
 func (p *Parser) handleLargeByteArray(storageEntry []byte, entry types.SolidityStorageEntry) []byte {
-	sm := p.storageManager
-
 	bytes := ExtractFromSingleStorage(0, 32, storageEntry)
 
 	numberOfElements := p.ParseUint(bytes)
@@ -64,7 +62,7 @@ func (p *Parser) handleLargeByteArray(storageEntry []byte, entry types.SolidityS
 		isFullRow := resultsLeft.Cmp(maxElementsInRow) > 0
 
 		if isFullRow {
-			currentResults := p.handleShortByteArray(sm.Get(currentStorageSlot), 32)
+			currentResults := p.handleShortByteArray(p.storageManager.Get(currentStorageSlot), 32)
 
 			allResults = append(allResults, currentResults...)
 
@@ -72,7 +70,7 @@ func (p *Parser) handleLargeByteArray(storageEntry []byte, entry types.SolidityS
 			asBig.Add(asBig, BigOne)
 			currentStorageSlot = common.BigToHash(asBig)
 		} else {
-			currentResults := p.handleShortByteArray(sm.Get(currentStorageSlot), byte(resultsLeft.Uint64()))
+			currentResults := p.handleShortByteArray(p.storageManager.Get(currentStorageSlot), byte(resultsLeft.Uint64()))
 			allResults = append(allResults, currentResults...)
 		}
 	}

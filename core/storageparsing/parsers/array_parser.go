@@ -21,30 +21,7 @@ func (p *Parser) ParseArray(entry types.SolidityStorageEntry, namedType types.So
 		storageSlot = hash(storageSlot.Big())
 	}
 
-	//build up array of fake storage elements the array has
-	storageElements := make([]types.SolidityStorageEntry, 0)
-
-	currentSlot := uint64(0)
-	currentOffset := uint64(0)
-	for i := uint64(0); i < sizeOfArray; i++ {
-		nextEntry := types.SolidityStorageEntry{
-			Offset: currentOffset,
-			Slot:   currentSlot,
-			Type:   namedType.Base,
-		}
-		storageElements = append(storageElements, nextEntry)
-
-		currentOffset += sizeOfElement
-		if currentOffset >= 32 {
-			currentSlot += roundUpTo32(currentOffset) / 32
-			currentOffset = 0
-		}
-	}
-
-	newTemplate := types.SolidityStorageDocument{
-		Storage: storageElements,
-		Types:   p.template.Types,
-	}
+	newTemplate := p.createArrayStorageDocument(sizeOfArray, sizeOfElement, namedType.Base)
 
 	arrayParser := NewParser(p.storageManager, newTemplate, storageSlot)
 	out, err := arrayParser.ParseRawStorage()
@@ -56,6 +33,34 @@ func (p *Parser) ParseArray(entry types.SolidityStorageEntry, namedType types.So
 		extractedResults = append(extractedResults, result.Value)
 	}
 	return extractedResults, nil
+}
+
+func (p *Parser) createArrayStorageDocument(sizeOfArray uint64, sizeOfElement uint64, baseType string) types.SolidityStorageDocument {
+	//build up array of fake storage elements the array has
+	storageElements := make([]types.SolidityStorageEntry, 0)
+
+	currentSlot := uint64(0)
+	currentOffset := uint64(0)
+	for i := uint64(0); i < sizeOfArray; i++ {
+
+		nextEntry := types.SolidityStorageEntry{
+			Offset: currentOffset,
+			Slot:   currentSlot,
+			Type:   baseType,
+		}
+		storageElements = append(storageElements, nextEntry)
+
+		currentOffset += sizeOfElement
+		if currentOffset+sizeOfElement > 32 {
+			currentSlot += roundUpTo32(currentOffset) / 32
+			currentOffset = 0
+		}
+	}
+
+	return types.SolidityStorageDocument{
+		Storage: storageElements,
+		Types:   p.template.Types,
+	}
 }
 
 func (p *Parser) determineSize(storageItem types.SolidityStorageEntry, isDynamic bool) (uint64, error) {
