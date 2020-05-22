@@ -18,7 +18,7 @@ func (p *Parser) ParseArray(entry types.SolidityStorageEntry, namedType types.So
 
 	storageSlot := p.ResolveSlot(bigN(entry.Slot))
 	if isDynamic {
-		storageSlot = hash(storageSlot.Big())
+		storageSlot = hash(storageSlot)
 	}
 
 	newTemplate := p.createArrayStorageDocument(sizeOfArray, sizeOfElement, namedType.Base)

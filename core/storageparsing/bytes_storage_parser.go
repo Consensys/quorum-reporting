@@ -53,7 +53,7 @@ func (p *Parser) handleLargeByteArray(storageEntry []byte, entry types.SolidityS
 	numberOfElements := p.ParseUint(bytes)
 	numberOfElements.Sub(numberOfElements, BigOne).Div(numberOfElements, BigTwo)
 
-	currentStorageSlot := hash(p.ResolveSlot(bigN(entry.Slot)).Big())
+	currentStorageSlot := hash(p.ResolveSlot(bigN(entry.Slot)))
 
 	allResults := make([]byte, 0)
 	for i := bigN(0); i.Cmp(numberOfElements) < 0; i.Add(i, maxElementsInRow) {
