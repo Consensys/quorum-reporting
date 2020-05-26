@@ -41,6 +41,10 @@ var (
 )
 
 func TestCreateTransaction(t *testing.T) {
+	testBlock := &types.Block{
+		Number:    2,
+		Timestamp: uint64(0x1000),
+	}
 	mockGraphQL := map[string]map[string]interface{}{
 		graphql.TransactionDetailQuery(common.HexToHash("0xe625ba9f14eed0671508966080fb01374d0a3a16b9cee545a324179b75f30aa8")): {
 			"transaction": interface{}(graphqlResp),
@@ -62,8 +66,8 @@ func TestCreateTransaction(t *testing.T) {
 			},
 		},
 	}
-	tm := NewTransactionMonitor(nil, client.NewStubQuorumClient(nil, mockGraphQL, mockRPC), "istanbul")
-	tx, err := tm.createTransaction(common.HexToHash("0xe625ba9f14eed0671508966080fb01374d0a3a16b9cee545a324179b75f30aa8"))
+	tm := NewTransactionMonitor(nil, client.NewStubQuorumClient(nil, mockGraphQL, mockRPC))
+	tx, err := tm.createTransaction(testBlock, common.HexToHash("0xe625ba9f14eed0671508966080fb01374d0a3a16b9cee545a324179b75f30aa8"))
 	if err != nil {
 		t.Fatalf("expected no error, but got %v", err)
 	}
@@ -129,13 +133,13 @@ func TestTransactionMonitor_PullTransactions(t *testing.T) {
 	}
 	block := &types.Block{
 		Hash:   common.BytesToHash([]byte("dummy")),
-		Number: 1,
+		Number: 2,
 		Transactions: []common.Hash{
 			common.HexToHash("0xe625ba9f14eed0671508966080fb01374d0a3a16b9cee545a324179b75f30aa8"),
 		},
 	}
 
-	tm := NewTransactionMonitor(nil, client.NewStubQuorumClient(nil, mockGraphQL, mockRPC), "istanbul")
+	tm := NewTransactionMonitor(nil, client.NewStubQuorumClient(nil, mockGraphQL, mockRPC))
 
 	txs, err := tm.PullTransactions(block)
 	assert.Nil(t, err, "unexpected error")

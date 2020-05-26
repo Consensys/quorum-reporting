@@ -15,13 +15,12 @@ import (
 )
 
 type TransactionMonitor struct {
-	consensus    string
 	db           database.Database
 	quorumClient client.Client
 }
 
-func NewTransactionMonitor(db database.Database, quorumClient client.Client, consensus string) *TransactionMonitor {
-	return &TransactionMonitor{consensus, db, quorumClient}
+func NewTransactionMonitor(db database.Database, quorumClient client.Client) *TransactionMonitor {
+	return &TransactionMonitor{db, quorumClient}
 }
 
 func (tm *TransactionMonitor) PullTransactions(block *types.Block) ([]*types.Transaction, error) {
@@ -30,7 +29,7 @@ func (tm *TransactionMonitor) PullTransactions(block *types.Block) ([]*types.Tra
 	fetchedTransactions := make([]*types.Transaction, 0, len(block.Transactions))
 	for _, txHash := range block.Transactions {
 		// 1. Query transaction details by graphql.
-		tx, err := tm.createTransaction(txHash)
+		tx, err := tm.createTransaction(block, txHash)
 		if err != nil {
 			return nil, err
 		}
@@ -39,7 +38,7 @@ func (tm *TransactionMonitor) PullTransactions(block *types.Block) ([]*types.Tra
 	return fetchedTransactions, nil
 }
 
-func (tm *TransactionMonitor) createTransaction(hash common.Hash) (*types.Transaction, error) {
+func (tm *TransactionMonitor) createTransaction(block *types.Block, hash common.Hash) (*types.Transaction, error) {
 	var (
 		resp     map[string]interface{}
 		txOrigin graphql.Transaction
@@ -55,10 +54,6 @@ func (tm *TransactionMonitor) createTransaction(hash common.Hash) (*types.Transa
 	}
 
 	// Create reporting transaction struct fields.
-	blockNumber, err := hexutil.DecodeUint64(txOrigin.Block.Number)
-	if err != nil {
-		return nil, err
-	}
 	nonce, err := hexutil.DecodeUint64(txOrigin.Nonce)
 	if err != nil {
 		return nil, err
@@ -84,16 +79,11 @@ func (tm *TransactionMonitor) createTransaction(hash common.Hash) (*types.Transa
 		return nil, err
 	}
 
-	timestamp := hexutil.MustDecodeUint64(txOrigin.Block.Timestamp)
-	if tm.consensus == "raft" {
-		timestamp = timestamp / 1_000_000_000
-	}
-
 	tx := &types.Transaction{
-		Hash:              common.HexToHash(txOrigin.Hash),
+		Hash:              hash,
 		Status:            txOrigin.Status == "0x1",
-		BlockNumber:       blockNumber,
-		BlockHash:         common.HexToHash(txOrigin.Block.Hash),
+		BlockNumber:       block.Number,
+		BlockHash:         block.Hash,
 		Index:             txOrigin.Index,
 		Nonce:             nonce,
 		From:              common.HexToAddress(txOrigin.From.Address),
@@ -107,7 +97,7 @@ func (tm *TransactionMonitor) createTransaction(hash common.Hash) (*types.Transa
 		Data:              hexutil.MustDecode(txOrigin.InputData),
 		PrivateData:       hexutil.MustDecode(txOrigin.PrivateInputData),
 		IsPrivate:         txOrigin.IsPrivate,
-		Timestamp:         timestamp,
+		Timestamp:         block.Timestamp,
 	}
 	events := []*types.Event{}
 	for _, l := range txOrigin.Logs {
@@ -120,11 +110,11 @@ func (tm *TransactionMonitor) createTransaction(hash common.Hash) (*types.Transa
 			Address:          common.HexToAddress(l.Account.Address),
 			Topics:           topics,
 			Data:             hexutil.MustDecode(l.Data),
-			BlockNumber:      tx.BlockNumber,
-			BlockHash:        common.HexToHash(txOrigin.Block.Hash),
+			BlockNumber:      block.Number,
+			BlockHash:        block.Hash,
 			TransactionHash:  tx.Hash,
 			TransactionIndex: txOrigin.Index,
-			Timestamp:        timestamp,
+			Timestamp:        block.Timestamp,
 		}
 		events = append(events, e)
 	}

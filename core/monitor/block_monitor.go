@@ -30,7 +30,7 @@ func NewBlockMonitor(db database.Database, quorumClient client.Client, consensus
 	return &BlockMonitor{
 		db:                 db,
 		quorumClient:       quorumClient,
-		transactionMonitor: NewTransactionMonitor(db, quorumClient, consensus),
+		transactionMonitor: NewTransactionMonitor(db, quorumClient),
 		newBlockChan:       make(chan *types.Block),
 		batchWriteChan:     batchWriteChan,
 		consensus:          consensus,

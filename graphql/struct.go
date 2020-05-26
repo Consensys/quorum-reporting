@@ -9,7 +9,6 @@ type CurrentBlock struct {
 type Transaction struct {
 	Hash              string
 	Status            string
-	Block             CurrentBlock
 	Index             uint64
 	Nonce             string
 	From              Address
