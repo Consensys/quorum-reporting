@@ -35,6 +35,10 @@ type DatabaseConfig struct {
 	CacheSize     int                  `toml:"cacheSize,omitempty"`
 }
 
+type TuningConfig struct {
+	BlockProcessingQueueSize int `toml:"blockProcessingQueueSize"`
+}
+
 type ReportingConfig struct {
 	Title     string
 	Addresses []common.Address `toml:"addresses,omitempty"`
@@ -50,6 +54,7 @@ type ReportingConfig struct {
 		ReconnectInterval int    `toml:"reconnectInterval,omitempty"`
 		MaxReconnectTries int    `toml:"maxReconnectTries,omitempty"`
 	}
+	Tuning TuningConfig `toml:"tuning,omitempty"`
 }
 
 func ReadConfig(configFile string) (ReportingConfig, error) {

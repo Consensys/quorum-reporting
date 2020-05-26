@@ -10,17 +10,20 @@ import (
 	"quorumengineering/quorum-report/types"
 )
 
+//Arbitrary for now
+var maxTransactionMultiplier = 10
+
 type BlockAndTransactions struct {
 	block *types.Block
 	txs   []*types.Transaction
 }
 
 type BatchWriter struct {
-	maxBlocks       uint64
-	maxTransactions uint64
+	maxBlocks       int
+	maxTransactions int
 
 	currentWorkUnits        []*BlockAndTransactions
-	currentTransactionCount uint64
+	currentTransactionCount int
 
 	BatchWorkChan chan *BlockAndTransactions
 	db            database.Database
@@ -30,10 +33,9 @@ type BatchWriter struct {
 
 func NewBatchWriter(batchWorkChan chan *BlockAndTransactions, db database.Database) *BatchWriter {
 	bp := &BatchWriter{
-		// TODO: parameterize constant?
-		maxBlocks:               100,
-		maxTransactions:         1000,
-		currentWorkUnits:        make([]*BlockAndTransactions, 0, 100),
+		maxBlocks:               cap(batchWorkChan),
+		maxTransactions:         maxTransactionMultiplier * cap(batchWorkChan),
+		currentWorkUnits:        make([]*BlockAndTransactions, 0, 1),
 		currentTransactionCount: 0,
 		BatchWorkChan:           batchWorkChan,
 		db:                      db,
@@ -48,13 +50,14 @@ func (bw *BatchWriter) Run(stopChan <-chan types.StopEvent) {
 		case newWorkUnit := <-bw.BatchWorkChan:
 			// Listen to new block channel and process if new block comes.
 			bw.currentWorkUnits = append(bw.currentWorkUnits, newWorkUnit)
-			bw.currentTransactionCount += uint64(len(newWorkUnit.txs))
-			if uint64(len(bw.currentWorkUnits)) >= bw.maxBlocks || bw.currentTransactionCount >= bw.maxTransactions {
+			bw.currentTransactionCount += len(newWorkUnit.txs)
+			if len(bw.currentWorkUnits) >= bw.maxBlocks || bw.currentTransactionCount >= bw.maxTransactions {
 				err := bw.BatchWrite()
 				if err != nil {
 					log.Panicf("batch write failed: %v", err)
 				}
 			}
+			ticker.Stop()
 			ticker = time.NewTicker(2 * time.Second)
 		case <-ticker.C:
 			err := bw.BatchWrite()
@@ -62,6 +65,7 @@ func (bw *BatchWriter) Run(stopChan <-chan types.StopEvent) {
 				log.Panicf("batch write failed: %v", err)
 			}
 		case <-stopChan:
+			ticker.Stop()
 			return
 		}
 	}

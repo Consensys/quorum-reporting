@@ -5,7 +5,10 @@ addresses = ["0x1932c48b2bf8102ba33b4a6b545c32236e342f34"]
 [database]
 
     cacheSize = 10
-    [database.elasticsearch]
+
+[database.elasticsearch]
+
+    urls = ["http://localhost:9200"]
 
 [server]
 
@@ -19,3 +22,7 @@ addresses = ["0x1932c48b2bf8102ba33b4a6b545c32236e342f34"]
     graphQLUrl = "http://localhost:8547/graphql"
     reconnectInterval = 5
     maxReconnectTries = 5
+
+[tuning]
+
+    blockProcessingQueueSize = 1000

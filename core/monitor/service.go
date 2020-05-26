@@ -24,8 +24,11 @@ type MonitorService struct {
 	totalWorkers uint64
 }
 
-func NewMonitorService(db database.Database, quorumClient client.Client, consensus string) *MonitorService {
-	batchWriteChan := make(chan *BlockAndTransactions)
+func NewMonitorService(db database.Database, quorumClient client.Client, consensus string, tuningConfig types.TuningConfig) *MonitorService {
+	if tuningConfig.BlockProcessingQueueSize < 1 {
+		tuningConfig.BlockProcessingQueueSize = 100
+	}
+	batchWriteChan := make(chan *BlockAndTransactions, tuningConfig.BlockProcessingQueueSize)
 	return &MonitorService{
 		db:           db,
 		quorumClient: quorumClient,
@@ -115,9 +118,8 @@ func (m *MonitorService) syncHistoricBlocks() error {
 		select {
 		case latestChainHead := <-m.syncStart:
 			close(m.syncStart)
-			err := m.blockMonitor.syncBlocks(currentBlockNumber+1, latestChainHead-1)
-			if err != nil {
-				log.Panicf("sync historic blocks from %v to %v failed: %v", currentBlockNumber, latestChainHead-1, err)
+			for err := m.blockMonitor.syncBlocks(currentBlockNumber+1, latestChainHead-1); err != nil; {
+				log.Printf("sync historic blocks from %v to %v failed: %v\n", currentBlockNumber, latestChainHead-1, err)
 			}
 		case <-stopChan:
 			return

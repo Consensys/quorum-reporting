@@ -58,7 +58,7 @@ func New(config types.ReportingConfig) (*Backend, error) {
 	}
 
 	return &Backend{
-		monitor: monitor.NewMonitorService(db, quorumClient, consensus),
+		monitor: monitor.NewMonitorService(db, quorumClient, consensus, config.Tuning),
 		filter:  filter.NewFilterService(db, quorumClient),
 		rpc:     rpc.NewRPCService(db, config.Server.RPCAddr, config.Server.RPCVHosts, config.Server.RPCCorsList),
 		db:      db,
