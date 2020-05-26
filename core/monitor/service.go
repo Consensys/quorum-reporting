@@ -118,8 +118,9 @@ func (m *MonitorService) syncHistoricBlocks() error {
 		select {
 		case latestChainHead := <-m.syncStart:
 			close(m.syncStart)
-			for err := m.blockMonitor.syncBlocks(currentBlockNumber+1, latestChainHead-1); err != nil; {
-				log.Printf("sync historic blocks from %v to %v failed: %v\n", currentBlockNumber, latestChainHead-1, err)
+			err := m.blockMonitor.syncBlocks(currentBlockNumber+1, latestChainHead-1)
+			if err != nil {
+				log.Panicf("sync historic blocks from %v to %v failed: %v", currentBlockNumber, latestChainHead-1, err)
 			}
 		case <-stopChan:
 			return
