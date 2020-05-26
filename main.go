@@ -5,7 +5,11 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
+
+	"github.com/gin-gonic/contrib/static"
+	"github.com/gin-gonic/gin"
 
 	"quorumengineering/quorum-report/core"
 	"quorumengineering/quorum-report/types"
@@ -37,12 +41,21 @@ func main() {
 	}
 
 	backend.Start()
+	defer backend.Stop()
+
+	// start a light weighted sample sample ui
+	router := gin.Default()
+	router.Use(static.Serve("/", static.LocalFile("./ui", true)))
+	if config.Server.UIPort > 0 {
+		err := router.Run(":" + strconv.Itoa(config.Server.UIPort))
+		if err != nil {
+			log.Panicf("unable to start UI: %v", err)
+		}
+	}
 
 	sigc := make(chan os.Signal, 1)
 	signal.Notify(sigc, syscall.SIGINT, syscall.SIGTERM)
 	defer signal.Stop(sigc)
 	<-sigc
 	log.Println("Got interrupted, shutting down...")
-
-	backend.Stop()
 }

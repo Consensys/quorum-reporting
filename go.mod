@@ -5,6 +5,8 @@ go 1.13
 require (
 	github.com/elastic/go-elasticsearch/v7 v7.5.1-0.20200409075911-14061b088525
 	github.com/ethereum/go-ethereum v1.9.8
+	github.com/gin-gonic/contrib v0.0.0-20191209060500-d6e26eeaa607
+	github.com/gin-gonic/gin v1.6.3
 	github.com/golang/mock v1.4.3
 	github.com/gorilla/websocket v1.4.2
 	github.com/hashicorp/golang-lru v0.5.4
