@@ -43,7 +43,7 @@ type ReportingConfig struct {
 		RPCAddr     string   `toml:"rpcAddr"`
 		RPCCorsList []string `toml:"rpcCorsList,omitempty"`
 		RPCVHosts   []string `toml:"rpcvHosts,omitempty"`
-		UIPort      int      `toml:"uiPort,omitempty"`
+		UIPort      int      `toml:"uiPort,omitempty"` // Serve a sample UI if provided
 	}
 	Connection struct {
 		WSUrl             string `toml:"wsUrl"`

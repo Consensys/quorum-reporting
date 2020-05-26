@@ -43,10 +43,10 @@ func main() {
 	backend.Start()
 	defer backend.Stop()
 
-	// start a light weighted sample sample ui
-	router := gin.Default()
-	router.Use(static.Serve("/", static.LocalFile("./ui", true)))
 	if config.Server.UIPort > 0 {
+		// start a light weighted sample sample ui
+		router := gin.Default()
+		router.Use(static.Serve("/", static.LocalFile("./ui", true)))
 		err := router.Run(":" + strconv.Itoa(config.Server.UIPort))
 		if err != nil {
 			log.Panicf("unable to start UI: %v", err)
