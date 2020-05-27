@@ -1,7 +1,6 @@
 package types
 
 import (
-	"errors"
 	"os"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -61,6 +60,12 @@ func (rc *ReportingConfig) SetDefaults() {
 	if rc.Tuning.BlockProcessingQueueSize < 1 {
 		rc.Tuning.BlockProcessingQueueSize = 100
 	}
+	if rc.Database != nil && rc.Database.CacheSize < 1 {
+		rc.Database.CacheSize = 10
+	}
+	if rc.Connection.MaxReconnectTries > 0 && rc.Connection.ReconnectInterval < 1 {
+		rc.Connection.ReconnectInterval = 5
+	}
 }
 
 func ReadConfig(configFile string) (ReportingConfig, error) {
@@ -72,12 +77,6 @@ func ReadConfig(configFile string) (ReportingConfig, error) {
 	var input ReportingConfig
 	if err = toml.NewDecoder(f).Decode(&input); err != nil {
 		return ReportingConfig{}, err
-	}
-
-	// if AlwaysReconnect is set to true, check if ReconnectInterval
-	// and MaxReconnectTries are given or not. If not throw error
-	if input.Connection.MaxReconnectTries > 0 && input.Connection.ReconnectInterval == 0 {
-		return ReportingConfig{}, errors.New("ReconnectInterval should be greater than zero if MaxReconnectTries is set")
 	}
 
 	input.SetDefaults()

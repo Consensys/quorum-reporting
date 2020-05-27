@@ -44,9 +44,8 @@ func TestConfigFile(t *testing.T) {
 	err = ioutil.WriteFile(fileName, blob, 0644)
 	assert.Nil(t, err, "error writing new node info to file %s: %s", fileName, err)
 
-	expectedErr := "ReconnectInterval should be greater than zero if MaxReconnectTries is set"
 	_, err = ReadConfig(fileName)
-	assert.EqualError(t, err, expectedErr, "expected %v, but got %v", expectedErr, err)
+	assert.Nil(t, err, "expected no error, but got %v", err)
 
 	tmpConfigData.Connection.ReconnectInterval = 10
 	blob, err = toml.Marshal(tmpConfigData)
