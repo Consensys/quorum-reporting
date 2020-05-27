@@ -25,9 +25,6 @@ type MonitorService struct {
 }
 
 func NewMonitorService(db database.Database, quorumClient client.Client, consensus string, tuningConfig types.TuningConfig) *MonitorService {
-	if tuningConfig.BlockProcessingQueueSize < 1 {
-		tuningConfig.BlockProcessingQueueSize = 100
-	}
 	batchWriteChan := make(chan *BlockAndTransactions, tuningConfig.BlockProcessingQueueSize)
 	return &MonitorService{
 		db:           db,

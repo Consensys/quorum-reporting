@@ -57,6 +57,12 @@ type ReportingConfig struct {
 	Tuning TuningConfig `toml:"tuning,omitempty"`
 }
 
+func (rc *ReportingConfig) SetDefaults() {
+	if rc.Tuning.BlockProcessingQueueSize < 1 {
+		rc.Tuning.BlockProcessingQueueSize = 100
+	}
+}
+
 func ReadConfig(configFile string) (ReportingConfig, error) {
 	f, err := os.Open(configFile)
 	if err != nil {
@@ -73,5 +79,7 @@ func ReadConfig(configFile string) (ReportingConfig, error) {
 	if input.Connection.MaxReconnectTries > 0 && input.Connection.ReconnectInterval == 0 {
 		return ReportingConfig{}, errors.New("ReconnectInterval should be greater than zero if MaxReconnectTries is set")
 	}
+
+	input.SetDefaults()
 	return input, nil
 }
