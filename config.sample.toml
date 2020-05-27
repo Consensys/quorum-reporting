@@ -12,6 +12,7 @@ addresses = ["0x1932c48b2bf8102ba33b4a6b545c32236e342f34"]
     rpcAddr = "localhost:4000"
     rpcCorsList = ["*"]
     rpcvHosts = ["*"]
+    uiPort = 3000
 
 [connection]
 
