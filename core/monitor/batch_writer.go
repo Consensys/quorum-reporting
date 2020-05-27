@@ -10,8 +10,8 @@ import (
 	"quorumengineering/quorum-report/types"
 )
 
-//Arbitrary for now
-var maxTransactionMultiplier = 10
+//TODO: Arbitrary for now, allow for updating based on seen blocks?
+const maxTransactionMultiplier = 10
 
 type BlockAndTransactions struct {
 	block *types.Block
@@ -35,7 +35,7 @@ func NewBatchWriter(batchWorkChan chan *BlockAndTransactions, db database.Databa
 	bp := &BatchWriter{
 		maxBlocks:               cap(batchWorkChan),
 		maxTransactions:         maxTransactionMultiplier * cap(batchWorkChan),
-		currentWorkUnits:        make([]*BlockAndTransactions, 0, 1),
+		currentWorkUnits:        make([]*BlockAndTransactions, 0, cap(batchWorkChan)),
 		currentTransactionCount: 0,
 		BatchWorkChan:           batchWorkChan,
 		db:                      db,
