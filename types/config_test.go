@@ -1,6 +1,7 @@
 package types
 
 import (
+	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"os"
 	"testing"
@@ -14,9 +15,8 @@ func TestConfigFile(t *testing.T) {
 	fileName := d + "/config.toml"
 
 	// test reading a non-exist file
-	if _, err := ReadConfig(fileName); err == nil {
-		t.Fatal("expect file not there error")
-	}
+	_, err := ReadConfig(fileName)
+	assert.NotNil(t, err, "expect file not there error")
 
 	// test config file with missing fields
 	var tmpConfigData ReportingConfig
@@ -26,44 +26,38 @@ func TestConfigFile(t *testing.T) {
 	tmpConfigData.Connection.WSUrl = "localhost:6666"
 	tmpConfigData.Server.RPCCorsList = append(tmpConfigData.Server.RPCCorsList, "localhost")
 	tmpConfigData.Server.RPCVHosts = append(tmpConfigData.Server.RPCVHosts, "localhost")
+	tmpConfigData.Tuning.BlockProcessingQueueSize = 10
 
 	blob, err := toml.Marshal(tmpConfigData)
-	if err != nil {
-		t.Fatal("error marshalling test config file", "error", err)
-	}
-	if err := ioutil.WriteFile(fileName, blob, 0644); err != nil {
-		t.Fatal("error writing new node info to file", "fileName", fileName, "error", err)
-	}
-	if _, err := ReadConfig(fileName); err != nil {
-		t.Fatal("error reading config file", "error", err)
-	}
+	assert.Nil(t, err, "error marshalling test config file: %s", err)
+
+	err = ioutil.WriteFile(fileName, blob, 0644)
+	assert.Nil(t, err, "error writing new node info to file %s: %s", fileName, err)
+
+	_, err = ReadConfig(fileName)
+	assert.Nil(t, err, "error reading config file: %s", err)
+
 	tmpConfigData.Connection.MaxReconnectTries = 5
 	blob, err = toml.Marshal(tmpConfigData)
-	if err != nil {
-		t.Fatal("error marshalling test config file", "error", err)
-	}
-	if err := ioutil.WriteFile(fileName, blob, 0644); err != nil {
-		t.Fatal("error writing new node info to file", "fileName", fileName, "error", err)
-	}
-	if _, err := ReadConfig(fileName); err.Error() != "ReconnectInterval should be greater than zero if MaxReconnectTries is set" {
-		t.Fatalf("expected %v, but got %v", "ReconnectInterval should be greater than zero if MaxReconnectTries is set", err)
-	}
+	assert.Nil(t, err, "error marshalling test config file: %s", err)
+
+	err = ioutil.WriteFile(fileName, blob, 0644)
+	assert.Nil(t, err, "error writing new node info to file %s: %s", fileName, err)
+
+	_, err = ReadConfig(fileName)
+	assert.Nil(t, err, "expected no error, but got %v", err)
 
 	tmpConfigData.Connection.ReconnectInterval = 10
 	blob, err = toml.Marshal(tmpConfigData)
-	if err != nil {
-		t.Fatal("error marshalling test config file")
-	}
-	if err := ioutil.WriteFile(fileName, blob, 0644); err != nil {
-		t.Fatal("error writing new node info to file", "fileName", fileName, "error", err)
-	}
-	if _, err := ReadConfig(fileName); err != nil {
-		t.Fatalf("expected no error, but got %v", err)
-	}
+	assert.Nil(t, err, "error marshalling test config file: %s", err)
+
+	err = ioutil.WriteFile(fileName, blob, 0644)
+	assert.Nil(t, err, "error writing new node info to file %s: %s", fileName, err)
+
+	_, err = ReadConfig(fileName)
+	assert.Nil(t, err, "expected no error, but got %v", err)
 
 	// test config.sample.toml is valid
-	if _, err := ReadConfig("../config.sample.toml"); err != nil {
-		t.Fatal("error reading sample config file")
-	}
-
+	_, err = ReadConfig("../config.sample.toml")
+	assert.Nil(t, err, "error reading sample config file")
 }

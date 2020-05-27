@@ -24,8 +24,8 @@ type MonitorService struct {
 	totalWorkers uint64
 }
 
-func NewMonitorService(db database.Database, quorumClient client.Client, consensus string) *MonitorService {
-	batchWriteChan := make(chan *BlockAndTransactions)
+func NewMonitorService(db database.Database, quorumClient client.Client, consensus string, tuningConfig types.TuningConfig) *MonitorService {
+	batchWriteChan := make(chan *BlockAndTransactions, tuningConfig.BlockProcessingQueueSize)
 	return &MonitorService{
 		db:           db,
 		quorumClient: quorumClient,
