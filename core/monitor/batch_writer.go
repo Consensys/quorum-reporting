@@ -13,6 +13,8 @@ import (
 //TODO: Arbitrary for now, allow for updating based on seen blocks?
 const maxTransactionMultiplier = 10
 
+const timeoutPeriod = 2 * time.Second
+
 type BlockAndTransactions struct {
 	block *types.Block
 	txs   []*types.Transaction
@@ -44,7 +46,7 @@ func NewBatchWriter(batchWorkChan chan *BlockAndTransactions, db database.Databa
 }
 
 func (bw *BatchWriter) Run(stopChan <-chan types.StopEvent) {
-	ticker := time.NewTicker(2 * time.Second)
+	ticker := time.NewTicker(timeoutPeriod)
 	for {
 		select {
 		case newWorkUnit := <-bw.BatchWorkChan:
@@ -52,17 +54,19 @@ func (bw *BatchWriter) Run(stopChan <-chan types.StopEvent) {
 			bw.currentWorkUnits = append(bw.currentWorkUnits, newWorkUnit)
 			bw.currentTransactionCount += len(newWorkUnit.txs)
 			if len(bw.currentWorkUnits) >= bw.maxBlocks || bw.currentTransactionCount >= bw.maxTransactions {
-				err := bw.BatchWrite()
-				if err != nil {
-					log.Panicf("batch write failed: %v", err)
+				//if the write fails, keep trying until it succeeds, waiting
+				//the defined timeout period between attempts
+				for err := bw.BatchWrite(); err != nil; err = bw.BatchWrite() {
+					log.Printf("batch write failed: %v", err)
+					<-ticker.C
 				}
 			}
 			ticker.Stop()
-			ticker = time.NewTicker(2 * time.Second)
+			ticker = time.NewTicker(timeoutPeriod)
 		case <-ticker.C:
-			err := bw.BatchWrite()
-			if err != nil {
-				log.Panicf("batch write failed: %v", err)
+			//if this fails, it will try again on the next run
+			if err := bw.BatchWrite(); err != nil {
+				log.Printf("batch write failed: %v", err)
 			}
 		case <-stopChan:
 			ticker.Stop()
@@ -72,6 +76,10 @@ func (bw *BatchWriter) Run(stopChan <-chan types.StopEvent) {
 }
 
 func (bw *BatchWriter) BatchWrite() error {
+	if len(bw.currentWorkUnits) == 0 {
+		return nil
+	}
+
 	allTxns := make([]*types.Transaction, 0, bw.currentTransactionCount)
 	allBlocks := make([]*types.Block, 0, len(bw.currentWorkUnits))
 	for _, workunit := range bw.currentWorkUnits {

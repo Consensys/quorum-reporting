@@ -1,6 +1,7 @@
 package core
 
 import (
+	"fmt"
 	"log"
 	"time"
 
@@ -24,19 +25,14 @@ type Backend struct {
 func New(config types.ReportingConfig) (*Backend, error) {
 	quorumClient, err := client.NewQuorumClient(config.Connection.WSUrl, config.Connection.GraphQLUrl)
 	if err != nil {
-		if config.Connection.MaxReconnectTries > 0 {
-			i := 0
-			for err != nil {
-				i++
-				if i == config.Connection.MaxReconnectTries {
-					return nil, err
-				}
-				log.Printf("Connection error: %v. Trying to reconnect in %d second...\n", err, config.Connection.ReconnectInterval)
-				time.Sleep(time.Duration(config.Connection.ReconnectInterval) * time.Second)
-				quorumClient, err = client.NewQuorumClient(config.Connection.WSUrl, config.Connection.GraphQLUrl)
-			}
-		} else {
+		if config.Connection.MaxReconnectTries == 0 {
 			return nil, err
+		}
+
+		for i := 0; i < config.Connection.MaxReconnectTries && err != nil; i++ {
+			log.Printf("Connection error: %v. Trying to reconnect in %d second...\n", err, config.Connection.ReconnectInterval)
+			time.Sleep(time.Duration(config.Connection.ReconnectInterval) * time.Second)
+			quorumClient, err = client.NewQuorumClient(config.Connection.WSUrl, config.Connection.GraphQLUrl)
 		}
 	}
 
@@ -65,16 +61,17 @@ func New(config types.ReportingConfig) (*Backend, error) {
 	}, nil
 }
 
-func (b *Backend) Start() {
+func (b *Backend) Start() error {
 	for _, f := range []func() error{
 		b.monitor.Start, // monitor service
 		b.filter.Start,  // filter service
 		b.rpc.Start,     // RPC service
 	} {
 		if err := f(); err != nil {
-			log.Panicf("start up failed: %v", err)
+			return fmt.Errorf("start up failed: %v", err)
 		}
 	}
+	return nil
 }
 
 func (b *Backend) Stop() {

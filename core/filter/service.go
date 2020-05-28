@@ -41,18 +41,21 @@ func (fs *FilterService) Start() error {
 			case <-ticker.C:
 				current, err := fs.db.GetLastPersistedBlockNumber()
 				if err != nil {
-					log.Panicf("get last persisted block number failed: %v", err)
+					log.Printf("get last persisted block number failed: %v\n", err)
+					continue
 				}
 				//log.Printf("Last persisted block %v.\n", current)
 				lastFilteredAll, lastFiltered, err := fs.getLastFiltered(current)
 				if err != nil {
-					log.Panicf("get last filtered failed: %v", err)
+					log.Printf("get last filtered failed: %v\n", err)
+					continue
 				}
 				//log.Printf("Last filtered block %v.\n", lastFiltered)
 				for current > lastFiltered {
 					err := fs.index(lastFilteredAll, lastFiltered+1)
 					if err != nil {
-						log.Panicf("index block %v failed: %v", lastFiltered, err)
+						log.Printf("index block %v failed: %v", lastFiltered, err)
+						break
 					}
 					lastFiltered++
 				}
