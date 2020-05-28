@@ -63,15 +63,6 @@ Storage APIs can query account storage for a given contract at any block
 (Todo) `reporting_getStorageHistory` provides extended feature on top of simply getting raw storage. It can search by 
 block range, and provides a list of historical state formatted by the given template.
 
-##### Example Template
-```json
-{
-	"name": "storedData",
-	"index": 0,
-	"type": "uint256"
-}
-```
-
 ## Transaction
 
 Transaction APIs query 
@@ -89,36 +80,11 @@ Transaction APIs query
 (Implemented) `reporting_getAllTransactionsToAddress` returns a list of tx hash and total number matching the search options 
 provided.
 
-Sample Response:
-```$json
-{
-    transactions: [common.Hash...],
-    total: uint64,
-    options: {
-        beginBlockNumber, endBlockNumber,
-        beginTimestamp, endTimestamp,
-        pageSize, pageNumber,
-    }
-}
-```
 
 #### reporting_getAllTransactionsInternalToAddress
 
 (Implemented) `reporting_getAllTransactionsInternalToAddress` returns a list of tx hash and total number matching the search 
 options provided.
-
-Sample Response:
-```$json
-{
-    transactions: [common.Hash...],
-    total: uint64,
-    options: {
-        beginBlockNumber, endBlockNumber,
-        beginTimestamp, endTimestamp,
-        pageSize, pageNumber,
-    }
-}
-```
 
 ## Event
 
@@ -126,19 +92,6 @@ Sample Response:
 
 (Implemented) `reporting_getAllEventsFromAddress` returns a list of event objs and total number of events matching the search 
 options provided.
-
-Sample Response:
-```$json
-{
-    events: [eventObj...],
-    total: uint64,
-    options: {
-        beginBlockNumber, endBlockNumber,
-        beginTimestamp, endTimestamp,
-        pageSize, pageNumber,
-    }
-}
-```
 
 ## Default Query Options
 ```$json
