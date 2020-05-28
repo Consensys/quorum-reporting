@@ -1,9 +1,11 @@
 package storageparsing
 
 import (
-	"github.com/ethereum/go-ethereum/common"
-	"golang.org/x/crypto/sha3"
 	"math/big"
+
+	"golang.org/x/crypto/sha3"
+
+	"github.com/ethereum/go-ethereum/common"
 )
 
 var (

@@ -2,8 +2,9 @@ package types
 
 import (
 	"encoding/json"
-	"github.com/ethereum/go-ethereum/common"
 	"strconv"
+
+	"github.com/ethereum/go-ethereum/common"
 )
 
 type SolidityStorageEntries []SolidityStorageEntry

@@ -3,12 +3,12 @@ package rpc
 import (
 	"encoding/json"
 	"errors"
-	"quorumengineering/quorum-report/core/storageparsing"
 	"strings"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 
+	"quorumengineering/quorum-report/core/storageparsing"
 	"quorumengineering/quorum-report/database"
 	"quorumengineering/quorum-report/types"
 )

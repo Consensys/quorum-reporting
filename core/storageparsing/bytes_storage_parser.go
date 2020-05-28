@@ -1,10 +1,12 @@
 package storageparsing
 
 import (
-	"github.com/ethereum/go-ethereum/common"
 	"math/big"
-	"quorumengineering/quorum-report/types"
 	"strconv"
+
+	"github.com/ethereum/go-ethereum/common"
+
+	"quorumengineering/quorum-report/types"
 )
 
 var maxElementsInRow = BigThirtyTwo
