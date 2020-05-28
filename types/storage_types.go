@@ -3,6 +3,8 @@ package types
 import (
 	"encoding/json"
 	"strconv"
+
+	"github.com/ethereum/go-ethereum/common"
 )
 
 type SolidityStorageEntries []SolidityStorageEntry
@@ -60,7 +62,13 @@ func (sse SolidityStorageEntries) Len() int {
 }
 
 func (sse SolidityStorageEntries) Less(i, j int) bool {
-	return (sse[i].Slot < sse[j].Slot) || (sse[i].Offset < sse[j].Offset)
+	if sse[i].Slot < sse[j].Slot {
+		return true
+	}
+	if sse[i].Slot == sse[j].Slot {
+		return sse[i].Offset < sse[j].Offset
+	}
+	return false
 }
 
 func (sse SolidityStorageEntries) Swap(i, j int) {
@@ -86,6 +94,7 @@ func (sse *SolidityTypeEntry) UnmarshalJSON(b []byte) error {
 	sse.Label = simple.Label
 	sse.Value = simple.Value
 	sse.Members = simple.Members
+	sse.Base = simple.Base
 
 	if simple.NumberOfBytes != "" {
 		numBytesAsUint64, err := strconv.ParseUint(simple.NumberOfBytes, 10, 0)
@@ -103,6 +112,14 @@ type StorageItem struct {
 	VarIndex uint64      `json:"index"`
 	VarType  string      `json:"type"`
 	Value    interface{} `json:"value,omitempty"`
-	// for map only
-	Values map[string]interface{} `json:"values,omitempty"`
+}
+
+type ReportingResponseTemplate struct {
+	Address       common.Address `json:"address"`
+	HistoricState []*ParsedState `json:"historicState"`
+}
+
+type ParsedState struct {
+	BlockNumber     uint64         `json:"blockNumber"`
+	HistoricStorage []*StorageItem `json:"historicStorage"`
 }

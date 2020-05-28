@@ -8,6 +8,7 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 
+	"quorumengineering/quorum-report/core/storageparsing"
 	"quorumengineering/quorum-report/database"
 	"quorumengineering/quorum-report/types"
 )
@@ -121,6 +122,45 @@ func (r *RPCAPIs) GetAllEventsFromAddress(address common.Address, options *types
 
 func (r *RPCAPIs) GetStorage(address common.Address, blockNumber uint64) (map[common.Hash]string, error) {
 	return r.db.GetStorage(address, blockNumber)
+}
+
+func (r *RPCAPIs) GetStorageHistory(address common.Address, startBlockNumber, endBlockNumber uint64) (*types.ReportingResponseTemplate, error) {
+	rawAbi, err := r.db.GetStorageABI(address)
+	if err != nil {
+		return nil, err
+	}
+	if rawAbi == "" {
+		return nil, errors.New("no storage ABI present to parse with")
+	}
+	var parsedAbi types.SolidityStorageDocument
+	err = json.Unmarshal([]byte(rawAbi), &parsedAbi)
+	if err != nil {
+		return nil, errors.New("unable to decode storage ABI: " + err.Error())
+	}
+
+	// TODO: implement GetStorageRoot to reduce the response list
+	historicStates := []*types.ParsedState{}
+	for i := startBlockNumber; i <= endBlockNumber; i++ {
+		rawStorage, err := r.db.GetStorage(address, i)
+		if err != nil {
+			return nil, err
+		}
+		if rawStorage == nil {
+			continue
+		}
+		historicStorage, err := storageparsing.ParseRawStorage(rawStorage, parsedAbi)
+		if err != nil {
+			return nil, err
+		}
+		historicStates = append(historicStates, &types.ParsedState{
+			BlockNumber:     i,
+			HistoricStorage: historicStorage,
+		})
+	}
+	return &types.ReportingResponseTemplate{
+		Address:       address,
+		HistoricState: historicStates,
+	}, nil
 }
 
 func (r *RPCAPIs) AddAddress(address common.Address) error {
