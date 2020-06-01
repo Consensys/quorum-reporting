@@ -146,14 +146,14 @@ func TestAPIParsing(t *testing.T) {
 	if err != nil {
 		t.Fatalf("expected no error, but got %v", err)
 	}
-	parsedEvents, err := apis.GetAllEventsFromAddress(address, nil)
+	eventsResp, err := apis.GetAllEventsFromAddress(address, nil)
 	if err != nil {
 		t.Fatalf("expected no error, but got %v", err)
 	}
-	if parsedEvents[0].Sig != "event valueSet(uint256 _value)" {
-		t.Fatalf("expected %v, but got %v", "event valueSet(uint256 _value)", parsedEvents[0].Sig)
+	if eventsResp.Events[0].Sig != "event valueSet(uint256 _value)" {
+		t.Fatalf("expected %v, but got %v", "event valueSet(uint256 _value)", eventsResp.Events[0].Sig)
 	}
-	if parsedEvents[0].ParsedData["_value"].(*big.Int).Cmp(big.NewInt(1000)) != 0 {
-		t.Fatalf("expected %v, but got %v", 1000, parsedEvents[0].ParsedData["_value"])
+	if eventsResp.Events[0].ParsedData["_value"].(*big.Int).Cmp(big.NewInt(1000)) != 0 {
+		t.Fatalf("expected %v, but got %v", 1000, eventsResp.Events[0].ParsedData["_value"])
 	}
 }
