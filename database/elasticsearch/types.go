@@ -271,6 +271,10 @@ type SearchQueryResult struct {
 	} `json:"hits"`
 }
 
+type CountQueryResult struct {
+	Count uint64 `json:"count"`
+}
+
 type IndividualResult struct {
 	Id     string                 `json:"_id"`
 	Source map[string]interface{} `json:"_source"`

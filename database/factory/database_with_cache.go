@@ -231,6 +231,18 @@ func (cachingDB *DatabaseWithCache) GetAllEventsFromAddress(address common.Addre
 	return cachingDB.db.GetAllEventsFromAddress(address, options)
 }
 
+func (cachingDB *DatabaseWithCache) GetTransactionsToAddressTotal(address common.Address, options *types.QueryOptions) (uint64, error) {
+	return cachingDB.db.GetTransactionsToAddressTotal(address, options)
+}
+
+func (cachingDB *DatabaseWithCache) GetTransactionsInternalToAddressTotal(address common.Address, options *types.QueryOptions) (uint64, error) {
+	return cachingDB.db.GetTransactionsInternalToAddressTotal(address, options)
+}
+
+func (cachingDB *DatabaseWithCache) GetEventsFromAddressTotal(address common.Address, options *types.QueryOptions) (uint64, error) {
+	return cachingDB.db.GetEventsFromAddressTotal(address, options)
+}
+
 func (cachingDB *DatabaseWithCache) GetStorage(address common.Address, blockNumber uint64) (map[common.Hash]string, error) {
 	return cachingDB.db.GetStorage(address, blockNumber)
 }
