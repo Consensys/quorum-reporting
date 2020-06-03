@@ -80,11 +80,36 @@ Transaction APIs query
 (Implemented) `reporting_getAllTransactionsToAddress` returns a list of tx hash and total number matching the search options 
 provided.
 
+Sample Response:
+```$json
+{
+    transactions: [common.Hash...],
+    total: uint64,
+    options: {
+        beginBlockNumber, endBlockNumber,
+        beginTimestamp, endTimestamp,
+        pageSize, pageNumber,
+    }
+}
+```
 
 #### reporting_getAllTransactionsInternalToAddress
 
 (Implemented) `reporting_getAllTransactionsInternalToAddress` returns a list of tx hash and total number matching the search 
 options provided.
+
+Sample Response:
+```$json
+{
+    transactions: [common.Hash...],
+    total: uint64,
+    options: {
+        beginBlockNumber, endBlockNumber,
+        beginTimestamp, endTimestamp,
+        pageSize, pageNumber,
+    }
+}
+```
 
 ## Event
 
@@ -92,6 +117,19 @@ options provided.
 
 (Implemented) `reporting_getAllEventsFromAddress` returns a list of event objs and total number of events matching the search 
 options provided.
+
+Sample Response:
+```$json
+{
+    events: [eventObj...],
+    total: uint64,
+    options: {
+        beginBlockNumber, endBlockNumber,
+        beginTimestamp, endTimestamp,
+        pageSize, pageNumber,
+    }
+}
+```
 
 ## Default Query Options
 ```$json
