@@ -1,13 +1,13 @@
 {
   "files": {
-    "main.js": "/static/js/main.084913c0.chunk.js",
-    "main.js.map": "/static/js/main.084913c0.chunk.js.map",
+    "main.js": "/static/js/main.59d67f30.chunk.js",
+    "main.js.map": "/static/js/main.59d67f30.chunk.js.map",
     "runtime-main.js": "/static/js/runtime-main.c0e7cfbf.js",
     "runtime-main.js.map": "/static/js/runtime-main.c0e7cfbf.js.map",
     "static/js/2.e39f8a1a.chunk.js": "/static/js/2.e39f8a1a.chunk.js",
     "static/js/2.e39f8a1a.chunk.js.map": "/static/js/2.e39f8a1a.chunk.js.map",
     "index.html": "/index.html",
-    "precache-manifest.07c2aec38ea191881d89178b9f4f05d5.js": "/precache-manifest.07c2aec38ea191881d89178b9f4f05d5.js",
+    "precache-manifest.042bd24d3571decd1c5d8baebd17a9bb.js": "/precache-manifest.042bd24d3571decd1c5d8baebd17a9bb.js",
     "service-worker.js": "/service-worker.js",
     "static/js/2.e39f8a1a.chunk.js.LICENSE.txt": "/static/js/2.e39f8a1a.chunk.js.LICENSE.txt",
     "static/media/quorum-logo.png": "/static/media/quorum-logo.e2dac645.png"
@@ -15,6 +15,6 @@
   "entrypoints": [
     "static/js/runtime-main.c0e7cfbf.js",
     "static/js/2.e39f8a1a.chunk.js",
-    "static/js/main.084913c0.chunk.js"
+    "static/js/main.59d67f30.chunk.js"
   ]
 }

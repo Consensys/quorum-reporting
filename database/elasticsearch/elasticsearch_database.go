@@ -458,6 +458,20 @@ func (es *ElasticsearchDB) GetAllTransactionsToAddress(address common.Address, o
 	return converted, nil
 }
 
+func (es *ElasticsearchDB) GetTransactionsToAddressTotal(address common.Address, options *types.QueryOptions) (uint64, error) {
+	queryString := fmt.Sprintf(QueryByToAddressWithOptionsTemplate(options), address.String())
+
+	req := esapi.CountRequest{
+		Index: []string{TransactionIndex},
+		Body:  strings.NewReader(queryString),
+	}
+	results, err := es.doCountRequest(req)
+	if err != nil {
+		return 0, err
+	}
+	return results.Count, nil
+}
+
 func (es *ElasticsearchDB) GetAllTransactionsInternalToAddress(address common.Address, options *types.QueryOptions) ([]common.Hash, error) {
 	queryString := fmt.Sprintf(QueryInternalTransactionsWithOptionsTemplate(options), address.String())
 
@@ -484,6 +498,20 @@ func (es *ElasticsearchDB) GetAllTransactionsInternalToAddress(address common.Ad
 	}
 
 	return converted, nil
+}
+
+func (es *ElasticsearchDB) GetTransactionsInternalToAddressTotal(address common.Address, options *types.QueryOptions) (uint64, error) {
+	queryString := fmt.Sprintf(QueryInternalTransactionsWithOptionsTemplate(options), address.String())
+
+	req := esapi.CountRequest{
+		Index: []string{TransactionIndex},
+		Body:  strings.NewReader(queryString),
+	}
+	results, err := es.doCountRequest(req)
+	if err != nil {
+		return 0, err
+	}
+	return results.Count, nil
 }
 
 func (es *ElasticsearchDB) GetAllEventsFromAddress(address common.Address, options *types.QueryOptions) ([]*types.Event, error) {
@@ -515,6 +543,20 @@ func (es *ElasticsearchDB) GetAllEventsFromAddress(address common.Address, optio
 	}
 
 	return convertedList, nil
+}
+
+func (es *ElasticsearchDB) GetEventsFromAddressTotal(address common.Address, options *types.QueryOptions) (uint64, error) {
+	queryString := fmt.Sprintf(QueryByAddressWithOptionsTemplate(options), address.String())
+
+	req := esapi.CountRequest{
+		Index: []string{EventIndex},
+		Body:  strings.NewReader(queryString),
+	}
+	results, err := es.doCountRequest(req)
+	if err != nil {
+		return 0, err
+	}
+	return results.Count, nil
 }
 
 func (es *ElasticsearchDB) GetStorage(address common.Address, blockNumber uint64) (map[common.Hash]string, error) {
@@ -683,6 +725,20 @@ func (es *ElasticsearchDB) doSearchRequest(req esapi.SearchRequest) (*SearchQuer
 	}
 
 	var ret SearchQueryResult
+	err = json.Unmarshal(body, &ret)
+	if err != nil {
+		return nil, err
+	}
+	return &ret, nil
+}
+
+func (es *ElasticsearchDB) doCountRequest(req esapi.CountRequest) (*CountQueryResult, error) {
+	body, err := es.apiClient.DoRequest(req)
+	if err != nil {
+		return nil, err
+	}
+
+	var ret CountQueryResult
 	err = json.Unmarshal(body, &ret)
 	if err != nil {
 		return nil, err

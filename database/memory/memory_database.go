@@ -273,6 +273,7 @@ func (db *MemoryDB) GetContractCreationTransaction(address common.Address) (comm
 }
 
 func (db *MemoryDB) GetAllTransactionsToAddress(address common.Address, options *types.QueryOptions) ([]common.Hash, error) {
+	// TODO: MemoryDB doesn't implement query options
 	db.mux.RLock()
 	defer db.mux.RUnlock()
 	if !db.addressIsRegistered(address) {
@@ -281,7 +282,18 @@ func (db *MemoryDB) GetAllTransactionsToAddress(address common.Address, options 
 	return db.txIndexDB[address].txsTo, nil
 }
 
+func (db *MemoryDB) GetTransactionsToAddressTotal(address common.Address, options *types.QueryOptions) (uint64, error) {
+	// TODO: MemoryDB doesn't implement query options
+	db.mux.RLock()
+	defer db.mux.RUnlock()
+	if !db.addressIsRegistered(address) {
+		return 0, errors.New("address is not registered")
+	}
+	return uint64(len(db.txIndexDB[address].txsTo)), nil
+}
+
 func (db *MemoryDB) GetAllTransactionsInternalToAddress(address common.Address, options *types.QueryOptions) ([]common.Hash, error) {
+	// TODO: MemoryDB doesn't implement query options
 	db.mux.RLock()
 	defer db.mux.RUnlock()
 	if !db.addressIsRegistered(address) {
@@ -290,13 +302,34 @@ func (db *MemoryDB) GetAllTransactionsInternalToAddress(address common.Address, 
 	return db.txIndexDB[address].txsInternalTo, nil
 }
 
+func (db *MemoryDB) GetTransactionsInternalToAddressTotal(address common.Address, options *types.QueryOptions) (uint64, error) {
+	// TODO: MemoryDB doesn't implement query options
+	db.mux.RLock()
+	defer db.mux.RUnlock()
+	if !db.addressIsRegistered(address) {
+		return 0, errors.New("address is not registered")
+	}
+	return uint64(len(db.txIndexDB[address].txsInternalTo)), nil
+}
+
 func (db *MemoryDB) GetAllEventsFromAddress(address common.Address, options *types.QueryOptions) ([]*types.Event, error) {
+	// TODO: MemoryDB doesn't implement query options
 	db.mux.RLock()
 	defer db.mux.RUnlock()
 	if !db.addressIsRegistered(address) {
 		return nil, errors.New("address is not registered")
 	}
 	return db.eventIndexDB[address], nil
+}
+
+func (db *MemoryDB) GetEventsFromAddressTotal(address common.Address, options *types.QueryOptions) (uint64, error) {
+	// TODO: MemoryDB doesn't implement query options
+	db.mux.RLock()
+	defer db.mux.RUnlock()
+	if !db.addressIsRegistered(address) {
+		return 0, errors.New("address is not registered")
+	}
+	return uint64(len(db.eventIndexDB[address])), nil
 }
 
 func (db *MemoryDB) GetStorage(address common.Address, blockNumber uint64) (map[common.Hash]string, error) {

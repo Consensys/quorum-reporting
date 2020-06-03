@@ -143,6 +143,18 @@ func (f *FakeDB) GetAllEventsFromAddress(common.Address, *types.QueryOptions) ([
 	return nil, errors.New("not implemented")
 }
 
+func (f *FakeDB) GetTransactionsToAddressTotal(common.Address, *types.QueryOptions) (uint64, error) {
+	return 0, errors.New("not implemented")
+}
+
+func (f *FakeDB) GetTransactionsInternalToAddressTotal(common.Address, *types.QueryOptions) (uint64, error) {
+	return 0, errors.New("not implemented")
+}
+
+func (f *FakeDB) GetEventsFromAddressTotal(common.Address, *types.QueryOptions) (uint64, error) {
+	return 0, errors.New("not implemented")
+}
+
 func (f *FakeDB) GetStorage(common.Address, uint64) (map[common.Hash]string, error) {
 	return nil, errors.New("not implemented")
 }
