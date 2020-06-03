@@ -103,9 +103,10 @@ func (m *MonitorService) syncHistoricBlocks() error {
 
 	// Sync is called in a go routine so that it doesn't block main process.
 	go func() {
-		err = m.blockMonitor.syncBlocks(lastPersisted+1, currentBlockNumber)
-		if err != nil {
-			log.Panicf("sync historic blocks from %v to %v failed: %v", lastPersisted, currentBlockNumber, err)
+		err := m.blockMonitor.syncBlocks(lastPersisted+1, currentBlockNumber)
+		for err != nil {
+			log.Printf("sync historic blocks from %v to %v failed: %v\n", lastPersisted, currentBlockNumber, err)
+			err = m.blockMonitor.syncBlocks(err.EndBlockNumber(), currentBlockNumber)
 		}
 
 		// Sync from currentBlockNumber + 1 to the first ChainHeadEvent if there is any gap.
@@ -116,8 +117,9 @@ func (m *MonitorService) syncHistoricBlocks() error {
 		case latestChainHead := <-m.syncStart:
 			close(m.syncStart)
 			err := m.blockMonitor.syncBlocks(currentBlockNumber+1, latestChainHead-1)
-			if err != nil {
-				log.Panicf("sync historic blocks from %v to %v failed: %v", currentBlockNumber, latestChainHead-1, err)
+			for err != nil {
+				log.Printf("sync historic blocks from %v to %v failed: %v\n", currentBlockNumber, latestChainHead-1, err)
+				err = m.blockMonitor.syncBlocks(err.EndBlockNumber(), latestChainHead-1)
 			}
 		case <-stopChan:
 			return

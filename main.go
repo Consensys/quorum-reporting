@@ -1,21 +1,29 @@
 package main
 
 import (
+	"errors"
 	"flag"
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
-	"strconv"
 	"syscall"
-
-	"github.com/gin-gonic/contrib/static"
-	"github.com/gin-gonic/gin"
 
 	"quorumengineering/quorum-report/core"
 	"quorumengineering/quorum-report/types"
+	"quorumengineering/quorum-report/ui"
 )
 
 func main() {
+	err := run()
+	log.Println("Exiting...")
+	if err != nil {
+		_, _ = fmt.Printf("error: %v\n", err)
+		os.Exit(1)
+	}
+}
+
+func run() error {
 	// expects one input which the config file
 	// read the config file path
 	var configFile string
@@ -23,34 +31,32 @@ func main() {
 	flag.Parse()
 
 	if configFile == "" {
-		log.Panic("Config file path not given. Cannot start the service.")
+		return errors.New("config file path not given")
 	}
 
 	// read the given config file
 	config, err := types.ReadConfig(configFile)
 	if err != nil {
-		log.Panicf("unable to read configuration from the config file: %v", err)
+		return fmt.Errorf("unable to read configuration from the config file: %v", err)
 	}
 
 	// start the back end with given config
 	backend, err := core.New(config)
 	if err != nil {
-		log.Println("Exiting...")
-		log.Panicf("error: %v", err)
-		return
+		return fmt.Errorf("error: %v", err)
 	}
 
-	backend.Start()
+	err = backend.Start()
 	defer backend.Stop()
+	if err != nil {
+		return err
+	}
 
 	if config.Server.UIPort > 0 {
 		// start a light weighted sample sample ui
-		router := gin.Default()
-		router.Use(static.Serve("/", static.LocalFile("./ui", true)))
-		err := router.Run(":" + strconv.Itoa(config.Server.UIPort))
-		if err != nil {
-			log.Panicf("unable to start UI: %v", err)
-		}
+		uiHandler := ui.NewUIHandler(config.Server.UIPort)
+		uiHandler.Start()
+		defer uiHandler.Stop()
 	}
 
 	sigc := make(chan os.Signal, 1)
@@ -58,4 +64,5 @@ func main() {
 	defer signal.Stop(sigc)
 	<-sigc
 	log.Println("Got interrupted, shutting down...")
+	return nil
 }

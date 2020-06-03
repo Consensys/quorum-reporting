@@ -85,26 +85,28 @@ func (bm *BlockMonitor) currentBlockNumber() (uint64, error) {
 	return hexutil.DecodeUint64(currentBlock.Number)
 }
 
-func (bm *BlockMonitor) syncBlocks(start, end uint64) error {
-	if start <= end {
-		log.Printf("Start to sync historic blocks from %v to %v. \n", start, end)
-		for i := start; i <= end; i++ {
-			blockOrigin, err := bm.quorumClient.BlockByNumber(context.Background(), big.NewInt(int64(i)))
-			if err != nil {
-				// TODO: if quorum node is down, reconnect?
-				return err
-			}
-			bm.newBlockChan <- bm.createBlock(blockOrigin)
+func (bm *BlockMonitor) syncBlocks(start, end uint64) *types.SyncError {
+	if start > end {
+		return nil
+	}
+
+	log.Printf("Start to sync historic blocks from %v to %v. \n", start, end)
+	for i := start; i <= end; i++ {
+		blockOrigin, err := bm.quorumClient.BlockByNumber(context.Background(), big.NewInt(int64(i)))
+		if err != nil {
+			// TODO: if quorum node is down, reconnect?
+			return types.NewSyncError(err.Error(), i)
 		}
+		bm.newBlockChan <- bm.createBlock(blockOrigin)
 	}
 	return nil
 }
 
 func (bm *BlockMonitor) processChainHead(header *ethTypes.Header) {
 	blockOrigin, err := bm.quorumClient.BlockByNumber(context.Background(), header.Number)
-	if err != nil {
-		// TODO: if quorum node is down, reconnect?
-		log.Panicf("get block with hash %v error: %v", header.Hash(), err)
+	for err != nil {
+		log.Printf("get block with hash %v error: %v\n", header.Hash(), err)
+		blockOrigin, err = bm.quorumClient.BlockByNumber(context.Background(), header.Number)
 	}
 	bm.newBlockChan <- bm.createBlock(blockOrigin)
 }
