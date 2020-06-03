@@ -34,6 +34,11 @@ func New(config types.ReportingConfig) (*Backend, error) {
 			time.Sleep(time.Duration(config.Connection.ReconnectInterval) * time.Second)
 			quorumClient, err = client.NewQuorumClient(config.Connection.WSUrl, config.Connection.GraphQLUrl)
 		}
+
+		//max retries reached but still erroring, abort
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	consensus, err := client.Consensus(quorumClient)
