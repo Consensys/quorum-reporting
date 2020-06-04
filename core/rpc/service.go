@@ -1,13 +1,14 @@
 package rpc
 
 import (
-	"log"
+	"fmt"
 	"net"
 	"time"
 
 	ethRPC "github.com/ethereum/go-ethereum/rpc"
 
 	"quorumengineering/quorum-report/database"
+	"quorumengineering/quorum-report/log"
 )
 
 var defaultHTTPTimeouts = ethRPC.HTTPTimeouts{
@@ -42,9 +43,9 @@ func NewRPCService(db database.Database, httpEndpoint string, vhosts []string, c
 }
 
 func (r *RPCService) Start() error {
-	log.Println("Start rpc service...")
+	log.Info("starting rpc service")
 
-	modules := []string{}
+	var modules []string
 	for _, apis := range r.apis {
 		modules = append(modules, apis.Namespace)
 	}
@@ -53,7 +54,7 @@ func (r *RPCService) Start() error {
 		return err
 	}
 	r.listener = listener
-	log.Printf("HTTP endpoint opened: http://%s.\n", r.httpEndpoint)
+	log.Info("RPC HTTP endpoint opened", "url", fmt.Sprintf("http://%s", r.httpEndpoint))
 	return nil
 }
 
@@ -61,6 +62,6 @@ func (r *RPCService) Stop() {
 	if r.listener != nil {
 		r.listener.Close()
 	}
-	log.Printf("HTTP endpoint closed: http://%s.\n", r.httpEndpoint)
-	log.Println("RPC service stopped.")
+	log.Info("RPC HTTP endpoint closed", "url", fmt.Sprintf("http://%s", r.httpEndpoint))
+	log.Info("RPC service stopped")
 }

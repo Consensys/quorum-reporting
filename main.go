@@ -4,21 +4,21 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"log"
 	"os"
 	"os/signal"
 	"syscall"
 
 	"quorumengineering/quorum-report/core"
+	"quorumengineering/quorum-report/log"
 	"quorumengineering/quorum-report/types"
 	"quorumengineering/quorum-report/ui"
 )
 
 func main() {
 	err := run()
-	log.Println("Exiting...")
+	log.Info("Exiting")
 	if err != nil {
-		_, _ = fmt.Printf("error: %v\n", err)
+		log.Error(err.Error())
 		os.Exit(1)
 	}
 }
@@ -29,15 +29,17 @@ func run() error {
 	var configFile string
 	flag.StringVar(&configFile, "config", "config.toml", "config file")
 	flag.Parse()
-
 	if configFile == "" {
 		return errors.New("config file path not given")
 	}
 
+	log.Info("config file found", "filename", configFile)
+
 	// read the given config file
 	config, err := types.ReadConfig(configFile)
 	if err != nil {
-		return fmt.Errorf("unable to read configuration from the config file: %v", err)
+		log.Error("unable to read configuration", "err", err)
+		return errors.New("unable to read configuration")
 	}
 
 	// start the back end with given config
@@ -52,6 +54,7 @@ func run() error {
 		return err
 	}
 
+	log.Debug("UI Port", "port number", config.Server.UIPort)
 	if config.Server.UIPort > 0 {
 		// start a light weighted sample sample ui
 		uiHandler := ui.NewUIHandler(config.Server.UIPort)
@@ -63,6 +66,6 @@ func run() error {
 	signal.Notify(sigc, syscall.SIGINT, syscall.SIGTERM)
 	defer signal.Stop(sigc)
 	<-sigc
-	log.Println("Got interrupted, shutting down...")
+	log.Info("Received interrupt signal, shutting down...")
 	return nil
 }

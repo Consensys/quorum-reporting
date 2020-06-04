@@ -4,6 +4,7 @@ import (
 	"quorumengineering/quorum-report/database"
 	"quorumengineering/quorum-report/database/elasticsearch"
 	"quorumengineering/quorum-report/database/memory"
+	"quorumengineering/quorum-report/log"
 	"quorumengineering/quorum-report/types"
 )
 
@@ -19,8 +20,10 @@ func (dbFactory *Factory) Database(config *types.DatabaseConfig) (database.Datab
 		if err != nil {
 			return nil, err
 		}
+		log.Info("created database connection", "type", "elasticsearch")
 		return NewDatabaseWithCache(db, config.CacheSize)
 	}
+	log.Info("created database connection", "type", "memory")
 	return dbFactory.NewInMemoryDatabase(), nil
 }
 

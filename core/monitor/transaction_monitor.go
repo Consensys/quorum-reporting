@@ -1,14 +1,13 @@
 package monitor
 
 import (
-	"log"
-
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 
 	"quorumengineering/quorum-report/client"
 	"quorumengineering/quorum-report/database"
 	"quorumengineering/quorum-report/graphql"
+	"quorumengineering/quorum-report/log"
 	"quorumengineering/quorum-report/types"
 )
 
@@ -22,7 +21,7 @@ func NewTransactionMonitor(db database.Database, quorumClient client.Client) *Tr
 }
 
 func (tm *TransactionMonitor) PullTransactions(block *types.Block) ([]*types.Transaction, error) {
-	log.Printf("Pull all transactions for block %v.\n", block.Number)
+	log.Info("Fetching transactions", "block", block.Hash.String())
 
 	fetchedTransactions := make([]*types.Transaction, 0, len(block.Transactions))
 	for _, txHash := range block.Transactions {
@@ -37,6 +36,8 @@ func (tm *TransactionMonitor) PullTransactions(block *types.Block) ([]*types.Tra
 }
 
 func (tm *TransactionMonitor) createTransaction(block *types.Block, hash common.Hash) (*types.Transaction, error) {
+	log.Debug("processing transaction", "hash", hash.String())
+
 	var txResult graphql.TransactionResult
 	if err := tm.quorumClient.ExecuteGraphQLQuery(&txResult, graphql.TransactionDetailQuery(hash)); err != nil {
 		return nil, err

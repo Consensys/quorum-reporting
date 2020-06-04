@@ -135,7 +135,6 @@ func (c *DefaultAPIClient) ScrollAllResults(index string, query string) ([]inter
 
 		// Break out of the loop when there are no results
 		if len(hits) == 0 {
-			//log.Println("Finished scrolling")
 			break
 		}
 

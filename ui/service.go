@@ -2,8 +2,6 @@ package ui
 
 import (
 	"context"
-	"fmt"
-	"log"
 	"net/http"
 	"strconv"
 	"sync"
@@ -11,6 +9,8 @@ import (
 
 	"github.com/gin-gonic/contrib/static"
 	"github.com/gin-gonic/gin"
+
+	"quorumengineering/quorum-report/log"
 )
 
 type UIHandler struct {
@@ -26,6 +26,8 @@ func NewUIHandler(port int) *UIHandler {
 }
 
 func (handler *UIHandler) Start() {
+	log.Info("Start UI", "port number", handler.port)
+
 	// start a light weighted sample sample ui
 	router := gin.Default()
 	router.Use(static.Serve("/", static.LocalFile("./ui/build", true)))
@@ -37,17 +39,18 @@ func (handler *UIHandler) Start() {
 
 	go func() {
 		if err := handler.srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			fmt.Printf("unable to start UI: %v", err)
+			log.Error("unable to start UI", "err", err)
 		}
 	}()
 }
 
 func (handler *UIHandler) Stop() error {
+	log.Info("stopping UI server")
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	if err := handler.srv.Shutdown(ctx); err != nil {
-		log.Println("Server Shutdown:", err)
+		log.Error("UI server shutdown failed", "err", err)
 	}
 	return nil
 }
