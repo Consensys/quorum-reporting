@@ -2,6 +2,7 @@ package filter
 
 import (
 	"log"
+	"sync"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -17,7 +18,7 @@ type FilterServiceDB interface {
 	GetLastPersistedBlockNumber() (uint64, error)
 	GetLastFiltered(common.Address) (uint64, error)
 	GetAddresses() ([]common.Address, error)
-	IndexBlock([]common.Address, *types.Block) error
+	IndexBlocks([]common.Address, []*types.Block) error
 	IndexStorage(map[common.Address]*state.DumpAccount, uint64) error
 }
 
@@ -61,12 +62,18 @@ func (fs *FilterService) Start() error {
 				}
 				//log.Printf("Last filtered block %v.\n", lastFiltered)
 				for current > lastFiltered {
-					err := fs.index(lastFilteredAll, lastFiltered+1)
+					//index 1000 blocks at a time
+					//TODO: make configurable
+					endBlock := lastFiltered + 1000
+					if endBlock > current {
+						endBlock = current
+					}
+					err := fs.index(lastFilteredAll, lastFiltered+1, endBlock)
 					if err != nil {
 						log.Printf("index block %v failed: %v", lastFiltered, err)
 						break
 					}
-					lastFiltered++
+					lastFiltered = endBlock
 				}
 			case <-stopChan:
 				return
@@ -107,22 +114,48 @@ func (fs *FilterService) getLastFiltered(current uint64) (map[common.Address]uin
 	return lastFiltered, current, nil
 }
 
-func (fs *FilterService) index(lastFiltered map[common.Address]uint64, blockNumber uint64) error {
-	block, err := fs.db.ReadBlock(blockNumber)
-	if err != nil {
-		return err
+func (fs *FilterService) index(lastFiltered map[common.Address]uint64, blockNumber uint64, endBlockNumber uint64) error {
+	//read the block range that we are indexing
+	allBlocks := make([]*types.Block, 0)
+	for i := blockNumber; i <= endBlockNumber; i++ {
+		block, err := fs.db.ReadBlock(i)
+		if err != nil {
+			return err
+		}
+		allBlocks = append(allBlocks, block)
 	}
+
+	// find all the addresses we may need to index
+	// this may result in some extra indexing if an address has had some of the block range
+	// indexed before
 	addresses := []common.Address{}
 	for address, curLastFiltered := range lastFiltered {
-		if curLastFiltered < blockNumber {
+		if curLastFiltered < endBlockNumber {
 			addresses = append(addresses, address)
 			log.Printf("Index registered addresses %v at block %v.\n", address.Hex(), blockNumber)
 		}
 	}
 
-	if err = fs.storageFilter.IndexStorage(addresses, blockNumber); err != nil {
-		return err
+	var (
+		wg        sync.WaitGroup
+		returnErr error
+	)
+
+	for _, block := range allBlocks {
+		wg.Add(1)
+		go func(block *types.Block) {
+			if err := fs.storageFilter.IndexStorage(addresses, block.Number); err != nil {
+				returnErr = err
+			}
+			wg.Done()
+		}(block)
 	}
+	wg.Wait()
+
+	if returnErr != nil {
+		return returnErr
+	}
+
 	// if IndexStorage has an error, IndexBlock is never called, last filtered will not be updated
-	return fs.db.IndexBlock(addresses, block)
+	return fs.db.IndexBlocks(addresses, allBlocks)
 }

@@ -205,8 +205,8 @@ func (cachingDB *DatabaseWithCache) ReadTransaction(hash common.Hash) (*types.Tr
 	return tx, nil
 }
 
-func (cachingDB *DatabaseWithCache) IndexBlock(addresses []common.Address, block *types.Block) error {
-	return cachingDB.db.IndexBlock(addresses, block)
+func (cachingDB *DatabaseWithCache) IndexBlocks(addresses []common.Address, blocks []*types.Block) error {
+	return cachingDB.db.IndexBlocks(addresses, blocks)
 }
 
 func (cachingDB *DatabaseWithCache) IndexStorage(rawStorage map[common.Address]*state.DumpAccount, blockNumber uint64) error {

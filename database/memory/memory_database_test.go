@@ -271,7 +271,7 @@ func testReadTransaction(t *testing.T, db database.Database, hash common.Hash, e
 }
 
 func testIndexBlock(t *testing.T, db database.Database, address common.Address, block *types.Block) {
-	err := db.IndexBlock([]common.Address{address}, block)
+	err := db.IndexBlocks([]common.Address{address}, []*types.Block{block})
 	if err != nil {
 		t.Fatalf("expected no error, but got %v", err)
 	}

@@ -282,6 +282,13 @@ func (db *MemoryDB) IndexBlock(addresses []common.Address, block *types.Block) e
 	return nil
 }
 
+func (db *MemoryDB) IndexBlocks(addresses []common.Address, blocks []*types.Block) error {
+	for _, block := range blocks {
+		db.IndexBlock(addresses, block)
+	}
+	return nil
+}
+
 func (db *MemoryDB) GetContractCreationTransaction(address common.Address) (common.Hash, error) {
 	db.mux.RLock()
 	defer db.mux.RUnlock()
