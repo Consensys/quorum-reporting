@@ -634,11 +634,18 @@ func (es *ElasticsearchDB) getContractByAddress(address common.Address) (*Contra
 func (es *ElasticsearchDB) indexTransaction(filteredAddresses map[common.Address]bool, tx *types.Transaction) error {
 	// Compare the address with tx.To and tx.CreatedContract to check if the transaction is related.
 	if filteredAddresses[tx.CreatedContract] {
-		err := es.updateCreatedTx(tx.CreatedContract, tx.Hash)
-		if err != nil {
+		if err := es.updateCreatedTx(tx.CreatedContract, tx.Hash); err != nil {
 			return err
 		}
 		log.Printf("Index contract creation tx %v of registered address %v.\n", tx.Hash.Hex(), tx.CreatedContract.Hex())
+	}
+	for _, internalCall := range tx.InternalCalls {
+		if internalCall.Type == "CREATE" || internalCall.Type == "CREATE2" {
+			if err := es.updateCreatedTx(internalCall.To, tx.Hash); err != nil {
+				return err
+			}
+			log.Printf("Index contract creation tx %v of registered address %v.\n", tx.Hash.Hex(), internalCall.To.Hex())
+		}
 	}
 
 	// Index events emitted by the given address
