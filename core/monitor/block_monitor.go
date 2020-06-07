@@ -2,9 +2,9 @@ package monitor
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"math/big"
+	"runtime"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -24,6 +24,8 @@ type BlockMonitor struct {
 	newBlockChan       chan *types.Block          // concurrent block processing
 	batchWriteChan     chan *BlockAndTransactions // concurrent block processing
 	consensus          string
+
+	workerQueue chan *types.Block
 }
 
 func NewBlockMonitor(db database.Database, quorumClient client.Client, consensus string, batchWriteChan chan *BlockAndTransactions) *BlockMonitor {
@@ -34,20 +36,41 @@ func NewBlockMonitor(db database.Database, quorumClient client.Client, consensus
 		newBlockChan:       make(chan *types.Block),
 		batchWriteChan:     batchWriteChan,
 		consensus:          consensus,
+
+		//Queue size is one bigger than number of workers so it never gets full
+		workerQueue: make(chan *types.Block, 3*runtime.NumCPU()+1),
 	}
 }
 
 func (bm *BlockMonitor) startWorker(stopChan <-chan types.StopEvent) {
+	/*
+		Check the reprocess queue first (bm.workerQueue) in case Quorum went down
+		Then check the main incoming queue for any new blocks
+	*/
 	for {
+		select {
+		case block := <-bm.workerQueue:
+			// Listen to worker-only channel in case we need to reprocess a block first
+			if err := bm.process(block); err != nil {
+				log.Printf("process block %v error: %v\n", block.Number, err)
+				bm.workerQueue <- block
+			}
+			continue
+		case <-stopChan:
+			log.Println("Returning from block processing worker")
+			return
+		default:
+		}
+
 		select {
 		case block := <-bm.newBlockChan:
 			// Listen to new block channel and process if new block comes.
-			err := bm.process(block)
-			if err != nil {
-				fmt.Printf("process block %v error: %v\n", block.Number, err)
-				bm.newBlockChan <- block
+			if err := bm.process(block); err != nil {
+				log.Printf("process block %v error: %v\n", block.Number, err)
+				bm.workerQueue <- block
 			}
 		case <-stopChan:
+			log.Println("Returning from block processing worker")
 			return
 		}
 	}
@@ -85,7 +108,7 @@ func (bm *BlockMonitor) currentBlockNumber() (uint64, error) {
 	return hexutil.DecodeUint64(currentBlock.Number)
 }
 
-func (bm *BlockMonitor) syncBlocks(start, end uint64, stopChan chan types.StopEvent) *types.SyncError {
+func (bm *BlockMonitor) syncBlocks(start, end uint64, stopChan chan bool) *types.SyncError {
 	if start > end {
 		return nil
 	}

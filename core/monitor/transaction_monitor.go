@@ -2,6 +2,7 @@ package monitor
 
 import (
 	"context"
+	"errors"
 	"log"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -49,7 +50,12 @@ func (tm *TransactionMonitor) createTransaction(block *types.Block, hash common.
 		return nil, err
 	}
 
-	if err = mapstructure.Decode(resp["transaction"].(map[string]interface{}), &txOrigin); err != nil {
+	transactionData, ok := resp["transaction"].(map[string]interface{})
+	if !ok {
+		return nil, errors.New("transaction data not pulled properly")
+	}
+
+	if err = mapstructure.Decode(transactionData, &txOrigin); err != nil {
 		return nil, err
 	}
 
