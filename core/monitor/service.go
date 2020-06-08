@@ -106,8 +106,8 @@ func (m *MonitorService) syncHistoricBlocks() error {
 		defer stopSubscription.Unsubscribe()
 		err := m.blockMonitor.syncBlocks(lastPersisted+1, currentBlockNumber, stopChan)
 		for err != nil {
-			log.Printf("sync historic blocks from %v to %v failed: %v\n", lastPersisted, currentBlockNumber, err)
-			<-time.NewTicker(time.Second).C
+			log.Printf("sync historic blocks up to %v failed: %v\n", currentBlockNumber, err)
+			time.Sleep(time.Second)
 			err = m.blockMonitor.syncBlocks(err.EndBlockNumber(), currentBlockNumber, stopChan)
 		}
 	}()
