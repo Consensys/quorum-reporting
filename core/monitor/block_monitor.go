@@ -85,19 +85,30 @@ func (bm *BlockMonitor) currentBlockNumber() (uint64, error) {
 	return hexutil.DecodeUint64(currentBlock.Number)
 }
 
-func (bm *BlockMonitor) syncBlocks(start, end uint64) *types.SyncError {
+func (bm *BlockMonitor) syncBlocks(start, end uint64, stopChan chan types.StopEvent) *types.SyncError {
 	if start > end {
 		return nil
 	}
 
 	log.Printf("Start to sync historic blocks from %v to %v. \n", start, end)
 	for i := start; i <= end; i++ {
+		select {
+		case <-stopChan:
+			return nil
+		default:
+		}
+
 		blockOrigin, err := bm.quorumClient.BlockByNumber(context.Background(), big.NewInt(int64(i)))
 		if err != nil {
 			// TODO: if quorum node is down, reconnect?
 			return types.NewSyncError(err.Error(), i)
 		}
-		bm.newBlockChan <- bm.createBlock(blockOrigin)
+
+		select {
+		case <-stopChan:
+			return nil
+		case bm.newBlockChan <- bm.createBlock(blockOrigin):
+		}
 	}
 	return nil
 }

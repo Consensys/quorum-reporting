@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"runtime"
+	"time"
 
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/event"
@@ -17,7 +18,6 @@ import (
 type MonitorService struct {
 	db           database.Database
 	quorumClient client.Client
-	syncStart    chan uint64
 	blockMonitor *BlockMonitor
 	batchWriter  *BatchWriter
 	stopFeed     event.Feed
@@ -29,7 +29,6 @@ func NewMonitorService(db database.Database, quorumClient client.Client, consens
 	return &MonitorService{
 		db:           db,
 		quorumClient: quorumClient,
-		syncStart:    make(chan uint64, 1), // make channel buffered so that it does not block chain head listener
 		blockMonitor: NewBlockMonitor(db, quorumClient, consensus, batchWriteChan),
 		batchWriter:  NewBatchWriter(batchWriteChan, db),
 		totalWorkers: 3 * uint64(runtime.NumCPU()),
@@ -48,13 +47,13 @@ func (m *MonitorService) Start() error {
 	m.startBatchWriter()
 	m.startWorkers()
 
-	// 2. Sync from last persisted to current block height.
-	if err := m.syncHistoricBlocks(); err != nil {
+	// 2. Listen to ChainHeadEvent and sync.
+	if err := m.listenToChainHead(); err != nil {
 		return err
 	}
 
-	// 3. Listen to ChainHeadEvent and sync.
-	if err := m.listenToChainHead(); err != nil {
+	// 3. Sync from last persisted to current block height.
+	if err := m.syncHistoricBlocks(); err != nil {
 		return err
 	}
 
@@ -103,26 +102,13 @@ func (m *MonitorService) syncHistoricBlocks() error {
 
 	// Sync is called in a go routine so that it doesn't block main process.
 	go func() {
-		err := m.blockMonitor.syncBlocks(lastPersisted+1, currentBlockNumber)
-		for err != nil {
-			log.Printf("sync historic blocks from %v to %v failed: %v\n", lastPersisted, currentBlockNumber, err)
-			err = m.blockMonitor.syncBlocks(err.EndBlockNumber(), currentBlockNumber)
-		}
-
-		// Sync from currentBlockNumber + 1 to the first ChainHeadEvent if there is any gap.
 		stopChan, stopSubscription := m.subscribeStopEvent()
 		defer stopSubscription.Unsubscribe()
-
-		select {
-		case latestChainHead := <-m.syncStart:
-			close(m.syncStart)
-			err := m.blockMonitor.syncBlocks(currentBlockNumber+1, latestChainHead-1)
-			for err != nil {
-				log.Printf("sync historic blocks from %v to %v failed: %v\n", currentBlockNumber, latestChainHead-1, err)
-				err = m.blockMonitor.syncBlocks(err.EndBlockNumber(), latestChainHead-1)
-			}
-		case <-stopChan:
-			return
+		err := m.blockMonitor.syncBlocks(lastPersisted+1, currentBlockNumber, stopChan)
+		for err != nil {
+			log.Printf("sync historic blocks up to %v failed: %v\n", currentBlockNumber, err)
+			time.Sleep(time.Second)
+			err = m.blockMonitor.syncBlocks(err.EndBlockNumber(), currentBlockNumber, stopChan)
 		}
 	}()
 
@@ -139,16 +125,11 @@ func (m *MonitorService) listenToChainHead() error {
 	go func() {
 		stopChan, stopSubscription := m.subscribeStopEvent()
 		defer stopSubscription.Unsubscribe()
-		syncStarted := false
 		for {
 			select {
 			case err := <-sub.Err():
 				log.Panicf("chain head event subscription error: %v", err)
 			case header := <-headers:
-				if !syncStarted {
-					m.syncStart <- header.Number.Uint64()
-					syncStarted = true
-				}
 				m.blockMonitor.processChainHead(header)
 			case <-stopChan:
 				return
