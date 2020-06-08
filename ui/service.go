@@ -28,7 +28,7 @@ func NewUIHandler(port int) *UIHandler {
 func (handler *UIHandler) Start() {
 	// start a light weighted sample sample ui
 	router := gin.Default()
-	router.Use(static.Serve("/", static.LocalFile("./ui", true)))
+	router.Use(static.Serve("/", static.LocalFile("./ui/build", true)))
 
 	handler.srv = &http.Server{
 		Addr:    ":" + strconv.Itoa(handler.port),
