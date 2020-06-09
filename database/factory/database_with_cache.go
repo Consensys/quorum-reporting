@@ -115,12 +115,20 @@ func (cachingDB *DatabaseWithCache) GetContractABI(address common.Address) (stri
 	return cachingDB.db.GetContractABI(address)
 }
 
-func (cachingDB *DatabaseWithCache) AddStorageABI(address common.Address, abi string) error {
-	return cachingDB.db.AddStorageABI(address, abi)
+func (cachingDB *DatabaseWithCache) AddStorageLayout(address common.Address, abi string) error {
+	return cachingDB.db.AddStorageLayout(address, abi)
 }
 
-func (cachingDB *DatabaseWithCache) GetStorageABI(address common.Address) (string, error) {
-	return cachingDB.db.GetStorageABI(address)
+func (cachingDB *DatabaseWithCache) GetStorageLayout(address common.Address) (string, error) {
+	return cachingDB.db.GetStorageLayout(address)
+}
+
+func (cachingDB *DatabaseWithCache) AddTemplate(name string, abi string, layout string) error {
+	return cachingDB.db.AddTemplate(name, abi, layout)
+}
+
+func (cachingDB *DatabaseWithCache) AssignTemplate(address common.Address, name string) error {
+	return cachingDB.db.AssignTemplate(address, name)
 }
 
 func (cachingDB *DatabaseWithCache) WriteBlock(block *types.Block) error {

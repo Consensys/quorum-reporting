@@ -9,7 +9,7 @@ import (
 
 type Database interface {
 	AddressDB
-	ABIDB
+	TemplateDB
 	BlockDB
 	TransactionDB
 	IndexDB
@@ -23,12 +23,16 @@ type AddressDB interface {
 	GetAddresses() ([]common.Address, error)
 }
 
-// ABIDB stores contract ABI of registered address
-type ABIDB interface {
+// TemplateDB stores contract ABI/ Storage Layout of registered address
+type TemplateDB interface {
+	// Deprecated: Use AddTemplate + AssignTemplate
 	AddContractABI(common.Address, string) error
+	// Deprecated: Use AddTemplate + AssignTemplate
+	AddStorageLayout(common.Address, string) error
+	AddTemplate(string, string, string) error
+	AssignTemplate(common.Address, string) error
 	GetContractABI(common.Address) (string, error)
-	AddStorageABI(common.Address, string) error
-	GetStorageABI(common.Address) (string, error)
+	GetStorageLayout(common.Address) (string, error)
 }
 
 // BlockDB stores the block details for all blocks.

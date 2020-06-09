@@ -5,15 +5,14 @@ import (
 	"github.com/ethereum/go-ethereum/core/state"
 
 	"quorumengineering/quorum-report/client"
-	"quorumengineering/quorum-report/database"
 )
 
 type StorageFilter struct {
-	db           database.Database
+	db           FilterServiceDB
 	quorumClient client.Client
 }
 
-func NewStorageFilter(db database.Database, quorumClient client.Client) *StorageFilter {
+func NewStorageFilter(db FilterServiceDB, quorumClient client.Client) *StorageFilter {
 	return &StorageFilter{db, quorumClient}
 }
 

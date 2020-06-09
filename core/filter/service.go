@@ -5,21 +5,30 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/state"
 	"github.com/ethereum/go-ethereum/event"
 
 	"quorumengineering/quorum-report/client"
-	"quorumengineering/quorum-report/database"
 	"quorumengineering/quorum-report/types"
 )
 
+type FilterServiceDB interface {
+	ReadBlock(uint64) (*types.Block, error)
+	GetLastPersistedBlockNumber() (uint64, error)
+	GetLastFiltered(common.Address) (uint64, error)
+	GetAddresses() ([]common.Address, error)
+	IndexBlock([]common.Address, *types.Block) error
+	IndexStorage(map[common.Address]*state.DumpAccount, uint64) error
+}
+
 // FilterService filters transactions and storage based on registered address list.
 type FilterService struct {
-	db            database.Database
+	db            FilterServiceDB
 	storageFilter *StorageFilter
 	stopFeed      event.Feed
 }
 
-func NewFilterService(db database.Database, client client.Client) *FilterService {
+func NewFilterService(db FilterServiceDB, client client.Client) *FilterService {
 	return &FilterService{
 		db:            db,
 		storageFilter: NewStorageFilter(db, client),

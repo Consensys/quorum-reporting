@@ -14,9 +14,10 @@ import (
 // MemoryDB is a sample memory database for dev only.
 type MemoryDB struct {
 	// registered contract data
-	addressDB    []common.Address
-	abiDB        map[common.Address]string
-	storageAbiDB map[common.Address]string
+	addressDB       []common.Address
+	templateDB      map[common.Address]string
+	abiDB           map[string]string
+	storageLayoutDB map[string]string
 	// blockchain data
 	blockDB                  map[uint64]*types.Block
 	txDB                     map[common.Hash]*types.Transaction
@@ -33,8 +34,9 @@ type MemoryDB struct {
 func NewMemoryDB() *MemoryDB {
 	return &MemoryDB{
 		addressDB:                []common.Address{},
-		abiDB:                    make(map[common.Address]string),
-		storageAbiDB:             make(map[common.Address]string),
+		templateDB:               make(map[common.Address]string),
+		abiDB:                    make(map[string]string),
+		storageLayoutDB:          make(map[string]string),
 		blockDB:                  make(map[uint64]*types.Block),
 		txDB:                     make(map[common.Hash]*types.Transaction),
 		txIndexDB:                make(map[common.Address]*TxIndexer),
@@ -126,27 +128,44 @@ func (db *MemoryDB) GetAddresses() ([]common.Address, error) {
 func (db *MemoryDB) AddContractABI(address common.Address, abi string) error {
 	db.mux.Lock()
 	defer db.mux.Unlock()
-	db.abiDB[address] = abi
+	db.templateDB[address] = address.Hex()
+	db.abiDB[address.Hex()] = abi
 	return nil
 }
 
 func (db *MemoryDB) GetContractABI(address common.Address) (string, error) {
 	db.mux.RLock()
 	defer db.mux.RUnlock()
-	return db.abiDB[address], nil
+	return db.abiDB[db.templateDB[address]], nil
 }
 
-func (db *MemoryDB) AddStorageABI(address common.Address, abi string) error {
+func (db *MemoryDB) AddStorageLayout(address common.Address, layout string) error {
 	db.mux.Lock()
 	defer db.mux.Unlock()
-	db.storageAbiDB[address] = abi
+	db.templateDB[address] = address.Hex()
+	db.storageLayoutDB[address.Hex()] = layout
 	return nil
 }
 
-func (db *MemoryDB) GetStorageABI(address common.Address) (string, error) {
+func (db *MemoryDB) GetStorageLayout(address common.Address) (string, error) {
 	db.mux.RLock()
 	defer db.mux.RUnlock()
-	return db.storageAbiDB[address], nil
+	return db.storageLayoutDB[db.templateDB[address]], nil
+}
+
+func (db *MemoryDB) AddTemplate(name string, abi string, layout string) error {
+	db.mux.Lock()
+	defer db.mux.Unlock()
+	db.abiDB[name] = abi
+	db.storageLayoutDB[name] = layout
+	return nil
+}
+
+func (db *MemoryDB) AssignTemplate(address common.Address, name string) error {
+	db.mux.Lock()
+	defer db.mux.Unlock()
+	db.templateDB[address] = name
+	return nil
 }
 
 func (db *MemoryDB) WriteBlock(block *types.Block) error {

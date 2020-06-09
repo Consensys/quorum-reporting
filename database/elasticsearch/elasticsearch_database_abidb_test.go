@@ -225,7 +225,7 @@ func TestElasticsearchDB_AddStorageABI(t *testing.T) {
 
 	db, _ := New(mockedClient)
 
-	err := db.AddStorageABI(addr, abi)
+	err := db.AddStorageLayout(addr, abi)
 
 	assert.Nil(t, err, "expected error to be nil")
 }
@@ -271,7 +271,7 @@ func TestElasticsearchDB_AddStorageABI_WithError(t *testing.T) {
 
 	db, _ := New(mockedClient)
 
-	err := db.AddStorageABI(addr, abi)
+	err := db.AddStorageLayout(addr, abi)
 
 	assert.EqualError(t, err, "test error", "wrong error message")
 }
@@ -295,7 +295,7 @@ func TestElasticsearchDB_AddStorageABI_ContractDoesntExist(t *testing.T) {
 
 	db, _ := New(mockedClient)
 
-	err := db.AddStorageABI(addr, abi)
+	err := db.AddStorageLayout(addr, abi)
 
 	assert.EqualError(t, err, "not found", "wrong error message")
 }
@@ -328,7 +328,7 @@ func TestElasticsearchDB_GetStorageABI(t *testing.T) {
 
 	db, _ := New(mockedClient)
 
-	abi, err := db.GetStorageABI(addr)
+	abi, err := db.GetStorageLayout(addr)
 
 	assert.Nil(t, err, "unexpected error")
 	assert.Equal(t, "some storage ABI", abi)
@@ -352,7 +352,7 @@ func TestElasticsearchDB_GetStorageABI_ContractDoesntExist(t *testing.T) {
 
 	db, _ := New(mockedClient)
 
-	abi, err := db.GetStorageABI(addr)
+	abi, err := db.GetStorageLayout(addr)
 
 	assert.Equal(t, "", abi, "unexpected error")
 	assert.EqualError(t, err, "not found", "unexpected error message")

@@ -58,40 +58,8 @@ type FakeDB struct {
 	lastFiltered map[common.Address]uint64
 }
 
-func (f *FakeDB) AddAddresses([]common.Address) error {
-	return errors.New("not implemented")
-}
-
-func (f *FakeDB) DeleteAddress(common.Address) error {
-	return errors.New("not implemented")
-}
-
 func (f *FakeDB) GetAddresses() ([]common.Address, error) {
 	return f.addresses, nil
-}
-
-func (f *FakeDB) AddContractABI(common.Address, string) error {
-	return errors.New("not implemented")
-}
-
-func (f *FakeDB) GetContractABI(common.Address) (string, error) {
-	return "", errors.New("not implemented")
-}
-
-func (f *FakeDB) AddStorageABI(common.Address, string) error {
-	return errors.New("not implemented")
-}
-
-func (f *FakeDB) GetStorageABI(common.Address) (string, error) {
-	return "", errors.New("not implemented")
-}
-
-func (f *FakeDB) WriteBlock(*types.Block) error {
-	return errors.New("not implemented")
-}
-
-func (f *FakeDB) WriteBlocks([]*types.Block) error {
-	return errors.New("not implemented")
 }
 
 func (f *FakeDB) ReadBlock(blockNumber uint64) (*types.Block, error) {
@@ -100,18 +68,6 @@ func (f *FakeDB) ReadBlock(blockNumber uint64) (*types.Block, error) {
 
 func (f *FakeDB) GetLastPersistedBlockNumber() (uint64, error) {
 	return 0, errors.New("not implemented")
-}
-
-func (f *FakeDB) WriteTransaction(*types.Transaction) error {
-	return errors.New("not implemented")
-}
-
-func (f *FakeDB) WriteTransactions([]*types.Transaction) error {
-	return errors.New("not implemented")
-}
-
-func (f *FakeDB) ReadTransaction(common.Hash) (*types.Transaction, error) {
-	return nil, errors.New("not implemented")
 }
 
 func (f *FakeDB) IndexStorage(map[common.Address]*state.DumpAccount, uint64) error {
@@ -127,40 +83,6 @@ func (f *FakeDB) IndexBlock(addresses []common.Address, block *types.Block) erro
 	return nil
 }
 
-func (f *FakeDB) GetContractCreationTransaction(common.Address) (common.Hash, error) {
-	return common.Hash{}, errors.New("not implemented")
-}
-
-func (f *FakeDB) GetAllTransactionsToAddress(common.Address, *types.QueryOptions) ([]common.Hash, error) {
-	return nil, errors.New("not implemented")
-}
-
-func (f *FakeDB) GetAllTransactionsInternalToAddress(common.Address, *types.QueryOptions) ([]common.Hash, error) {
-	return nil, errors.New("not implemented")
-}
-
-func (f *FakeDB) GetAllEventsFromAddress(common.Address, *types.QueryOptions) ([]*types.Event, error) {
-	return nil, errors.New("not implemented")
-}
-
-func (f *FakeDB) GetTransactionsToAddressTotal(common.Address, *types.QueryOptions) (uint64, error) {
-	return 0, errors.New("not implemented")
-}
-
-func (f *FakeDB) GetTransactionsInternalToAddressTotal(common.Address, *types.QueryOptions) (uint64, error) {
-	return 0, errors.New("not implemented")
-}
-
-func (f *FakeDB) GetEventsFromAddressTotal(common.Address, *types.QueryOptions) (uint64, error) {
-	return 0, errors.New("not implemented")
-}
-
-func (f *FakeDB) GetStorage(common.Address, uint64) (map[common.Hash]string, error) {
-	return nil, errors.New("not implemented")
-}
-
 func (f *FakeDB) GetLastFiltered(address common.Address) (uint64, error) {
 	return f.lastFiltered[address], nil
 }
-
-func (f *FakeDB) Stop() {}
