@@ -30,8 +30,9 @@ func New(client APIClient) (*ElasticsearchDB, error) {
 	initialized, err := db.checkIsInitialized()
 	if err != nil {
 		if err.Error() == "EOF" {
-			log.Println("Error communicating with ElasticSearch: EOF")
-			log.Println("Are certificates & https in use and set up properly?")
+			log.Println("Error talking to ElasticSearch")
+			log.Println("Please check all ElasticSearch settings, including certificates, URL and username/password")
+			return nil, errors.New("error communicating with ElasticSearch: EOF")
 		}
 		return nil, err
 	}
