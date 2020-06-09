@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"strconv"
 	"strings"
 	"sync"
@@ -364,26 +363,12 @@ func (es *ElasticsearchDB) ReadTransaction(hash common.Hash) (*types.Transaction
 
 // IndexDB
 func (es *ElasticsearchDB) IndexBlock(addresses []common.Address, block *types.Block) error {
-	// filter out registered and unfiltered address only
-	filteredAddresses := map[common.Address]bool{}
-	for _, address := range addresses {
-		lastFiltered, _ := es.GetLastFiltered(address)
-		if lastFiltered < block.Number {
-			filteredAddresses[address] = true
-			//log.Printf("Index registered address %v at block %v.\n", address.Hex(), block.Number)
-		}
+	indexer := NewBlockIndexer(addresses, []*types.Block{block}, es)
+	if err := indexer.Index(); err != nil {
+		return err
 	}
 
-	// index transactions and events
-	for _, txHash := range block.Transactions {
-		transaction, _ := es.ReadTransaction(txHash)
-		err := es.indexTransaction(filteredAddresses, transaction)
-		if err != nil {
-			return err
-		}
-	}
-
-	return es.updateAllLastFiltered(filteredAddresses, block.Number)
+	return es.updateAllLastFiltered(addresses, block.Number)
 }
 
 func (es *ElasticsearchDB) IndexStorage(rawStorage map[common.Address]*state.DumpAccount, blockNumber uint64) error {
@@ -631,41 +616,10 @@ func (es *ElasticsearchDB) getContractByAddress(address common.Address) (*Contra
 	return &contract.Source, nil
 }
 
-func (es *ElasticsearchDB) indexTransaction(filteredAddresses map[common.Address]bool, tx *types.Transaction) error {
-	// Compare the address with tx.To and tx.CreatedContract to check if the transaction is related.
-	if filteredAddresses[tx.CreatedContract] {
-		if err := es.updateCreatedTx(tx.CreatedContract, tx.Hash); err != nil {
-			return err
-		}
-		log.Printf("Index contract creation tx %v of registered address %v.\n", tx.Hash.Hex(), tx.CreatedContract.Hex())
-	}
-	for _, internalCall := range tx.InternalCalls {
-		if internalCall.Type == "CREATE" || internalCall.Type == "CREATE2" {
-			if err := es.updateCreatedTx(internalCall.To, tx.Hash); err != nil {
-				return err
-			}
-			log.Printf("Index contract creation tx %v of registered address %v.\n", tx.Hash.Hex(), internalCall.To.Hex())
-		}
-	}
-
-	// Index events emitted by the given address
-	pendingIndexEvents := []*types.Event{}
-	for _, event := range tx.Events {
-		if filteredAddresses[event.Address] {
-			pendingIndexEvents = append(pendingIndexEvents, event)
-		}
-	}
-	return es.createEvents(pendingIndexEvents)
-}
-
-func (es *ElasticsearchDB) updateCreatedTx(address common.Address, creationTxHash common.Hash) error {
-	return es.updateContract(address, "creationTx", creationTxHash.String())
-}
-
-func (es *ElasticsearchDB) updateAllLastFiltered(addresses map[common.Address]bool, lastFiltered uint64) error {
+func (es *ElasticsearchDB) updateAllLastFiltered(addresses []common.Address, lastFiltered uint64) error {
 	bi := es.apiClient.GetBulkHandler(ContractIndex)
 
-	for address := range addresses {
+	for _, address := range addresses {
 		bi.Add(
 			context.Background(),
 			esutil.BulkIndexerItem{
@@ -678,7 +632,7 @@ func (es *ElasticsearchDB) updateAllLastFiltered(addresses map[common.Address]bo
 	return nil
 }
 
-func (es *ElasticsearchDB) updateContract(address common.Address, property string, value interface{}) error {
+func (es *ElasticsearchDB) updateContract(address common.Address, property string, value string) error {
 	//check contract exists before updating
 	_, err := es.getContractByAddress(address)
 	if err != nil {
