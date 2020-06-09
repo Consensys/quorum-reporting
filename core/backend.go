@@ -2,6 +2,7 @@ package core
 
 import (
 	"fmt"
+	"github.com/ethereum/go-ethereum/common"
 	"log"
 	"time"
 
@@ -52,10 +53,20 @@ func New(config types.ReportingConfig) (*Backend, error) {
 		return nil, err
 	}
 
-	// add addresses from config file as initial registered addresses
-	err = db.AddAddresses(config.Addresses)
-	if err != nil {
-		return nil, err
+	// store all templates
+	for _, template := range config.Templates {
+		if err := db.AddTemplate(template.TemplateName, template.ABI, template.StorageLayout); err != nil {
+			return nil, err
+		}
+	}
+	// store address while assign template
+	for _, address := range config.Addresses {
+		if err := db.AddAddresses([]common.Address{address.Address}); err != nil {
+			return nil, err
+		}
+		if err := db.AssignTemplate(address.Address, address.TemplateName); err != nil {
+			return nil, err
+		}
 	}
 
 	return &Backend{

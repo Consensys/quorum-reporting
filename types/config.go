@@ -38,10 +38,22 @@ type TuningConfig struct {
 	BlockProcessingQueueSize int `toml:"blockProcessingQueueSize"`
 }
 
+type AddressConfig struct {
+	Address      common.Address `toml:"address,omitempty"`
+	TemplateName string         `toml:"templateName,omitempty"`
+}
+
+type TemplateConfig struct {
+	TemplateName  string `toml:"templateName,omitempty"`
+	ABI           string `toml:"abi,omitempty"`
+	StorageLayout string `toml:"storageLayout,omitempty"`
+}
+
 type ReportingConfig struct {
 	Title     string
-	Addresses []common.Address `toml:"addresses,omitempty"`
-	Database  *DatabaseConfig  `toml:"database,omitempty"`
+	Addresses []*AddressConfig  `toml:"addresses,omitempty"`
+	Templates []*TemplateConfig `toml:"templates,omitempty"`
+	Database  *DatabaseConfig   `toml:"database,omitempty"`
 	Server    struct {
 		RPCAddr     string   `toml:"rpcAddr"`
 		RPCCorsList []string `toml:"rpcCorsList,omitempty"`
