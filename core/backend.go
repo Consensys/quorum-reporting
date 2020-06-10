@@ -60,6 +60,10 @@ func New(config types.ReportingConfig) (*Backend, error) {
 			return nil, err
 		}
 	}
+	// store erc20 template
+	if err := db.AddTemplate(types.ERC20, types.ERC20ABI, ""); err != nil {
+		return nil, err
+	}
 	// store all addresses
 	initialAddresses := []common.Address{}
 	for _, address := range config.Addresses {

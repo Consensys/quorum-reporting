@@ -3,6 +3,7 @@ package monitor
 import (
 	"context"
 	"log"
+	"strings"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -33,9 +34,45 @@ func (tm *TransactionMonitor) PullTransactions(block *types.Block) ([]*types.Tra
 		if err != nil {
 			return nil, err
 		}
+		// 2. Check if transaction deploys a public ERC20 contract
+		if checkERC20(tx.Data) {
+			log.Printf("tx %v deploys %v which is a potential ERC20 contract.\n", tx.Hash.Hex(), tx.CreatedContract.Hex())
+			// add contract address
+			tm.db.AddAddresses([]common.Address{tx.CreatedContract})
+			// assign ERC20 template
+			tm.db.AssignTemplate(tx.CreatedContract, types.ERC20)
+		}
 		fetchedTransactions = append(fetchedTransactions, tx)
 	}
 	return fetchedTransactions, nil
+}
+
+func checkERC20(data hexutil.Bytes) bool {
+	// check totalSupply()
+	if !strings.Contains(data.String(), "18160ddd") {
+		return false
+	}
+	// check balanceOf(address)
+	if !strings.Contains(data.String(), "70a08231") {
+		return false
+	}
+	// check allowance(address,address)
+	if !strings.Contains(data.String(), "dd62ed3e") {
+		return false
+	}
+	// check transfer(address,uint256)
+	if !strings.Contains(data.String(), "a9059cbb") {
+		return false
+	}
+	// check approve(address,uint256)
+	if !strings.Contains(data.String(), "095ea7b3") {
+		return false
+	}
+	// check transferFrom(address,address,uint256)
+	if !strings.Contains(data.String(), "23b872dd") {
+		return false
+	}
+	return true
 }
 
 func (tm *TransactionMonitor) createTransaction(block *types.Block, hash common.Hash) (*types.Transaction, error) {
