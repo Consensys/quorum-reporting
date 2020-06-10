@@ -29,7 +29,10 @@ func (dbFactory *Factory) NewInMemoryDatabase() *memory.MemoryDB {
 }
 
 func (dbFactory *Factory) NewElasticsearchDatabase(config *types.ElasticsearchConfig) (*elasticsearch.ElasticsearchDB, error) {
-	esConfig := elasticsearch.NewConfig(config)
+	esConfig, err := elasticsearch.NewConfig(config)
+	if err != nil {
+		return nil, err
+	}
 	client, err := elasticsearch.NewClient(esConfig)
 	if err != nil {
 		return nil, err

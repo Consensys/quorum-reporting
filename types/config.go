@@ -15,18 +15,8 @@ type ElasticsearchConfig struct {
 	Password string `toml:"password"`
 	APIKey   string `toml:"apikey"`
 
-	// PEM-encoded certificate authorities.
-	// When set, an empty certificate pool will be created, and the certificates will be appended to it.
-	// The option is only valid when the transport is not specified, or when it's http.Transport.
-	//CACert []byte
-
-	//RetryOnStatus        []int // List of status codes for retry. Default: 502, 503, 504.
-	//DisableRetry         bool  // Default: false.
-	//EnableRetryOnTimeout bool  // Default: false.
-	//MaxRetries           int   // Default: 3.
-
-	//DiscoverNodesOnStart  bool          // Discover nodes when initializing the client. Default: false.
-	//DiscoverNodesInterval time.Duration // Discover nodes periodically. Default: disabled.
+	// Path to PEM-encoded certificate authorities file
+	CACert string `toml:"cacert"`
 }
 
 type DatabaseConfig struct {
