@@ -2,6 +2,7 @@ package monitor
 
 import (
 	"context"
+	"github.com/ethereum/go-ethereum/accounts/abi"
 	"log"
 	"strings"
 
@@ -34,13 +35,27 @@ func (tm *TransactionMonitor) PullTransactions(block *types.Block) ([]*types.Tra
 		if err != nil {
 			return nil, err
 		}
-		// 2. Check if transaction deploys a public ERC20 contract
-		if checkERC20(tx.Data) {
-			log.Printf("tx %v deploys %v which is a potential ERC20 contract.\n", tx.Hash.Hex(), tx.CreatedContract.Hex())
-			// add contract address
-			tm.db.AddAddresses([]common.Address{tx.CreatedContract})
-			// assign ERC20 template
-			tm.db.AssignTemplate(tx.CreatedContract, types.ERC20)
+		var addrs []common.Address
+		addrs = append(addrs, tx.CreatedContract)
+		for _, ic := range tx.InternalCalls {
+			if ic.Type == "CREATE" || ic.Type == "CREATE2" {
+				addrs = append(addrs, ic.To)
+			}
+		}
+
+		for _, addr := range addrs {
+			var res hexutil.Bytes
+			tm.quorumClient.RPCCall(context.Background(), &res, "eth_getCode", addr, tx.BlockHash.String())
+			//TODO: error handle the RPC call
+
+			// 2. Check if transaction deploys a public ERC20 contract
+			if checkERC20(res) {
+				log.Printf("tx %v deploys %v which is a potential ERC20 contract.\n", tx.Hash.Hex(), addr.Hex())
+				// add contract address
+				tm.db.AddAddresses([]common.Address{tx.CreatedContract})
+				// assign ERC20 template
+				tm.db.AssignTemplate(tx.CreatedContract, types.ERC20)
+			}
 		}
 		fetchedTransactions = append(fetchedTransactions, tx)
 	}
@@ -48,29 +63,12 @@ func (tm *TransactionMonitor) PullTransactions(block *types.Block) ([]*types.Tra
 }
 
 func checkERC20(data hexutil.Bytes) bool {
-	// check totalSupply()
-	if !strings.Contains(data.String(), "18160ddd") {
-		return false
-	}
-	// check balanceOf(address)
-	if !strings.Contains(data.String(), "70a08231") {
-		return false
-	}
-	// check allowance(address,address)
-	if !strings.Contains(data.String(), "dd62ed3e") {
-		return false
-	}
-	// check transfer(address,uint256)
-	if !strings.Contains(data.String(), "a9059cbb") {
-		return false
-	}
-	// check approve(address,uint256)
-	if !strings.Contains(data.String(), "095ea7b3") {
-		return false
-	}
-	// check transferFrom(address,address,uint256)
-	if !strings.Contains(data.String(), "23b872dd") {
-		return false
+	abi, _ := abi.JSON(strings.NewReader(types.ERC20ABI))
+	for _, b := range abi.Methods {
+		id := common.Bytes2Hex(b.ID())
+		if !strings.Contains(data.String(), id) {
+			return false
+		}
 	}
 	return true
 }
