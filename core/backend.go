@@ -2,9 +2,10 @@ package core
 
 import (
 	"fmt"
-	"github.com/ethereum/go-ethereum/common"
 	"log"
 	"time"
+
+	"github.com/ethereum/go-ethereum/common"
 
 	"quorumengineering/quorum-report/client"
 	"quorumengineering/quorum-report/core/filter"
@@ -59,11 +60,16 @@ func New(config types.ReportingConfig) (*Backend, error) {
 			return nil, err
 		}
 	}
-	// store address while assign template
+	// store all addresses
+	initialAddresses := []common.Address{}
 	for _, address := range config.Addresses {
-		if err := db.AddAddresses([]common.Address{address.Address}); err != nil {
-			return nil, err
-		}
+		initialAddresses = append(initialAddresses, address.Address)
+	}
+	if err := db.AddAddresses(initialAddresses); err != nil {
+		return nil, err
+	}
+	// assign all addresses
+	for _, address := range config.Addresses {
 		if err := db.AssignTemplate(address.Address, address.TemplateName); err != nil {
 			return nil, err
 		}

@@ -13,6 +13,79 @@ import (
 	elasticsearch_mocks "quorumengineering/quorum-report/database/elasticsearch/mocks"
 )
 
+func TestElasticsearchDB_AddTemplate(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockedClient := elasticsearch_mocks.NewMockAPIClient(ctrl)
+
+	template := Template{
+		TemplateName: "test template",
+		ABI:          "test abi",
+		StorageABI:   "test storage",
+	}
+
+	ex := esapi.IndexRequest{
+		Index:      TemplateIndex,
+		DocumentID: template.TemplateName,
+		Body:       esutil.NewJSONReader(template),
+		Refresh:    "true",
+	}
+
+	mockedClient.EXPECT().DoRequest(gomock.Any()) //for setup, not relevant to test
+	mockedClient.EXPECT().DoRequest(NewIndexRequestMatcher(ex))
+
+	db, err := New(mockedClient)
+
+	err = db.AddTemplate(template.TemplateName, template.ABI, template.StorageABI)
+
+	assert.Nil(t, err, "expected error to be nil")
+}
+
+func TestElasticsearchDB_AssignTemplate(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockedClient := elasticsearch_mocks.NewMockAPIClient(ctrl)
+
+	addr := common.HexToAddress("0x1932c48b2bf8102ba33b4a6b545c32236e342f34")
+	templateName := "test template"
+
+	searchContractRequest := esapi.GetRequest{
+		Index:      ContractIndex,
+		DocumentID: addr.String(),
+	}
+	contractSearchReturnValue := `{
+	       "_source": {
+	         "address" : "0x1932c48b2bf8102ba33b4a6b545c32236e342f34",
+	         "creationTx" : "0xd09fc502b74c7e6015e258e3aed2d724cb50317684a46e00355e50b1b21c6446",
+	         "lastFiltered" : 20,
+	         "templateName": "old template"
+	       }
+	}`
+	contractQuery := map[string]interface{}{
+		"doc": map[string]interface{}{
+			"templateName": templateName,
+		},
+	}
+	contractUpdateRequest := esapi.UpdateRequest{
+		Index:      ContractIndex,
+		DocumentID: addr.String(),
+		Body:       esutil.NewJSONReader(contractQuery),
+		Refresh:    "true",
+	}
+
+	mockedClient.EXPECT().DoRequest(gomock.Any()) //for setup, not relevant to test
+	mockedClient.EXPECT().DoRequest(NewGetRequestMatcher(searchContractRequest)).Return([]byte(contractSearchReturnValue), nil)
+	mockedClient.EXPECT().DoRequest(NewUpdateRequestMatcher(contractUpdateRequest))
+
+	db, err := New(mockedClient)
+
+	err = db.AssignTemplate(addr, templateName)
+
+	assert.Nil(t, err, "expected error to be nil")
+}
+
 func TestElasticsearchDB_AddContractABI(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
@@ -22,34 +95,53 @@ func TestElasticsearchDB_AddContractABI(t *testing.T) {
 	addr := common.HexToAddress("0x1932c48b2bf8102ba33b4a6b545c32236e342f34")
 	abi := "test ABI string"
 
-	query := map[string]interface{}{
+	contractQuery := map[string]interface{}{
 		"doc": map[string]interface{}{
-			"abi": abi,
+			"templateName": addr.String(),
 		},
 	}
-
-	updateRequest := esapi.UpdateRequest{
+	contractUpdateRequest := esapi.UpdateRequest{
 		Index:      ContractIndex,
 		DocumentID: addr.String(),
-		Body:       esutil.NewJSONReader(query),
+		Body:       esutil.NewJSONReader(contractQuery),
 		Refresh:    "true",
 	}
-	searchRequest := esapi.GetRequest{
+
+	searchContractRequest := esapi.GetRequest{
 		Index:      ContractIndex,
 		DocumentID: addr.String(),
 	}
 	contractSearchReturnValue := `{
-         "_source": {		
-           "address" : "0x1932c48b2bf8102ba33b4a6b545c32236e342f34",		
-           "creationTx" : "0xd09fc502b74c7e6015e258e3aed2d724cb50317684a46e00355e50b1b21c6446",		
-           "lastFiltered" : 20,		
-           "abi": ""		
-         }		
- }`
+	       "_source": {
+	         "address" : "0x1932c48b2bf8102ba33b4a6b545c32236e342f34",
+	         "creationTx" : "0xd09fc502b74c7e6015e258e3aed2d724cb50317684a46e00355e50b1b21c6446",
+	         "lastFiltered" : 20,
+	         "templateName": "template"
+	       }
+	}`
+	searchTemplateRequest1 := esapi.GetRequest{
+		Index:      TemplateIndex,
+		DocumentID: "template",
+	}
+	searchTemplateRequest2 := esapi.GetRequest{
+		Index:      TemplateIndex,
+		DocumentID: addr.String(),
+	}
+	templateSearchResultValue := `{
+	       "_source": {
+	         "templateName": "template",
+	         "abi": "template abi",
+	         "storageAbi": "template storage layout",
+	       }
+	}`
 
-	mockedClient.EXPECT().DoRequest(NewGetRequestMatcher(searchRequest)).Return([]byte(contractSearchReturnValue), nil)
 	mockedClient.EXPECT().DoRequest(gomock.Any()) //for setup, not relevant to test
-	mockedClient.EXPECT().DoRequest(NewUpdateRequestMatcher(updateRequest))
+	mockedClient.EXPECT().DoRequest(NewGetRequestMatcher(searchContractRequest)).Return([]byte(contractSearchReturnValue), nil)
+	mockedClient.EXPECT().DoRequest(NewGetRequestMatcher(searchTemplateRequest1)).Return([]byte(templateSearchResultValue), nil)
+	mockedClient.EXPECT().DoRequest(NewGetRequestMatcher(searchTemplateRequest2)).Return(nil, ErrNotFound)
+	mockedClient.EXPECT().DoRequest(gomock.Any()) // update template
+	mockedClient.EXPECT().DoRequest(NewGetRequestMatcher(searchContractRequest)).Return([]byte(contractSearchReturnValue), nil)
+	mockedClient.EXPECT().DoRequest(NewUpdateRequestMatcher(contractUpdateRequest))
 
 	db, _ := New(mockedClient)
 
@@ -67,34 +159,53 @@ func TestElasticsearchDB_AddContractABI_WithError(t *testing.T) {
 	addr := common.HexToAddress("0x1932c48b2bf8102ba33b4a6b545c32236e342f34")
 	abi := "test ABI string"
 
-	query := map[string]interface{}{
+	contractQuery := map[string]interface{}{
 		"doc": map[string]interface{}{
-			"abi": abi,
+			"templateName": addr.String(),
 		},
 	}
-
-	updateRequest := esapi.UpdateRequest{
+	contractUpdateRequest := esapi.UpdateRequest{
 		Index:      ContractIndex,
 		DocumentID: addr.String(),
-		Body:       esutil.NewJSONReader(query),
+		Body:       esutil.NewJSONReader(contractQuery),
 		Refresh:    "true",
 	}
-	searchRequest := esapi.GetRequest{
+
+	searchContractRequest := esapi.GetRequest{
 		Index:      ContractIndex,
 		DocumentID: addr.String(),
 	}
 	contractSearchReturnValue := `{
-         "_source": {		
-           "address" : "0x1932c48b2bf8102ba33b4a6b545c32236e342f34",		
-           "creationTx" : "0xd09fc502b74c7e6015e258e3aed2d724cb50317684a46e00355e50b1b21c6446",		
-           "lastFiltered" : 20,		
-           "abi": ""		
-         }		
- }`
+	       "_source": {
+	         "address" : "0x1932c48b2bf8102ba33b4a6b545c32236e342f34",
+	         "creationTx" : "0xd09fc502b74c7e6015e258e3aed2d724cb50317684a46e00355e50b1b21c6446",
+	         "lastFiltered" : 20,
+	         "templateName": "template"
+	       }
+	}`
+	searchTemplateRequest1 := esapi.GetRequest{
+		Index:      TemplateIndex,
+		DocumentID: "template",
+	}
+	searchTemplateRequest2 := esapi.GetRequest{
+		Index:      TemplateIndex,
+		DocumentID: addr.String(),
+	}
+	templateSearchResultValue := `{
+	       "_source": {
+	         "templateName": "template",
+	         "abi": "template abi",
+	         "storageAbi": "template storage layout",
+	       }
+	}`
 
-	mockedClient.EXPECT().DoRequest(NewGetRequestMatcher(searchRequest)).Return([]byte(contractSearchReturnValue), nil)
 	mockedClient.EXPECT().DoRequest(gomock.Any()) //for setup, not relevant to test
-	mockedClient.EXPECT().DoRequest(NewUpdateRequestMatcher(updateRequest)).Return(nil, errors.New("test error"))
+	mockedClient.EXPECT().DoRequest(NewGetRequestMatcher(searchContractRequest)).Return([]byte(contractSearchReturnValue), nil)
+	mockedClient.EXPECT().DoRequest(NewGetRequestMatcher(searchTemplateRequest1)).Return([]byte(templateSearchResultValue), nil)
+	mockedClient.EXPECT().DoRequest(NewGetRequestMatcher(searchTemplateRequest2)).Return(nil, ErrNotFound)
+	mockedClient.EXPECT().DoRequest(gomock.Any()) // update template
+	mockedClient.EXPECT().DoRequest(NewGetRequestMatcher(searchContractRequest)).Return([]byte(contractSearchReturnValue), nil)
+	mockedClient.EXPECT().DoRequest(NewUpdateRequestMatcher(contractUpdateRequest)).Return(nil, errors.New("test error"))
 
 	db, _ := New(mockedClient)
 
@@ -135,22 +246,32 @@ func TestElasticsearchDB_GetContractABI(t *testing.T) {
 
 	addr := common.HexToAddress("0x1932c48b2bf8102ba33b4a6b545c32236e342f34")
 
-	searchRequest := esapi.GetRequest{
+	contractSearchRequest := esapi.GetRequest{
 		Index:      ContractIndex,
 		DocumentID: addr.String(),
 	}
-
 	contractSearchReturnValue := `{
         "_source": {
           "address" : "0x1932c48b2bf8102ba33b4a6b545c32236e342f34",
           "creationTx" : "0xd09fc502b74c7e6015e258e3aed2d724cb50317684a46e00355e50b1b21c6446",
           "lastFiltered" : 20,
+          "templateName": "template"
+        }
+	}`
+	templateSearchRequest := esapi.GetRequest{
+		Index:      TemplateIndex,
+		DocumentID: "template",
+	}
+	templateSearchReturnValue := `{
+        "_source": {
+          "templateName": "template",
           "abi": "test abi"
         }
-}`
+	}`
 
 	mockedClient.EXPECT().DoRequest(gomock.Any()) //for setup, not relevant to test
-	mockedClient.EXPECT().DoRequest(NewGetRequestMatcher(searchRequest)).Return([]byte(contractSearchReturnValue), nil)
+	mockedClient.EXPECT().DoRequest(NewGetRequestMatcher(contractSearchRequest)).Return([]byte(contractSearchReturnValue), nil)
+	mockedClient.EXPECT().DoRequest(NewGetRequestMatcher(templateSearchRequest)).Return([]byte(templateSearchReturnValue), nil)
 
 	db, _ := New(mockedClient)
 
@@ -193,35 +314,53 @@ func TestElasticsearchDB_AddStorageABI(t *testing.T) {
 	addr := common.HexToAddress("0x1932c48b2bf8102ba33b4a6b545c32236e342f34")
 	abi := "test storage ABI string"
 
-	query := map[string]interface{}{
+	contractQuery := map[string]interface{}{
 		"doc": map[string]interface{}{
-			"storageAbi": abi,
+			"templateName": addr.String(),
 		},
 	}
-
-	updateRequest := esapi.UpdateRequest{
+	contractUpdateRequest := esapi.UpdateRequest{
 		Index:      ContractIndex,
 		DocumentID: addr.String(),
-		Body:       esutil.NewJSONReader(query),
+		Body:       esutil.NewJSONReader(contractQuery),
 		Refresh:    "true",
 	}
-	searchRequest := esapi.GetRequest{
+
+	searchContractRequest := esapi.GetRequest{
 		Index:      ContractIndex,
 		DocumentID: addr.String(),
 	}
 	contractSearchReturnValue := `{
-         "_source": {		
-           "address" : "0x1932c48b2bf8102ba33b4a6b545c32236e342f34",		
-           "creationTx" : "0xd09fc502b74c7e6015e258e3aed2d724cb50317684a46e00355e50b1b21c6446",		
-           "lastFiltered" : 20,		
-           "abi": "",
-           "storageAbi": ""
-         }		
- }`
+	       "_source": {
+	         "address" : "0x1932c48b2bf8102ba33b4a6b545c32236e342f34",
+	         "creationTx" : "0xd09fc502b74c7e6015e258e3aed2d724cb50317684a46e00355e50b1b21c6446",
+	         "lastFiltered" : 20,
+	         "templateName": "template"
+	       }
+	}`
+	searchTemplateRequest1 := esapi.GetRequest{
+		Index:      TemplateIndex,
+		DocumentID: "template",
+	}
+	searchTemplateRequest2 := esapi.GetRequest{
+		Index:      TemplateIndex,
+		DocumentID: addr.String(),
+	}
+	templateSearchResultValue := `{
+	       "_source": {
+	         "templateName": "template",
+	         "abi": "template abi",
+	         "storageAbi": "template storage layout",
+	       }
+	}`
 
-	mockedClient.EXPECT().DoRequest(NewGetRequestMatcher(searchRequest)).Return([]byte(contractSearchReturnValue), nil)
 	mockedClient.EXPECT().DoRequest(gomock.Any()) //for setup, not relevant to test
-	mockedClient.EXPECT().DoRequest(NewUpdateRequestMatcher(updateRequest))
+	mockedClient.EXPECT().DoRequest(NewGetRequestMatcher(searchContractRequest)).Return([]byte(contractSearchReturnValue), nil)
+	mockedClient.EXPECT().DoRequest(NewGetRequestMatcher(searchTemplateRequest1)).Return([]byte(templateSearchResultValue), nil)
+	mockedClient.EXPECT().DoRequest(NewGetRequestMatcher(searchTemplateRequest2)).Return(nil, ErrNotFound)
+	mockedClient.EXPECT().DoRequest(gomock.Any()) // update template
+	mockedClient.EXPECT().DoRequest(NewGetRequestMatcher(searchContractRequest)).Return([]byte(contractSearchReturnValue), nil)
+	mockedClient.EXPECT().DoRequest(NewUpdateRequestMatcher(contractUpdateRequest))
 
 	db, _ := New(mockedClient)
 
@@ -239,35 +378,53 @@ func TestElasticsearchDB_AddStorageABI_WithError(t *testing.T) {
 	addr := common.HexToAddress("0x1932c48b2bf8102ba33b4a6b545c32236e342f34")
 	abi := "test storage ABI string"
 
-	query := map[string]interface{}{
+	contractQuery := map[string]interface{}{
 		"doc": map[string]interface{}{
-			"storageAbi": abi,
+			"templateName": addr.String(),
 		},
 	}
-
-	updateRequest := esapi.UpdateRequest{
+	contractUpdateRequest := esapi.UpdateRequest{
 		Index:      ContractIndex,
 		DocumentID: addr.String(),
-		Body:       esutil.NewJSONReader(query),
+		Body:       esutil.NewJSONReader(contractQuery),
 		Refresh:    "true",
 	}
-	searchRequest := esapi.GetRequest{
+
+	searchContractRequest := esapi.GetRequest{
 		Index:      ContractIndex,
 		DocumentID: addr.String(),
 	}
 	contractSearchReturnValue := `{
-         "_source": {		
-           "address" : "0x1932c48b2bf8102ba33b4a6b545c32236e342f34",		
-           "creationTx" : "0xd09fc502b74c7e6015e258e3aed2d724cb50317684a46e00355e50b1b21c6446",		
-           "lastFiltered" : 20,		
-           "abi": "",
-           "storageAbi": ""
-         }		
- }`
+	       "_source": {
+	         "address" : "0x1932c48b2bf8102ba33b4a6b545c32236e342f34",
+	         "creationTx" : "0xd09fc502b74c7e6015e258e3aed2d724cb50317684a46e00355e50b1b21c6446",
+	         "lastFiltered" : 20,
+	         "templateName": "template"
+	       }
+	}`
+	searchTemplateRequest1 := esapi.GetRequest{
+		Index:      TemplateIndex,
+		DocumentID: "template",
+	}
+	searchTemplateRequest2 := esapi.GetRequest{
+		Index:      TemplateIndex,
+		DocumentID: addr.String(),
+	}
+	templateSearchResultValue := `{
+	       "_source": {
+	         "templateName": "template",
+	         "abi": "template abi",
+	         "storageAbi": "template storage layout",
+	       }
+	}`
 
-	mockedClient.EXPECT().DoRequest(NewGetRequestMatcher(searchRequest)).Return([]byte(contractSearchReturnValue), nil)
 	mockedClient.EXPECT().DoRequest(gomock.Any()) //for setup, not relevant to test
-	mockedClient.EXPECT().DoRequest(NewUpdateRequestMatcher(updateRequest)).Return(nil, errors.New("test error"))
+	mockedClient.EXPECT().DoRequest(NewGetRequestMatcher(searchContractRequest)).Return([]byte(contractSearchReturnValue), nil)
+	mockedClient.EXPECT().DoRequest(NewGetRequestMatcher(searchTemplateRequest1)).Return([]byte(templateSearchResultValue), nil)
+	mockedClient.EXPECT().DoRequest(NewGetRequestMatcher(searchTemplateRequest2)).Return(nil, ErrNotFound)
+	mockedClient.EXPECT().DoRequest(gomock.Any()) // update template
+	mockedClient.EXPECT().DoRequest(NewGetRequestMatcher(searchContractRequest)).Return([]byte(contractSearchReturnValue), nil)
+	mockedClient.EXPECT().DoRequest(NewUpdateRequestMatcher(contractUpdateRequest)).Return(nil, errors.New("test error"))
 
 	db, _ := New(mockedClient)
 
@@ -308,7 +465,7 @@ func TestElasticsearchDB_GetStorageABI(t *testing.T) {
 
 	addr := common.HexToAddress("0x1932c48b2bf8102ba33b4a6b545c32236e342f34")
 
-	searchRequest := esapi.GetRequest{
+	contractSearchRequest := esapi.GetRequest{
 		Index:      ContractIndex,
 		DocumentID: addr.String(),
 	}
@@ -318,13 +475,23 @@ func TestElasticsearchDB_GetStorageABI(t *testing.T) {
           "address" : "0x1932c48b2bf8102ba33b4a6b545c32236e342f34",
           "creationTx" : "0xd09fc502b74c7e6015e258e3aed2d724cb50317684a46e00355e50b1b21c6446",
           "lastFiltered" : 20,
-          "abi": "test abi",
+          "templateName" : "template"
+        }
+	}`
+	templateSearchRequest := esapi.GetRequest{
+		Index:      TemplateIndex,
+		DocumentID: "template",
+	}
+	templateSearchReturnValue := `{
+        "_source": {
+          "templateName": "template",
           "storageAbi": "some storage ABI"
         }
-}`
+	}`
 
 	mockedClient.EXPECT().DoRequest(gomock.Any()) //for setup, not relevant to test
-	mockedClient.EXPECT().DoRequest(NewGetRequestMatcher(searchRequest)).Return([]byte(contractSearchReturnValue), nil)
+	mockedClient.EXPECT().DoRequest(NewGetRequestMatcher(contractSearchRequest)).Return([]byte(contractSearchReturnValue), nil)
+	mockedClient.EXPECT().DoRequest(NewGetRequestMatcher(templateSearchRequest)).Return([]byte(templateSearchReturnValue), nil)
 
 	db, _ := New(mockedClient)
 
