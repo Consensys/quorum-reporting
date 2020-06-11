@@ -43,7 +43,7 @@ func run() error {
 	// start the back end with given config
 	backend, err := core.New(config)
 	if err != nil {
-		return fmt.Errorf("error: %v", err)
+		return fmt.Errorf("initialize backend error: %v", err)
 	}
 
 	err = backend.Start()
