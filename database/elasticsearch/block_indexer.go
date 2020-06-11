@@ -60,8 +60,8 @@ func (indexer *DefaultBlockIndexer) IndexEvents(transactions []*types.Transactio
 	return indexer.createEvents(pendingIndexEvents)
 }
 
-func (indexer *DefaultBlockIndexer) IndexTransaction(tx *types.Transaction) error {
-	// Compare the address with tx.To and tx.CreatedContract to check if the transaction is related.
+func (indexer *DefaultBlockIndexer) indexTransaction(tx *types.Transaction) error {
+	// Compare the address with tx.CreatedContract to check if the transaction is related
 	if indexer.addresses[tx.CreatedContract] {
 		if err := indexer.updateContract(tx.CreatedContract, "creationTx", tx.Hash.String()); err != nil {
 			return err
@@ -69,7 +69,7 @@ func (indexer *DefaultBlockIndexer) IndexTransaction(tx *types.Transaction) erro
 		log.Printf("Index contract creation tx %v of registered address %v.\n", tx.Hash.Hex(), tx.CreatedContract.Hex())
 	}
 
-	//Check all the internal calls for contract creations as well
+	// Check all the internal calls for contract creations as well
 	for _, internalCall := range tx.InternalCalls {
 		if (internalCall.Type == "CREATE" || internalCall.Type == "CREATE2") && indexer.addresses[internalCall.To] {
 			if err := indexer.updateContract(internalCall.To, "creationTx", tx.Hash.String()); err != nil {
