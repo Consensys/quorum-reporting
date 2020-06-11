@@ -39,7 +39,7 @@ func (indexer *DefaultBlockIndexer) Index() error {
 	}
 
 	for _, transaction := range allTransactions {
-		if err := indexer.IndexTransaction(transaction); err != nil {
+		if err := indexer.indexTransaction(transaction); err != nil {
 			return err
 		}
 	}
