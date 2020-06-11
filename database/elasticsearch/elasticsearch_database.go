@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"strconv"
 	"strings"
 	"sync"
@@ -28,6 +29,8 @@ func New(client APIClient) (*ElasticsearchDB, error) {
 
 	initialized, err := db.checkIsInitialized()
 	if err != nil {
+		log.Printf("Error communicating with ElasticSearch: %v.\n", err)
+		log.Println("Please check all ElasticSearch settings, including certificates, URL and username/password.")
 		return nil, err
 	}
 	if !initialized {
