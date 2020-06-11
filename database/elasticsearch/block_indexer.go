@@ -11,7 +11,8 @@ import (
 type DefaultBlockIndexer struct {
 	addresses map[common.Address]bool
 	blocks    []*types.Block
-
+	// function pointers currently originated from ES database implementation only
+	// TODO: May convert all functions into an interface. DefaultBlockIndexer can then accept all database implementation and move to a util package.
 	updateContract  func(common.Address, string, string) error
 	createEvents    func([]*types.Event) error
 	readTransaction func(common.Hash) (*types.Transaction, error)
@@ -44,10 +45,10 @@ func (indexer *DefaultBlockIndexer) Index() error {
 		}
 	}
 
-	return indexer.IndexEvents(allTransactions)
+	return indexer.indexEvents(allTransactions)
 }
 
-func (indexer *DefaultBlockIndexer) IndexEvents(transactions []*types.Transaction) error {
+func (indexer *DefaultBlockIndexer) indexEvents(transactions []*types.Transaction) error {
 	var pendingIndexEvents []*types.Event
 	for _, transaction := range transactions {
 		for _, event := range transaction.Events {
