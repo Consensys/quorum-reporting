@@ -1,6 +1,6 @@
 # Quorum Reporting
 
-## Requirements (draft)
+## Requirements (initial draft)
 Number | Area | Requirement 
 :---: | :---: | :--- 
 1 | Admin | Ability for an admin to register a contract address for monitoring and reporting
@@ -32,7 +32,10 @@ Reporting engine is built on top of Quorum 2.6.0 as it supports `graphql` with a
 
 ## Up and Running
 
-**Notes:** In order to avoid missing state for storage fetching, Quorum node should run with `--gcmode archive`
+**Notes**
+- Run geth using https://github.com/QuorumEngineering/quorum/tree/dump_account_api branch
+- Make sure GraphQL endpoint and websocket are exposed on geth
+- In order to avoid missing state for storage fetching, Quorum node should run with `--gcmode archive`
 
 #### Build Executable
 * After clone the repo, build `quorum-report` tool
@@ -120,13 +123,12 @@ Elasticsearch Database Schema [Reference](database/elasticsearch/README.md)
 - Extend RPC APIs with complex queries
 - Containerize reporting
 
-#### Phase 3 (todo)
+#### Phase 3 (in progress)
 
 - Handle fail recover scenarios
 - Enhance performance
 - Integrate UI for visualization
 - Define reporting templates
-- Use Docker-compose/Kubernetes for orchestration
 - Security
   - configurable secure connection with Elasticsearch
   - configurable secure connection with RPC endpoint
@@ -134,3 +136,4 @@ Elasticsearch Database Schema [Reference](database/elasticsearch/README.md)
 #### Future Items
 
 - After Quorum supports go module, we should use Quorum module instead of ethereum 1.9.8
+- Use Docker-compose/Kubernetes for orchestration

@@ -25,9 +25,9 @@ type AddressDB interface {
 
 // TemplateDB stores contract ABI/ Storage Layout of registered address
 type TemplateDB interface {
-	// Deprecated: Use AddTemplate + AssignTemplate
+	// Deprecated: Recommend using AddTemplate + AssignTemplate
 	AddContractABI(common.Address, string) error
-	// Deprecated: Use AddTemplate + AssignTemplate
+	// Deprecated: Recommend using AddTemplate + AssignTemplate
 	AddStorageLayout(common.Address, string) error
 	AddTemplate(string, string, string) error
 	AssignTemplate(common.Address, string) error
@@ -37,7 +37,7 @@ type TemplateDB interface {
 
 // BlockDB stores the block details for all blocks.
 type BlockDB interface {
-	// Deprecated: Always use WriteBlocks
+	// Deprecated: Recommend using WriteBlocks
 	WriteBlock(*types.Block) error
 	WriteBlocks([]*types.Block) error
 	ReadBlock(uint64) (*types.Block, error)
@@ -46,7 +46,7 @@ type BlockDB interface {
 
 // TransactionDB stores all transactions change a contract's state.
 type TransactionDB interface {
-	// Deprecated: Always use WriteTransactions
+	// Deprecated: Recommend using WriteTransactions
 	WriteTransaction(*types.Transaction) error
 	WriteTransactions([]*types.Transaction) error
 	ReadTransaction(common.Hash) (*types.Transaction, error)

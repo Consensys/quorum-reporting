@@ -60,7 +60,16 @@ func NewClient(config elasticsearch7.Config) (*elasticsearch7.Client, error) {
 	return elasticsearch7.NewClient(config)
 }
 
-func NewConfig(config *types.ElasticsearchConfig) elasticsearch7.Config {
+func NewConfig(config *types.ElasticsearchConfig) (elasticsearch7.Config, error) {
+	var cert []byte
+	if config.CACert != "" {
+		certificate, err := ioutil.ReadFile(config.CACert)
+		if err != nil {
+			return elasticsearch7.Config{}, err
+		}
+		cert = certificate
+	}
+
 	return elasticsearch7.Config{
 		Addresses: config.Addresses,
 		CloudID:   config.CloudID,
@@ -68,7 +77,9 @@ func NewConfig(config *types.ElasticsearchConfig) elasticsearch7.Config {
 		Username: config.Username,
 		Password: config.Password,
 		APIKey:   config.APIKey,
-	}
+
+		CACert: cert,
+	}, nil
 }
 
 func (c *DefaultAPIClient) ScrollAllResults(index string, query string) ([]interface{}, error) {
