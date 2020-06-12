@@ -70,6 +70,11 @@ func checkERC20(data hexutil.Bytes) bool {
 			return false
 		}
 	}
+	for _, event := range abi.Events {
+		if !strings.Contains(data.String(), common.Bytes2Hex(event.ID().Bytes())) {
+			return false
+		}
+	}
 	return true
 }
 
