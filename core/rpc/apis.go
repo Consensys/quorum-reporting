@@ -160,7 +160,7 @@ func (r *RPCAPIs) GetStorage(address common.Address, blockNumber uint64) (map[co
 }
 
 func (r *RPCAPIs) GetStorageHistory(address common.Address, startBlockNumber, endBlockNumber uint64) (*types.ReportingResponseTemplate, error) {
-	rawAbi, err := r.db.GetStorageABI(address)
+	rawAbi, err := r.db.GetStorageLayout(address)
 	if err != nil {
 		return nil, err
 	}
@@ -214,9 +214,8 @@ func (r *RPCAPIs) GetAddresses() ([]common.Address, error) {
 }
 
 func (r *RPCAPIs) AddABI(address common.Address, data string) error {
-	//check ABI is valid
-	_, err := abi.JSON(strings.NewReader(data))
-	if err != nil {
+	// check ABI is valid
+	if _, err := abi.JSON(strings.NewReader(data)); err != nil {
 		return err
 	}
 	return r.db.AddContractABI(address, data)
@@ -228,13 +227,29 @@ func (r *RPCAPIs) GetABI(address common.Address) (string, error) {
 
 func (r *RPCAPIs) AddStorageABI(address common.Address, data string) error {
 	var storageAbi types.SolidityStorageDocument
-	err := json.Unmarshal([]byte(data), &storageAbi)
-	if err != nil {
+	if err := json.Unmarshal([]byte(data), &storageAbi); err != nil {
 		return errors.New("invalid JSON: " + err.Error())
 	}
-	return r.db.AddStorageABI(address, data)
+	return r.db.AddStorageLayout(address, data)
 }
 
 func (r *RPCAPIs) GetStorageABI(address common.Address) (string, error) {
-	return r.db.GetStorageABI(address)
+	return r.db.GetStorageLayout(address)
+}
+
+func (r *RPCAPIs) AddTemplate(name string, abiData string, layout string) error {
+	// check ABI is valid
+	if _, err := abi.JSON(strings.NewReader(abiData)); err != nil {
+		return err
+	}
+	// check storage layout is valid
+	var storageAbi types.SolidityStorageDocument
+	if err := json.Unmarshal([]byte(layout), &storageAbi); err != nil {
+		return errors.New("invalid JSON: " + err.Error())
+	}
+	return r.db.AddTemplate(name, abiData, layout)
+}
+
+func (r *RPCAPIs) AssignTemplate(address common.Address, name string) error {
+	return r.db.AssignTemplate(address, name)
 }

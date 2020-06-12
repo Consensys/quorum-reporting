@@ -8,10 +8,15 @@ import (
 
 type Contract struct {
 	Address             common.Address `json:"address"`
-	ABI                 string         `json:"abi"`
-	StorageABI          string         `json:"storageAbi"`
+	TemplateName        string         `json:"templateName"`
 	CreationTransaction common.Hash    `json:"creationTx"`
 	LastFiltered        uint64         `json:"lastFiltered"`
+}
+
+type Template struct {
+	TemplateName string `json:"templateName"`
+	ABI          string `json:"abi"`
+	StorageABI   string `json:"storageAbi"`
 }
 
 type State struct {
@@ -241,6 +246,10 @@ func (b *Block) From(block *types.Block) {
 
 type ContractQueryResult struct {
 	Source Contract `json:"_source"`
+}
+
+type TemplateQueryResult struct {
+	Source Template `json:"_source"`
 }
 
 type TransactionQueryResult struct {

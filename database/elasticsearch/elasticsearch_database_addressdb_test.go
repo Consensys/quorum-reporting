@@ -28,7 +28,7 @@ func TestAddSingleAddress(t *testing.T) {
 
 	contract := Contract{
 		Address:             addr,
-		ABI:                 "",
+		TemplateName:        addr.String(),
 		CreationTransaction: common.Hash{},
 		LastFiltered:        0,
 	}
@@ -64,7 +64,7 @@ func TestAddMultipleAddresses(t *testing.T) {
 
 	contract1 := Contract{
 		Address:             addr1,
-		ABI:                 "",
+		TemplateName:        addr1.String(),
 		CreationTransaction: common.Hash{},
 		LastFiltered:        0,
 	}
@@ -75,7 +75,7 @@ func TestAddMultipleAddresses(t *testing.T) {
 	}
 	contract2 := Contract{
 		Address:             addr2,
-		ABI:                 "",
+		TemplateName:        addr2.String(),
 		CreationTransaction: common.Hash{},
 		LastFiltered:        0,
 	}
@@ -130,7 +130,7 @@ func TestAddSingleAddressWithError(t *testing.T) {
 
 	contract := Contract{
 		Address:             addr,
-		ABI:                 "",
+		TemplateName:        addr.String(),
 		CreationTransaction: common.Hash{},
 		LastFiltered:        0,
 	}
@@ -166,7 +166,7 @@ func TestAddMultipleAddressWithError(t *testing.T) {
 
 	contract1 := Contract{
 		Address:             addr1,
-		ABI:                 "",
+		TemplateName:        addr1.String(),
 		CreationTransaction: common.Hash{},
 		LastFiltered:        0,
 	}
@@ -177,7 +177,7 @@ func TestAddMultipleAddressWithError(t *testing.T) {
 	}
 	contract2 := Contract{
 		Address:             addr2,
-		ABI:                 "",
+		TemplateName:        addr2.String(),
 		CreationTransaction: common.Hash{},
 		LastFiltered:        0,
 	}

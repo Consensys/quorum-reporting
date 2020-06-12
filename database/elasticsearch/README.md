@@ -28,10 +28,18 @@ Considering that we are using ElasticSearch, it makes sense to structure our dat
 ```
 Contract {
 	Address
-	ABI
-    StorageABI (storage layout)
+	TemplateName
 	ContractCreationTransaction
 	LastFiltered
+}
+```
+
+#### Contract Template
+```
+Template {
+	TemplateName
+	ABI
+	StorageABI (storage layout)
 }
 ```
 

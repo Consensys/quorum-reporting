@@ -18,17 +18,25 @@ Contract APIs register/ deregister contracts to be reported. Complex queries can
 
 #### reporting_addABI
 
-(Implemented)
+(Deprecated. Use `reporting_addTemplate` and `reporting_assignTemplate`)
 
 #### reporting_getABI
 
 (Implemented)
 
-#### reporting_addStoraegABI
+#### reporting_addStorageABI
+
+(Deprecated. Use `reporting_addTemplate` and `reporting_assignTemplate`)
+
+#### reporting_getStorageABI
 
 (Implemented)
 
-#### reporting_getStorageABI
+#### reporting_addTemplate
+
+(Implemented)
+
+#### reporting_assignTemplate
 
 (Implemented)
 

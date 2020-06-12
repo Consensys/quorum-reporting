@@ -5,6 +5,8 @@ import (
 	"log"
 	"time"
 
+	"github.com/ethereum/go-ethereum/common"
+
 	"quorumengineering/quorum-report/client"
 	"quorumengineering/quorum-report/core/filter"
 	"quorumengineering/quorum-report/core/monitor"
@@ -52,10 +54,25 @@ func New(config types.ReportingConfig) (*Backend, error) {
 		return nil, err
 	}
 
-	// add addresses from config file as initial registered addresses
-	err = db.AddAddresses(config.Addresses)
-	if err != nil {
+	// store all templates
+	for _, template := range config.Templates {
+		if err := db.AddTemplate(template.TemplateName, template.ABI, template.StorageLayout); err != nil {
+			return nil, err
+		}
+	}
+	// store all addresses
+	initialAddresses := []common.Address{}
+	for _, address := range config.Addresses {
+		initialAddresses = append(initialAddresses, address.Address)
+	}
+	if err := db.AddAddresses(initialAddresses); err != nil {
 		return nil, err
+	}
+	// assign all addresses
+	for _, address := range config.Addresses {
+		if err := db.AssignTemplate(address.Address, address.TemplateName); err != nil {
+			return nil, err
+		}
 	}
 
 	return &Backend{
