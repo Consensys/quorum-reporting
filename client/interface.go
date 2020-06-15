@@ -15,7 +15,7 @@ type Client interface {
 
 	// ExecuteGraphQLQuery performs a fully constructed query against the Geth
 	// GraphQL server
-	ExecuteGraphQLQuery(context.Context, interface{}, string) error
+	ExecuteGraphQLQuery(interface{}, string) error
 
 	// RPCCall makes an arbitrary call to the Geth RPC server
 	RPCCall(context.Context, interface{}, string, ...interface{}) error

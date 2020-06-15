@@ -9,7 +9,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
-	"github.com/mitchellh/mapstructure"
 
 	"quorumengineering/quorum-report/client"
 	"quorumengineering/quorum-report/database"
@@ -70,19 +69,11 @@ func (bm *BlockMonitor) process(block *types.Block) error {
 }
 
 func (bm *BlockMonitor) currentBlockNumber() (uint64, error) {
-	var (
-		resp         map[string]interface{}
-		currentBlock graphql.CurrentBlock
-	)
-	err := bm.quorumClient.ExecuteGraphQLQuery(context.Background(), &resp, graphql.CurrentBlockQuery())
-	if err != nil {
+	var currentBlock graphql.CurrentBlock
+	if err := bm.quorumClient.ExecuteGraphQLQuery(&currentBlock, graphql.CurrentBlockQuery()); err != nil {
 		return 0, err
 	}
-	err = mapstructure.Decode(resp["block"].(map[string]interface{}), &currentBlock)
-	if err != nil {
-		return 0, err
-	}
-	return hexutil.DecodeUint64(currentBlock.Number)
+	return hexutil.DecodeUint64(currentBlock.Block.Number)
 }
 
 func (bm *BlockMonitor) syncBlocks(start, end uint64, stopChan chan types.StopEvent) *types.SyncError {
