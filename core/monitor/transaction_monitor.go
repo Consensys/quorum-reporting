@@ -65,13 +65,12 @@ func (tm *TransactionMonitor) PullTransactions(block *types.Block) ([]*types.Tra
 func checkERC20(data hexutil.Bytes) bool {
 	abi, _ := abi.JSON(strings.NewReader(types.ERC20ABI))
 	for _, b := range abi.Methods {
-		id := common.Bytes2Hex(b.ID())
-		if !strings.Contains(data.String(), id) {
+		if !strings.Contains(data.String(), common.Bytes2Hex(b.ID())) {
 			return false
 		}
 	}
 	for _, event := range abi.Events {
-		if !strings.Contains(data.String(), common.Bytes2Hex(event.ID().Bytes())) {
+		if !strings.Contains(data.String(), event.ID().Hex()[2:]) {
 			return false
 		}
 	}
