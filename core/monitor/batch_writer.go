@@ -82,9 +82,9 @@ func (bw *BatchWriter) BatchWrite() error {
 
 	allTxns := make([]*types.Transaction, 0, bw.currentTransactionCount)
 	allBlocks := make([]*types.Block, 0, len(bw.currentWorkUnits))
-	for _, workunit := range bw.currentWorkUnits {
-		allTxns = append(allTxns, workunit.txs...)
-		allBlocks = append(allBlocks, workunit.block)
+	for _, workUnit := range bw.currentWorkUnits {
+		allTxns = append(allTxns, workUnit.txs...)
+		allBlocks = append(allBlocks, workUnit.block)
 	}
 
 	err := bw.db.WriteTransactions(allTxns)

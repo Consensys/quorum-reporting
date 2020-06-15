@@ -1,6 +1,8 @@
 package filter
 
 import (
+	"sync"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/state"
 
@@ -16,15 +18,31 @@ func NewStorageFilter(db FilterServiceDB, quorumClient client.Client) *StorageFi
 	return &StorageFilter{db, quorumClient}
 }
 
-func (sf *StorageFilter) IndexStorage(addresses []common.Address, blockNumber uint64) error {
-	rawStorage := make(map[common.Address]*state.DumpAccount)
-	for _, address := range addresses {
-		//log.Printf("Pull registered contract %v storage at block %v.\n", address.Hex(), blockNumber)
-		dumpAccount, err := client.DumpAddress(sf.quorumClient, address, blockNumber)
-		rawStorage[address] = dumpAccount
-		if err != nil {
-			return err
-		}
+func (sf *StorageFilter) IndexStorage(addresses []common.Address, startBlockNumber, endBlockNumber uint64) error {
+	var (
+		wg        sync.WaitGroup
+		returnErr error
+	)
+	for i := startBlockNumber; i <= endBlockNumber; i++ {
+		wg.Add(1)
+		go func(blockNumber uint64) {
+			rawStorage := make(map[common.Address]*state.DumpAccount)
+			for _, address := range addresses {
+				//log.Printf("Pull registered contract %v storage at block %v.\n", address.Hex(), blockNumber)
+				dumpAccount, err := client.DumpAddress(sf.quorumClient, address, blockNumber)
+				rawStorage[address] = dumpAccount
+				if err != nil {
+					returnErr = err
+					wg.Done()
+					return
+				}
+			}
+			if err := sf.db.IndexStorage(rawStorage, blockNumber); err != nil {
+				returnErr = err
+			}
+			wg.Done()
+		}(i)
 	}
-	return sf.db.IndexStorage(rawStorage, blockNumber)
+	wg.Wait()
+	return returnErr
 }

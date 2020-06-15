@@ -259,32 +259,9 @@ func (db *MemoryDB) IndexStorage(rawStorage map[common.Address]*state.DumpAccoun
 	return nil
 }
 
-func (db *MemoryDB) IndexBlock(addresses []common.Address, block *types.Block) error {
-	db.mux.Lock()
-	defer db.mux.Unlock()
-	// filter out registered and unfiltered address only
-	filteredAddresses := map[common.Address]bool{}
-	for _, address := range addresses {
-		if db.addressIsRegistered(address) && db.lastFiltered[address] < block.Number {
-			filteredAddresses[address] = true
-			log.Printf("Index registered address %v at block %v.\n", address.Hex(), block.Number)
-		}
-	}
-
-	// index transactions and events
-	for _, txHash := range block.Transactions {
-		db.indexTransaction(filteredAddresses, db.txDB[txHash])
-	}
-
-	for address := range filteredAddresses {
-		db.lastFiltered[address] = block.Number
-	}
-	return nil
-}
-
 func (db *MemoryDB) IndexBlocks(addresses []common.Address, blocks []*types.Block) error {
 	for _, block := range blocks {
-		db.IndexBlock(addresses, block)
+		db.indexBlock(addresses, block)
 	}
 	return nil
 }
@@ -388,6 +365,29 @@ func (db *MemoryDB) addressIsRegistered(address common.Address) bool {
 		}
 	}
 	return false
+}
+
+func (db *MemoryDB) indexBlock(addresses []common.Address, block *types.Block) error {
+	db.mux.Lock()
+	defer db.mux.Unlock()
+	// filter out registered and unfiltered address only
+	filteredAddresses := map[common.Address]bool{}
+	for _, address := range addresses {
+		if db.addressIsRegistered(address) && db.lastFiltered[address] < block.Number {
+			filteredAddresses[address] = true
+			log.Printf("Index registered address %v at block %v.\n", address.Hex(), block.Number)
+		}
+	}
+
+	// index transactions and events
+	for _, txHash := range block.Transactions {
+		db.indexTransaction(filteredAddresses, db.txDB[txHash])
+	}
+
+	for address := range filteredAddresses {
+		db.lastFiltered[address] = block.Number
+	}
+	return nil
 }
 
 func (db *MemoryDB) indexTransaction(filteredAddresses map[common.Address]bool, tx *types.Transaction) {

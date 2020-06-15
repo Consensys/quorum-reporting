@@ -2,7 +2,6 @@ package filter
 
 import (
 	"log"
-	"sync"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -44,7 +43,7 @@ func (fs *FilterService) Start() error {
 
 	go func() {
 		// Filter tick every second to index transactions/ storage
-		ticker := time.NewTicker(time.Second)
+		ticker := time.NewTicker(time.Second * 2)
 		defer ticker.Stop()
 		for {
 			select {
@@ -114,48 +113,61 @@ func (fs *FilterService) getLastFiltered(current uint64) (map[common.Address]uin
 	return lastFiltered, current, nil
 }
 
+type IndexBatch struct {
+	addresses []common.Address
+	blocks    []*types.Block
+}
+
 func (fs *FilterService) index(lastFiltered map[common.Address]uint64, blockNumber uint64, endBlockNumber uint64) error {
-	//read the block range that we are indexing
-	allBlocks := make([]*types.Block, 0)
-	for i := blockNumber; i <= endBlockNumber; i++ {
-		block, err := fs.db.ReadBlock(i)
+	log.Printf("Index from block %v to block %v.\n", blockNumber, endBlockNumber)
+	indexBatches := make([]IndexBatch, 0)
+	curBatch := IndexBatch{
+		addresses: make([]common.Address, 0),
+		blocks:    make([]*types.Block, 0),
+	}
+	addressInBatch := make(map[common.Address]bool)
+	for blockNumber <= endBlockNumber {
+		// check if a new batch should be created
+		oldBatch := curBatch
+		for address, curLastFiltered := range lastFiltered {
+			if curLastFiltered < blockNumber {
+				if !addressInBatch[address] {
+					addrList := curBatch.addresses
+					curBatch = IndexBatch{
+						addresses: []common.Address{address},
+						blocks:    make([]*types.Block, 0),
+					}
+					curBatch.addresses = append(curBatch.addresses, addrList...)
+					addressInBatch[address] = true
+				}
+				log.Printf("Index registered addresses %v at block %v.\n", address.Hex(), blockNumber)
+			}
+		}
+		// if new batch is created, append old batch to indexBatches
+		if len(oldBatch.addresses) > 0 && len(curBatch.addresses) > len(oldBatch.addresses) {
+			indexBatches = append(indexBatches, oldBatch)
+		}
+		// appending block to current batch
+		block, err := fs.db.ReadBlock(blockNumber)
 		if err != nil {
 			return err
 		}
-		allBlocks = append(allBlocks, block)
+		curBatch.blocks = append(curBatch.blocks, block)
+		blockNumber++
+	}
+	if len(curBatch.addresses) > 0 {
+		indexBatches = append(indexBatches, curBatch)
 	}
 
-	// find all the addresses we may need to index
-	// this may result in some extra indexing if an address has had some of the block range
-	// indexed before
-	addresses := []common.Address{}
-	for address, curLastFiltered := range lastFiltered {
-		if curLastFiltered < endBlockNumber {
-			addresses = append(addresses, address)
-			log.Printf("Index registered addresses %v at block %v.\n", address.Hex(), blockNumber)
+	// index storage and blocks for all batches
+	for _, batch := range indexBatches {
+		if err := fs.storageFilter.IndexStorage(batch.addresses, batch.blocks[0].Number, batch.blocks[len(batch.blocks)-1].Number); err != nil {
+			return err
+		}
+		// if IndexStorage has an error, IndexBlocks is never called, last filtered will not be updated
+		if err := fs.db.IndexBlocks(batch.addresses, batch.blocks); err != nil {
+			return err
 		}
 	}
-
-	var (
-		wg        sync.WaitGroup
-		returnErr error
-	)
-
-	for _, block := range allBlocks {
-		wg.Add(1)
-		go func(block *types.Block) {
-			if err := fs.storageFilter.IndexStorage(addresses, block.Number); err != nil {
-				returnErr = err
-			}
-			wg.Done()
-		}(block)
-	}
-	wg.Wait()
-
-	if returnErr != nil {
-		return returnErr
-	}
-
-	// if IndexStorage has an error, IndexBlock is never called, last filtered will not be updated
-	return fs.db.IndexBlocks(addresses, allBlocks)
+	return nil
 }
