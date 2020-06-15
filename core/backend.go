@@ -61,7 +61,10 @@ func New(config types.ReportingConfig) (*Backend, error) {
 		}
 	}
 	// store erc20 template
-	if err := db.AddTemplate(types.ERC20, types.ERC20ABI, ""); err != nil {
+	if err := db.AddTemplate(types.ERC20, types.ERC20ABIstring, ""); err != nil {
+		return nil, err
+	}
+	if err := db.AddTemplate(types.ERC721, types.ERC721ABIstring, ""); err != nil {
 		return nil, err
 	}
 	// store all addresses

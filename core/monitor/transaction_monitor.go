@@ -49,8 +49,16 @@ func (tm *TransactionMonitor) PullTransactions(block *types.Block) ([]*types.Tra
 			//TODO: error handle the RPC call
 
 			// 2. Check if transaction deploys a public ERC20 contract
-			if checkERC20(res) {
+			if checkAbiMatch(types.ERC20ABI, res) {
 				log.Printf("tx %v deploys %v which is a potential ERC20 contract.\n", tx.Hash.Hex(), addr.Hex())
+				// add contract address
+				tm.db.AddAddresses([]common.Address{tx.CreatedContract})
+				// assign ERC20 template
+				tm.db.AssignTemplate(tx.CreatedContract, types.ERC20)
+			}
+
+			if checkAbiMatch(types.ERC721ABI, res) {
+				log.Printf("tx %v deploys %v which is a potential ERC721 contract.\n", tx.Hash.Hex(), addr.Hex())
 				// add contract address
 				tm.db.AddAddresses([]common.Address{tx.CreatedContract})
 				// assign ERC20 template
@@ -62,14 +70,13 @@ func (tm *TransactionMonitor) PullTransactions(block *types.Block) ([]*types.Tra
 	return fetchedTransactions, nil
 }
 
-func checkERC20(data hexutil.Bytes) bool {
-	abi, _ := abi.JSON(strings.NewReader(types.ERC20ABI))
-	for _, b := range abi.Methods {
+func checkAbiMatch(abiToCheck abi.ABI, data hexutil.Bytes) bool {
+	for _, b := range abiToCheck.Methods {
 		if !strings.Contains(data.String(), common.Bytes2Hex(b.ID())) {
 			return false
 		}
 	}
-	for _, event := range abi.Events {
+	for _, event := range abiToCheck.Events {
 		if !strings.Contains(data.String(), event.ID().Hex()[2:]) {
 			return false
 		}
