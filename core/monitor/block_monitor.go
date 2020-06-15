@@ -60,12 +60,12 @@ func (bm *BlockMonitor) process(block *types.Block) error {
 		return err
 	}
 
-	workunit := &BlockAndTransactions{
+	workUnit := &BlockAndTransactions{
 		block: block,
 		txs:   fetchedTxns,
 	}
 
-	bm.batchWriteChan <- workunit
+	bm.batchWriteChan <- workUnit
 	return nil
 }
 
