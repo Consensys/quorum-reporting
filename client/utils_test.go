@@ -1,6 +1,7 @@
 package client
 
 import (
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"testing"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -102,4 +103,30 @@ func TestDumpAddress(t *testing.T) {
 	dump, err := DumpAddress(stubClient, common.HexToAddress("0x1349f3e1b8d71effb47b840594ff27da7e603d17"), 1)
 	assert.Nil(t, err)
 	assert.Equal(t, res, dump)
+}
+
+func TestGetCode(t *testing.T) {
+	sampleCode, _ := hexutil.Decode("0xefe5cb8d23d632b5d2cdd9f0a151c4b1a84ccb7afa1c57331009aa922d5e4f36")
+	mockRPC := map[string]interface{}{
+		"eth_getCode<common.Address Value>0xe625ba9f14eed0671508966080fb01374d0a3a16b9cee545a324179b75f30aa8": sampleCode,
+	}
+	stubClient := NewStubQuorumClient(nil, nil, mockRPC)
+
+	blockHash := common.HexToHash("0xe625ba9f14eed0671508966080fb01374d0a3a16b9cee545a324179b75f30aa8")
+	address := common.HexToAddress("0x1349f3e1b8d71effb47b840594ff27da7e603d17")
+
+	code, err := GetCode(stubClient, address, blockHash)
+	assert.Nil(t, err)
+	assert.Equal(t, "0xefe5cb8d23d632b5d2cdd9f0a151c4b1a84ccb7afa1c57331009aa922d5e4f36", code.String())
+}
+
+func TestGetCode_WithError(t *testing.T) {
+	stubClient := NewStubQuorumClient(nil, nil, nil)
+
+	blockHash := common.HexToHash("0xe625ba9f14eed0671508966080fb01374d0a3a16b9cee545a324179b75f30aa8")
+	address := common.HexToAddress("0x1349f3e1b8d71effb47b840594ff27da7e603d17")
+
+	code, err := GetCode(stubClient, address, blockHash)
+	assert.EqualError(t, err, "not found")
+	assert.Nil(t, code)
 }

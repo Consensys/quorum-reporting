@@ -44,9 +44,10 @@ func (tm *TransactionMonitor) PullTransactions(block *types.Block) ([]*types.Tra
 		}
 
 		for _, addr := range addrs {
-			var res hexutil.Bytes
-			tm.quorumClient.RPCCall(context.Background(), &res, "eth_getCode", addr, tx.BlockHash.String())
-			//TODO: error handle the RPC call
+			res, err := client.GetCode(tm.quorumClient, addr, tx.BlockHash)
+			if err != nil {
+				return nil, err
+			}
 
 			// 2. Check if transaction deploys a public ERC20 contract
 			if checkAbiMatch(types.ERC20ABI, res) {

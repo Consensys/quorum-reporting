@@ -32,6 +32,14 @@ func TraceTransaction(c Client, txHash common.Hash) (map[string]interface{}, err
 	return resp, nil
 }
 
+func GetCode(c Client, address common.Address, blockHash common.Hash) (hexutil.Bytes, error) {
+	var res hexutil.Bytes
+	if err := c.RPCCall(context.Background(), &res, "eth_getCode", address, blockHash.String()); err != nil {
+		return nil, err
+	}
+	return res, nil
+}
+
 func Consensus(c Client) (string, error) {
 	var resp p2p.NodeInfo
 	err := c.RPCCall(context.Background(), &resp, "admin_nodeInfo")
