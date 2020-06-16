@@ -102,11 +102,11 @@ func TestStubQuorumClient(t *testing.T) {
 
 	// test mock GraphQL
 	var resp map[string]interface{}
-	err = c.ExecuteGraphQLQuery(context.Background(), &resp, "query")
+	err = c.ExecuteGraphQLQuery(&resp, "query")
 	assert.Nil(t, err, "expected no error, but got %v", err)
 	assert.Equal(t, "world", resp["hello"], "expected resp hello world, but got %v", resp["hello"])
 
-	err = c.ExecuteGraphQLQuery(context.Background(), &resp, "random")
+	err = c.ExecuteGraphQLQuery(&resp, "random")
 	assert.EqualError(t, err, "not found", "unexpected error message")
 
 	// test mock RPC

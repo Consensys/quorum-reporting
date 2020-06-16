@@ -1,12 +1,10 @@
 package monitor
 
 import (
-	"context"
 	"log"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/mitchellh/mapstructure"
 
 	"quorumengineering/quorum-report/client"
 	"quorumengineering/quorum-report/database"
@@ -39,19 +37,12 @@ func (tm *TransactionMonitor) PullTransactions(block *types.Block) ([]*types.Tra
 }
 
 func (tm *TransactionMonitor) createTransaction(block *types.Block, hash common.Hash) (*types.Transaction, error) {
-	var (
-		resp     map[string]interface{}
-		txOrigin graphql.Transaction
-	)
-	err := tm.quorumClient.ExecuteGraphQLQuery(context.Background(), &resp, graphql.TransactionDetailQuery(hash))
-	if err != nil {
-		// TODO: if quorum node is down, reconnect?
+	var txResult graphql.TransactionResult
+	if err := tm.quorumClient.ExecuteGraphQLQuery(&txResult, graphql.TransactionDetailQuery(hash)); err != nil {
 		return nil, err
 	}
 
-	if err = mapstructure.Decode(resp["transaction"].(map[string]interface{}), &txOrigin); err != nil {
-		return nil, err
-	}
+	txOrigin := txResult.Transaction
 
 	// Create reporting transaction struct fields.
 	nonce, err := hexutil.DecodeUint64(txOrigin.Nonce)
@@ -120,12 +111,13 @@ func (tm *TransactionMonitor) createTransaction(block *types.Block, hash common.
 	}
 	tx.Events = events
 
-	resp, err = client.TraceTransaction(tm.quorumClient, tx.Hash)
+	var traceResp map[string]interface{}
+	traceResp, err = client.TraceTransaction(tm.quorumClient, tx.Hash)
 	if err != nil {
 		return nil, err
 	}
-	if resp["calls"] != nil {
-		respCalls := resp["calls"].([]interface{})
+	if traceResp["calls"] != nil {
+		respCalls := traceResp["calls"].([]interface{})
 		tx.InternalCalls = make([]*types.InternalCall, len(respCalls))
 		for i, respCall := range respCalls {
 			respCallMap := respCall.(map[string]interface{})
