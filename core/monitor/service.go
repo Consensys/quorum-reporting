@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"runtime"
+	"sync"
 	"time"
 
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
@@ -21,7 +22,7 @@ type MonitorService struct {
 	blockMonitor *BlockMonitor
 	batchWriter  *BatchWriter
 	stopFeed     event.Feed
-	totalWorkers uint64
+	totalWorkers int
 }
 
 func NewMonitorService(db database.Database, quorumClient client.Client, consensus string, tuningConfig types.TuningConfig) *MonitorService {
@@ -31,7 +32,7 @@ func NewMonitorService(db database.Database, quorumClient client.Client, consens
 		quorumClient: quorumClient,
 		blockMonitor: NewBlockMonitor(db, quorumClient, consensus, batchWriteChan),
 		batchWriter:  NewBatchWriter(db, batchWriteChan, tuningConfig.BlockProcessingFlushPeriod),
-		totalWorkers: 3 * uint64(runtime.NumCPU()),
+		totalWorkers: 3 * runtime.NumCPU(),
 	}
 }
 
@@ -43,19 +44,11 @@ func (m *MonitorService) Start() error {
 
 	log.Println("Start to sync blocks...")
 
-	// 1. Start batch writer and workers
+	// Start batch writer and workers
 	m.startBatchWriter()
 	m.startWorkers()
 
-	// 2. Listen to ChainHeadEvent and sync.
-	if err := m.listenToChainHead(); err != nil {
-		return err
-	}
-
-	// 3. Sync from last persisted to current block height.
-	if err := m.syncHistoricBlocks(); err != nil {
-		return err
-	}
+	go m.run()
 
 	return nil
 }
@@ -80,7 +73,7 @@ func (m *MonitorService) startBatchWriter() {
 }
 
 func (m *MonitorService) startWorkers() {
-	for i := uint64(0); i < m.totalWorkers; i++ {
+	for i := 0; i < m.totalWorkers; i++ {
 		go func() {
 			stopChan, stopSubscription := m.subscribeStopEvent()
 			defer stopSubscription.Unsubscribe()
@@ -89,7 +82,62 @@ func (m *MonitorService) startWorkers() {
 	}
 }
 
-func (m *MonitorService) syncHistoricBlocks() error {
+func (m *MonitorService) run() {
+	stopChan, stopSubscription := m.subscribeStopEvent()
+	defer stopSubscription.Unsubscribe()
+
+	/*
+		We want to sync historical blocks as well as listen to the chain head simultaneously,
+		whilst also being able to abort if we are shutting down and retry later if the connection
+		to Quorum is lost.
+
+		1. This loop will kick off the processing of historical/chain head syncing.
+			a) if an error occurs setting up the chain head subscription, wait for a timeout period and try again
+			b) if an error occurs setting up the historical block sync, cancel the chain head sub, wait and try again
+		2. If we receive a shutdown message, cancel the chain head listener, wait for the historical block sync to finish and return
+		3. If the chain head sub has an error, close the "cancelChan" which will stop the historical sync
+
+		Note: 	errors in the historical sync *after* it is set up will not propagate up to here, but instead be
+				handled internally. If the historical sync is cancelled, it returns without giving an error, allowing
+				the function to break its internal loop.
+
+				we need to set up the historical sync every time since we may have missed some blocks whilst the
+				chain head subscription was down
+	*/
+
+	for {
+		chStopChan := make(chan bool)
+		cancelChan := make(chan bool)
+		var wg sync.WaitGroup
+		wg.Add(1)
+
+		if err := m.listenToChainHead(cancelChan, chStopChan); err != nil {
+			log.Printf("Subscribe to chain head event error: %v. Retry in 1 second...\n", err)
+			time.Sleep(time.Second)
+			continue
+		}
+		if err := m.syncHistoricBlocks(cancelChan, &wg); err != nil {
+			log.Printf("Sync historic blocks error: %v. Retry in 1 second...\n", err)
+			close(chStopChan)
+			time.Sleep(time.Second)
+			continue
+		}
+
+		select {
+		case <-stopChan:
+			close(chStopChan)
+			<-cancelChan
+			wg.Wait()
+			return
+		case <-cancelChan:
+			wg.Wait()
+			log.Println("Retry in 1 second...")
+			time.Sleep(time.Second)
+		}
+	}
+}
+
+func (m *MonitorService) syncHistoricBlocks(cancelChan chan bool, wg *sync.WaitGroup) error {
 	currentBlockNumber, err := m.blockMonitor.currentBlockNumber()
 	if err != nil {
 		return err
@@ -102,20 +150,20 @@ func (m *MonitorService) syncHistoricBlocks() error {
 
 	// Sync is called in a go routine so that it doesn't block main process.
 	go func() {
-		stopChan, stopSubscription := m.subscribeStopEvent()
-		defer stopSubscription.Unsubscribe()
-		err := m.blockMonitor.syncBlocks(lastPersisted+1, currentBlockNumber, stopChan)
+		defer log.Println("Returning from historical block processing.")
+		defer wg.Done()
+		err := m.blockMonitor.syncBlocks(lastPersisted+1, currentBlockNumber, cancelChan)
 		for err != nil {
-			log.Printf("sync historic blocks up to %v failed: %v\n", currentBlockNumber, err)
+			log.Printf("Sync historic blocks up to %v failed: %v.\n", currentBlockNumber, err)
 			time.Sleep(time.Second)
-			err = m.blockMonitor.syncBlocks(err.EndBlockNumber(), currentBlockNumber, stopChan)
+			err = m.blockMonitor.syncBlocks(err.EndBlockNumber(), currentBlockNumber, cancelChan)
 		}
 	}()
 
 	return nil
 }
 
-func (m *MonitorService) listenToChainHead() error {
+func (m *MonitorService) listenToChainHead(cancelChan chan bool, stopChan chan bool) error {
 	headers := make(chan *ethTypes.Header)
 	sub, err := m.quorumClient.SubscribeNewHead(context.Background(), headers)
 	if err != nil {
@@ -123,15 +171,17 @@ func (m *MonitorService) listenToChainHead() error {
 	}
 
 	go func() {
-		stopChan, stopSubscription := m.subscribeStopEvent()
-		defer stopSubscription.Unsubscribe()
+		defer close(cancelChan)
+		log.Println("Starting chain head listener.")
 		for {
 			select {
 			case err := <-sub.Err():
-				log.Panicf("chain head event subscription error: %v", err)
+				log.Printf("Chain head event subscription error: %v.\n", err)
+				return
 			case header := <-headers:
 				m.blockMonitor.processChainHead(header)
 			case <-stopChan:
+				log.Println("Stopping chain head listener.")
 				return
 			}
 		}
