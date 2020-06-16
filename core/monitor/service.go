@@ -30,7 +30,7 @@ func NewMonitorService(db database.Database, quorumClient client.Client, consens
 		db:           db,
 		quorumClient: quorumClient,
 		blockMonitor: NewBlockMonitor(db, quorumClient, consensus, batchWriteChan),
-		batchWriter:  NewBatchWriter(batchWriteChan, db),
+		batchWriter:  NewBatchWriter(db, batchWriteChan, tuningConfig.BlockProcessingFlushPeriod),
 		totalWorkers: 3 * uint64(runtime.NumCPU()),
 	}
 }
