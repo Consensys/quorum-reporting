@@ -4,7 +4,7 @@ import (
 	"context"
 	"log"
 	"math/big"
-	"runtime"
+	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -36,9 +36,6 @@ func NewBlockMonitor(db database.Database, quorumClient client.Client, consensus
 		newBlockChan:       make(chan *types.Block),
 		batchWriteChan:     batchWriteChan,
 		consensus:          consensus,
-
-		//Queue size is one bigger than number of workers so it never gets full
-		workerQueue: make(chan *types.Block, 3*runtime.NumCPU()+1),
 	}
 }
 
@@ -51,24 +48,15 @@ func (bm *BlockMonitor) startWorker(stopChan <-chan types.StopEvent) {
 	//defer log.Println("Returning from block processing worker.")
 	for {
 		select {
-		case block := <-bm.workerQueue:
-			// Listen to worker-only channel in case we need to reprocess a block first
-			if err := bm.process(block); err != nil {
-				log.Printf("Process block %v error: %v.\n", block.Number, err)
-				bm.workerQueue <- block
-			}
-			continue
-		case <-stopChan:
-			return
-		default:
-		}
-
-		select {
 		case block := <-bm.newBlockChan:
 			// Listen to new block channel and process if new block comes.
-			if err := bm.process(block); err != nil {
+			err := bm.process(block)
+
+			for err != nil {
 				log.Printf("Process block %v error: %v.\n", block.Number, err)
-				bm.workerQueue <- block
+				//log.Println("Waiting a second before processing...") //TODO: this should be at a "debug" level
+				time.Sleep(time.Second)
+				err = bm.process(block)
 			}
 		case <-stopChan:
 			return
