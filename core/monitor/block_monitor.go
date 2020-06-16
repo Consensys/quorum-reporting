@@ -23,8 +23,6 @@ type BlockMonitor struct {
 	newBlockChan       chan *types.Block          // concurrent block processing
 	batchWriteChan     chan *BlockAndTransactions // concurrent block processing
 	consensus          string
-
-	workerQueue chan *types.Block
 }
 
 func NewBlockMonitor(db database.Database, quorumClient client.Client, consensus string, batchWriteChan chan *BlockAndTransactions) *BlockMonitor {
@@ -39,18 +37,11 @@ func NewBlockMonitor(db database.Database, quorumClient client.Client, consensus
 }
 
 func (bm *BlockMonitor) startWorker(stopChan <-chan types.StopEvent) {
-	/*
-		Check the reprocess queue first (bm.workerQueue) in case Quorum went down
-		Then check the main incoming queue for any new blocks
-	*/
-	// There can be too many printing if num of workers are big. Thus comment it.
-	//defer log.Println("Returning from block processing worker.")
 	for {
 		select {
 		case block := <-bm.newBlockChan:
 			// Listen to new block channel and process if new block comes.
 			err := bm.process(block)
-
 			for err != nil {
 				log.Printf("Process block %v error: %v.\n", block.Number, err)
 				//log.Println("Waiting a second before processing...") //TODO: this should be at a "debug" level
