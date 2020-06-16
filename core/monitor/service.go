@@ -44,7 +44,7 @@ func (m *MonitorService) Start() error {
 
 	log.Println("Start to sync blocks...")
 
-	// 1. Start batch writer and workers
+	// Start batch writer and workers
 	m.startBatchWriter()
 	m.startWorkers()
 
@@ -150,12 +150,12 @@ func (m *MonitorService) syncHistoricBlocks(cancelChan chan bool, wg *sync.WaitG
 		defer wg.Done()
 		err := m.blockMonitor.syncBlocks(lastPersisted+1, currentBlockNumber, cancelChan)
 		for err != nil {
-			log.Printf("sync historic blocks up to %v failed: %v\n", currentBlockNumber, err)
+			log.Printf("Sync historic blocks up to %v failed: %v.\n", currentBlockNumber, err)
 			time.Sleep(time.Second)
 			err = m.blockMonitor.syncBlocks(err.EndBlockNumber(), currentBlockNumber, cancelChan)
 		}
 
-		log.Println("Returning from historical block processing")
+		log.Println("Returning from historical block processing.")
 	}()
 
 	return nil
@@ -174,12 +174,12 @@ func (m *MonitorService) listenToChainHead(cancelChan chan bool, stopChan chan b
 		for {
 			select {
 			case err := <-sub.Err():
-				log.Printf("chain head event subscription error: %v", err)
+				log.Printf("Chain head event subscription error: %v.\n", err)
 				return
 			case header := <-headers:
 				m.blockMonitor.processChainHead(header)
 			case <-stopChan:
-				log.Println("Returning from chain head listener")
+				log.Println("Returning from chain head listener.")
 				return
 			}
 		}

@@ -47,17 +47,18 @@ func (bm *BlockMonitor) startWorker(stopChan <-chan types.StopEvent) {
 		Check the reprocess queue first (bm.workerQueue) in case Quorum went down
 		Then check the main incoming queue for any new blocks
 	*/
+	// There can be too many printing if num of workers are big. Thus comment it.
+	//defer log.Println("Returning from block processing worker.")
 	for {
 		select {
 		case block := <-bm.workerQueue:
 			// Listen to worker-only channel in case we need to reprocess a block first
 			if err := bm.process(block); err != nil {
-				log.Printf("process block %v error: %v\n", block.Number, err)
+				log.Printf("Process block %v error: %v.\n", block.Number, err)
 				bm.workerQueue <- block
 			}
 			continue
 		case <-stopChan:
-			log.Println("Returning from block processing worker")
 			return
 		default:
 		}
@@ -66,11 +67,10 @@ func (bm *BlockMonitor) startWorker(stopChan <-chan types.StopEvent) {
 		case block := <-bm.newBlockChan:
 			// Listen to new block channel and process if new block comes.
 			if err := bm.process(block); err != nil {
-				log.Printf("process block %v error: %v\n", block.Number, err)
+				log.Printf("Process block %v error: %v.\n", block.Number, err)
 				bm.workerQueue <- block
 			}
 		case <-stopChan:
-			log.Println("Returning from block processing worker")
 			return
 		}
 	}
