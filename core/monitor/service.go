@@ -112,10 +112,12 @@ func (m *MonitorService) run() {
 		wg.Add(1)
 
 		if err := m.listenToChainHead(cancelChan, chStopChan); err != nil {
+			log.Printf("Subscribe to chain head event error: %v. Retry in 1 second...\n", err)
 			time.Sleep(time.Second)
 			continue
 		}
 		if err := m.syncHistoricBlocks(cancelChan, &wg); err != nil {
+			log.Printf("Sync historic blocks error: %v. Retry in 1 second...\n", err)
 			close(chStopChan)
 			time.Sleep(time.Second)
 			continue
@@ -129,6 +131,7 @@ func (m *MonitorService) run() {
 			return
 		case <-cancelChan:
 			wg.Wait()
+			log.Println("Retry in 1 second...")
 			time.Sleep(time.Second)
 		}
 	}
@@ -147,6 +150,7 @@ func (m *MonitorService) syncHistoricBlocks(cancelChan chan bool, wg *sync.WaitG
 
 	// Sync is called in a go routine so that it doesn't block main process.
 	go func() {
+		defer log.Println("Returning from historical block processing.")
 		defer wg.Done()
 		err := m.blockMonitor.syncBlocks(lastPersisted+1, currentBlockNumber, cancelChan)
 		for err != nil {
@@ -154,8 +158,6 @@ func (m *MonitorService) syncHistoricBlocks(cancelChan chan bool, wg *sync.WaitG
 			time.Sleep(time.Second)
 			err = m.blockMonitor.syncBlocks(err.EndBlockNumber(), currentBlockNumber, cancelChan)
 		}
-
-		log.Println("Returning from historical block processing.")
 	}()
 
 	return nil
@@ -170,7 +172,7 @@ func (m *MonitorService) listenToChainHead(cancelChan chan bool, stopChan chan b
 
 	go func() {
 		defer close(cancelChan)
-
+		log.Println("Starting chain head listener.")
 		for {
 			select {
 			case err := <-sub.Err():
@@ -179,7 +181,7 @@ func (m *MonitorService) listenToChainHead(cancelChan chan bool, stopChan chan b
 			case header := <-headers:
 				m.blockMonitor.processChainHead(header)
 			case <-stopChan:
-				log.Println("Returning from chain head listener.")
+				log.Println("Stopping chain head listener.")
 				return
 			}
 		}
