@@ -287,6 +287,19 @@ func (es *ElasticsearchDB) AssignTemplate(address common.Address, name string) e
 	return es.updateContract(address, "templateName", name)
 }
 
+func (es *ElasticsearchDB) GetTemplates() ([]string, error) {
+	results, err := es.apiClient.ScrollAllResults(TemplateIndex, QueryAllTemplateNamesTemplate)
+	if err != nil {
+		return nil, errors.New("error fetching templates: " + err.Error())
+	}
+	converted := make([]string, len(results))
+	for i, result := range results {
+		data := result.(map[string]interface{})["_source"].(map[string]interface{})
+		converted[i] = data["templateName"].(string)
+	}
+	return converted, nil
+}
+
 // BlockDB
 func (es *ElasticsearchDB) WriteBlock(block *types.Block) error {
 	var internalBlock Block

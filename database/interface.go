@@ -33,6 +33,7 @@ type TemplateDB interface {
 	AssignTemplate(common.Address, string) error
 	GetContractABI(common.Address) (string, error)
 	GetStorageLayout(common.Address) (string, error)
+	GetTemplates() ([]string, error)
 }
 
 // BlockDB stores the block details for all blocks.

@@ -253,3 +253,7 @@ func (r *RPCAPIs) AddTemplate(name string, abiData string, layout string) error 
 func (r *RPCAPIs) AssignTemplate(address common.Address, name string) error {
 	return r.db.AssignTemplate(address, name)
 }
+
+func (r *RPCAPIs) GetTemplates() ([]string, error) {
+	return r.db.GetTemplates()
+}

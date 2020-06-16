@@ -40,6 +40,10 @@ Contract APIs register/ deregister contracts to be reported. Complex queries can
 
 (Implemented)
 
+#### reporting_getTemplates
+
+(Implemented)
+
 #### reporting_getLastFiltered
 
 (Implemented) `reporting_getLastFiltered` gets the last block number before which storage & txs & events of a contract 

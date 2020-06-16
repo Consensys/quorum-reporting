@@ -123,6 +123,10 @@ func (cachingDB *DatabaseWithCache) GetStorageLayout(address common.Address) (st
 	return cachingDB.db.GetStorageLayout(address)
 }
 
+func (cachingDB *DatabaseWithCache) GetTemplates() ([]string, error) {
+	return cachingDB.db.GetTemplates()
+}
+
 func (cachingDB *DatabaseWithCache) AddTemplate(name string, abi string, layout string) error {
 	return cachingDB.db.AddTemplate(name, abi, layout)
 }
