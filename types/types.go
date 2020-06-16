@@ -5,6 +5,12 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 )
 
+type Template struct {
+	TemplateName  string `json:"templateName"`
+	ABI           string `json:"abi"`
+	StorageLayout string `json:"storageLayout"`
+}
+
 type Block struct {
 	Hash         common.Hash   `json:"hash"`
 	ParentHash   common.Hash   `json:"parentHash"`

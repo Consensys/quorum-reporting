@@ -1,7 +1,9 @@
 package elasticsearch
 
 import (
+	"encoding/json"
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/elastic/go-elasticsearch/v7/esapi"
@@ -523,4 +525,96 @@ func TestElasticsearchDB_GetStorageABI_ContractDoesntExist(t *testing.T) {
 
 	assert.Equal(t, "", abi, "unexpected error")
 	assert.EqualError(t, err, "not found", "unexpected error message")
+}
+
+func TestElasticsearchDB_GetTemplates_NoTemplate(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockedClient := elasticsearch_mocks.NewMockAPIClient(ctrl)
+
+	mockedClient.EXPECT().DoRequest(gomock.Any()) //for setup, not relevant to test
+	mockedClient.EXPECT().
+		ScrollAllResults(TemplateIndex, QueryAllTemplateNamesTemplate).
+		Return(make([]interface{}, 0, 0), nil)
+
+	db, _ := New(mockedClient)
+	allAddresses, err := db.GetTemplates()
+
+	assert.Nil(t, err, "error was not nil")
+	assert.Equal(t, 0, len(allAddresses), "templates found when none expected: %s", allAddresses)
+}
+
+func TestElasticsearchDB_GetTemplates_SingleTemplate(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	sampleTemplate := "sampleTemplate"
+	createReturnValue := func(template string) interface{} {
+		sampleReturnValue := `{"_source" : { "templateName": "%s"}}`
+		var asInterface map[string]interface{}
+		_ = json.Unmarshal([]byte(fmt.Sprintf(sampleReturnValue, template)), &asInterface)
+		return asInterface
+	}
+
+	mockedClient := elasticsearch_mocks.NewMockAPIClient(ctrl)
+
+	mockedClient.EXPECT().DoRequest(gomock.Any()) //for setup, not relevant to test
+	mockedClient.EXPECT().
+		ScrollAllResults(TemplateIndex, QueryAllTemplateNamesTemplate).
+		Return([]interface{}{createReturnValue(sampleTemplate)}, nil)
+
+	db, _ := New(mockedClient)
+	allTemplates, err := db.GetTemplates()
+
+	assert.Nil(t, err, "error was not nil")
+	assert.Equal(t, 1, len(allTemplates), "wrong number of templates found: %v", len(allTemplates))
+	assert.Equal(t, sampleTemplate, allTemplates[0], "unexpected template found: %s", allTemplates[0])
+}
+
+func TestElasticsearchDB_GetTemplates_MultipleTemplates(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	sampleTemplate1 := "sampleTemplate1"
+	sampleTemplate2 := "sampleTemplate2"
+	createReturnValue := func(template string) interface{} {
+		sampleReturnValue := `{"_source" : { "templateName": "%s"}}`
+		var asInterface map[string]interface{}
+		_ = json.Unmarshal([]byte(fmt.Sprintf(sampleReturnValue, template)), &asInterface)
+		return asInterface
+	}
+
+	mockedClient := elasticsearch_mocks.NewMockAPIClient(ctrl)
+
+	mockedClient.EXPECT().DoRequest(gomock.Any()) //for setup, not relevant to test
+	mockedClient.EXPECT().
+		ScrollAllResults(TemplateIndex, QueryAllTemplateNamesTemplate).
+		Return([]interface{}{createReturnValue(sampleTemplate1), createReturnValue(sampleTemplate2)}, nil)
+
+	db, _ := New(mockedClient)
+	allTemplates, err := db.GetTemplates()
+
+	assert.Nil(t, err, "error was not nil")
+	assert.Equal(t, 2, len(allTemplates), "wrong number of templates found: %v", len(allTemplates))
+	assert.Equal(t, sampleTemplate1, allTemplates[0], "unexpected template found: %s", allTemplates[0])
+	assert.Equal(t, sampleTemplate2, allTemplates[1], "unexpected template found: %s", allTemplates[0])
+}
+
+func TestElasticsearchDB_GetTemplates_WithError(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockedClient := elasticsearch_mocks.NewMockAPIClient(ctrl)
+
+	mockedClient.EXPECT().DoRequest(gomock.Any()) //for setup, not relevant to test
+	mockedClient.EXPECT().
+		ScrollAllResults(TemplateIndex, QueryAllTemplateNamesTemplate).
+		Return(nil, errors.New("test error"))
+
+	db, _ := New(mockedClient)
+	allTemplates, err := db.GetTemplates()
+
+	assert.Nil(t, allTemplates, "error was not nil")
+	assert.EqualError(t, err, "error fetching templates: test error", "wrong error message")
 }

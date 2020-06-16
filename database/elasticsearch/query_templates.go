@@ -16,6 +16,15 @@ const QueryAllAddressesTemplate = `
 }
 `
 
+const QueryAllTemplateNamesTemplate = `
+{
+	"_source": ["templateName"],
+	"query": {
+		"match_all": {}
+	}
+}
+`
+
 func QueryByToAddressWithOptionsTemplate(options *types.QueryOptions) string {
 	return `
 {

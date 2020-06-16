@@ -160,6 +160,14 @@ func (es *ElasticsearchDB) GetAddresses() ([]common.Address, error) {
 	return converted, nil
 }
 
+func (es *ElasticsearchDB) GetContractTemplate(address common.Address) (string, error) {
+	contract, err := es.getContractByAddress(address)
+	if err != nil {
+		return "", err
+	}
+	return contract.TemplateName, nil
+}
+
 //ABIDB
 func (es *ElasticsearchDB) AddContractABI(address common.Address, abi string) error {
 	// check contract & template existence before updating
@@ -285,6 +293,31 @@ func (es *ElasticsearchDB) AddTemplate(name string, abi string, layout string) e
 
 func (es *ElasticsearchDB) AssignTemplate(address common.Address, name string) error {
 	return es.updateContract(address, "templateName", name)
+}
+
+func (es *ElasticsearchDB) GetTemplates() ([]string, error) {
+	results, err := es.apiClient.ScrollAllResults(TemplateIndex, QueryAllTemplateNamesTemplate)
+	if err != nil {
+		return nil, errors.New("error fetching templates: " + err.Error())
+	}
+	converted := make([]string, len(results))
+	for i, result := range results {
+		data := result.(map[string]interface{})["_source"].(map[string]interface{})
+		converted[i] = data["templateName"].(string)
+	}
+	return converted, nil
+}
+
+func (es *ElasticsearchDB) GetTemplateDetails(templateName string) (*types.Template, error) {
+	template, err := es.getTemplateByName(templateName)
+	if err != nil {
+		return nil, err
+	}
+	return &types.Template{
+		TemplateName:  templateName,
+		ABI:           template.ABI,
+		StorageLayout: template.StorageABI,
+	}, nil
 }
 
 // BlockDB

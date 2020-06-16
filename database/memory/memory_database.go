@@ -125,6 +125,12 @@ func (db *MemoryDB) GetAddresses() ([]common.Address, error) {
 	return db.addressDB, nil
 }
 
+func (db *MemoryDB) GetContractTemplate(address common.Address) (string, error) {
+	db.mux.RLock()
+	defer db.mux.RUnlock()
+	return db.templateDB[address], nil
+}
+
 func (db *MemoryDB) AddContractABI(address common.Address, abi string) error {
 	db.mux.Lock()
 	defer db.mux.Unlock()
@@ -166,6 +172,34 @@ func (db *MemoryDB) AssignTemplate(address common.Address, name string) error {
 	defer db.mux.Unlock()
 	db.templateDB[address] = name
 	return nil
+}
+
+func (db *MemoryDB) GetTemplates() ([]string, error) {
+	db.mux.RLock()
+	defer db.mux.RUnlock()
+	// merge abiDB and storageLayoutDB to find the full template name list
+	templateNames := make(map[string]bool)
+	for template, _ := range db.abiDB {
+		templateNames[template] = true
+	}
+	for template, _ := range db.storageLayoutDB {
+		templateNames[template] = true
+	}
+	res := make([]string, 0)
+	for template, _ := range templateNames {
+		res = append(res, template)
+	}
+	return res, nil
+}
+
+func (db *MemoryDB) GetTemplateDetails(templateName string) (*types.Template, error) {
+	db.mux.RLock()
+	defer db.mux.RUnlock()
+	return &types.Template{
+		TemplateName:  templateName,
+		ABI:           db.abiDB[templateName],
+		StorageLayout: db.storageLayoutDB[templateName],
+	}, nil
 }
 
 func (db *MemoryDB) WriteBlock(block *types.Block) error {
