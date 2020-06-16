@@ -107,6 +107,10 @@ func (cachingDB *DatabaseWithCache) GetAddresses() ([]common.Address, error) {
 	return addresses, nil
 }
 
+func (cachingDB *DatabaseWithCache) GetContractTemplate(address common.Address) (string, error) {
+	return cachingDB.db.GetContractTemplate(address)
+}
+
 func (cachingDB *DatabaseWithCache) AddContractABI(address common.Address, abi string) error {
 	return cachingDB.db.AddContractABI(address, abi)
 }
@@ -123,16 +127,20 @@ func (cachingDB *DatabaseWithCache) GetStorageLayout(address common.Address) (st
 	return cachingDB.db.GetStorageLayout(address)
 }
 
-func (cachingDB *DatabaseWithCache) GetTemplates() ([]string, error) {
-	return cachingDB.db.GetTemplates()
-}
-
 func (cachingDB *DatabaseWithCache) AddTemplate(name string, abi string, layout string) error {
 	return cachingDB.db.AddTemplate(name, abi, layout)
 }
 
 func (cachingDB *DatabaseWithCache) AssignTemplate(address common.Address, name string) error {
 	return cachingDB.db.AssignTemplate(address, name)
+}
+
+func (cachingDB *DatabaseWithCache) GetTemplates() ([]string, error) {
+	return cachingDB.db.GetTemplates()
+}
+
+func (cachingDB *DatabaseWithCache) GetTemplateDetails(templateName string) (*types.Template, error) {
+	return cachingDB.db.GetTemplateDetails(templateName)
 }
 
 func (cachingDB *DatabaseWithCache) WriteBlock(block *types.Block) error {

@@ -16,6 +16,10 @@ Contract APIs register/ deregister contracts to be reported. Complex queries can
 
 (Implemented)
 
+#### reporting_getContractTemplate
+
+(Implemented)
+
 #### reporting_addABI
 
 (Deprecated. Use `reporting_addTemplate` and `reporting_assignTemplate`)
@@ -41,6 +45,10 @@ Contract APIs register/ deregister contracts to be reported. Complex queries can
 (Implemented)
 
 #### reporting_getTemplates
+
+(Implemented)
+
+#### reporting_getTemplateDetails
 
 (Implemented)
 

@@ -21,6 +21,7 @@ type AddressDB interface {
 	AddAddresses([]common.Address) error
 	DeleteAddress(common.Address) error
 	GetAddresses() ([]common.Address, error)
+	GetContractTemplate(common.Address) (string, error)
 }
 
 // TemplateDB stores contract ABI/ Storage Layout of registered address
@@ -34,6 +35,7 @@ type TemplateDB interface {
 	GetContractABI(common.Address) (string, error)
 	GetStorageLayout(common.Address) (string, error)
 	GetTemplates() ([]string, error)
+	GetTemplateDetails(string) (*types.Template, error)
 }
 
 // BlockDB stores the block details for all blocks.

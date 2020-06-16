@@ -160,6 +160,14 @@ func (es *ElasticsearchDB) GetAddresses() ([]common.Address, error) {
 	return converted, nil
 }
 
+func (es *ElasticsearchDB) GetContractTemplate(address common.Address) (string, error) {
+	contract, err := es.getContractByAddress(address)
+	if err != nil {
+		return "", err
+	}
+	return contract.TemplateName, nil
+}
+
 //ABIDB
 func (es *ElasticsearchDB) AddContractABI(address common.Address, abi string) error {
 	// check contract & template existence before updating
@@ -298,6 +306,18 @@ func (es *ElasticsearchDB) GetTemplates() ([]string, error) {
 		converted[i] = data["templateName"].(string)
 	}
 	return converted, nil
+}
+
+func (es *ElasticsearchDB) GetTemplateDetails(templateName string) (*types.Template, error) {
+	template, err := es.getTemplateByName(templateName)
+	if err != nil {
+		return nil, err
+	}
+	return &types.Template{
+		TemplateName:  templateName,
+		ABI:           template.ABI,
+		StorageLayout: template.StorageABI,
+	}, nil
 }
 
 // BlockDB

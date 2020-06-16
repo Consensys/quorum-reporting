@@ -213,6 +213,10 @@ func (r *RPCAPIs) GetAddresses() ([]common.Address, error) {
 	return r.db.GetAddresses()
 }
 
+func (r *RPCAPIs) GetContractTemplate(address common.Address) (string, error) {
+	return r.db.GetContractTemplate(address)
+}
+
 func (r *RPCAPIs) AddABI(address common.Address, data string) error {
 	// check ABI is valid
 	if _, err := abi.JSON(strings.NewReader(data)); err != nil {
@@ -256,4 +260,8 @@ func (r *RPCAPIs) AssignTemplate(address common.Address, name string) error {
 
 func (r *RPCAPIs) GetTemplates() ([]string, error) {
 	return r.db.GetTemplates()
+}
+
+func (r *RPCAPIs) GetTemplateDetails(templateName string) (*types.Template, error) {
+	return r.db.GetTemplateDetails(templateName)
 }

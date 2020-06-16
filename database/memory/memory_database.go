@@ -125,6 +125,12 @@ func (db *MemoryDB) GetAddresses() ([]common.Address, error) {
 	return db.addressDB, nil
 }
 
+func (db *MemoryDB) GetContractTemplate(address common.Address) (string, error) {
+	db.mux.RLock()
+	defer db.mux.RUnlock()
+	return db.templateDB[address], nil
+}
+
 func (db *MemoryDB) AddContractABI(address common.Address, abi string) error {
 	db.mux.Lock()
 	defer db.mux.Unlock()
@@ -184,6 +190,16 @@ func (db *MemoryDB) GetTemplates() ([]string, error) {
 		res = append(res, template)
 	}
 	return res, nil
+}
+
+func (db *MemoryDB) GetTemplateDetails(templateName string) (*types.Template, error) {
+	db.mux.RLock()
+	defer db.mux.RUnlock()
+	return &types.Template{
+		TemplateName:  templateName,
+		ABI:           db.abiDB[templateName],
+		StorageLayout: db.storageLayoutDB[templateName],
+	}, nil
 }
 
 func (db *MemoryDB) WriteBlock(block *types.Block) error {
