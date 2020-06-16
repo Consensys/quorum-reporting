@@ -2,13 +2,13 @@ package client
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"math/big"
 	"reflect"
 
 	"github.com/ethereum/go-ethereum"
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
-	"github.com/mitchellh/mapstructure"
 )
 
 // StubQuorumClient is used for unit test.
@@ -41,13 +41,10 @@ func (qc *StubQuorumClient) BlockByNumber(ctx context.Context, blockNumber *big.
 	return nil, errors.New("not found")
 }
 
-func (qc *StubQuorumClient) ExecuteGraphQLQuery(ctx context.Context, result interface{}, query string) error {
+func (qc *StubQuorumClient) ExecuteGraphQLQuery(result interface{}, query string) error {
 	if resp, ok := qc.mockGraphQL[query]; ok {
-		err := mapstructure.Decode(resp, &result)
-		if err != nil {
-			return err
-		}
-		return nil
+		out, _ := json.Marshal(resp)
+		return json.Unmarshal(out, &result)
 	}
 	return errors.New("not found")
 }
