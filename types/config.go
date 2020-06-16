@@ -25,7 +25,8 @@ type DatabaseConfig struct {
 }
 
 type TuningConfig struct {
-	BlockProcessingQueueSize int `toml:"blockProcessingQueueSize"`
+	BlockProcessingQueueSize   int `toml:"blockProcessingQueueSize"`
+	BlockProcessingFlushPeriod int `toml:"blockProcessingFlushPeriod"`
 }
 
 type AddressConfig struct {
@@ -62,6 +63,9 @@ type ReportingConfig struct {
 func (rc *ReportingConfig) SetDefaults() {
 	if rc.Tuning.BlockProcessingQueueSize < 1 {
 		rc.Tuning.BlockProcessingQueueSize = 100
+	}
+	if rc.Tuning.BlockProcessingFlushPeriod < 1 {
+		rc.Tuning.BlockProcessingFlushPeriod = 3
 	}
 	if rc.Database != nil && rc.Database.CacheSize < 1 {
 		rc.Database.CacheSize = 10
