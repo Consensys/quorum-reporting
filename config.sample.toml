@@ -28,7 +28,3 @@ templates = [
     graphQLUrl = "http://localhost:8547/graphql"
     reconnectInterval = 5
     maxReconnectTries = 5
-
-[tuning]
-
-    blockProcessingQueueSize = 1000
