@@ -37,12 +37,12 @@ func (tm *TransactionMonitor) PullTransactions(block *types.Block) ([]*types.Tra
 }
 
 func (tm *TransactionMonitor) createTransaction(block *types.Block, hash common.Hash) (*types.Transaction, error) {
-	var txQuery graphql.Transaction
-	if err := tm.quorumClient.ExecuteGraphQLQuery(&txQuery, graphql.TransactionDetailQuery(hash)); err != nil {
+	var txResult graphql.TransactionResult
+	if err := tm.quorumClient.ExecuteGraphQLQuery(&txResult, graphql.TransactionDetailQuery(hash)); err != nil {
 		return nil, err
 	}
 
-	txOrigin := txQuery.Transaction
+	txOrigin := txResult.Transaction
 
 	// Create reporting transaction struct fields.
 	nonce, err := hexutil.DecodeUint64(txOrigin.Nonce)

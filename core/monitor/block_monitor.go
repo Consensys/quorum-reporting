@@ -69,11 +69,11 @@ func (bm *BlockMonitor) process(block *types.Block) error {
 }
 
 func (bm *BlockMonitor) currentBlockNumber() (uint64, error) {
-	var currentBlock graphql.CurrentBlock
-	if err := bm.quorumClient.ExecuteGraphQLQuery(&currentBlock, graphql.CurrentBlockQuery()); err != nil {
+	var currentBlockResult graphql.CurrentBlockResult
+	if err := bm.quorumClient.ExecuteGraphQLQuery(&currentBlockResult, graphql.CurrentBlockQuery()); err != nil {
 		return 0, err
 	}
-	return hexutil.DecodeUint64(currentBlock.Block.Number)
+	return hexutil.DecodeUint64(currentBlockResult.Block.Number)
 }
 
 func (bm *BlockMonitor) syncBlocks(start, end uint64, stopChan chan types.StopEvent) *types.SyncError {

@@ -45,7 +45,6 @@ func (qc *StubQuorumClient) ExecuteGraphQLQuery(result interface{}, query string
 	if resp, ok := qc.mockGraphQL[query]; ok {
 		out, _ := json.Marshal(resp)
 		return json.Unmarshal(out, &result)
-		//return mapstructure.Decode(resp, &result)
 	}
 	return errors.New("not found")
 }
