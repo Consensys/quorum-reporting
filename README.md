@@ -1,139 +1,71 @@
 # Quorum Reporting
 
-## Requirements (initial draft)
-Number | Area | Requirement 
-:---: | :---: | :--- 
-1 | Admin | Ability for an admin to register a contract address for monitoring and reporting
-2 | Admin | Registration should allow flexibility to monitor <ul><li>Contract events - It should be possible to monitor all or a subset of contract events</li><li>State changes - It should be possible to monitor state change of all or subset of contract attributes </li><li>Internal transactions created as a part of contract execution</li></ul>
-3 | Data Fetch | Once a contract is registered for monitoring/reporting, reporting tools should fetch the following historical data from geth <ul><li>Events</li><li>Transactions </li><li>State changes</li></ul>
-4 | Data Fetch | For all registered contracts, reporting tool to poll continuously on Quorum geth node for new blocks and if the state of the registered contracts have changed in the new block, it should fetch all applicable data for reporting
-5 | Data Fetch | Data fetch should cater for scenarios when the reporting service was restarted and thus the reporting db data is behind the Quorum geth node data.
-6 | Data storage | Reporting tool to have its own reporting database with a well defined data schema for easy querying and reporting. The data fetched from Quorum geth node to be stored here
-7 | Dashboard and UI | UI for the following activities <ul><li>Registration of contracts for monitoring with ability to select subset of contract events and storage attributes</li><li>UI displaying all contract transactions, related event logs, internal transactions and state changes with drill down capability</ul>
+Quorum Reporting is a tool that indexes the blockchain and generates reports to 
+give users insights into what is happening to their contracts.
 
-## Approach
+It generates reports of the contracts state, allow you to see how the contract changes and evolves
+over its lifetime. It will also interpret and parse events the contract has emitted in a human
+readable manner, meaning they can be viewed in a dashboard or other application with little extra
+effort.
 
-Reporting engine is built on top of Quorum 2.6.0 as it supports `graphql` with a flexible querying mechanism
+## Usage 
 
-* Fetch Data
-   * Reporting engine subscribes to `newChainHead` event of geth node on websocket connection
-   * Reporting engine pulls all blocks and transactions from geth node
-   * Reporting engine index transactions/ events/ storage based on registered addresses
-   * Endpoints used:
-      * GraphQL
-      * RPC APIs
-* Store Data
-   * Memory Database (for dev only)
-   * Elasticsearch Database
-* Parse Data
-   * Reporting engine can store contract ABI and parse transaction/ event signature and params based on the ABI information
-* Display Data 
-   * Dashboard and configuration options to be added on Cakeshop UI for the first version
+### Pre-requisites
+- Running Quorum
+    - Quorum needs to be run with GraphQL and websockets open, with `eth`, `admin` and `debug` endpoints available.
+    - Quorum Reporting fetches a lot of data that is usually cleaned up by Quorum, so it is recommended to run Quorum in archive mode
+    - e.g. `geth --graphql --graphql.port 11000 --graphql.vhosts=* --ws --wsport 10000 --wsapi admin,eth,debug --wsorigins=* --gcmode=archive ...`
 
-## Up and Running
+- ElasticSearch v7
+    - Quorum Reporting uses ElasticSearch as its data store, and can be set up in many configurations.
+        [Click here](https://www.elastic.co/guide/en/elasticsearch/reference/current/getting-started.html) to get started with ElasticSearch
 
-**Notes**
-- Run geth using https://github.com/QuorumEngineering/quorum/tree/dump_account_api branch
-- Make sure GraphQL endpoint and websocket are exposed on geth
-- In order to avoid missing state for storage fetching, Quorum node should run with `--gcmode archive`
+### Running
 
-#### Build Executable
-* After clone the repo, build `quorum-report` tool
-```bash
-go build
-```
-* See usage of `quorum-report`
-```bash
-./quorum-report --help
-```
-* Start `quorum-report` tool with `config.toml` in the current path
-```
-./quorum-report
-```
+#### Using native binary
 
-#### Run with Docker
-* Build docker image
+- Running with default configuration file path of `config.toml`:
+`./quorum-report`
+
+- Running with custom configuration path:
+`./quorum-report -config <path to config file>`
+
+- Running with help
+`./quorum-report -help`
+
+#### Using Docker
+
+A configuration must be supplied to the Docker container (there is no default)
+docker run -p 6666:6666 --mount type=bind,source=<path to config>,target=/config.toml quorum-reporting:latest
+
+### Configuration
+A [sample configuration](./config.sample.toml) file has been provided with details about each of the options [here]
+
+## Using the application
+
+The application has a set of RPC API's that are used to interact with the application
+- add new templates
+- add new addresses to index
+- fetch contract storage
+- fetch transactions
+
+See [here](core/rpc/README.md) for all the RPC APIs.
+
+## Development
+
+### Pre-Requisites
+- golang 1.13
+
+### Development Environment
+- Clone the Git repo with `git clone https://github.com/QuorumEngineering/quorum-reporting.git`
+- Fetch dependencies using gomod: `go get ./...`
+
+### Building
+
+#### Build on native OS
+Building the project uses standard go tooling: `go build` or `go build -o quorum-reporting`
+
+#### Build with Docker
 ```bash
 docker build . -t quorum-reporting
 ```
-* Run with local config (e.g. `config.docker.sample.toml`)
-```bash
-docker run --rm -p 6666:6666 --mount type=bind,source=$(pwd)/config.docker.sample.toml,target=/config.toml quorum-reporting:latest
-```
-
-## Architecture & Design
-
-
-```
-Quorum Reporting -----> [ Backend ] ----------> [ RPC Service ]
-                           |   |                       |
-                           |   +---------+             |
-                           |             |             |
-                           |             V             |
-   +-----------------------+------- [ Filter Service ] |
-   |                       |                    |      |
-   |                       |                    |      |
-   |                       V                    |      |
-   |              [ Monitor Service ]           |      |
-   |                       |                    |      |
-   |                       |                    |      |
-   |                       |                    |      |
-   |                       |                    |      |
-   |                       |                    |      |
-   V                       V                    V      V
-Quorum <--------- [ Block Monitor ] ----------> Database <---------- Visualization (e.g. Cakeshop)
-   ^                       |                       ^
-   |                       |                       |
-   |                       |                       | 
-   |                       |                       | 
-   |                       |                       |
-   |                       V                       |
-   +------- [ Transaction/Storage Monitor ] -------+
-```
-
-#### Database Schema
-
-Elasticsearch Database Schema [Reference](database/elasticsearch/README.md)
-
-#### RPC API Specification
-
-[Reference](core/rpc/README.md)
-
-## Roadmap
-
-#### Phase 0 (done)
-
-- Complete the base code architecture
-- Sync blocks & Store blocks/ transactions in a memory database
-- Filter transactions by registered addresses
-- Filter events by registered addresses
-- Dynamically change registered addresses, clean up and refilter
-- Expose basic RPC endpoints to serve queries
-- Unit tests & Github Actions CI
-
-#### Phase 1 (done)
-
-- Parse transaction/ event data inputs from contract ABI
-- Filter contract detailed storage by registered addresses (with dumpAccount available on geth side)
-- Resolve transactions with internal calls to registered addresses
-
-#### Phase 2 (done)
-
-- Design database schema & Integrate
-- Extend RPC APIs with complex queries
-- Containerize reporting
-
-#### Phase 3 (in progress)
-
-- Handle fail recover scenarios
-- Enhance performance
-- Integrate UI for visualization
-- Define reporting templates
-- Security
-  - configurable secure connection with Elasticsearch
-  - configurable secure connection with RPC endpoint
-
-#### Future Items
-
-- After Quorum supports go module, we should use Quorum module instead of ethereum 1.9.8
-- Use Docker-compose/Kubernetes for orchestration
