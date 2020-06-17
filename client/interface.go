@@ -12,6 +12,7 @@ type Client interface {
 	// from ethclient.Client
 	SubscribeNewHead(context.Context, chan<- *ethTypes.Header) (ethereum.Subscription, error)
 	BlockByNumber(context.Context, *big.Int) (*ethTypes.Block, error)
+	CallContract(ctx context.Context, msg ethereum.CallMsg, blockNumber *big.Int) ([]byte, error)
 
 	// ExecuteGraphQLQuery performs a fully constructed query against the Geth
 	// GraphQL server

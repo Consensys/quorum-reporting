@@ -74,28 +74,41 @@ func (bm *BlockMonitor) process(block *types.Block) error {
 				addrs = append(addrs, ic.To)
 			}
 		}
+
 		for _, addr := range addrs {
 			res, err := client.GetCode(bm.quorumClient, addr, tx.BlockHash)
 			if err != nil {
 				return err
 			}
 
-			// check ERC20
-			if checkAbiMatch(types.ERC20ABI, res) {
-				log.Info("Transaction deploys potential ERC20 contract.", "tx", tx.Hash.Hex(), "address", addr.Hex())
-				// add contract address
-				bm.db.AddAddresses([]common.Address{tx.CreatedContract})
-				// assign ERC20 template
-				bm.db.AssignTemplate(tx.CreatedContract, types.ERC20)
+			contractType, err := bm.checkEIP165(addr, block.Number)
+			if err != nil {
+				return err
 			}
-
-			// check ERC721
-			if checkAbiMatch(types.ERC721ABI, res) {
-				log.Info("Transaction deploys potential ERC721 contract.", "tx", tx.Hash.Hex(), "address", addr.Hex())
-				// add contract address
+			if contractType != "" {
+				log.Info("Contract implemented interface via ERC165", "interface", contractType, "address", addr.String())
 				bm.db.AddAddresses([]common.Address{tx.CreatedContract})
-				// assign ERC721 template
-				bm.db.AssignTemplate(tx.CreatedContract, types.ERC721)
+				bm.db.AssignTemplate(tx.CreatedContract, contractType)
+			} else {
+				//Check if contract has bytecode for contract types
+
+				// check ERC20
+				if checkAbiMatch(types.ERC20ABI, res) {
+					log.Info("Transaction deploys potential ERC20 contract.", "tx", tx.Hash.Hex(), "address", addr.Hex())
+					// add contract address
+					bm.db.AddAddresses([]common.Address{tx.CreatedContract})
+					// assign ERC20 template
+					bm.db.AssignTemplate(tx.CreatedContract, types.ERC20)
+				}
+
+				// check ERC721
+				if checkAbiMatch(types.ERC721ABI, res) {
+					log.Info("Transaction deploys potential ERC721 contract.", "tx", tx.Hash.Hex(), "address", addr.Hex())
+					// add contract address
+					bm.db.AddAddresses([]common.Address{tx.CreatedContract})
+					// assign ERC721 template
+					bm.db.AssignTemplate(tx.CreatedContract, types.ERC721)
+				}
 			}
 		}
 	}
@@ -198,4 +211,45 @@ func checkAbiMatch(abiToCheck abi.ABI, data hexutil.Bytes) bool {
 		}
 	}
 	return true
+}
+
+func (bm *BlockMonitor) checkEIP165(address common.Address, blockNum uint64) (string, error) {
+	//check if the contract implements EIP165
+
+	eip165Call, err := client.CallEIP165(bm.quorumClient, address, common.Hex2Bytes("01ffc9a70"), new(big.Int).SetUint64(blockNum))
+	if err != nil {
+		return "", err
+	}
+
+	if !eip165Call {
+		return "", nil
+	}
+
+	eip165CallCheck, err := client.CallEIP165(bm.quorumClient, address, common.Hex2Bytes("ffffffff"), new(big.Int).SetUint64(blockNum))
+	if err != nil {
+		return "", err
+	}
+	if eip165CallCheck {
+		return "", nil
+	}
+
+	//now we know it implements EIP165, so lets check the interfaces
+
+	erc20check, err := client.CallEIP165(bm.quorumClient, address, common.Hex2Bytes("36372b07"), new(big.Int).SetUint64(blockNum))
+	if err != nil {
+		return "", err
+	}
+	if erc20check {
+		return types.ERC20, nil
+	}
+
+	erc721check, err := client.CallEIP165(bm.quorumClient, address, common.Hex2Bytes("80ac58cd"), new(big.Int).SetUint64(blockNum))
+	if err != nil {
+		return "", err
+	}
+	if erc721check {
+		return types.ERC721, nil
+	}
+
+	return "", nil
 }

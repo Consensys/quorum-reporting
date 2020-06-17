@@ -41,6 +41,15 @@ func (qc *StubQuorumClient) BlockByNumber(ctx context.Context, blockNumber *big.
 	return nil, errors.New("not found")
 }
 
+func (qc *StubQuorumClient) CallContract(ctx context.Context, msg ethereum.CallMsg, blockNumber *big.Int) ([]byte, error) {
+	//for _, b := range qc.blocks {
+	//	if b.Number().Cmp(blockNumber) == 0 {
+	//		return b, nil
+	//	}
+	//}
+	return nil, errors.New("not implemented")
+}
+
 func (qc *StubQuorumClient) ExecuteGraphQLQuery(result interface{}, query string) error {
 	if resp, ok := qc.mockGraphQL[query]; ok {
 		out, _ := json.Marshal(resp)
