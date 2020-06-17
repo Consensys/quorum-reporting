@@ -7,6 +7,13 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+const (
+	ErrorLevel int = iota //0
+	WarnLevel             //1
+	InfoLevel             //2
+	DebugLevel            //3
+)
+
 func init() {
 	logrus.SetFormatter(&logrus.TextFormatter{FullTimestamp: true, ForceColors: true})
 	logrus.SetLevel(logrus.InfoLevel)

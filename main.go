@@ -4,6 +4,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"os"
 	"os/signal"
 	"syscall"
@@ -24,6 +25,12 @@ func main() {
 }
 
 func run() error {
+	// Set up logging with given verbosity
+	verbosity := log.DebugLevel
+	flag.IntVar(&verbosity, "verbosity", log.DebugLevel, "logging verbosity")
+	flag.Parse()
+	logrus.SetLevel(logrus.Level(verbosity + 2))
+
 	// expects one input which the config file
 	// read the config file path
 	var configFile string

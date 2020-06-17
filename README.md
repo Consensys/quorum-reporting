@@ -65,6 +65,15 @@ docker run -p <port mapping> --mount type=bind,source=<path to config>,target=/c
 
 A [sample configuration](./config.sample.toml) file has been provided with details about each of the options.
 
+Additionally, application logging verbosity can be controlled with the `-verbosity <level>` flag, where `<level>`
+ corresponds to:
+```
+0: ERROR
+1: WARNING
+2: INFO
+3: DEBUG
+```
+
 ### Interact with Quorum Reporting through RPC
 
 The application has a set of RPC API's that are used to interact with the application. See [here](core/rpc/README.md) for all the available RPC APIs.
