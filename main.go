@@ -40,13 +40,13 @@ func run() error {
 		return errors.New("config file path not given")
 	}
 
-	log.Info("config file found", "filename", configFile)
+	log.Info("Config file found", "filename", configFile)
 
 	// read the given config file
 	config, err := types.ReadConfig(configFile)
 	if err != nil {
-		log.Error("unable to read configuration", "err", err)
-		return errors.New("unable to read configuration")
+		log.Error("Unable to read configuration", "err", err)
+		return errors.New("Unable to read configuration")
 	}
 
 	// start the back end with given config

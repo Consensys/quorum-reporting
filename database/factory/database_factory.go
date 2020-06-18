@@ -20,10 +20,10 @@ func (dbFactory *Factory) Database(config *types.DatabaseConfig) (database.Datab
 		if err != nil {
 			return nil, err
 		}
-		log.Info("created database connection", "type", "elasticsearch")
+		log.Info("Created database connection", "type", "elasticsearch")
 		return NewDatabaseWithCache(db, config.CacheSize)
 	}
-	log.Info("created database connection", "type", "memory")
+	log.Info("Created database connection", "type", "memory")
 	return dbFactory.NewInMemoryDatabase(), nil
 }
 

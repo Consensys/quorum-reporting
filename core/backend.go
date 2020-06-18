@@ -48,7 +48,7 @@ func New(config types.ReportingConfig) (*Backend, error) {
 	if err != nil {
 		return nil, err
 	}
-	log.Info("consensus found", "algorithm", consensus)
+	log.Info("Consensus found", "algorithm", consensus)
 
 	dbFactory := factory.NewFactory()
 	db, err := dbFactory.Database(config.Database)
@@ -57,7 +57,7 @@ func New(config types.ReportingConfig) (*Backend, error) {
 	}
 
 	// store all templates
-	log.Info("adding templates from configuration file to database")
+	log.Info("Adding templates from configuration file to database")
 	for _, template := range config.Templates {
 		if err := db.AddTemplate(template.TemplateName, template.ABI, template.StorageLayout); err != nil {
 			return nil, err
@@ -68,7 +68,7 @@ func New(config types.ReportingConfig) (*Backend, error) {
 	for _, address := range config.Addresses {
 		initialAddresses = append(initialAddresses, address.Address)
 	}
-	log.Info("adding addresses from configuration file to database")
+	log.Info("Adding addresses from configuration file to database")
 	if err := db.AddAddresses(initialAddresses); err != nil {
 		return nil, err
 	}

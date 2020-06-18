@@ -51,13 +51,13 @@ func (fs *FilterService) Start() error {
 			case <-ticker.C:
 				current, err := fs.db.GetLastPersistedBlockNumber()
 				if err != nil {
-					log.Warn("fetching last persisted block number failed", "err", err)
+					log.Warn("Fetching last persisted block number failed", "err", err)
 					continue
 				}
-				log.Debug("last persisted block number found", "block number", current)
+				log.Debug("Last persisted block number found", "block number", current)
 				lastFilteredAll, lastFiltered, err := fs.getLastFiltered(current)
 				if err != nil {
-					log.Warn("fetching last filtered failed", "err", err)
+					log.Warn("Fetching last filtered failed", "err", err)
 					continue
 				}
 				for current > lastFiltered {
@@ -69,7 +69,7 @@ func (fs *FilterService) Start() error {
 					}
 					err := fs.index(lastFilteredAll, lastFiltered+1, endBlock)
 					if err != nil {
-						log.Warn("index block failed", "block number", lastFiltered, "err", err)
+						log.Warn("Index block failed", "block number", lastFiltered, "err", err)
 						break
 					}
 					lastFiltered = endBlock

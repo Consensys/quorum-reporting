@@ -45,7 +45,7 @@ func NewBatchWriter(db database.Database, batchWorkChan chan *BlockAndTransactio
 }
 
 func (bw *BatchWriter) Run(stopChan <-chan types.StopEvent) {
-	log.Info("starting batch block processor", "timeout period", time.Duration(bw.flushPeriod) * time.Second, "max blocks", bw.maxBlocks, "max txns", bw.maxTransactions)
+	log.Info("Starting batch block processor", "timeout period", time.Duration(bw.flushPeriod)*time.Second, "max blocks", bw.maxBlocks, "max txns", bw.maxTransactions)
 
 	ticker := time.NewTicker(time.Duration(bw.flushPeriod) * time.Second)
 	defer ticker.Stop()
@@ -53,24 +53,24 @@ func (bw *BatchWriter) Run(stopChan <-chan types.StopEvent) {
 		// Listen to new block channel and process if new block comes.
 		select {
 		case newWorkUnit := <-bw.BatchWorkChan:
-			log.Debug("next block found for batch processing", "block", newWorkUnit.block.Hash.String(), "tx count", len(newWorkUnit.txs))
+			log.Debug("Next block found for batch processing", "block", newWorkUnit.block.Hash.String(), "tx count", len(newWorkUnit.txs))
 			bw.currentWorkUnits = append(bw.currentWorkUnits, newWorkUnit)
 			bw.currentTransactionCount += len(newWorkUnit.txs)
 
 			if len(bw.currentWorkUnits) >= bw.maxBlocks || bw.currentTransactionCount >= bw.maxTransactions {
-				log.Info("max batch write limit reached")
+				log.Info("Max batch write limit reached")
 				//if the write fails, keep trying until it succeeds, waiting
 				//the defined timeout period between attempts
 				for err := bw.BatchWrite(); err != nil; err = bw.BatchWrite() {
-					log.Warn("batch write failed", "err", err)
+					log.Warn("Batch write failed", "err", err)
 					<-ticker.C
 				}
 			}
 		case <-ticker.C:
-			log.Debug("batch writing blocks/transactions from ticker")
+			log.Debug("Batch writing blocks/transactions from ticker")
 			//if this fails, it will try again on the next run
 			if err := bw.BatchWrite(); err != nil {
-				log.Warn("batch write failed", "err", err)
+				log.Warn("Batch write failed", "err", err)
 			}
 		case <-stopChan:
 			return
@@ -80,7 +80,7 @@ func (bw *BatchWriter) Run(stopChan <-chan types.StopEvent) {
 
 func (bw *BatchWriter) BatchWrite() error {
 	if len(bw.currentWorkUnits) == 0 {
-		log.Debug("no blocks/transaction to write")
+		log.Debug("No blocks/transaction to write")
 		return nil
 	}
 
@@ -91,7 +91,7 @@ func (bw *BatchWriter) BatchWrite() error {
 		allBlocks = append(allBlocks, workUnit.block)
 	}
 
-	log.Info("batch writing blocks and transactions", "block count", len(allBlocks), "tx count", len(allTxns))
+	log.Info("Batch writing blocks and transactions", "block count", len(allBlocks), "tx count", len(allTxns))
 
 	if err := bw.db.WriteTransactions(allTxns); err != nil {
 		return err

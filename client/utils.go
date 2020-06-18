@@ -12,7 +12,7 @@ import (
 )
 
 func DumpAddress(c Client, address common.Address, blockNumber uint64) (*state.DumpAccount, error) {
-	log.Debug("fetching account dump", "account", address.String(), "blocknumber", blockNumber)
+	log.Debug("Fetching account dump", "account", address.String(), "blocknumber", blockNumber)
 	dumpAccount := &state.DumpAccount{}
 	err := c.RPCCall(context.Background(), &dumpAccount, "debug_dumpAddress", address, hexutil.EncodeUint64(blockNumber))
 	if err != nil {
@@ -22,7 +22,7 @@ func DumpAddress(c Client, address common.Address, blockNumber uint64) (*state.D
 }
 
 func TraceTransaction(c Client, txHash common.Hash) (map[string]interface{}, error) {
-	log.Debug("tracing transaction", "tx", txHash.String())
+	log.Debug("Tracing transaction", "tx", txHash.String())
 
 	// Trace internal calls of the transaction
 	// Reference: https://github.com/ethereum/go-ethereum/issues/3128
@@ -38,7 +38,7 @@ func TraceTransaction(c Client, txHash common.Hash) (map[string]interface{}, err
 }
 
 func Consensus(c Client) (string, error) {
-	log.Debug("fetching consensus info")
+	log.Debug("Fetching consensus info")
 
 	var resp p2p.NodeInfo
 	err := c.RPCCall(context.Background(), &resp, "admin_nodeInfo")

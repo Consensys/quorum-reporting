@@ -20,25 +20,25 @@ type QuorumClient struct {
 }
 
 func NewQuorumClient(rawurl, qgurl string) (*QuorumClient, error) {
-	log.Debug("connecting to RPC endpoint", "url", rawurl)
+	log.Debug("Connecting to RPC endpoint", "url", rawurl)
 	rpcClient, err := ethRPC.Dial(rawurl)
 	if err != nil {
 		return nil, err
 	}
-	log.Debug("connected to RPC endpoint")
+	log.Debug("Connected to RPC endpoint")
 	rawClient := ethclient.NewClient(rpcClient)
 
 	// Create a client. (safe to share across requests)
 	graphqlClient := graphql.NewClient(qgurl)
 	quorumClient := &QuorumClient{rawClient, rpcClient, graphqlClient}
 	// Test graphql endpoint connection.
-	log.Debug("connecting to GraphQL endpoint", "url", qgurl)
+	log.Debug("Connecting to GraphQL endpoint", "url", qgurl)
 	var resp map[string]interface{}
 	err = quorumClient.ExecuteGraphQLQuery(&resp, graphqlQuery.CurrentBlockQuery())
 	if err != nil || len(resp) == 0 {
 		return nil, errors.New("call graphql endpoint failed")
 	}
-	log.Debug("connected to GraphQL endpoint")
+	log.Debug("Connected to GraphQL endpoint")
 	return quorumClient, err
 }
 

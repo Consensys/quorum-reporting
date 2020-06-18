@@ -39,13 +39,13 @@ func (handler *UIHandler) Start() {
 
 	go func() {
 		if err := handler.srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Error("unable to start UI", "err", err)
+			log.Error("Unable to start UI", "err", err)
 		}
 	}()
 }
 
 func (handler *UIHandler) Stop() error {
-	log.Info("stopping UI server")
+	log.Info("Stopping UI server")
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 

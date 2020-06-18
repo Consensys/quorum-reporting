@@ -144,12 +144,12 @@ func (m *MonitorService) syncHistoricBlocks(cancelChan chan bool, wg *sync.WaitG
 	if err != nil {
 		return err
 	}
-	log.Info("queried current block head from Quorum", "block number", currentBlockNumber)
+	log.Info("Queried current block head from Quorum", "block number", currentBlockNumber)
 	lastPersisted, err := m.db.GetLastPersistedBlockNumber()
 	if err != nil {
 		return err
 	}
-	log.Info("queried last persisted block", "block number", lastPersisted)
+	log.Info("Queried last persisted block", "block number", lastPersisted)
 
 	// Sync is called in a go routine so that it doesn't block main process.
 	go func() {
@@ -161,7 +161,7 @@ func (m *MonitorService) syncHistoricBlocks(cancelChan chan bool, wg *sync.WaitG
 			time.Sleep(time.Second)
 			err = m.blockMonitor.syncBlocks(err.EndBlockNumber(), currentBlockNumber, cancelChan)
 		}
-		log.Info("complete historical sync finished")
+		log.Info("Complete historical sync finished")
 	}()
 
 	return nil
@@ -180,7 +180,7 @@ func (m *MonitorService) listenToChainHead(cancelChan chan bool, stopChan chan b
 		for {
 			select {
 			case err := <-sub.Err():
-				log.Error("chain head event subscription error", "err", err)
+				log.Error("Chain head event subscription error", "err", err)
 				return
 			case header := <-headers:
 				m.blockMonitor.processChainHead(header)

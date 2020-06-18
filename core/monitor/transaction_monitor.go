@@ -36,7 +36,7 @@ func (tm *TransactionMonitor) PullTransactions(block *types.Block) ([]*types.Tra
 }
 
 func (tm *TransactionMonitor) createTransaction(block *types.Block, hash common.Hash) (*types.Transaction, error) {
-	log.Debug("processing transaction", "hash", hash.String())
+	log.Debug("Processing transaction", "hash", hash.String())
 
 	var txResult graphql.TransactionResult
 	if err := tm.quorumClient.ExecuteGraphQLQuery(&txResult, graphql.TransactionDetailQuery(hash)); err != nil {

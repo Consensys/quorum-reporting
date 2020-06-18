@@ -43,7 +43,7 @@ func NewRPCService(db database.Database, httpEndpoint string, vhosts []string, c
 }
 
 func (r *RPCService) Start() error {
-	log.Info("starting rpc service")
+	log.Info("Starting rpc service")
 
 	var modules []string
 	for _, apis := range r.apis {

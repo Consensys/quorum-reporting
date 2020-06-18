@@ -43,12 +43,12 @@ func (bm *BlockMonitor) startWorker(stopChan <-chan types.StopEvent) {
 			// Listen to new block channel and process if new block comes.
 			err := bm.process(block)
 			for err != nil {
-				log.Warn("error processing block", "block number", block.Number, "err", err)
+				log.Warn("Error processing block", "block number", block.Number, "err", err)
 				time.Sleep(time.Second)
 				err = bm.process(block)
 			}
 		case <-stopChan:
-			log.Debug("stop message received", "location", "BlockMonitor::startWorker")
+			log.Debug("Stop message received", "location", "BlockMonitor::startWorker")
 			return
 		}
 	}
@@ -71,14 +71,14 @@ func (bm *BlockMonitor) process(block *types.Block) error {
 }
 
 func (bm *BlockMonitor) currentBlockNumber() (uint64, error) {
-	log.Debug("fetching current block number")
+	log.Debug("Fetching current block number")
 
 	var currentBlockResult graphql.CurrentBlockResult
 	if err := bm.quorumClient.ExecuteGraphQLQuery(&currentBlockResult, graphql.CurrentBlockQuery()); err != nil {
 		return 0, err
 	}
 
-	log.Debug("current block number found", "number", currentBlockResult.Block.Number)
+	log.Debug("Current block number found", "number", currentBlockResult.Block.Number)
 	return hexutil.DecodeUint64(currentBlockResult.Block.Number)
 }
 
@@ -110,10 +110,10 @@ func (bm *BlockMonitor) syncBlocks(start, end uint64, stopChan chan bool) *types
 }
 
 func (bm *BlockMonitor) processChainHead(header *ethTypes.Header) {
-	log.Info("processing chain head", "block hash", header.Hash().String(), "block number", header.Number.String())
+	log.Info("Processing chain head", "block hash", header.Hash().String(), "block number", header.Number.String())
 	blockOrigin, err := bm.quorumClient.BlockByNumber(context.Background(), header.Number)
 	for err != nil {
-		log.Warn("error fetching block from Quorum", "block hash", header.Hash(), "block number", header.Number.String(), "err", err)
+		log.Warn("Error fetching block from Quorum", "block hash", header.Hash(), "block number", header.Number.String(), "err", err)
 		time.Sleep(1 * time.Second) //TODO: return err and let caller handle?
 		blockOrigin, err = bm.quorumClient.BlockByNumber(context.Background(), header.Number)
 	}
