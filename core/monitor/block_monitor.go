@@ -106,6 +106,7 @@ func (bm *BlockMonitor) syncBlocks(start, end uint64, stopChan chan bool) *types
 		case bm.newBlockChan <- bm.createBlock(blockOrigin):
 		}
 	}
+	log.Info("Complete historical sync finished")
 	return nil
 }
 

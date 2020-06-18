@@ -161,7 +161,6 @@ func (m *MonitorService) syncHistoricBlocks(cancelChan chan bool, wg *sync.WaitG
 			time.Sleep(time.Second)
 			err = m.blockMonitor.syncBlocks(err.EndBlockNumber(), currentBlockNumber, cancelChan)
 		}
-		log.Info("Complete historical sync finished")
 	}()
 
 	return nil
