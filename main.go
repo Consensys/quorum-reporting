@@ -19,7 +19,7 @@ func main() {
 	err := run()
 	log.Info("Exiting")
 	if err != nil {
-		log.Error(err.Error())
+		log.Error("error occurred in startup", "err", err.Error())
 		os.Exit(1)
 	}
 }
@@ -28,14 +28,14 @@ func run() error {
 	// Set up logging with given verbosity
 	verbosity := log.DebugLevel
 	flag.IntVar(&verbosity, "verbosity", log.DebugLevel, "logging verbosity")
-	flag.Parse()
-	logrus.SetLevel(logrus.Level(verbosity + 2))
 
 	// expects one input which the config file
 	// read the config file path
 	var configFile string
 	flag.StringVar(&configFile, "config", "config.toml", "config file")
 	flag.Parse()
+
+	logrus.SetLevel(logrus.Level(verbosity + 2))
 	if configFile == "" {
 		return errors.New("config file path not given")
 	}
@@ -46,7 +46,7 @@ func run() error {
 	config, err := types.ReadConfig(configFile)
 	if err != nil {
 		log.Error("Unable to read configuration", "err", err)
-		return errors.New("Unable to read configuration")
+		return errors.New("unable to read configuration")
 	}
 
 	// start the back end with given config
