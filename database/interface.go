@@ -21,6 +21,7 @@ type AddressDB interface {
 	AddAddresses([]common.Address) error
 	DeleteAddress(common.Address) error
 	GetAddresses() ([]common.Address, error)
+	GetContractTemplate(common.Address) (string, error)
 }
 
 // TemplateDB stores contract ABI/ Storage Layout of registered address
@@ -33,6 +34,8 @@ type TemplateDB interface {
 	AssignTemplate(common.Address, string) error
 	GetContractABI(common.Address) (string, error)
 	GetStorageLayout(common.Address) (string, error)
+	GetTemplates() ([]string, error)
+	GetTemplateDetails(string) (*types.Template, error)
 }
 
 // BlockDB stores the block details for all blocks.
@@ -54,7 +57,7 @@ type TransactionDB interface {
 
 // IndexDB stores the location to find all transactions/ events/ storage for a contract.
 type IndexDB interface {
-	IndexBlock([]common.Address, *types.Block) error
+	IndexBlocks([]common.Address, []*types.Block) error
 	IndexStorage(map[common.Address]*state.DumpAccount, uint64) error
 	GetContractCreationTransaction(common.Address) (common.Hash, error)
 	GetAllTransactionsToAddress(common.Address, *types.QueryOptions) ([]common.Hash, error)

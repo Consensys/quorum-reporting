@@ -28,7 +28,7 @@ func NewQuorumClient(rawurl, qgurl string) (*QuorumClient, error) {
 	quorumClient := &QuorumClient{rawClient, rpcClient, graphqlClient}
 	// Test graphql endpoint connection.
 	var resp map[string]interface{}
-	err = quorumClient.ExecuteGraphQLQuery(context.Background(), &resp, graphqlQuery.CurrentBlockQuery())
+	err = quorumClient.ExecuteGraphQLQuery(&resp, graphqlQuery.CurrentBlockQuery())
 	if err != nil || len(resp) == 0 {
 		return nil, errors.New("call graphql endpoint failed")
 	}
@@ -36,11 +36,11 @@ func NewQuorumClient(rawurl, qgurl string) (*QuorumClient, error) {
 }
 
 // Execute customized graphql query.
-func (qc *QuorumClient) ExecuteGraphQLQuery(ctx context.Context, result interface{}, query string) error {
+func (qc *QuorumClient) ExecuteGraphQLQuery(result interface{}, query string) error {
 	// Build a request from query.
 	req := graphql.NewRequest(query)
 	// Run it and capture the response.
-	return qc.graphqlClient.Run(ctx, req, &result)
+	return qc.graphqlClient.Run(context.Background(), req, &result)
 }
 
 // Execute customized rpc call.

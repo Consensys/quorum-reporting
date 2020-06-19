@@ -17,7 +17,7 @@ type FilterServiceDB interface {
 	GetLastPersistedBlockNumber() (uint64, error)
 	GetLastFiltered(common.Address) (uint64, error)
 	GetAddresses() ([]common.Address, error)
-	IndexBlock([]common.Address, *types.Block) error
+	IndexBlocks([]common.Address, []*types.Block) error
 	IndexStorage(map[common.Address]*state.DumpAccount, uint64) error
 }
 
@@ -43,7 +43,7 @@ func (fs *FilterService) Start() error {
 
 	go func() {
 		// Filter tick every second to index transactions/ storage
-		ticker := time.NewTicker(time.Second)
+		ticker := time.NewTicker(time.Second * 2)
 		defer ticker.Stop()
 		for {
 			select {
@@ -61,12 +61,18 @@ func (fs *FilterService) Start() error {
 				}
 				//log.Printf("Last filtered block %v.\n", lastFiltered)
 				for current > lastFiltered {
-					err := fs.index(lastFilteredAll, lastFiltered+1)
+					//index 1000 blocks at a time
+					//TODO: make configurable
+					endBlock := lastFiltered + 1000
+					if endBlock > current {
+						endBlock = current
+					}
+					err := fs.index(lastFilteredAll, lastFiltered+1, endBlock)
 					if err != nil {
 						log.Printf("index block %v failed: %v", lastFiltered, err)
 						break
 					}
-					lastFiltered++
+					lastFiltered = endBlock
 				}
 			case <-stopChan:
 				return
@@ -107,22 +113,61 @@ func (fs *FilterService) getLastFiltered(current uint64) (map[common.Address]uin
 	return lastFiltered, current, nil
 }
 
-func (fs *FilterService) index(lastFiltered map[common.Address]uint64, blockNumber uint64) error {
-	block, err := fs.db.ReadBlock(blockNumber)
-	if err != nil {
-		return err
+type IndexBatch struct {
+	addresses []common.Address
+	blocks    []*types.Block
+}
+
+func (fs *FilterService) index(lastFiltered map[common.Address]uint64, blockNumber uint64, endBlockNumber uint64) error {
+	log.Printf("Index from block %v to block %v.\n", blockNumber, endBlockNumber)
+	indexBatches := make([]IndexBatch, 0)
+	curBatch := IndexBatch{
+		addresses: make([]common.Address, 0),
+		blocks:    make([]*types.Block, 0),
 	}
-	addresses := []common.Address{}
-	for address, curLastFiltered := range lastFiltered {
-		if curLastFiltered < blockNumber {
-			addresses = append(addresses, address)
-			log.Printf("Index registered addresses %v at block %v.\n", address.Hex(), blockNumber)
+	addressInBatch := make(map[common.Address]bool)
+	for blockNumber <= endBlockNumber {
+		// check if a new batch should be created
+		oldBatch := curBatch
+		for address, curLastFiltered := range lastFiltered {
+			if curLastFiltered < blockNumber {
+				if !addressInBatch[address] {
+					addrList := curBatch.addresses
+					curBatch = IndexBatch{
+						addresses: []common.Address{address},
+						blocks:    make([]*types.Block, 0),
+					}
+					curBatch.addresses = append(curBatch.addresses, addrList...)
+					addressInBatch[address] = true
+				}
+				log.Printf("Index registered addresses %v at block %v.\n", address.Hex(), blockNumber)
+			}
 		}
+		// if new batch is created, append old batch to indexBatches
+		if len(oldBatch.addresses) > 0 && len(curBatch.addresses) > len(oldBatch.addresses) {
+			indexBatches = append(indexBatches, oldBatch)
+		}
+		// appending block to current batch
+		block, err := fs.db.ReadBlock(blockNumber)
+		if err != nil {
+			return err
+		}
+		curBatch.blocks = append(curBatch.blocks, block)
+		blockNumber++
+	}
+	if len(curBatch.addresses) > 0 {
+		indexBatches = append(indexBatches, curBatch)
 	}
 
-	if err = fs.storageFilter.IndexStorage(addresses, blockNumber); err != nil {
-		return err
+	// index storage and blocks for all batches
+	for _, batch := range indexBatches {
+		if err := fs.storageFilter.IndexStorage(batch.addresses, batch.blocks[0].Number, batch.blocks[len(batch.blocks)-1].Number); err != nil {
+			return err
+		}
+		// if IndexStorage has an error, IndexBlocks is never called, last filtered will not be updated
+		if err := fs.db.IndexBlocks(batch.addresses, batch.blocks); err != nil {
+			return err
+		}
 	}
-	// if IndexStorage has an error, IndexBlock is never called, last filtered will not be updated
-	return fs.db.IndexBlock(addresses, block)
+	return nil
 }

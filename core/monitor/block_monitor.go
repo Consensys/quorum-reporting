@@ -2,16 +2,15 @@ package monitor
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"math/big"
 	"strings"
+	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
-	"github.com/mitchellh/mapstructure"
 
 	"quorumengineering/quorum-report/client"
 	"quorumengineering/quorum-report/database"
@@ -45,9 +44,11 @@ func (bm *BlockMonitor) startWorker(stopChan <-chan types.StopEvent) {
 		case block := <-bm.newBlockChan:
 			// Listen to new block channel and process if new block comes.
 			err := bm.process(block)
-			if err != nil {
-				fmt.Printf("process block %v error: %v\n", block.Number, err)
-				bm.newBlockChan <- block
+			for err != nil {
+				log.Printf("Process block %v error: %v.\n", block.Number, err)
+				//log.Println("Waiting a second before processing...") //TODO: this should be at a "debug" level
+				time.Sleep(time.Second)
+				err = bm.process(block)
 			}
 		case <-stopChan:
 			return
@@ -109,22 +110,14 @@ func (bm *BlockMonitor) process(block *types.Block) error {
 }
 
 func (bm *BlockMonitor) currentBlockNumber() (uint64, error) {
-	var (
-		resp         map[string]interface{}
-		currentBlock graphql.CurrentBlock
-	)
-	err := bm.quorumClient.ExecuteGraphQLQuery(context.Background(), &resp, graphql.CurrentBlockQuery())
-	if err != nil {
+	var currentBlockResult graphql.CurrentBlockResult
+	if err := bm.quorumClient.ExecuteGraphQLQuery(&currentBlockResult, graphql.CurrentBlockQuery()); err != nil {
 		return 0, err
 	}
-	err = mapstructure.Decode(resp["block"].(map[string]interface{}), &currentBlock)
-	if err != nil {
-		return 0, err
-	}
-	return hexutil.DecodeUint64(currentBlock.Number)
+	return hexutil.DecodeUint64(currentBlockResult.Block.Number)
 }
 
-func (bm *BlockMonitor) syncBlocks(start, end uint64, stopChan chan types.StopEvent) *types.SyncError {
+func (bm *BlockMonitor) syncBlocks(start, end uint64, stopChan chan bool) *types.SyncError {
 	if start > end {
 		return nil
 	}

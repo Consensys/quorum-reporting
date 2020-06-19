@@ -15,6 +15,7 @@ func TestIndexBlock(t *testing.T) {
 	// setup
 	mockRPC := map[string]interface{}{
 		"debug_dumpAddress<common.Address Value>0x4": &state.DumpAccount{},
+		"debug_dumpAddress<common.Address Value>0x5": &state.DumpAccount{},
 		"debug_dumpAddress<common.Address Value>0x6": &state.DumpAccount{},
 	}
 	db := &FakeDB{[]common.Address{{1}, {2}}, map[common.Address]uint64{{1}: 3, {2}: 5}}
@@ -34,7 +35,7 @@ func TestIndexBlock(t *testing.T) {
 		t.Fatalf("expected last filtered %v, but got %v", 3, lastFiltered)
 	}
 	// test fs.index
-	err = fs.index(lastFilteredAll, 4)
+	err = fs.index(lastFilteredAll, 4, 4)
 	if err != nil {
 		t.Fatalf("expected no error, but got %v", err)
 	}
@@ -44,7 +45,8 @@ func TestIndexBlock(t *testing.T) {
 	if db.lastFiltered[common.Address{2}] != 5 {
 		t.Fatalf("expected common.Address{2} last filtered %v, but got %v", 5, db.lastFiltered[common.Address{2}])
 	}
-	err = fs.index(lastFilteredAll, 6)
+	// index multiple blocks
+	err = fs.index(lastFilteredAll, 5, 6)
 	if db.lastFiltered[common.Address{1}] != 6 {
 		t.Fatalf("expected common.Address{1} last filtered %v, but got %v", 6, db.lastFiltered[common.Address{1}])
 	}
@@ -79,6 +81,13 @@ func (f *FakeDB) IndexBlock(addresses []common.Address, block *types.Block) erro
 		if f.lastFiltered[address] < block.Number {
 			f.lastFiltered[address] = block.Number
 		}
+	}
+	return nil
+}
+
+func (f *FakeDB) IndexBlocks(addresses []common.Address, blocks []*types.Block) error {
+	for _, block := range blocks {
+		f.IndexBlock(addresses, block)
 	}
 	return nil
 }

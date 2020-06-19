@@ -13,8 +13,6 @@ import (
 //TODO: Arbitrary for now, allow for updating based on seen blocks?
 const maxTransactionMultiplier = 10
 
-const timeoutPeriod = 2 * time.Second
-
 type BlockAndTransactions struct {
 	block *types.Block
 	txs   []*types.Transaction
@@ -23,6 +21,7 @@ type BlockAndTransactions struct {
 type BatchWriter struct {
 	maxBlocks       int
 	maxTransactions int
+	flushPeriod     int
 
 	currentWorkUnits        []*BlockAndTransactions
 	currentTransactionCount int
@@ -33,10 +32,11 @@ type BatchWriter struct {
 	stopFeed event.Feed
 }
 
-func NewBatchWriter(batchWorkChan chan *BlockAndTransactions, db database.Database) *BatchWriter {
+func NewBatchWriter(db database.Database, batchWorkChan chan *BlockAndTransactions, flushPeriod int) *BatchWriter {
 	bp := &BatchWriter{
 		maxBlocks:               cap(batchWorkChan),
 		maxTransactions:         maxTransactionMultiplier * cap(batchWorkChan),
+		flushPeriod:             flushPeriod,
 		currentWorkUnits:        make([]*BlockAndTransactions, 0, cap(batchWorkChan)),
 		currentTransactionCount: 0,
 		BatchWorkChan:           batchWorkChan,
@@ -46,7 +46,7 @@ func NewBatchWriter(batchWorkChan chan *BlockAndTransactions, db database.Databa
 }
 
 func (bw *BatchWriter) Run(stopChan <-chan types.StopEvent) {
-	ticker := time.NewTicker(timeoutPeriod)
+	ticker := time.NewTicker(time.Duration(bw.flushPeriod) * time.Second)
 	for {
 		select {
 		case newWorkUnit := <-bw.BatchWorkChan:
@@ -61,8 +61,6 @@ func (bw *BatchWriter) Run(stopChan <-chan types.StopEvent) {
 					<-ticker.C
 				}
 			}
-			ticker.Stop()
-			ticker = time.NewTicker(timeoutPeriod)
 		case <-ticker.C:
 			//if this fails, it will try again on the next run
 			if err := bw.BatchWrite(); err != nil {
@@ -82,9 +80,9 @@ func (bw *BatchWriter) BatchWrite() error {
 
 	allTxns := make([]*types.Transaction, 0, bw.currentTransactionCount)
 	allBlocks := make([]*types.Block, 0, len(bw.currentWorkUnits))
-	for _, workunit := range bw.currentWorkUnits {
-		allTxns = append(allTxns, workunit.txs...)
-		allBlocks = append(allBlocks, workunit.block)
+	for _, workUnit := range bw.currentWorkUnits {
+		allTxns = append(allTxns, workUnit.txs...)
+		allBlocks = append(allBlocks, workUnit.block)
 	}
 
 	err := bw.db.WriteTransactions(allTxns)

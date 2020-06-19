@@ -1,6 +1,14 @@
 package graphql
 
-type CurrentBlock struct {
+type CurrentBlockResult struct {
+	Block Block
+}
+
+type TransactionResult struct {
+	Transaction Transaction
+}
+
+type Block struct {
 	Number    string
 	Hash      string
 	Timestamp string

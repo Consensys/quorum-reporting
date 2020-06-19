@@ -160,6 +160,14 @@ func (es *ElasticsearchDB) GetAddresses() ([]common.Address, error) {
 	return converted, nil
 }
 
+func (es *ElasticsearchDB) GetContractTemplate(address common.Address) (string, error) {
+	contract, err := es.getContractByAddress(address)
+	if err != nil {
+		return "", err
+	}
+	return contract.TemplateName, nil
+}
+
 //ABIDB
 func (es *ElasticsearchDB) AddContractABI(address common.Address, abi string) error {
 	// check contract & template existence before updating
@@ -285,6 +293,31 @@ func (es *ElasticsearchDB) AddTemplate(name string, abi string, layout string) e
 
 func (es *ElasticsearchDB) AssignTemplate(address common.Address, name string) error {
 	return es.updateContract(address, "templateName", name)
+}
+
+func (es *ElasticsearchDB) GetTemplates() ([]string, error) {
+	results, err := es.apiClient.ScrollAllResults(TemplateIndex, QueryAllTemplateNamesTemplate)
+	if err != nil {
+		return nil, errors.New("error fetching templates: " + err.Error())
+	}
+	converted := make([]string, len(results))
+	for i, result := range results {
+		data := result.(map[string]interface{})["_source"].(map[string]interface{})
+		converted[i] = data["templateName"].(string)
+	}
+	return converted, nil
+}
+
+func (es *ElasticsearchDB) GetTemplateDetails(templateName string) (*types.Template, error) {
+	template, err := es.getTemplateByName(templateName)
+	if err != nil {
+		return nil, err
+	}
+	return &types.Template{
+		TemplateName:  templateName,
+		ABI:           template.ABI,
+		StorageLayout: template.StorageABI,
+	}, nil
 }
 
 // BlockDB
@@ -461,20 +494,25 @@ func (es *ElasticsearchDB) ReadTransaction(hash common.Hash) (*types.Transaction
 }
 
 // IndexDB
-func (es *ElasticsearchDB) IndexBlock(addresses []common.Address, block *types.Block) error {
-	indexer := NewBlockIndexer(addresses, []*types.Block{block}, es)
+
+func (es *ElasticsearchDB) IndexBlocks(addresses []common.Address, blocks []*types.Block) error {
+	indexer := NewBlockIndexer(addresses, blocks, es)
 	if err := indexer.Index(); err != nil {
 		return err
 	}
-
-	return es.updateAllLastFiltered(addresses, block.Number)
+	return es.updateAllLastFiltered(addresses, blocks[len(blocks)-1].Number)
 }
 
 func (es *ElasticsearchDB) IndexStorage(rawStorage map[common.Address]*state.DumpAccount, blockNumber uint64) error {
 	biState := es.apiClient.GetBulkHandler(StateIndex)
 	biStorage := es.apiClient.GetBulkHandler(StorageIndex)
 
+	var (
+		wg        sync.WaitGroup
+		returnErr error
+	)
 	for address, dumpAccount := range rawStorage {
+		wg.Add(2)
 		stateObj := State{
 			Address:     address,
 			BlockNumber: blockNumber,
@@ -491,6 +529,13 @@ func (es *ElasticsearchDB) IndexStorage(rawStorage map[common.Address]*state.Dum
 				Action:     "create",
 				DocumentID: address.String() + "-" + strconv.FormatUint(blockNumber, 10),
 				Body:       esutil.NewJSONReader(stateObj),
+				OnSuccess: func(ctx context.Context, item esutil.BulkIndexerItem, item2 esutil.BulkIndexerResponseItem) {
+					wg.Done()
+				},
+				OnFailure: func(ctx context.Context, item esutil.BulkIndexerItem, item2 esutil.BulkIndexerResponseItem, err error) {
+					returnErr = err
+					wg.Done()
+				},
 			},
 		)
 		biStorage.Add(
@@ -499,11 +544,18 @@ func (es *ElasticsearchDB) IndexStorage(rawStorage map[common.Address]*state.Dum
 				Action:     "create",
 				DocumentID: "0x" + dumpAccount.Root,
 				Body:       esutil.NewJSONReader(storageMap),
+				OnSuccess: func(ctx context.Context, item esutil.BulkIndexerItem, item2 esutil.BulkIndexerResponseItem) {
+					wg.Done()
+				},
+				OnFailure: func(ctx context.Context, item esutil.BulkIndexerItem, item2 esutil.BulkIndexerResponseItem, err error) {
+					returnErr = err
+					wg.Done()
+				},
 			},
 		)
 	}
-	// TODO: must make sure bulk update is successful and also not blocking to slow down...
-	return nil
+	wg.Wait()
+	return returnErr
 }
 
 func (es *ElasticsearchDB) GetContractCreationTransaction(address common.Address) (common.Hash, error) {
@@ -791,20 +843,32 @@ func (es *ElasticsearchDB) updateContract(address common.Address, property strin
 func (es *ElasticsearchDB) createEvents(events []*types.Event) error {
 	bi := es.apiClient.GetBulkHandler(EventIndex)
 
+	var (
+		wg        sync.WaitGroup
+		returnErr error
+	)
 	for _, event := range events {
 		var e Event
 		e.From(event)
+		wg.Add(1)
 		bi.Add(
 			context.Background(),
 			esutil.BulkIndexerItem{
 				Action:     "create",
 				DocumentID: strconv.FormatUint(event.BlockNumber, 10) + "-" + strconv.FormatUint(event.Index, 10),
 				Body:       esutil.NewJSONReader(e),
+				OnSuccess: func(ctx context.Context, item esutil.BulkIndexerItem, item2 esutil.BulkIndexerResponseItem) {
+					wg.Done()
+				},
+				OnFailure: func(ctx context.Context, item esutil.BulkIndexerItem, item2 esutil.BulkIndexerResponseItem, err error) {
+					returnErr = err
+					wg.Done()
+				},
 			},
 		)
 	}
-	// TODO: must make sure bulk update is successful and also not blocking to slow down...
-	return nil
+	wg.Wait()
+	return returnErr
 }
 
 func (es *ElasticsearchDB) Stop() {

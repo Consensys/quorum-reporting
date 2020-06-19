@@ -125,6 +125,12 @@ func (db *MemoryDB) GetAddresses() ([]common.Address, error) {
 	return db.addressDB, nil
 }
 
+func (db *MemoryDB) GetContractTemplate(address common.Address) (string, error) {
+	db.mux.RLock()
+	defer db.mux.RUnlock()
+	return db.templateDB[address], nil
+}
+
 func (db *MemoryDB) AddContractABI(address common.Address, abi string) error {
 	db.mux.Lock()
 	defer db.mux.Unlock()
@@ -166,6 +172,34 @@ func (db *MemoryDB) AssignTemplate(address common.Address, name string) error {
 	defer db.mux.Unlock()
 	db.templateDB[address] = name
 	return nil
+}
+
+func (db *MemoryDB) GetTemplates() ([]string, error) {
+	db.mux.RLock()
+	defer db.mux.RUnlock()
+	// merge abiDB and storageLayoutDB to find the full template name list
+	templateNames := make(map[string]bool)
+	for template, _ := range db.abiDB {
+		templateNames[template] = true
+	}
+	for template, _ := range db.storageLayoutDB {
+		templateNames[template] = true
+	}
+	res := make([]string, 0)
+	for template, _ := range templateNames {
+		res = append(res, template)
+	}
+	return res, nil
+}
+
+func (db *MemoryDB) GetTemplateDetails(templateName string) (*types.Template, error) {
+	db.mux.RLock()
+	defer db.mux.RUnlock()
+	return &types.Template{
+		TemplateName:  templateName,
+		ABI:           db.abiDB[templateName],
+		StorageLayout: db.storageLayoutDB[templateName],
+	}, nil
 }
 
 func (db *MemoryDB) WriteBlock(block *types.Block) error {
@@ -259,25 +293,9 @@ func (db *MemoryDB) IndexStorage(rawStorage map[common.Address]*state.DumpAccoun
 	return nil
 }
 
-func (db *MemoryDB) IndexBlock(addresses []common.Address, block *types.Block) error {
-	db.mux.Lock()
-	defer db.mux.Unlock()
-	// filter out registered and unfiltered address only
-	filteredAddresses := map[common.Address]bool{}
-	for _, address := range addresses {
-		if db.addressIsRegistered(address) && db.lastFiltered[address] < block.Number {
-			filteredAddresses[address] = true
-			log.Printf("Index registered address %v at block %v.\n", address.Hex(), block.Number)
-		}
-	}
-
-	// index transactions and events
-	for _, txHash := range block.Transactions {
-		db.indexTransaction(filteredAddresses, db.txDB[txHash])
-	}
-
-	for address := range filteredAddresses {
-		db.lastFiltered[address] = block.Number
+func (db *MemoryDB) IndexBlocks(addresses []common.Address, blocks []*types.Block) error {
+	for _, block := range blocks {
+		db.indexBlock(addresses, block)
 	}
 	return nil
 }
@@ -381,6 +399,29 @@ func (db *MemoryDB) addressIsRegistered(address common.Address) bool {
 		}
 	}
 	return false
+}
+
+func (db *MemoryDB) indexBlock(addresses []common.Address, block *types.Block) error {
+	db.mux.Lock()
+	defer db.mux.Unlock()
+	// filter out registered and unfiltered address only
+	filteredAddresses := map[common.Address]bool{}
+	for _, address := range addresses {
+		if db.addressIsRegistered(address) && db.lastFiltered[address] < block.Number {
+			filteredAddresses[address] = true
+			log.Printf("Index registered address %v at block %v.\n", address.Hex(), block.Number)
+		}
+	}
+
+	// index transactions and events
+	for _, txHash := range block.Transactions {
+		db.indexTransaction(filteredAddresses, db.txDB[txHash])
+	}
+
+	for address := range filteredAddresses {
+		db.lastFiltered[address] = block.Number
+	}
+	return nil
 }
 
 func (db *MemoryDB) indexTransaction(filteredAddresses map[common.Address]bool, tx *types.Transaction) {
