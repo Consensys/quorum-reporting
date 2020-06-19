@@ -1,6 +1,7 @@
 package client
 
 import (
+	"math/big"
 	"testing"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -129,4 +130,44 @@ func TestGetCode_WithError(t *testing.T) {
 	code, err := GetCode(stubClient, address, blockHash)
 	assert.EqualError(t, err, "not found")
 	assert.Nil(t, code)
+}
+
+func TestEIP165(t *testing.T) {
+	stubClient := NewStubQuorumClient(nil, nil, nil)
+
+	address := common.HexToAddress("0x1349f3e1b8d71effb47b840594ff27da7e603d17")
+
+	exists, err := CallEIP165(stubClient, address, []byte("1234"), big.NewInt(2))
+	assert.Nil(t, err)
+	assert.True(t, exists)
+}
+
+func TestEIP165_WithWrongInterfaceLengthError(t *testing.T) {
+	stubClient := NewStubQuorumClient(nil, nil, nil)
+
+	address := common.HexToAddress("0x1349f3e1b8d71effb47b840594ff27da7e603d17")
+
+	exists, err := CallEIP165(stubClient, address, []byte("1234567890"), new(big.Int))
+	assert.EqualError(t, err, "interfaceId wrong size")
+	assert.False(t, exists)
+}
+
+func TestEIP165_WithClientError(t *testing.T) {
+	stubClient := NewStubQuorumClient(nil, nil, nil)
+
+	address := common.HexToAddress("0x1349f3e1b8d71effb47b840594ff27da7e603d17")
+
+	exists, err := CallEIP165(stubClient, address, []byte("1234"), new(big.Int))
+	assert.EqualError(t, err, "not found")
+	assert.False(t, exists)
+}
+
+func TestEIP165_WithWrongSizeResult(t *testing.T) {
+	stubClient := NewStubQuorumClient(nil, nil, nil)
+
+	address := common.HexToAddress("0x1349f3e1b8d71effb47b840594ff27da7e603d17")
+
+	exists, err := CallEIP165(stubClient, address, []byte("1234"), big.NewInt(1))
+	assert.Nil(t, err)
+	assert.False(t, exists)
 }

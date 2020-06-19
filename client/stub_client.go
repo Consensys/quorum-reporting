@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"github.com/ethereum/go-ethereum/common"
 	"math/big"
 	"reflect"
 
@@ -42,12 +43,13 @@ func (qc *StubQuorumClient) BlockByNumber(ctx context.Context, blockNumber *big.
 }
 
 func (qc *StubQuorumClient) CallContract(ctx context.Context, msg ethereum.CallMsg, blockNumber *big.Int) ([]byte, error) {
-	//for _, b := range qc.blocks {
-	//	if b.Number().Cmp(blockNumber) == 0 {
-	//		return b, nil
-	//	}
-	//}
-	return nil, errors.New("not implemented")
+	if blockNumber.Uint64() == 0 {
+		return nil, errors.New("not found")
+	}
+	if blockNumber.Uint64() == 1 {
+		return []byte{1}, nil
+	}
+	return common.RightPadBytes([]byte{1}, 32), nil
 }
 
 func (qc *StubQuorumClient) ExecuteGraphQLQuery(result interface{}, query string) error {
