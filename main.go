@@ -4,10 +4,11 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"github.com/sirupsen/logrus"
 	"os"
 	"os/signal"
 	"syscall"
+
+	"github.com/sirupsen/logrus"
 
 	"quorumengineering/quorum-report/core"
 	"quorumengineering/quorum-report/log"
@@ -26,11 +27,9 @@ func main() {
 
 func run() error {
 	// Set up logging with given verbosity
-	verbosity := log.DebugLevel
-	flag.IntVar(&verbosity, "verbosity", log.DebugLevel, "logging verbosity")
-
-	// expects one input which the config file
-	// read the config file path
+	var verbosity int
+	flag.IntVar(&verbosity, "verbosity", log.InfoLevel, "logging verbosity")
+	// Read config file path
 	var configFile string
 	flag.StringVar(&configFile, "config", "config.toml", "config file")
 	flag.Parse()
