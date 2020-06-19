@@ -82,7 +82,7 @@ func (bm *BlockMonitor) process(block *types.Block) error {
 
 			// check ERC20
 			if checkAbiMatch(types.ERC20ABI, res) {
-				log.Printf("tx %v deploys %v which is a potential ERC20 contract.\n", tx.Hash.Hex(), addr.Hex())
+				log.Info("Transaction deploys potential ERC20 contract.", "tx", tx.Hash.Hex(), "address", addr.Hex())
 				// add contract address
 				bm.db.AddAddresses([]common.Address{tx.CreatedContract})
 				// assign ERC20 template
@@ -91,7 +91,7 @@ func (bm *BlockMonitor) process(block *types.Block) error {
 
 			// check ERC721
 			if checkAbiMatch(types.ERC721ABI, res) {
-				log.Printf("tx %v deploys %v which is a potential ERC721 contract.\n", tx.Hash.Hex(), addr.Hex())
+				log.Info("Transaction deploys potential ERC721 contract.", "tx", tx.Hash.Hex(), "address", addr.Hex())
 				// add contract address
 				bm.db.AddAddresses([]common.Address{tx.CreatedContract})
 				// assign ERC721 template
