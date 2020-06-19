@@ -2,7 +2,6 @@ package monitor
 
 import (
 	"context"
-	"log"
 	"math/big"
 	"time"
 
@@ -13,6 +12,7 @@ import (
 	"quorumengineering/quorum-report/client"
 	"quorumengineering/quorum-report/database"
 	"quorumengineering/quorum-report/graphql"
+	"quorumengineering/quorum-report/log"
 	"quorumengineering/quorum-report/types"
 )
 
@@ -43,12 +43,12 @@ func (bm *BlockMonitor) startWorker(stopChan <-chan types.StopEvent) {
 			// Listen to new block channel and process if new block comes.
 			err := bm.process(block)
 			for err != nil {
-				log.Printf("Process block %v error: %v.\n", block.Number, err)
-				//log.Println("Waiting a second before processing...") //TODO: this should be at a "debug" level
+				log.Warn("Error processing block", "block number", block.Number, "err", err)
 				time.Sleep(time.Second)
 				err = bm.process(block)
 			}
 		case <-stopChan:
+			log.Debug("Stop message received", "location", "BlockMonitor::startWorker")
 			return
 		}
 	}
@@ -71,10 +71,14 @@ func (bm *BlockMonitor) process(block *types.Block) error {
 }
 
 func (bm *BlockMonitor) currentBlockNumber() (uint64, error) {
+	log.Debug("Fetching current block number")
+
 	var currentBlockResult graphql.CurrentBlockResult
 	if err := bm.quorumClient.ExecuteGraphQLQuery(&currentBlockResult, graphql.CurrentBlockQuery()); err != nil {
 		return 0, err
 	}
+
+	log.Debug("Current block number found", "number", currentBlockResult.Block.Number)
 	return hexutil.DecodeUint64(currentBlockResult.Block.Number)
 }
 
@@ -83,7 +87,7 @@ func (bm *BlockMonitor) syncBlocks(start, end uint64, stopChan chan bool) *types
 		return nil
 	}
 
-	log.Printf("Start to sync historic blocks from %v to %v. \n", start, end)
+	log.Info("Syncing historic blocks", "start", start, "end", end)
 	for i := start; i <= end; i++ {
 		select {
 		case <-stopChan:
@@ -93,7 +97,6 @@ func (bm *BlockMonitor) syncBlocks(start, end uint64, stopChan chan bool) *types
 
 		blockOrigin, err := bm.quorumClient.BlockByNumber(context.Background(), big.NewInt(int64(i)))
 		if err != nil {
-			// TODO: if quorum node is down, reconnect?
 			return types.NewSyncError(err.Error(), i)
 		}
 
@@ -103,13 +106,16 @@ func (bm *BlockMonitor) syncBlocks(start, end uint64, stopChan chan bool) *types
 		case bm.newBlockChan <- bm.createBlock(blockOrigin):
 		}
 	}
+	log.Info("Complete historical sync finished")
 	return nil
 }
 
 func (bm *BlockMonitor) processChainHead(header *ethTypes.Header) {
+	log.Info("Processing chain head", "block hash", header.Hash().String(), "block number", header.Number.String())
 	blockOrigin, err := bm.quorumClient.BlockByNumber(context.Background(), header.Number)
 	for err != nil {
-		log.Printf("get block with hash %v error: %v\n", header.Hash(), err)
+		log.Warn("Error fetching block from Quorum", "block hash", header.Hash(), "block number", header.Number.String(), "err", err)
+		time.Sleep(1 * time.Second) //TODO: return err and let caller handle?
 		blockOrigin, err = bm.quorumClient.BlockByNumber(context.Background(), header.Number)
 	}
 	bm.newBlockChan <- bm.createBlock(blockOrigin)

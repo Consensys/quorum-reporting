@@ -2,12 +2,13 @@ package types
 
 import (
 	"errors"
-	"log"
 	"strings"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
+
+	"quorumengineering/quorum-report/log"
 )
 
 type ParsedTransaction struct {
@@ -23,7 +24,7 @@ func (ptx *ParsedTransaction) ParseTransaction(rawABI string) error {
 	if ptx.RawTransaction == nil {
 		return errors.New("transaction is nil or invalid")
 	}
-	log.Printf("Parse transaction %v.\n", ptx.RawTransaction.Hash.Hex())
+	log.Debug("Parse transaction ", "tx", ptx.RawTransaction.Hash.Hex())
 	// set defaults
 	var data []byte
 	if len(ptx.RawTransaction.PrivateData) > 0 {
@@ -75,7 +76,7 @@ func (pe *ParsedEvent) ParseEvent(rawABI string) error {
 	if pe.RawEvent == nil || pe.RawEvent.Topics == nil {
 		return errors.New("event is nil or invalid")
 	}
-	log.Printf("Parse event %v.\n", pe.RawEvent.Topics[0].Hex())
+	log.Debug("Parse event", "event", pe.RawEvent.Topics[0].Hex())
 	if eventABI, err := parsedABI.EventByID(pe.RawEvent.Topics[0]); err == nil {
 		pe.Sig = eventABI.String()
 		pe.ParsedData = map[string]interface{}{}

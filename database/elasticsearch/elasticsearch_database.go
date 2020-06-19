@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"strconv"
 	"strings"
 	"sync"
@@ -15,6 +14,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/state"
 
+	"quorumengineering/quorum-report/log"
 	"quorumengineering/quorum-report/types"
 )
 
@@ -29,8 +29,8 @@ func New(client APIClient) (*ElasticsearchDB, error) {
 
 	initialized, err := db.checkIsInitialized()
 	if err != nil {
-		log.Printf("Error communicating with ElasticSearch: %v.\n", err)
-		log.Println("Please check all ElasticSearch settings, including certificates, URL and username/password.")
+		log.Error("Error communicating with ElasticSearch", "err", err)
+		log.Error("Please check all ElasticSearch settings, including certificates, URL and username/password.")
 		return nil, err
 	}
 	if !initialized {

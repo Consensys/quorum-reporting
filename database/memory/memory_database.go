@@ -2,12 +2,12 @@ package memory
 
 import (
 	"errors"
-	"log"
 	"sync"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/state"
 
+	"quorumengineering/quorum-report/log"
 	"quorumengineering/quorum-report/types"
 )
 
@@ -205,26 +205,25 @@ func (db *MemoryDB) GetTemplateDetails(templateName string) (*types.Template, er
 func (db *MemoryDB) WriteBlock(block *types.Block) error {
 	db.mux.Lock()
 	defer db.mux.Unlock()
-	if block != nil {
-		blockNumber := block.Number
-		db.blockDB[blockNumber] = block
-		// Update last persisted block number.
-		if blockNumber == db.lastPersistedBlockNumber+1 {
-			for {
-				if _, ok := db.blockDB[blockNumber+1]; ok {
-					blockNumber++
-				} else {
-					break
-				}
-			}
-			db.lastPersistedBlockNumber = blockNumber
-		}
-		// debug printing
-		log.Printf("Block stored: number = %v, hash = %v.\n", block.Number, block.Hash.Hex())
-		log.Printf("Last persisted block: %v.\n", db.lastPersistedBlockNumber)
-		return nil
+	if block == nil {
+		return errors.New("block is nil")
 	}
-	return errors.New("block is nil")
+	blockNumber := block.Number
+	db.blockDB[blockNumber] = block
+	// Update last persisted block number.
+	if blockNumber == db.lastPersistedBlockNumber+1 {
+		for {
+			if _, ok := db.blockDB[blockNumber+1]; ok {
+				blockNumber++
+			} else {
+				break
+			}
+		}
+		db.lastPersistedBlockNumber = blockNumber
+	}
+	log.Debug("Block stored", "number", block.Number, "hash", block.Hash.String())
+	log.Debug("Last persisted block", "number", db.lastPersistedBlockNumber)
+	return nil
 }
 
 func (db *MemoryDB) WriteBlocks(blocks []*types.Block) error {
@@ -257,8 +256,7 @@ func (db *MemoryDB) WriteTransaction(transaction *types.Transaction) error {
 	defer db.mux.Unlock()
 	if transaction != nil {
 		db.txDB[transaction.Hash] = transaction
-		// debug printing
-		log.Printf("Transaction stored: hash = %v.\n", transaction.Hash.Hex())
+		log.Debug("Transaction stored", "hash", transaction.Hash.Hex())
 		return nil
 	}
 	return errors.New("transaction is nil")
@@ -409,7 +407,7 @@ func (db *MemoryDB) indexBlock(addresses []common.Address, block *types.Block) e
 	for _, address := range addresses {
 		if db.addressIsRegistered(address) && db.lastFiltered[address] < block.Number {
 			filteredAddresses[address] = true
-			log.Printf("Index registered address %v at block %v.\n", address.Hex(), block.Number)
+			log.Info("Index registered address ", "address", address.Hex(), "blocknumber", block.Number)
 		}
 	}
 
@@ -428,15 +426,15 @@ func (db *MemoryDB) indexTransaction(filteredAddresses map[common.Address]bool, 
 	// Compare the address with tx.To and tx.CreatedContract to check if the transaction is related.
 	if filteredAddresses[tx.CreatedContract] {
 		db.txIndexDB[tx.CreatedContract].contractCreationTx = tx.Hash
-		log.Printf("Index contract creation tx %v of registered address %v.\n", tx.Hash.Hex(), tx.CreatedContract.Hex())
+		log.Debug("Indexed address of contract creation", "tx", tx.Hash.Hex(), "contract", tx.CreatedContract.Hex())
 	} else if filteredAddresses[tx.To] {
 		db.txIndexDB[tx.To].txsTo = append(db.txIndexDB[tx.To].txsTo, tx.Hash)
-		log.Printf("Index tx %v to registered address %v.\n", tx.Hash.Hex(), tx.To.Hex())
+		log.Debug("Indexed tx recipient", "tx", tx.Hash.Hex(), "recipient", tx.To.Hex())
 	} else {
 		for _, internalCall := range tx.InternalCalls {
 			if filteredAddresses[internalCall.To] {
 				db.txIndexDB[internalCall.To].txsInternalTo = append(db.txIndexDB[internalCall.To].txsInternalTo, tx.Hash)
-				log.Printf("Index tx %v internal calling registered address %v.\n", tx.Hash.Hex(), internalCall.To.Hex())
+				log.Debug("Indexed transactions internal calls", "tx", tx.Hash.Hex(), "internal-recipient", internalCall.To.Hex())
 			}
 		}
 	}
@@ -444,7 +442,7 @@ func (db *MemoryDB) indexTransaction(filteredAddresses map[common.Address]bool, 
 	for _, event := range tx.Events {
 		if filteredAddresses[event.Address] {
 			db.eventIndexDB[event.Address] = append(db.eventIndexDB[event.Address], event)
-			log.Printf("Append event emitted in transaction %v to registered address %v.\n", event.TransactionHash.Hex(), event.Address.Hex())
+			log.Debug("Indexed emitted event", "tx", event.TransactionHash.Hex(), "address", event.Address.Hex())
 		}
 	}
 }

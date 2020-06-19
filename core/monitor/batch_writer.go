@@ -1,12 +1,12 @@
 package monitor
 
 import (
-	"log"
 	"time"
 
 	"github.com/ethereum/go-ethereum/event"
 
 	"quorumengineering/quorum-report/database"
+	"quorumengineering/quorum-report/log"
 	"quorumengineering/quorum-report/types"
 )
 
@@ -33,7 +33,7 @@ type BatchWriter struct {
 }
 
 func NewBatchWriter(db database.Database, batchWorkChan chan *BlockAndTransactions, flushPeriod int) *BatchWriter {
-	bp := &BatchWriter{
+	return &BatchWriter{
 		maxBlocks:               cap(batchWorkChan),
 		maxTransactions:         maxTransactionMultiplier * cap(batchWorkChan),
 		flushPeriod:             flushPeriod,
@@ -42,32 +42,37 @@ func NewBatchWriter(db database.Database, batchWorkChan chan *BlockAndTransactio
 		BatchWorkChan:           batchWorkChan,
 		db:                      db,
 	}
-	return bp
 }
 
 func (bw *BatchWriter) Run(stopChan <-chan types.StopEvent) {
+	log.Info("Starting batch block processor", "timeout period", time.Duration(bw.flushPeriod)*time.Second, "max blocks", bw.maxBlocks, "max txns", bw.maxTransactions)
+
 	ticker := time.NewTicker(time.Duration(bw.flushPeriod) * time.Second)
+	defer ticker.Stop()
 	for {
+		// Listen to new block channel and process if new block comes.
 		select {
 		case newWorkUnit := <-bw.BatchWorkChan:
-			// Listen to new block channel and process if new block comes.
+			log.Debug("Next block found for batch processing", "block", newWorkUnit.block.Hash.String(), "tx count", len(newWorkUnit.txs))
 			bw.currentWorkUnits = append(bw.currentWorkUnits, newWorkUnit)
 			bw.currentTransactionCount += len(newWorkUnit.txs)
+
 			if len(bw.currentWorkUnits) >= bw.maxBlocks || bw.currentTransactionCount >= bw.maxTransactions {
+				log.Info("Max batch write limit reached")
 				//if the write fails, keep trying until it succeeds, waiting
 				//the defined timeout period between attempts
 				for err := bw.BatchWrite(); err != nil; err = bw.BatchWrite() {
-					log.Printf("batch write failed: %v", err)
+					log.Warn("Batch write failed", "err", err)
 					<-ticker.C
 				}
 			}
 		case <-ticker.C:
+			log.Debug("Batch writing blocks/transactions from ticker")
 			//if this fails, it will try again on the next run
 			if err := bw.BatchWrite(); err != nil {
-				log.Printf("batch write failed: %v", err)
+				log.Warn("Batch write failed", "err", err)
 			}
 		case <-stopChan:
-			ticker.Stop()
 			return
 		}
 	}
@@ -75,6 +80,7 @@ func (bw *BatchWriter) Run(stopChan <-chan types.StopEvent) {
 
 func (bw *BatchWriter) BatchWrite() error {
 	if len(bw.currentWorkUnits) == 0 {
+		log.Debug("No blocks/transaction to write")
 		return nil
 	}
 
@@ -85,12 +91,12 @@ func (bw *BatchWriter) BatchWrite() error {
 		allBlocks = append(allBlocks, workUnit.block)
 	}
 
-	err := bw.db.WriteTransactions(allTxns)
-	if err != nil {
+	log.Info("Batch writing blocks and transactions", "block count", len(allBlocks), "tx count", len(allTxns))
+
+	if err := bw.db.WriteTransactions(allTxns); err != nil {
 		return err
 	}
-	err = bw.db.WriteBlocks(allBlocks)
-	if err != nil {
+	if err := bw.db.WriteBlocks(allBlocks); err != nil {
 		return err
 	}
 

@@ -1,10 +1,9 @@
 package elasticsearch
 
 import (
-	"log"
-
 	"github.com/ethereum/go-ethereum/common"
 
+	"quorumengineering/quorum-report/log"
 	"quorumengineering/quorum-report/types"
 )
 
@@ -67,7 +66,7 @@ func (indexer *DefaultBlockIndexer) indexTransaction(tx *types.Transaction) erro
 		if err := indexer.updateContract(tx.CreatedContract, "creationTx", tx.Hash.String()); err != nil {
 			return err
 		}
-		log.Printf("Index contract creation tx %v of registered address %v.\n", tx.Hash.Hex(), tx.CreatedContract.Hex())
+		log.Info("Indexed contract creation tx of registered address", "tx", tx.Hash.Hex(), "address", tx.CreatedContract.Hex())
 	}
 
 	// Check all the internal calls for contract creations as well
@@ -76,7 +75,7 @@ func (indexer *DefaultBlockIndexer) indexTransaction(tx *types.Transaction) erro
 			if err := indexer.updateContract(internalCall.To, "creationTx", tx.Hash.String()); err != nil {
 				return err
 			}
-			log.Printf("Index contract creation tx %v of registered address %v.\n", tx.Hash.Hex(), internalCall.To.Hex())
+			log.Info("Indexed contract creation tx of registered address", "tx", tx.Hash.Hex(), "address", internalCall.To.Hex())
 		}
 	}
 	return nil

@@ -168,8 +168,7 @@ func (r *RPCAPIs) GetStorageHistory(address common.Address, startBlockNumber, en
 		return nil, errors.New("no storage ABI present to parse with")
 	}
 	var parsedAbi types.SolidityStorageDocument
-	err = json.Unmarshal([]byte(rawAbi), &parsedAbi)
-	if err != nil {
+	if err = json.Unmarshal([]byte(rawAbi), &parsedAbi); err != nil {
 		return nil, errors.New("unable to decode storage ABI: " + err.Error())
 	}
 
@@ -199,7 +198,7 @@ func (r *RPCAPIs) GetStorageHistory(address common.Address, startBlockNumber, en
 }
 
 func (r *RPCAPIs) AddAddress(address common.Address) error {
-	if address == (common.Address{0}) {
+	if address == (common.Address{}) {
 		return errors.New("invalid input")
 	}
 	return r.db.AddAddresses([]common.Address{address})
