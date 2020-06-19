@@ -2,7 +2,6 @@ package core
 
 import (
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -13,6 +12,7 @@ import (
 	"quorumengineering/quorum-report/core/rpc"
 	"quorumengineering/quorum-report/database"
 	"quorumengineering/quorum-report/database/factory"
+	"quorumengineering/quorum-report/log"
 	"quorumengineering/quorum-report/types"
 )
 
@@ -32,7 +32,8 @@ func New(config types.ReportingConfig) (*Backend, error) {
 		}
 
 		for i := 0; i < config.Connection.MaxReconnectTries && err != nil; i++ {
-			log.Printf("Connection error: %v. Trying to reconnect in %d second...\n", err, config.Connection.ReconnectInterval)
+			log.Error("Failed to connect to Quorum RPC", "err", err)
+			log.Error("Trying to reconnect", "wait-time", config.Connection.ReconnectInterval)
 			time.Sleep(time.Duration(config.Connection.ReconnectInterval) * time.Second)
 			quorumClient, err = client.NewQuorumClient(config.Connection.WSUrl, config.Connection.GraphQLUrl)
 		}
@@ -47,6 +48,7 @@ func New(config types.ReportingConfig) (*Backend, error) {
 	if err != nil {
 		return nil, err
 	}
+	log.Info("Consensus found", "algorithm", consensus)
 
 	dbFactory := factory.NewFactory()
 	db, err := dbFactory.Database(config.Database)
@@ -55,6 +57,7 @@ func New(config types.ReportingConfig) (*Backend, error) {
 	}
 
 	// store all templates
+	log.Info("Adding templates from configuration file to database")
 	for _, template := range config.Templates {
 		if err := db.AddTemplate(template.TemplateName, template.ABI, template.StorageLayout); err != nil {
 			return nil, err
@@ -73,6 +76,7 @@ func New(config types.ReportingConfig) (*Backend, error) {
 	for _, address := range config.Addresses {
 		initialAddresses = append(initialAddresses, address.Address)
 	}
+	log.Info("Adding addresses from configuration file to database")
 	if err := db.AddAddresses(initialAddresses); err != nil {
 		return nil, err
 	}

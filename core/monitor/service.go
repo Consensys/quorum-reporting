@@ -2,7 +2,6 @@ package monitor
 
 import (
 	"context"
-	"log"
 	"runtime"
 	"sync"
 	"time"
@@ -12,6 +11,7 @@ import (
 
 	"quorumengineering/quorum-report/client"
 	"quorumengineering/quorum-report/database"
+	"quorumengineering/quorum-report/log"
 	"quorumengineering/quorum-report/types"
 )
 
@@ -37,15 +37,17 @@ func NewMonitorService(db database.Database, quorumClient client.Client, consens
 }
 
 func (m *MonitorService) Start() error {
-	log.Println("Start monitor service...")
+	log.Info("Start monitor service")
 
 	// Pulling historical blocks since the last persisted while continuously listening to ChainHeadEvent.
 	// For every block received, pull transactions/ events related to the registered contracts.
 
-	log.Println("Start to sync blocks...")
+	log.Info("Start to sync blocks...")
 
 	// Start batch writer and workers
+	log.Info("Starting batch writer")
 	m.startBatchWriter()
+	log.Info("Starting block processor workers")
 	m.startWorkers()
 
 	go m.run()
@@ -55,7 +57,7 @@ func (m *MonitorService) Start() error {
 
 func (m *MonitorService) Stop() {
 	m.stopFeed.Send(types.StopEvent{})
-	log.Println("Monitor service stopped.")
+	log.Info("Monitor service stopped")
 }
 
 func (m *MonitorService) subscribeStopEvent() (chan types.StopEvent, event.Subscription) {
@@ -112,12 +114,12 @@ func (m *MonitorService) run() {
 		wg.Add(1)
 
 		if err := m.listenToChainHead(cancelChan, chStopChan); err != nil {
-			log.Printf("Subscribe to chain head event error: %v. Retry in 1 second...\n", err)
+			log.Error("Subscribe to chain head event error, retrying in 1 second", "err", err)
 			time.Sleep(time.Second)
 			continue
 		}
 		if err := m.syncHistoricBlocks(cancelChan, &wg); err != nil {
-			log.Printf("Sync historic blocks error: %v. Retry in 1 second...\n", err)
+			log.Error("Sync historic blocks error, retrying in 1 second", "err", err)
 			close(chStopChan)
 			time.Sleep(time.Second)
 			continue
@@ -131,7 +133,7 @@ func (m *MonitorService) run() {
 			return
 		case <-cancelChan:
 			wg.Wait()
-			log.Println("Retry in 1 second...")
+			log.Info("Retry in 1 second...")
 			time.Sleep(time.Second)
 		}
 	}
@@ -142,19 +144,20 @@ func (m *MonitorService) syncHistoricBlocks(cancelChan chan bool, wg *sync.WaitG
 	if err != nil {
 		return err
 	}
-	log.Printf("Current block head is: %v.\n", currentBlockNumber)
+	log.Info("Queried current block head from Quorum", "block number", currentBlockNumber)
 	lastPersisted, err := m.db.GetLastPersistedBlockNumber()
 	if err != nil {
 		return err
 	}
+	log.Info("Queried last persisted block", "block number", lastPersisted)
 
 	// Sync is called in a go routine so that it doesn't block main process.
 	go func() {
-		defer log.Println("Returning from historical block processing.")
+		defer log.Info("Returning from historical block processing.")
 		defer wg.Done()
 		err := m.blockMonitor.syncBlocks(lastPersisted+1, currentBlockNumber, cancelChan)
 		for err != nil {
-			log.Printf("Sync historic blocks up to %v failed: %v.\n", currentBlockNumber, err)
+			log.Info("Sync historic blocks failed", "end-block", currentBlockNumber, "err", err)
 			time.Sleep(time.Second)
 			err = m.blockMonitor.syncBlocks(err.EndBlockNumber(), currentBlockNumber, cancelChan)
 		}
@@ -172,16 +175,16 @@ func (m *MonitorService) listenToChainHead(cancelChan chan bool, stopChan chan b
 
 	go func() {
 		defer close(cancelChan)
-		log.Println("Starting chain head listener.")
+		log.Info("Starting chain head listener.")
 		for {
 			select {
 			case err := <-sub.Err():
-				log.Printf("Chain head event subscription error: %v.\n", err)
+				log.Error("Chain head event subscription error", "err", err)
 				return
 			case header := <-headers:
 				m.blockMonitor.processChainHead(header)
 			case <-stopChan:
-				log.Println("Stopping chain head listener.")
+				log.Info("Stopping chain head listener.")
 				return
 			}
 		}

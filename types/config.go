@@ -3,6 +3,8 @@ package types
 import (
 	"os"
 
+	"quorumengineering/quorum-report/log"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/naoina/toml"
 )
@@ -62,15 +64,18 @@ type ReportingConfig struct {
 
 func (rc *ReportingConfig) SetDefaults() {
 	if rc.Tuning.BlockProcessingQueueSize < 1 {
+		log.Warn("tuning.BlockProcessingQueueSize below limit", "old value", rc.Tuning.BlockProcessingQueueSize, "new value", 100)
 		rc.Tuning.BlockProcessingQueueSize = 100
 	}
 	if rc.Tuning.BlockProcessingFlushPeriod < 1 {
 		rc.Tuning.BlockProcessingFlushPeriod = 3
 	}
 	if rc.Database != nil && rc.Database.CacheSize < 1 {
+		log.Warn("Database cache size below limit", "old value", rc.Database.CacheSize, "new value", 10)
 		rc.Database.CacheSize = 10
 	}
 	if rc.Connection.MaxReconnectTries > 0 && rc.Connection.ReconnectInterval < 1 {
+		log.Warn("Quorum client reconnect interval below limit", "old value", rc.Connection.ReconnectInterval, "new value", 5)
 		rc.Connection.ReconnectInterval = 5
 	}
 }

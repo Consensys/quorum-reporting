@@ -1,7 +1,6 @@
 package filter
 
 import (
-	"log"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -9,6 +8,7 @@ import (
 	"github.com/ethereum/go-ethereum/event"
 
 	"quorumengineering/quorum-report/client"
+	"quorumengineering/quorum-report/log"
 	"quorumengineering/quorum-report/types"
 )
 
@@ -36,13 +36,14 @@ func NewFilterService(db FilterServiceDB, client client.Client) *FilterService {
 }
 
 func (fs *FilterService) Start() error {
-	log.Println("Start filter service...")
+	log.Info("Starting filter service")
 
 	stopChan, stopSubscription := fs.subscribeStopEvent()
-	defer stopSubscription.Unsubscribe()
 
 	go func() {
-		// Filter tick every second to index transactions/ storage
+		defer stopSubscription.Unsubscribe()
+
+		// Filter tick every 2 seconds to index transactions/ storage
 		ticker := time.NewTicker(time.Second * 2)
 		defer ticker.Stop()
 		for {
@@ -50,16 +51,15 @@ func (fs *FilterService) Start() error {
 			case <-ticker.C:
 				current, err := fs.db.GetLastPersistedBlockNumber()
 				if err != nil {
-					log.Printf("get last persisted block number failed: %v\n", err)
+					log.Warn("Fetching last persisted block number failed", "err", err)
 					continue
 				}
-				//log.Printf("Last persisted block %v.\n", current)
+				log.Debug("Last persisted block number found", "block number", current)
 				lastFilteredAll, lastFiltered, err := fs.getLastFiltered(current)
 				if err != nil {
-					log.Printf("get last filtered failed: %v\n", err)
+					log.Warn("Fetching last filtered failed", "err", err)
 					continue
 				}
-				//log.Printf("Last filtered block %v.\n", lastFiltered)
 				for current > lastFiltered {
 					//index 1000 blocks at a time
 					//TODO: make configurable
@@ -69,7 +69,7 @@ func (fs *FilterService) Start() error {
 					}
 					err := fs.index(lastFilteredAll, lastFiltered+1, endBlock)
 					if err != nil {
-						log.Printf("index block %v failed: %v", lastFiltered, err)
+						log.Warn("Index block failed", "block number", lastFiltered, "err", err)
 						break
 					}
 					lastFiltered = endBlock
@@ -84,7 +84,7 @@ func (fs *FilterService) Start() error {
 
 func (fs *FilterService) Stop() {
 	fs.stopFeed.Send(types.StopEvent{})
-	log.Println("Filter service stopped.")
+	log.Info("Filter service stopped")
 }
 
 func (fs *FilterService) subscribeStopEvent() (chan types.StopEvent, event.Subscription) {
@@ -95,21 +95,23 @@ func (fs *FilterService) subscribeStopEvent() (chan types.StopEvent, event.Subsc
 
 // getLastFiltered finds the minimum value of "lastFiltered" across all addresses
 func (fs *FilterService) getLastFiltered(current uint64) (map[common.Address]uint64, uint64, error) {
-	lastFiltered := make(map[common.Address]uint64)
 	addresses, err := fs.db.GetAddresses()
 	if err != nil {
-		return lastFiltered, current, err
+		return nil, current, err
 	}
+
+	lastFiltered := make(map[common.Address]uint64)
 	for _, address := range addresses {
 		curLastFiltered, err := fs.db.GetLastFiltered(address)
 		if err != nil {
-			return lastFiltered, current, err
+			return nil, current, err
 		}
 		if curLastFiltered < current {
 			current = curLastFiltered
 		}
 		lastFiltered[address] = curLastFiltered
 	}
+
 	return lastFiltered, current, nil
 }
 
@@ -119,7 +121,7 @@ type IndexBatch struct {
 }
 
 func (fs *FilterService) index(lastFiltered map[common.Address]uint64, blockNumber uint64, endBlockNumber uint64) error {
-	log.Printf("Index from block %v to block %v.\n", blockNumber, endBlockNumber)
+	log.Info("Index registered address", "start-block", blockNumber, "end-block", endBlockNumber)
 	indexBatches := make([]IndexBatch, 0)
 	curBatch := IndexBatch{
 		addresses: make([]common.Address, 0),
@@ -140,7 +142,7 @@ func (fs *FilterService) index(lastFiltered map[common.Address]uint64, blockNumb
 					curBatch.addresses = append(curBatch.addresses, addrList...)
 					addressInBatch[address] = true
 				}
-				log.Printf("Index registered addresses %v at block %v.\n", address.Hex(), blockNumber)
+				log.Info("Indexing registered address", "address", address.Hex(), "blocknumber", blockNumber)
 			}
 		}
 		// if new batch is created, append old batch to indexBatches
