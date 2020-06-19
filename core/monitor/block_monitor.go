@@ -3,10 +3,8 @@ package monitor
 import (
 	"context"
 	"math/big"
-	"strings"
 	"time"
 
-	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
@@ -25,6 +23,7 @@ type BlockMonitor struct {
 	newBlockChan       chan *types.Block          // concurrent block processing
 	batchWriteChan     chan *BlockAndTransactions // concurrent block processing
 	consensus          string
+	tokenMonitor       TokenMonitor
 }
 
 func NewBlockMonitor(db database.Database, quorumClient client.Client, consensus string, batchWriteChan chan *BlockAndTransactions) *BlockMonitor {
@@ -35,6 +34,7 @@ func NewBlockMonitor(db database.Database, quorumClient client.Client, consensus
 		newBlockChan:       make(chan *types.Block),
 		batchWriteChan:     batchWriteChan,
 		consensus:          consensus,
+		tokenMonitor:       NewDefaultTokenMonitor(quorumClient),
 	}
 }
 
@@ -66,7 +66,7 @@ func (bm *BlockMonitor) process(block *types.Block) error {
 	// Check if transaction deploys a public ERC20/ERC721 contract directly or internally
 	for _, tx := range fetchedTxns {
 		var addrs []common.Address
-		if (tx.CreatedContract != common.Address{0}) {
+		if (tx.CreatedContract != common.Address{}) {
 			addrs = append(addrs, tx.CreatedContract)
 		}
 		for _, ic := range tx.InternalCalls {
@@ -75,41 +75,14 @@ func (bm *BlockMonitor) process(block *types.Block) error {
 			}
 		}
 
-		for _, addr := range addrs {
-			res, err := client.GetCode(bm.quorumClient, addr, tx.BlockHash)
-			if err != nil {
-				return err
-			}
+		tokens, err := bm.tokenMonitor.InspectAddresses(addrs, tx, block.Number)
+		if err != nil {
+			return err
+		}
 
-			contractType, err := bm.checkEIP165(addr, block.Number)
-			if err != nil {
-				return err
-			}
-			if contractType != "" {
-				log.Info("Contract implemented interface via ERC165", "interface", contractType, "address", addr.String())
-				bm.db.AddAddresses([]common.Address{tx.CreatedContract})
-				bm.db.AssignTemplate(tx.CreatedContract, contractType)
-			} else {
-				//Check if contract has bytecode for contract types
-
-				// check ERC20
-				if checkAbiMatch(types.ERC20ABI, res) {
-					log.Info("Transaction deploys potential ERC20 contract.", "tx", tx.Hash.Hex(), "address", addr.Hex())
-					// add contract address
-					bm.db.AddAddresses([]common.Address{tx.CreatedContract})
-					// assign ERC20 template
-					bm.db.AssignTemplate(tx.CreatedContract, types.ERC20)
-				}
-
-				// check ERC721
-				if checkAbiMatch(types.ERC721ABI, res) {
-					log.Info("Transaction deploys potential ERC721 contract.", "tx", tx.Hash.Hex(), "address", addr.Hex())
-					// add contract address
-					bm.db.AddAddresses([]common.Address{tx.CreatedContract})
-					// assign ERC721 template
-					bm.db.AssignTemplate(tx.CreatedContract, types.ERC721)
-				}
-			}
+		for addr, contractType := range tokens {
+			bm.db.AddAddresses([]common.Address{addr})
+			bm.db.AssignTemplate(addr, contractType)
 		}
 	}
 
@@ -197,20 +170,6 @@ func (bm *BlockMonitor) createBlock(block *ethTypes.Block) *types.Block {
 		ExtraData:    block.Extra(),
 		Transactions: txs,
 	}
-}
-
-func checkAbiMatch(abiToCheck abi.ABI, data hexutil.Bytes) bool {
-	for _, b := range abiToCheck.Methods {
-		if !strings.Contains(data.String(), common.Bytes2Hex(b.ID())) {
-			return false
-		}
-	}
-	for _, event := range abiToCheck.Events {
-		if !strings.Contains(data.String(), event.ID().Hex()[2:]) {
-			return false
-		}
-	}
-	return true
 }
 
 func (bm *BlockMonitor) checkEIP165(address common.Address, blockNum uint64) (string, error) {
