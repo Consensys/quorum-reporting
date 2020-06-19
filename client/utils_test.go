@@ -1,10 +1,10 @@
 package client
 
 import (
-	"github.com/ethereum/go-ethereum/common/hexutil"
 	"testing"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/state"
 	"github.com/ethereum/go-ethereum/p2p"
 	"github.com/stretchr/testify/assert"

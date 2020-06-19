@@ -3,6 +3,7 @@ package client
 import (
 	"context"
 	"errors"
+	"fmt"
 	"math/big"
 	"reflect"
 
@@ -53,6 +54,7 @@ func (qc *StubQuorumClient) ExecuteGraphQLQuery(ctx context.Context, result inte
 }
 
 func (qc *StubQuorumClient) RPCCall(ctx context.Context, result interface{}, method string, args ...interface{}) error {
+	fmt.Println(method)
 	for _, arg := range args {
 		method += reflect.ValueOf(arg).String()
 	}

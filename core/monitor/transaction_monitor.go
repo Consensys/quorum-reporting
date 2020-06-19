@@ -2,13 +2,10 @@ package monitor
 
 import (
 	"context"
-	"github.com/ethereum/go-ethereum/accounts/abi"
-	"log"
-	"strings"
-
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/mitchellh/mapstructure"
+	"log"
 
 	"quorumengineering/quorum-report/client"
 	"quorumengineering/quorum-report/database"
@@ -30,59 +27,14 @@ func (tm *TransactionMonitor) PullTransactions(block *types.Block) ([]*types.Tra
 
 	fetchedTransactions := make([]*types.Transaction, 0, len(block.Transactions))
 	for _, txHash := range block.Transactions {
-		// 1. Query transaction details by graphql.
+		// Query transaction details by graphql.
 		tx, err := tm.createTransaction(block, txHash)
 		if err != nil {
 			return nil, err
 		}
-		var addrs []common.Address
-		addrs = append(addrs, tx.CreatedContract)
-		for _, ic := range tx.InternalCalls {
-			if ic.Type == "CREATE" || ic.Type == "CREATE2" {
-				addrs = append(addrs, ic.To)
-			}
-		}
-
-		for _, addr := range addrs {
-			res, err := client.GetCode(tm.quorumClient, addr, tx.BlockHash)
-			if err != nil {
-				return nil, err
-			}
-
-			// 2. Check if transaction deploys a public ERC20 contract
-			if checkAbiMatch(types.ERC20ABI, res) {
-				log.Printf("tx %v deploys %v which is a potential ERC20 contract.\n", tx.Hash.Hex(), addr.Hex())
-				// add contract address
-				tm.db.AddAddresses([]common.Address{tx.CreatedContract})
-				// assign ERC20 template
-				tm.db.AssignTemplate(tx.CreatedContract, types.ERC20)
-			}
-
-			if checkAbiMatch(types.ERC721ABI, res) {
-				log.Printf("tx %v deploys %v which is a potential ERC721 contract.\n", tx.Hash.Hex(), addr.Hex())
-				// add contract address
-				tm.db.AddAddresses([]common.Address{tx.CreatedContract})
-				// assign ERC20 template
-				tm.db.AssignTemplate(tx.CreatedContract, types.ERC20)
-			}
-		}
 		fetchedTransactions = append(fetchedTransactions, tx)
 	}
 	return fetchedTransactions, nil
-}
-
-func checkAbiMatch(abiToCheck abi.ABI, data hexutil.Bytes) bool {
-	for _, b := range abiToCheck.Methods {
-		if !strings.Contains(data.String(), common.Bytes2Hex(b.ID())) {
-			return false
-		}
-	}
-	for _, event := range abiToCheck.Events {
-		if !strings.Contains(data.String(), event.ID().Hex()[2:]) {
-			return false
-		}
-	}
-	return true
 }
 
 func (tm *TransactionMonitor) createTransaction(block *types.Block, hash common.Hash) (*types.Transaction, error) {

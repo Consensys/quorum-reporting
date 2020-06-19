@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"log"
 	"math/big"
+	"strings"
 
+	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
@@ -60,11 +62,48 @@ func (bm *BlockMonitor) process(block *types.Block) error {
 		return err
 	}
 
+	// Check if transaction deploys a public ERC20/ERC721 contract directly or internally
+	for _, tx := range fetchedTxns {
+		var addrs []common.Address
+		if (tx.CreatedContract != common.Address{0}) {
+			addrs = append(addrs, tx.CreatedContract)
+		}
+		for _, ic := range tx.InternalCalls {
+			if ic.Type == "CREATE" || ic.Type == "CREATE2" {
+				addrs = append(addrs, ic.To)
+			}
+		}
+		for _, addr := range addrs {
+			res, err := client.GetCode(bm.quorumClient, addr, tx.BlockHash)
+			if err != nil {
+				return err
+			}
+
+			// check ERC20
+			if checkAbiMatch(types.ERC20ABI, res) {
+				log.Printf("tx %v deploys %v which is a potential ERC20 contract.\n", tx.Hash.Hex(), addr.Hex())
+				// add contract address
+				bm.db.AddAddresses([]common.Address{tx.CreatedContract})
+				// assign ERC20 template
+				bm.db.AssignTemplate(tx.CreatedContract, types.ERC20)
+			}
+
+			// check ERC721
+			if checkAbiMatch(types.ERC721ABI, res) {
+				log.Printf("tx %v deploys %v which is a potential ERC721 contract.\n", tx.Hash.Hex(), addr.Hex())
+				// add contract address
+				bm.db.AddAddresses([]common.Address{tx.CreatedContract})
+				// assign ERC721 template
+				bm.db.AssignTemplate(tx.CreatedContract, types.ERC721)
+			}
+		}
+	}
+
+	// batch write txs and blocks
 	workunit := &BlockAndTransactions{
 		block: block,
 		txs:   fetchedTxns,
 	}
-
 	bm.batchWriteChan <- workunit
 	return nil
 }
@@ -146,4 +185,18 @@ func (bm *BlockMonitor) createBlock(block *ethTypes.Block) *types.Block {
 		ExtraData:    block.Extra(),
 		Transactions: txs,
 	}
+}
+
+func checkAbiMatch(abiToCheck abi.ABI, data hexutil.Bytes) bool {
+	for _, b := range abiToCheck.Methods {
+		if !strings.Contains(data.String(), common.Bytes2Hex(b.ID())) {
+			return false
+		}
+	}
+	for _, event := range abiToCheck.Events {
+		if !strings.Contains(data.String(), event.ID().Hex()[2:]) {
+			return false
+		}
+	}
+	return true
 }
