@@ -43,22 +43,15 @@ func (dtm *DefaultTokenMonitor) InspectAddresses(addresses []common.Address, tx 
 
 		//Check if contract has bytecode for contract types
 
-		res, err := client.GetCode(dtm.quorumClient, addr, tx.BlockHash)
+		contractBytecode, err := client.GetCode(dtm.quorumClient, addr, tx.BlockHash)
 		if err != nil {
 			return nil, err
 		}
 
-		// check ERC20
-		if checkAbiMatch(types.ERC20ABI, res) {
-			log.Info("Transaction deploys potential ERC20 contract.", "tx", tx.Hash.Hex(), "address", addr.Hex())
-			tokenContracts[addr] = types.ERC20
-			continue
-		}
-
-		// check ERC721
-		if checkAbiMatch(types.ERC721ABI, res) {
-			log.Info("Transaction deploys potential ERC721 contract.", "tx", tx.Hash.Hex(), "address", addr.Hex())
-			tokenContracts[addr] = types.ERC721
+		contractType = checkBytecodeForTokens(contractBytecode)
+		if contractType != "" {
+			log.Info("Transaction deploys potential token", "type", contractType, "tx", tx.Hash.Hex(), "address", addr.Hex())
+			tokenContracts[addr] = contractType
 		}
 	}
 	return tokenContracts, nil
@@ -102,6 +95,18 @@ func (dtm *DefaultTokenMonitor) checkEIP165(address common.Address, blockNum uin
 	}
 
 	return "", nil
+}
+
+func checkBytecodeForTokens(data hexutil.Bytes) string {
+	// check ERC20
+	if checkAbiMatch(types.ERC20ABI, data) {
+		return types.ERC20
+	}
+	// check ERC721
+	if checkAbiMatch(types.ERC721ABI, data) {
+		return types.ERC721
+	}
+	return ""
 }
 
 func checkAbiMatch(abiToCheck abi.ABI, data hexutil.Bytes) bool {
