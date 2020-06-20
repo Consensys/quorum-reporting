@@ -133,7 +133,11 @@ func TestGetCode_WithError(t *testing.T) {
 }
 
 func TestEIP165(t *testing.T) {
-	stubClient := NewStubQuorumClient(nil, nil, nil)
+	mockRPC := map[string]interface{}{
+		"eth_call<ethereum.CallMsg Value><*big.Int Value>": common.LeftPadBytes([]byte{1}, 32),
+	}
+
+	stubClient := NewStubQuorumClient(nil, nil, mockRPC)
 
 	address := common.HexToAddress("0x1349f3e1b8d71effb47b840594ff27da7e603d17")
 
@@ -163,7 +167,11 @@ func TestEIP165_WithClientError(t *testing.T) {
 }
 
 func TestEIP165_WithWrongSizeResult(t *testing.T) {
-	stubClient := NewStubQuorumClient(nil, nil, nil)
+	mockRPC := map[string]interface{}{
+		"eth_call<ethereum.CallMsg Value><*big.Int Value>": []byte{},
+	}
+
+	stubClient := NewStubQuorumClient(nil, nil, mockRPC)
 
 	address := common.HexToAddress("0x1349f3e1b8d71effb47b840594ff27da7e603d17")
 

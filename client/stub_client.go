@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"github.com/ethereum/go-ethereum/common"
 	"math/big"
 	"reflect"
 
@@ -43,13 +42,9 @@ func (qc *StubQuorumClient) BlockByNumber(ctx context.Context, blockNumber *big.
 }
 
 func (qc *StubQuorumClient) CallContract(ctx context.Context, msg ethereum.CallMsg, blockNumber *big.Int) ([]byte, error) {
-	if blockNumber.Uint64() == 0 {
-		return nil, errors.New("not found")
-	}
-	if blockNumber.Uint64() == 1 {
-		return []byte{1}, nil
-	}
-	return common.RightPadBytes([]byte{1}, 32), nil
+	var res []byte
+	err := qc.RPCCall(ctx, &res, "eth_call", msg, blockNumber)
+	return res, err
 }
 
 func (qc *StubQuorumClient) ExecuteGraphQLQuery(result interface{}, query string) error {
