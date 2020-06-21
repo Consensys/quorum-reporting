@@ -14,7 +14,7 @@ import (
 )
 
 type TokenMonitor interface {
-	InspectAddresses(addressesToFindTokens []common.Address, tx *types.Transaction, blockNumber uint64) (map[common.Address]string, error)
+	InspectAddresses(addressesToFindTokens []common.Address, tx *types.Transaction) (map[common.Address]string, error)
 }
 
 type DefaultTokenMonitor struct {
@@ -27,11 +27,11 @@ func NewDefaultTokenMonitor(quorumClient client.Client) *DefaultTokenMonitor {
 	}
 }
 
-func (dtm *DefaultTokenMonitor) InspectAddresses(addresses []common.Address, tx *types.Transaction, blockNumber uint64) (map[common.Address]string, error) {
+func (dtm *DefaultTokenMonitor) InspectAddresses(addresses []common.Address, tx *types.Transaction) (map[common.Address]string, error) {
 	tokenContracts := make(map[common.Address]string)
 
 	for _, addr := range addresses {
-		contractType, err := dtm.checkEIP165(addr, blockNumber)
+		contractType, err := dtm.checkEIP165(addr, tx.BlockNumber)
 		if err != nil {
 			return nil, err
 		}
@@ -42,7 +42,6 @@ func (dtm *DefaultTokenMonitor) InspectAddresses(addresses []common.Address, tx 
 		}
 
 		//Check if contract has bytecode for contract types
-
 		contractBytecode, err := client.GetCode(dtm.quorumClient, addr, tx.BlockHash)
 		if err != nil {
 			return nil, err

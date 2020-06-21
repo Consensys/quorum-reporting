@@ -75,7 +75,7 @@ func (bm *BlockMonitor) process(block *types.Block) error {
 			}
 		}
 
-		tokens, err := bm.tokenMonitor.InspectAddresses(addrs, tx, block.Number)
+		tokens, err := bm.tokenMonitor.InspectAddresses(addrs, tx)
 		if err != nil {
 			return err
 		}

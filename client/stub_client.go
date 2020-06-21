@@ -18,7 +18,7 @@ type StubQuorumClient struct {
 	mockRPC     map[string]interface{}
 }
 
-func NewStubQuorumClient(blocks []*ethTypes.Block, mockGraphQL map[string]map[string]interface{}, mockRPC map[string]interface{}) Client {
+func NewStubQuorumClient(blocks []*ethTypes.Block, mockGraphQL map[string]map[string]interface{}, mockRPC map[string]interface{}) *StubQuorumClient {
 	if mockGraphQL == nil {
 		mockGraphQL = map[string]map[string]interface{}{}
 	}
