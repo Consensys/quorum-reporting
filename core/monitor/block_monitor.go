@@ -23,6 +23,7 @@ type BlockMonitor struct {
 	newBlockChan       chan *types.Block          // concurrent block processing
 	batchWriteChan     chan *BlockAndTransactions // concurrent block processing
 	consensus          string
+	tokenMonitor       TokenMonitor
 }
 
 func NewBlockMonitor(db database.Database, quorumClient client.Client, consensus string, batchWriteChan chan *BlockAndTransactions) *BlockMonitor {
@@ -33,6 +34,7 @@ func NewBlockMonitor(db database.Database, quorumClient client.Client, consensus
 		newBlockChan:       make(chan *types.Block),
 		batchWriteChan:     batchWriteChan,
 		consensus:          consensus,
+		tokenMonitor:       NewDefaultTokenMonitor(quorumClient),
 	}
 }
 
@@ -61,12 +63,35 @@ func (bm *BlockMonitor) process(block *types.Block) error {
 		return err
 	}
 
-	workUnit := &BlockAndTransactions{
+	// Check if transaction deploys a public ERC20/ERC721 contract directly or internally
+	for _, tx := range fetchedTxns {
+		var addrs []common.Address
+		if (tx.CreatedContract != common.Address{}) {
+			addrs = append(addrs, tx.CreatedContract)
+		}
+		for _, ic := range tx.InternalCalls {
+			if ic.Type == "CREATE" || ic.Type == "CREATE2" {
+				addrs = append(addrs, ic.To)
+			}
+		}
+
+		tokens, err := bm.tokenMonitor.InspectAddresses(addrs, tx)
+		if err != nil {
+			return err
+		}
+
+		for addr, contractType := range tokens {
+			bm.db.AddAddresses([]common.Address{addr})
+			bm.db.AssignTemplate(addr, contractType)
+		}
+	}
+
+	// batch write txs and blocks
+	workunit := &BlockAndTransactions{
 		block: block,
 		txs:   fetchedTxns,
 	}
-
-	bm.batchWriteChan <- workUnit
+	bm.batchWriteChan <- workunit
 	return nil
 }
 
@@ -145,4 +170,45 @@ func (bm *BlockMonitor) createBlock(block *ethTypes.Block) *types.Block {
 		ExtraData:    block.Extra(),
 		Transactions: txs,
 	}
+}
+
+func (bm *BlockMonitor) checkEIP165(address common.Address, blockNum uint64) (string, error) {
+	//check if the contract implements EIP165
+
+	eip165Call, err := client.CallEIP165(bm.quorumClient, address, common.Hex2Bytes("01ffc9a70"), new(big.Int).SetUint64(blockNum))
+	if err != nil {
+		return "", err
+	}
+
+	if !eip165Call {
+		return "", nil
+	}
+
+	eip165CallCheck, err := client.CallEIP165(bm.quorumClient, address, common.Hex2Bytes("ffffffff"), new(big.Int).SetUint64(blockNum))
+	if err != nil {
+		return "", err
+	}
+	if eip165CallCheck {
+		return "", nil
+	}
+
+	//now we know it implements EIP165, so lets check the interfaces
+
+	erc20check, err := client.CallEIP165(bm.quorumClient, address, common.Hex2Bytes("36372b07"), new(big.Int).SetUint64(blockNum))
+	if err != nil {
+		return "", err
+	}
+	if erc20check {
+		return types.ERC20, nil
+	}
+
+	erc721check, err := client.CallEIP165(bm.quorumClient, address, common.Hex2Bytes("80ac58cd"), new(big.Int).SetUint64(blockNum))
+	if err != nil {
+		return "", err
+	}
+	if erc721check {
+		return types.ERC721, nil
+	}
+
+	return "", nil
 }

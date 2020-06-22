@@ -2,7 +2,10 @@ package client
 
 import (
 	"context"
+	"errors"
+	"math/big"
 
+	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/state"
@@ -37,6 +40,14 @@ func TraceTransaction(c Client, txHash common.Hash) (map[string]interface{}, err
 	return resp, nil
 }
 
+func GetCode(c Client, address common.Address, blockHash common.Hash) (hexutil.Bytes, error) {
+	var res hexutil.Bytes
+	if err := c.RPCCall(context.Background(), &res, "eth_getCode", address, blockHash.String()); err != nil {
+		return nil, err
+	}
+	return res, nil
+}
+
 func Consensus(c Client) (string, error) {
 	log.Debug("Fetching consensus info")
 
@@ -50,4 +61,29 @@ func Consensus(c Client) (string, error) {
 	}
 	protocol := resp.Protocols["eth"].(map[string]interface{})
 	return protocol["consensus"].(string), nil
+}
+
+func CallEIP165(c Client, address common.Address, interfaceId []byte, blockNum *big.Int) (bool, error) {
+	eip165Id := common.Hex2Bytes("01ffc9a70")
+
+	//interfaceId should be 4 bytes long
+	if len(interfaceId) != 4 {
+		return false, errors.New("interfaceId wrong size")
+	}
+
+	calldata := append(eip165Id, common.RightPadBytes(interfaceId, 32)...)
+
+	msg := ethereum.CallMsg{
+		To:   &address,
+		Data: calldata,
+	}
+
+	result, err := c.CallContract(context.Background(), msg, blockNum)
+	if err != nil {
+		return false, err
+	}
+	if len(result) != 32 {
+		return false, nil
+	}
+	return result[len(result)-1] == 0x1, nil
 }

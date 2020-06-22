@@ -25,7 +25,7 @@ func (tm *TransactionMonitor) PullTransactions(block *types.Block) ([]*types.Tra
 
 	fetchedTransactions := make([]*types.Transaction, 0, len(block.Transactions))
 	for _, txHash := range block.Transactions {
-		// 1. Query transaction details by graphql.
+		// Query transaction details by graphql.
 		tx, err := tm.createTransaction(block, txHash)
 		if err != nil {
 			return nil, err

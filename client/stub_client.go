@@ -18,7 +18,7 @@ type StubQuorumClient struct {
 	mockRPC     map[string]interface{}
 }
 
-func NewStubQuorumClient(blocks []*ethTypes.Block, mockGraphQL map[string]map[string]interface{}, mockRPC map[string]interface{}) Client {
+func NewStubQuorumClient(blocks []*ethTypes.Block, mockGraphQL map[string]map[string]interface{}, mockRPC map[string]interface{}) *StubQuorumClient {
 	if mockGraphQL == nil {
 		mockGraphQL = map[string]map[string]interface{}{}
 	}
@@ -39,6 +39,12 @@ func (qc *StubQuorumClient) BlockByNumber(ctx context.Context, blockNumber *big.
 		}
 	}
 	return nil, errors.New("not found")
+}
+
+func (qc *StubQuorumClient) CallContract(ctx context.Context, msg ethereum.CallMsg, blockNumber *big.Int) ([]byte, error) {
+	var res []byte
+	err := qc.RPCCall(ctx, &res, "eth_call", msg, blockNumber)
+	return res, err
 }
 
 func (qc *StubQuorumClient) ExecuteGraphQLQuery(result interface{}, query string) error {
