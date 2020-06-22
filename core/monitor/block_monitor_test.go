@@ -61,11 +61,7 @@ func TestCreateBlock(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		bm := &DefaultBlockMonitor{
-			quorumClient: client.NewStubQuorumClient(nil, nil, nil),
-			newBlockChan: nil,
-			consensus:    tc.consensus,
-		}
+		bm := NewDefaultBlockMonitor(client.NewStubQuorumClient(nil, nil, nil), nil, tc.consensus)
 		actual := bm.createBlock(tc.originalBlock)
 		if actual.Hash != tc.expectedBlock.Hash {
 			t.Fatalf("expected hash %v, but got %v", tc.expectedBlock.Hash.Hex(), actual.Hash.Hex())
@@ -89,7 +85,7 @@ func TestCurrentBlock(t *testing.T) {
 		graphql.CurrentBlockQuery(): {"block": interface{}(map[string]interface{}{"number": "0x10"})},
 	}
 	bm := NewDefaultBlockMonitor(client.NewStubQuorumClient(nil, mockGraphQL, nil), nil, "raft")
-	currentBlockNumber, err := bm.CurrentBlockNumber()
+	currentBlockNumber, err := bm.currentBlockNumber()
 	if err != nil {
 		t.Fatalf("expected no error, but got %v", err)
 	}

@@ -17,9 +17,8 @@ import (
 )
 
 type BlockMonitor interface {
-	CurrentBlockNumber() (uint64, error)
 	ListenToChainHead(cancelChan chan bool, stopChan chan bool) error
-	SyncHistoricBlocks(lastPersisted, currentBlockNumber uint64, cancelChan chan bool, wg *sync.WaitGroup)
+	SyncHistoricBlocks(lastPersisted uint64, cancelChan chan bool, wg *sync.WaitGroup) error
 }
 
 type DefaultBlockMonitor struct {
@@ -28,7 +27,7 @@ type DefaultBlockMonitor struct {
 	consensus    string
 }
 
-func NewDefaultBlockMonitor(quorumClient client.Client, newBlockChan chan *types.Block, consensus string) BlockMonitor {
+func NewDefaultBlockMonitor(quorumClient client.Client, newBlockChan chan *types.Block, consensus string) *DefaultBlockMonitor {
 	return &DefaultBlockMonitor{
 		quorumClient: quorumClient,
 		newBlockChan: newBlockChan,
@@ -63,16 +62,26 @@ func (bm *DefaultBlockMonitor) ListenToChainHead(cancelChan chan bool, stopChan 
 	return nil
 }
 
-func (bm *DefaultBlockMonitor) SyncHistoricBlocks(lastPersisted, currentBlockNumber uint64, cancelChan chan bool, wg *sync.WaitGroup) {
-	// Sync is called in a go routine so that it doesn't block main process.
-	defer log.Info("Returning from historical block processing.")
-	defer wg.Done()
-	err := bm.syncBlocks(lastPersisted+1, currentBlockNumber, cancelChan)
-	for err != nil {
-		log.Info("Sync historic blocks failed", "end-block", currentBlockNumber, "err", err)
-		time.Sleep(time.Second)
-		err = bm.syncBlocks(err.EndBlockNumber(), currentBlockNumber, cancelChan)
+func (bm *DefaultBlockMonitor) SyncHistoricBlocks(lastPersisted uint64, cancelChan chan bool, wg *sync.WaitGroup) error {
+	currentBlockNumber, err := bm.currentBlockNumber()
+	if err != nil {
+		return err
 	}
+	log.Info("Queried current block head from Quorum", "block number", currentBlockNumber)
+
+	// Sync is called in a go routine so that it doesn't block main process.
+	go func() {
+		defer log.Info("Returning from historical block processing.")
+		defer wg.Done()
+		err := bm.syncBlocks(lastPersisted+1, currentBlockNumber, cancelChan)
+		for err != nil {
+			log.Info("Sync historic blocks failed", "end-block", currentBlockNumber, "err", err)
+			time.Sleep(time.Second)
+			err = bm.syncBlocks(err.EndBlockNumber(), currentBlockNumber, cancelChan)
+		}
+	}()
+
+	return nil
 }
 
 func (bm *DefaultBlockMonitor) processChainHead(header *ethTypes.Header) {
@@ -112,7 +121,7 @@ func (bm *DefaultBlockMonitor) createBlock(block *ethTypes.Block) *types.Block {
 	}
 }
 
-func (bm *DefaultBlockMonitor) CurrentBlockNumber() (uint64, error) {
+func (bm *DefaultBlockMonitor) currentBlockNumber() (uint64, error) {
 	log.Debug("Fetching current block number")
 
 	var currentBlockResult graphql.CurrentBlockResult

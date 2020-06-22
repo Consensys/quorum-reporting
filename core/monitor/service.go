@@ -163,24 +163,23 @@ func (m *MonitorService) run() {
 			continue
 		}
 
-		// sync historic blocks
-		currentBlockNumber, err := m.blockMonitor.CurrentBlockNumber()
-		if err != nil {
-			log.Error("Sync historic blocks error, retrying in 1 second", "err", err)
-			close(chStopChan)
-			time.Sleep(time.Second)
-			continue
-		}
-		log.Info("Queried current block head from Quorum", "block number", currentBlockNumber)
+		// get last persisted block number
 		lastPersisted, err := m.db.GetLastPersistedBlockNumber()
 		if err != nil {
+			log.Error("Get last persisted block number error, retrying in 1 second", "err", err)
+			close(chStopChan)
+			time.Sleep(time.Second)
+			continue
+		}
+
+		log.Info("Queried last persisted block", "block number", lastPersisted)
+		// sync historic blocks
+		if err := m.blockMonitor.SyncHistoricBlocks(lastPersisted, cancelChan, &wg); err != nil {
 			log.Error("Sync historic blocks error, retrying in 1 second", "err", err)
 			close(chStopChan)
 			time.Sleep(time.Second)
 			continue
 		}
-		log.Info("Queried last persisted block", "block number", lastPersisted)
-		go m.blockMonitor.SyncHistoricBlocks(lastPersisted, currentBlockNumber, cancelChan, &wg)
 
 		select {
 		case <-stopChan:
