@@ -49,7 +49,7 @@ func TestDefaultTokenMonitor_InspectTransaction_EIP165WithERC20(t *testing.T) {
 		CreatedContract: common.Address{9, 8, 7},
 	}
 
-	tokenMonitor := NewDefaultTokenMonitor(stubClient)
+	tokenMonitor := NewDefaultTokenMonitor(stubClient, []TokenRule{{scope: types.AllScope, templateName: "ERC20", eip165: "36372b07"}})
 	res, err := tokenMonitor.InspectTransaction(tx)
 
 	assert.Nil(t, err)
@@ -75,7 +75,7 @@ func TestDefaultTokenMonitor_InspectTransaction_EIP165WithERC721(t *testing.T) {
 		CreatedContract: common.Address{9, 8, 7},
 	}
 
-	tokenMonitor := NewDefaultTokenMonitor(stubClient)
+	tokenMonitor := NewDefaultTokenMonitor(stubClient, []TokenRule{{scope: types.AllScope, templateName: "ERC721", eip165: "80ac58cd"}})
 	res, err := tokenMonitor.InspectTransaction(tx)
 
 	assert.Nil(t, err)

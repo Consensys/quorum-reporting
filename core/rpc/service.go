@@ -9,6 +9,7 @@ import (
 
 	"quorumengineering/quorum-report/database"
 	"quorumengineering/quorum-report/log"
+	"quorumengineering/quorum-report/types"
 )
 
 var defaultHTTPTimeouts = ethRPC.HTTPTimeouts{
@@ -25,7 +26,7 @@ type RPCService struct {
 	listener     net.Listener
 }
 
-func NewRPCService(db database.Database, httpEndpoint string, vhosts []string, cors []string) *RPCService {
+func NewRPCService(db database.Database, config types.ReportingConfig) *RPCService {
 	apis := []ethRPC.API{
 		{
 			"reporting",
@@ -35,9 +36,9 @@ func NewRPCService(db database.Database, httpEndpoint string, vhosts []string, c
 		},
 	}
 	return &RPCService{
-		httpEndpoint: httpEndpoint,
-		vhosts:       vhosts,
-		cors:         cors,
+		httpEndpoint: config.Server.RPCAddr,
+		vhosts:       config.Server.RPCVHosts,
+		cors:         config.Server.RPCCorsList,
 		apis:         apis,
 	}
 }
