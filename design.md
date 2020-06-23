@@ -46,18 +46,8 @@ Quorum Reporting -----> [ Backend ] ----------> [ RPC Service ]
    |              [ Monitor Service ]           |      |
    |                       |                    |      |
    |                       |                    |      |
-   |                       |                    |      |
-   |                       |                    |      |
-   |                       |                    |      |
    V                       V                    V      V
-Quorum <--------- [ Block Monitor ] ----------> Database <---------- Visualization (e.g. Cakeshop)
-   ^                       |                       ^
-   |                       |                       |
-   |                       |                       | 
-   |                       |                       | 
-   |                       |                       |
-   |                       V                       |
-   +------- [ Transaction/Storage Monitor ] -------+
+Quorum <- [ Block/Transaction/Token Monitor ] -> Database <---------- Visualization (e.g. Cakeshop)
 ```
 
 #### Database Schema
