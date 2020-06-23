@@ -16,7 +16,7 @@ func TestAPIValidation(t *testing.T) {
 	db := memory.NewMemoryDB()
 	apis := NewRPCAPIs(db)
 	// Test AddAddress validation
-	err = apis.AddAddress(common.Address{0})
+	err = apis.AddAddress(common.Address{0}, nil)
 	if err == nil || err.Error() != "invalid input" {
 		t.Fatalf("expected %v, but got %v", "invalid input", err)
 	}
@@ -77,7 +77,7 @@ func TestAPIParsing(t *testing.T) {
 	var err error
 	db := memory.NewMemoryDB()
 	apis := NewRPCAPIs(db)
-	err = apis.AddAddress(address)
+	err = apis.AddAddress(address, nil)
 	if err != nil {
 		t.Fatalf("expected no error, but got %v", err)
 	}
@@ -155,5 +155,23 @@ func TestAPIParsing(t *testing.T) {
 	}
 	if eventsResp.Events[0].ParsedData["_value"].(*big.Int).Cmp(big.NewInt(1000)) != 0 {
 		t.Fatalf("expected %v, but got %v", 1000, eventsResp.Events[0].ParsedData["_value"])
+	}
+}
+
+func TestAddAddressWithFrom(t *testing.T) {
+	var err error
+	db := memory.NewMemoryDB()
+	apis := NewRPCAPIs(db)
+	from := uint64(100)
+	err = apis.AddAddress(address, &from)
+	if err != nil {
+		t.Fatalf("expected no error, but got %v", err)
+	}
+	lastFiltered, err := db.GetLastFiltered(address)
+	if err != nil {
+		t.Fatalf("expected no error, but got %v", err)
+	}
+	if lastFiltered != from-1 {
+		t.Fatalf("expected %v, but got %v", from-1, lastFiltered)
 	}
 }
