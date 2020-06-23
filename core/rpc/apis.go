@@ -54,14 +54,14 @@ func (r *RPCAPIs) GetTransaction(hash common.Hash) (*types.ParsedTransaction, er
 	}
 	parsedTx.ParsedEvents = make([]*types.ParsedEvent, len(parsedTx.RawTransaction.Events))
 	for i, e := range parsedTx.RawTransaction.Events {
+		parsedTx.ParsedEvents[i] = &types.ParsedEvent{
+			RawEvent: e,
+		}
 		contractABI, err := r.db.GetContractABI(e.Address)
 		if err != nil {
 			return nil, err
 		}
 		if contractABI != "" {
-			parsedTx.ParsedEvents[i] = &types.ParsedEvent{
-				RawEvent: e,
-			}
 			if err := parsedTx.ParsedEvents[i].ParseEvent(contractABI); err != nil {
 				return nil, err
 			}
@@ -71,7 +71,14 @@ func (r *RPCAPIs) GetTransaction(hash common.Hash) (*types.ParsedTransaction, er
 }
 
 func (r *RPCAPIs) GetContractCreationTransaction(address common.Address) (common.Hash, error) {
-	return r.db.GetContractCreationTransaction(address)
+	txHash, err := r.db.GetContractCreationTransaction(address)
+	if err != nil {
+		return common.Hash{0}, err
+	}
+	if txHash == (common.Hash{0}) {
+		return common.Hash{0}, errors.New("contract creation tx not found")
+	}
+	return txHash, nil
 }
 
 func (r *RPCAPIs) GetAllTransactionsToAddress(address common.Address, options *types.QueryOptions) (*TransactionsResp, error) {
@@ -165,11 +172,11 @@ func (r *RPCAPIs) GetStorageHistory(address common.Address, startBlockNumber, en
 		return nil, err
 	}
 	if rawAbi == "" {
-		return nil, errors.New("no storage ABI present to parse with")
+		return nil, errors.New("no Storage Layout present to parse with")
 	}
 	var parsedAbi types.SolidityStorageDocument
 	if err = json.Unmarshal([]byte(rawAbi), &parsedAbi); err != nil {
-		return nil, errors.New("unable to decode storage ABI: " + err.Error())
+		return nil, errors.New("unable to decode Storage Layout: " + err.Error())
 	}
 
 	// TODO: implement GetStorageRoot to reduce the response list
@@ -197,9 +204,13 @@ func (r *RPCAPIs) GetStorageHistory(address common.Address, startBlockNumber, en
 	}, nil
 }
 
-func (r *RPCAPIs) AddAddress(address common.Address) error {
+func (r *RPCAPIs) AddAddress(address common.Address, from *uint64) error {
 	if address == (common.Address{}) {
 		return errors.New("invalid input")
+	}
+	if from != nil && *from > 0 {
+		// add address from
+		return r.db.AddAddressFrom(address, *from)
 	}
 	return r.db.AddAddresses([]common.Address{address})
 }

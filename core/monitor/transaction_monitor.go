@@ -21,7 +21,7 @@ func NewTransactionMonitor(db database.Database, quorumClient client.Client) *Tr
 }
 
 func (tm *TransactionMonitor) PullTransactions(block *types.Block) ([]*types.Transaction, error) {
-	log.Info("Fetching transactions", "block", block.Hash.String())
+	log.Info("Fetching transactions", "block", block.Hash.String(), "blockNumber", block.Number)
 
 	fetchedTransactions := make([]*types.Transaction, 0, len(block.Transactions))
 	for _, txHash := range block.Transactions {
