@@ -103,7 +103,7 @@ func (m *MonitorService) startWorker(stopChan <-chan types.StopEvent) {
 				err = m.processBlock(block)
 			}
 		case <-stopChan:
-			log.Debug("Stop message received", "location", "BlockMonitor::startWorker")
+			log.Debug("Stop message received", "location", "core/monitor/service::startWorker")
 			return
 		}
 	}
