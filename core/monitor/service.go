@@ -1,12 +1,11 @@
 package monitor
 
 import (
-	"context"
 	"runtime"
 	"sync"
 	"time"
 
-	ethTypes "github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/event"
 
 	"quorumengineering/quorum-report/client"
@@ -17,37 +16,43 @@ import (
 
 // MonitorService starts all monitors. It pulls data from Quorum node and update the database.
 type MonitorService struct {
-	db           database.Database
-	quorumClient client.Client
-	blockMonitor *BlockMonitor
-	batchWriter  *BatchWriter
-	stopFeed     event.Feed
-	totalWorkers int
+	db database.Database
+
+	// monitors
+	blockMonitor       BlockMonitor
+	transactionMonitor TransactionMonitor
+	tokenMonitor       TokenMonitor
+
+	// concurrent block processing
+	newBlockChan   chan *types.Block
+	batchWriteChan chan *BlockAndTransactions
+	batchWriter    *BatchWriter
+	totalWorkers   int
+
+	// stop feed
+	stopFeed event.Feed
 }
 
 func NewMonitorService(db database.Database, quorumClient client.Client, consensus string, tuningConfig types.TuningConfig) *MonitorService {
+	newBlockChan := make(chan *types.Block)
 	batchWriteChan := make(chan *BlockAndTransactions, tuningConfig.BlockProcessingQueueSize)
 	return &MonitorService{
-		db:           db,
-		quorumClient: quorumClient,
-		blockMonitor: NewBlockMonitor(db, quorumClient, consensus, batchWriteChan),
-		batchWriter:  NewBatchWriter(db, batchWriteChan, tuningConfig.BlockProcessingFlushPeriod),
-		totalWorkers: 3 * runtime.NumCPU(),
+		db:                 db,
+		blockMonitor:       NewDefaultBlockMonitor(quorumClient, newBlockChan, consensus),
+		transactionMonitor: NewDefaultTransactionMonitor(quorumClient),
+		tokenMonitor:       NewDefaultTokenMonitor(quorumClient),
+		newBlockChan:       newBlockChan,
+		batchWriteChan:     batchWriteChan,
+		batchWriter:        NewBatchWriter(db, batchWriteChan, tuningConfig.BlockProcessingFlushPeriod),
+		totalWorkers:       3 * runtime.NumCPU(),
 	}
 }
 
 func (m *MonitorService) Start() error {
 	log.Info("Start monitor service")
 
-	// Pulling historical blocks since the last persisted while continuously listening to ChainHeadEvent.
-	// For every block received, pull transactions/ events related to the registered contracts.
-
-	log.Info("Start to sync blocks...")
-
 	// Start batch writer and workers
-	log.Info("Starting batch writer")
 	m.startBatchWriter()
-	log.Info("Starting block processor workers")
 	m.startWorkers()
 
 	go m.run()
@@ -67,6 +72,7 @@ func (m *MonitorService) subscribeStopEvent() (chan types.StopEvent, event.Subsc
 }
 
 func (m *MonitorService) startBatchWriter() {
+	log.Info("Starting batch writer")
 	go func() {
 		stopChan, stopSubscription := m.subscribeStopEvent()
 		defer stopSubscription.Unsubscribe()
@@ -75,12 +81,31 @@ func (m *MonitorService) startBatchWriter() {
 }
 
 func (m *MonitorService) startWorkers() {
+	log.Info("Starting block processor workers")
 	for i := 0; i < m.totalWorkers; i++ {
 		go func() {
 			stopChan, stopSubscription := m.subscribeStopEvent()
 			defer stopSubscription.Unsubscribe()
-			m.blockMonitor.startWorker(stopChan)
+			m.startWorker(stopChan)
 		}()
+	}
+}
+
+func (m *MonitorService) startWorker(stopChan <-chan types.StopEvent) {
+	for {
+		select {
+		case block := <-m.newBlockChan:
+			// Listen to new block channel and process if new block comes.
+			err := m.processBlock(block)
+			for err != nil {
+				log.Warn("Error processing block", "block number", block.Number, "err", err)
+				time.Sleep(time.Second)
+				err = m.processBlock(block)
+			}
+		case <-stopChan:
+			log.Debug("Stop message received", "location", "core/monitor/service::startWorker")
+			return
+		}
 	}
 }
 
@@ -107,18 +132,32 @@ func (m *MonitorService) run() {
 				chain head subscription was down
 	*/
 
+	log.Info("Start to sync blocks...")
 	for {
 		chStopChan := make(chan bool)
 		cancelChan := make(chan bool)
 		var wg sync.WaitGroup
 		wg.Add(1)
 
-		if err := m.listenToChainHead(cancelChan, chStopChan); err != nil {
+		// listen to chain head
+		if err := m.blockMonitor.ListenToChainHead(cancelChan, chStopChan); err != nil {
 			log.Error("Subscribe to chain head event error, retrying in 1 second", "err", err)
 			time.Sleep(time.Second)
 			continue
 		}
-		if err := m.syncHistoricBlocks(cancelChan, &wg); err != nil {
+
+		// get last persisted block number
+		lastPersisted, err := m.db.GetLastPersistedBlockNumber()
+		if err != nil {
+			log.Error("Get last persisted block number error, retrying in 1 second", "err", err)
+			close(chStopChan)
+			time.Sleep(time.Second)
+			continue
+		}
+
+		log.Info("Queried last persisted block", "block number", lastPersisted)
+		// sync historic blocks
+		if err := m.blockMonitor.SyncHistoricBlocks(lastPersisted, cancelChan, &wg); err != nil {
 			log.Error("Sync historic blocks error, retrying in 1 second", "err", err)
 			close(chStopChan)
 			time.Sleep(time.Second)
@@ -139,56 +178,32 @@ func (m *MonitorService) run() {
 	}
 }
 
-func (m *MonitorService) syncHistoricBlocks(cancelChan chan bool, wg *sync.WaitGroup) error {
-	currentBlockNumber, err := m.blockMonitor.currentBlockNumber()
+func (m *MonitorService) processBlock(block *types.Block) error {
+	// Transaction monitor pulls all transactions for the given block.
+	fetchedTxns, err := m.transactionMonitor.PullTransactions(block)
 	if err != nil {
 		return err
 	}
-	log.Info("Queried current block head from Quorum", "block number", currentBlockNumber)
-	lastPersisted, err := m.db.GetLastPersistedBlockNumber()
-	if err != nil {
-		return err
-	}
-	log.Info("Queried last persisted block", "block number", lastPersisted)
 
-	// Sync is called in a go routine so that it doesn't block main process.
-	go func() {
-		defer log.Info("Returning from historical block processing.")
-		defer wg.Done()
-		err := m.blockMonitor.syncBlocks(lastPersisted+1, currentBlockNumber, cancelChan)
-		for err != nil {
-			log.Info("Sync historic blocks failed", "end-block", currentBlockNumber, "err", err)
-			time.Sleep(time.Second)
-			err = m.blockMonitor.syncBlocks(err.EndBlockNumber(), currentBlockNumber, cancelChan)
+	// Token monitor checks if transaction deploys a public ERC20/ERC721 contract directly or internally
+	for _, tx := range fetchedTxns {
+		tokenContracts, err := m.tokenMonitor.InspectTransaction(tx)
+		if err != nil {
+			return err
 		}
-	}()
-
-	return nil
-}
-
-func (m *MonitorService) listenToChainHead(cancelChan chan bool, stopChan chan bool) error {
-	headers := make(chan *ethTypes.Header)
-	sub, err := m.quorumClient.SubscribeNewHead(context.Background(), headers)
-	if err != nil {
-		return err
+		for addr, contractType := range tokenContracts {
+			// TODO: error handling?
+			m.db.AddAddresses([]common.Address{addr})
+			m.db.AssignTemplate(addr, contractType)
+		}
 	}
 
-	go func() {
-		defer close(cancelChan)
-		log.Info("Starting chain head listener.")
-		for {
-			select {
-			case err := <-sub.Err():
-				log.Error("Chain head event subscription error", "err", err)
-				return
-			case header := <-headers:
-				m.blockMonitor.processChainHead(header)
-			case <-stopChan:
-				log.Info("Stopping chain head listener.")
-				return
-			}
-		}
-	}()
+	// batch write txs and blocks
+	workUnit := &BlockAndTransactions{
+		block: block,
+		txs:   fetchedTxns,
+	}
+	m.batchWriteChan <- workUnit
 
 	return nil
 }

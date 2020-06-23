@@ -14,7 +14,7 @@ import (
 )
 
 type TokenMonitor interface {
-	InspectAddresses(addressesToFindTokens []common.Address, tx *types.Transaction) (map[common.Address]string, error)
+	InspectTransaction(tx *types.Transaction) (map[common.Address]string, error)
 }
 
 type DefaultTokenMonitor struct {
@@ -27,11 +27,21 @@ func NewDefaultTokenMonitor(quorumClient client.Client) *DefaultTokenMonitor {
 	}
 }
 
-func (dtm *DefaultTokenMonitor) InspectAddresses(addresses []common.Address, tx *types.Transaction) (map[common.Address]string, error) {
+func (tm *DefaultTokenMonitor) InspectTransaction(tx *types.Transaction) (map[common.Address]string, error) {
+	var addresses []common.Address
+	if (tx.CreatedContract != common.Address{}) {
+		addresses = append(addresses, tx.CreatedContract)
+	}
+	for _, ic := range tx.InternalCalls {
+		if ic.Type == "CREATE" || ic.Type == "CREATE2" {
+			addresses = append(addresses, ic.To)
+		}
+	}
+
 	tokenContracts := make(map[common.Address]string)
 
 	for _, addr := range addresses {
-		contractType, err := dtm.checkEIP165(addr, tx.BlockNumber)
+		contractType, err := tm.checkEIP165(addr, tx.BlockNumber)
 		if err != nil {
 			return nil, err
 		}
@@ -42,24 +52,25 @@ func (dtm *DefaultTokenMonitor) InspectAddresses(addresses []common.Address, tx 
 		}
 
 		//Check if contract has bytecode for contract types
-		contractBytecode, err := client.GetCode(dtm.quorumClient, addr, tx.BlockHash)
+		contractBytecode, err := client.GetCode(tm.quorumClient, addr, tx.BlockHash)
 		if err != nil {
 			return nil, err
 		}
 
-		contractType = checkBytecodeForTokens(contractBytecode)
+		contractType = tm.checkBytecodeForTokens(contractBytecode)
 		if contractType != "" {
 			log.Info("Transaction deploys potential token", "type", contractType, "tx", tx.Hash.Hex(), "address", addr.Hex())
 			tokenContracts[addr] = contractType
 		}
 	}
+
 	return tokenContracts, nil
 }
 
-func (dtm *DefaultTokenMonitor) checkEIP165(address common.Address, blockNum uint64) (string, error) {
+func (tm *DefaultTokenMonitor) checkEIP165(address common.Address, blockNum uint64) (string, error) {
 	//check if the contract implements EIP165
 
-	eip165Call, err := client.CallEIP165(dtm.quorumClient, address, common.Hex2Bytes("01ffc9a70"), new(big.Int).SetUint64(blockNum))
+	eip165Call, err := client.CallEIP165(tm.quorumClient, address, common.Hex2Bytes("01ffc9a70"), new(big.Int).SetUint64(blockNum))
 	if err != nil {
 		return "", err
 	}
@@ -67,7 +78,7 @@ func (dtm *DefaultTokenMonitor) checkEIP165(address common.Address, blockNum uin
 		return "", nil
 	}
 
-	eip165CallCheck, err := client.CallEIP165(dtm.quorumClient, address, common.Hex2Bytes("ffffffff"), new(big.Int).SetUint64(blockNum))
+	eip165CallCheck, err := client.CallEIP165(tm.quorumClient, address, common.Hex2Bytes("ffffffff"), new(big.Int).SetUint64(blockNum))
 	if err != nil {
 		return "", err
 	}
@@ -77,7 +88,7 @@ func (dtm *DefaultTokenMonitor) checkEIP165(address common.Address, blockNum uin
 
 	//now we know it implements EIP165, so lets check the interfaces
 
-	erc20check, err := client.CallEIP165(dtm.quorumClient, address, common.Hex2Bytes("36372b07"), new(big.Int).SetUint64(blockNum))
+	erc20check, err := client.CallEIP165(tm.quorumClient, address, common.Hex2Bytes("36372b07"), new(big.Int).SetUint64(blockNum))
 	if err != nil {
 		return "", err
 	}
@@ -85,7 +96,7 @@ func (dtm *DefaultTokenMonitor) checkEIP165(address common.Address, blockNum uin
 		return types.ERC20, nil
 	}
 
-	erc721check, err := client.CallEIP165(dtm.quorumClient, address, common.Hex2Bytes("80ac58cd"), new(big.Int).SetUint64(blockNum))
+	erc721check, err := client.CallEIP165(tm.quorumClient, address, common.Hex2Bytes("80ac58cd"), new(big.Int).SetUint64(blockNum))
 	if err != nil {
 		return "", err
 	}
@@ -96,19 +107,19 @@ func (dtm *DefaultTokenMonitor) checkEIP165(address common.Address, blockNum uin
 	return "", nil
 }
 
-func checkBytecodeForTokens(data hexutil.Bytes) string {
+func (tm *DefaultTokenMonitor) checkBytecodeForTokens(data hexutil.Bytes) string {
 	// check ERC20
-	if checkAbiMatch(types.ERC20ABI, data) {
+	if tm.checkAbiMatch(types.ERC20ABI, data) {
 		return types.ERC20
 	}
 	// check ERC721
-	if checkAbiMatch(types.ERC721ABI, data) {
+	if tm.checkAbiMatch(types.ERC721ABI, data) {
 		return types.ERC721
 	}
 	return ""
 }
 
-func checkAbiMatch(abiToCheck abi.ABI, data hexutil.Bytes) bool {
+func (tm *DefaultTokenMonitor) checkAbiMatch(abiToCheck abi.ABI, data hexutil.Bytes) bool {
 	for _, b := range abiToCheck.Methods {
 		if !strings.Contains(data.String(), common.Bytes2Hex(b.ID())) {
 			return false

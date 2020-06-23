@@ -5,22 +5,26 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 
 	"quorumengineering/quorum-report/client"
-	"quorumengineering/quorum-report/database"
 	"quorumengineering/quorum-report/graphql"
 	"quorumengineering/quorum-report/log"
 	"quorumengineering/quorum-report/types"
 )
 
-type TransactionMonitor struct {
-	db           database.Database
+type TransactionMonitor interface {
+	PullTransactions(block *types.Block) ([]*types.Transaction, error)
+}
+
+type DefaultTransactionMonitor struct {
 	quorumClient client.Client
 }
 
-func NewTransactionMonitor(db database.Database, quorumClient client.Client) *TransactionMonitor {
-	return &TransactionMonitor{db, quorumClient}
+func NewDefaultTransactionMonitor(quorumClient client.Client) *DefaultTransactionMonitor {
+	return &DefaultTransactionMonitor{
+		quorumClient: quorumClient,
+	}
 }
 
-func (tm *TransactionMonitor) PullTransactions(block *types.Block) ([]*types.Transaction, error) {
+func (tm *DefaultTransactionMonitor) PullTransactions(block *types.Block) ([]*types.Transaction, error) {
 	log.Info("Fetching transactions", "block", block.Hash.String())
 
 	fetchedTransactions := make([]*types.Transaction, 0, len(block.Transactions))
@@ -35,7 +39,7 @@ func (tm *TransactionMonitor) PullTransactions(block *types.Block) ([]*types.Tra
 	return fetchedTransactions, nil
 }
 
-func (tm *TransactionMonitor) createTransaction(block *types.Block, hash common.Hash) (*types.Transaction, error) {
+func (tm *DefaultTransactionMonitor) createTransaction(block *types.Block, hash common.Hash) (*types.Transaction, error) {
 	log.Debug("Processing transaction", "hash", hash.String())
 
 	var txResult graphql.TransactionResult
