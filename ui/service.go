@@ -30,7 +30,7 @@ func (handler *UIHandler) Start() {
 
 	// start a light weighted sample sample ui
 	router := gin.Default()
-	router.Use(static.Serve("/", static.LocalFile("./ui/build", true)))
+	router.Use(static.Serve("/", static.LocalFile("./ui/build@bfb9f7639c0d56990a3843594a8f513f2f37f47b", true)))
 
 	handler.srv = &http.Server{
 		Addr:    ":" + strconv.Itoa(handler.port),
