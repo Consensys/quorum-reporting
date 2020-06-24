@@ -77,7 +77,7 @@ func (tm *DefaultTokenMonitor) InspectTransaction(tx *types.Transaction) (map[co
 			if contractType != "" {
 				log.Info("Contract implemented interface via ERC165", "interface", contractType, "address", addressWithMeta.address.String())
 				tokenContracts[addressWithMeta.address] = contractType
-				continue
+				break
 			}
 
 			// Check contract bytecode directly for all 4bytes presented in abi
@@ -89,6 +89,7 @@ func (tm *DefaultTokenMonitor) InspectTransaction(tx *types.Transaction) (map[co
 			if contractType != "" {
 				log.Info("Transaction deploys potential token", "type", contractType, "tx", tx.Hash.Hex(), "address", addressWithMeta.address.Hex())
 				tokenContracts[addressWithMeta.address] = contractType
+				break
 			}
 		}
 	}
