@@ -72,13 +72,24 @@ func (cachingDB *DatabaseWithCache) AddAddresses(addresses []common.Address) err
 		}
 	}
 	if len(newAddresses) > 0 {
-		err := cachingDB.db.AddAddresses(newAddresses)
-		if err != nil {
+		if err := cachingDB.db.AddAddresses(newAddresses); err != nil {
 			return err
 		}
 		for _, newAddress := range newAddresses {
 			cachingDB.addressCache[newAddress] = true
 		}
+	}
+	return nil
+}
+
+func (cachingDB *DatabaseWithCache) AddAddressFrom(address common.Address, from uint64) error {
+	cachingDB.addressMux.Lock()
+	defer cachingDB.addressMux.Unlock()
+	if err := cachingDB.db.AddAddressFrom(address, from); err != nil {
+		return err
+	}
+	if !cachingDB.addressCache[address] {
+		cachingDB.addressCache[address] = true
 	}
 	return nil
 }
@@ -89,8 +100,7 @@ func (cachingDB *DatabaseWithCache) DeleteAddress(address common.Address) error 
 	if !cachingDB.addressCache[address] {
 		return nil
 	}
-	err := cachingDB.db.DeleteAddress(address)
-	if err != nil {
+	if err := cachingDB.db.DeleteAddress(address); err != nil {
 		return err
 	}
 	delete(cachingDB.addressCache, address)

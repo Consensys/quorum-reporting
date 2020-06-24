@@ -19,6 +19,7 @@ type Database interface {
 // AddressDB stores registered addresses
 type AddressDB interface {
 	AddAddresses([]common.Address) error
+	AddAddressFrom(common.Address, uint64) error
 	DeleteAddress(common.Address) error
 	GetAddresses() ([]common.Address, error)
 	GetContractTemplate(common.Address) (string, error)

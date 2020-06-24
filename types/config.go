@@ -34,6 +34,7 @@ type TuningConfig struct {
 type AddressConfig struct {
 	Address      common.Address `toml:"address,omitempty"`
 	TemplateName string         `toml:"templateName,omitempty"`
+	From         uint64         `toml:"from,omitempty""`
 }
 
 type TemplateConfig struct {

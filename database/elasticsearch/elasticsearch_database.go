@@ -129,6 +129,25 @@ func (es *ElasticsearchDB) AddAddresses(addresses []common.Address) error {
 	return err
 }
 
+func (es *ElasticsearchDB) AddAddressFrom(address common.Address, from uint64) error {
+	contract := Contract{
+		Address:             address,
+		TemplateName:        address.String(),
+		CreationTransaction: common.Hash{},
+		LastFiltered:        from - 1,
+	}
+
+	req := esapi.IndexRequest{
+		Index:      ContractIndex,
+		DocumentID: address.String(),
+		Body:       esutil.NewJSONReader(contract),
+		Refresh:    "true",
+		OpType:     "create", //This will only create if the contract does not exist
+	}
+	_, err := es.apiClient.DoRequest(req)
+	return err
+}
+
 func (es *ElasticsearchDB) DeleteAddress(address common.Address) error {
 	deleteRequest := esapi.DeleteRequest{
 		Index:      ContractIndex,

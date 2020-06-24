@@ -98,6 +98,26 @@ func (db *MemoryDB) AddAddresses(addresses []common.Address) error {
 	return nil
 }
 
+func (db *MemoryDB) AddAddressFrom(address common.Address, from uint64) error {
+	db.mux.Lock()
+	defer db.mux.Unlock()
+	isExist := false
+	for _, exist := range db.addressDB {
+		if address == exist {
+			isExist = true
+			break
+		}
+	}
+	if !isExist {
+		db.txIndexDB[address] = NewTxIndexer()
+		db.eventIndexDB[address] = []*types.Event{}
+		db.storageIndexDB[address] = NewStorageIndexer()
+		db.addressDB = append(db.addressDB, address)
+		db.lastFiltered[address] = from - 1
+	}
+	return nil
+}
+
 func (db *MemoryDB) DeleteAddress(address common.Address) error {
 	db.mux.Lock()
 	defer db.mux.Unlock()
