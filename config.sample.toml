@@ -4,7 +4,7 @@ title = "Quorum reporting config example"
 # ----- Initial Contract Registration List -----
 
 # The list of addresses we want to index in more detail, including pulling storage & events
-# It includes the address itself, as well as a default template
+# It includes the address itself, as well as optional default template and from block
 addresses = [
     { address = "0x1932c48b2bf8102ba33b4a6b545c32236e342f34", templateName = "SimpleStorage" }
 ]

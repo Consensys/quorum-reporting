@@ -67,16 +67,27 @@ func New(config types.ReportingConfig) (*Backend, error) {
 	log.Info("Adding addresses from configuration file to database")
 	initialAddresses := []common.Address{}
 	for _, address := range config.Addresses {
-		initialAddresses = append(initialAddresses, address.Address)
+		if address.From > 0 {
+			// register address from a given block number
+			if err := db.AddAddressFrom(address.Address, address.From); err != nil {
+				return nil, err
+			}
+		} else {
+			initialAddresses = append(initialAddresses, address.Address)
+		}
 	}
+	// bulk update initial addresses without from
 	if err := db.AddAddresses(initialAddresses); err != nil {
 		return nil, err
 	}
 	log.Info("Assigning address templates from configuration file to database")
 	// assign all addresses
 	for _, address := range config.Addresses {
-		if err := db.AssignTemplate(address.Address, address.TemplateName); err != nil {
-			return nil, err
+		if address.TemplateName != "" {
+			if err := db.AssignTemplate(address.Address, address.TemplateName); err != nil {
+				return nil, err
+			}
+			log.Info("Assign template to initial registered contract", "template", address.TemplateName, "address", address.Address)
 		}
 	}
 
