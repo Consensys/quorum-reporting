@@ -63,14 +63,6 @@ func New(config types.ReportingConfig) (*Backend, error) {
 			return nil, err
 		}
 	}
-	// store erc20 template
-	if err := db.AddTemplate(types.ERC20, types.ERC20ABIString, ""); err != nil {
-		return nil, err
-	}
-	// store erc721 template
-	if err := db.AddTemplate(types.ERC721, types.ERC721ABIString, ""); err != nil {
-		return nil, err
-	}
 	// store all addresses
 	log.Info("Adding addresses from configuration file to database")
 	initialAddresses := []common.Address{}
@@ -88,6 +80,7 @@ func New(config types.ReportingConfig) (*Backend, error) {
 	if err := db.AddAddresses(initialAddresses); err != nil {
 		return nil, err
 	}
+	log.Info("Assigning address templates from configuration file to database")
 	// assign all addresses
 	for _, address := range config.Addresses {
 		if address.TemplateName != "" {
@@ -99,9 +92,9 @@ func New(config types.ReportingConfig) (*Backend, error) {
 	}
 
 	return &Backend{
-		monitor: monitor.NewMonitorService(db, quorumClient, consensus, config.Tuning),
+		monitor: monitor.NewMonitorService(db, quorumClient, consensus, config),
 		filter:  filter.NewFilterService(db, quorumClient),
-		rpc:     rpc.NewRPCService(db, config.Server.RPCAddr, config.Server.RPCVHosts, config.Server.RPCCorsList),
+		rpc:     rpc.NewRPCService(db, config),
 		db:      db,
 	}, nil
 }

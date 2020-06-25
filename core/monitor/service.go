@@ -2,9 +2,11 @@ package monitor
 
 import (
 	"runtime"
+	"strings"
 	"sync"
 	"time"
 
+	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/event"
 
@@ -33,17 +35,32 @@ type MonitorService struct {
 	stopFeed event.Feed
 }
 
-func NewMonitorService(db database.Database, quorumClient client.Client, consensus string, tuningConfig types.TuningConfig) *MonitorService {
+func NewMonitorService(db database.Database, quorumClient client.Client, consensus string, config types.ReportingConfig) *MonitorService {
+	// rules are only parsed once during monitor service initialization
+	var rules []TokenRule
+	for _, rule := range config.Rules {
+		template, _ := db.GetTemplateDetails(rule.TemplateName)
+		if template != nil {
+			abi, _ := abi.JSON(strings.NewReader(template.ABI))
+			rules = append(rules, TokenRule{
+				scope:        rule.Scope,
+				deployer:     rule.Deployer,
+				templateName: rule.TemplateName,
+				eip165:       rule.EIP165,
+				abi:          abi,
+			})
+		}
+	}
 	newBlockChan := make(chan *types.Block)
-	batchWriteChan := make(chan *BlockAndTransactions, tuningConfig.BlockProcessingQueueSize)
+	batchWriteChan := make(chan *BlockAndTransactions, config.Tuning.BlockProcessingQueueSize)
 	return &MonitorService{
 		db:                 db,
 		blockMonitor:       NewDefaultBlockMonitor(quorumClient, newBlockChan, consensus),
 		transactionMonitor: NewDefaultTransactionMonitor(quorumClient),
-		tokenMonitor:       NewDefaultTokenMonitor(quorumClient),
+		tokenMonitor:       NewDefaultTokenMonitor(quorumClient, rules),
 		newBlockChan:       newBlockChan,
 		batchWriteChan:     batchWriteChan,
-		batchWriter:        NewBatchWriter(db, batchWriteChan, tuningConfig.BlockProcessingFlushPeriod),
+		batchWriter:        NewBatchWriter(db, batchWriteChan, config.Tuning.BlockProcessingFlushPeriod),
 		totalWorkers:       3 * runtime.NumCPU(),
 	}
 }
@@ -185,7 +202,7 @@ func (m *MonitorService) processBlock(block *types.Block) error {
 		return err
 	}
 
-	// Token monitor checks if transaction deploys a public ERC20/ERC721 contract directly or internally
+	// Token monitor checks if transaction deploys a contract matching auto registration rules.
 	for _, tx := range fetchedTxns {
 		tokenContracts, err := m.tokenMonitor.InspectTransaction(tx)
 		if err != nil {

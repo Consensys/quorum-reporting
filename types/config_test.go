@@ -27,35 +27,69 @@ func TestConfigFile(t *testing.T) {
 	tmpConfigData.Server.RPCCorsList = append(tmpConfigData.Server.RPCCorsList, "localhost")
 	tmpConfigData.Server.RPCVHosts = append(tmpConfigData.Server.RPCVHosts, "localhost")
 	tmpConfigData.Tuning.BlockProcessingQueueSize = 10
+	tmpConfigData.Templates = []*TemplateConfig{
+		{
+			TemplateName:  "SimpleStorage",
+			StorageLayout: "{\"storage\":[{\"astId\":3,\"contract\":\"scripts/simplestorage.sol:SimpleStorage\",\"label\":\"storedData\",\"offset\":0,\"slot\":\"0\",\"type\":\"t_uint256\"}],\"types\":{\"t_uint256\":{\"encoding\":\"inplace\",\"label\":\"uint256\",\"numberOfBytes\":\"32\"}}}",
+		},
+	}
 
 	blob, err := toml.Marshal(tmpConfigData)
 	assert.Nil(t, err, "error marshalling test config file: %s", err)
-
 	err = ioutil.WriteFile(fileName, blob, 0644)
 	assert.Nil(t, err, "error writing new node info to file %s: %s", fileName, err)
 
 	_, err = ReadConfig(fileName)
-	assert.Nil(t, err, "error reading config file: %s", err)
+	assert.Error(t, err, "expected error, but got %v", err)
 
-	tmpConfigData.Connection.MaxReconnectTries = 5
+	tmpConfigData.Templates = []*TemplateConfig{
+		{
+			TemplateName:  "SimpleStorage",
+			ABI:           "[{\"constant\":true,\"inputs\":[],\"name\":\"storedData\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"_x\",\"type\":\"uint256\"}],\"name\":\"set\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"get\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"name\":\"_initVal\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"name\":\"_value\",\"type\":\"uint256\"}],\"name\":\"valueSet\",\"type\":\"event\"}]",
+			StorageLayout: "{\"storage\":[{\"astId\":3,\"contract\":\"scripts/simplestorage.sol:SimpleStorage\",\"label\":\"storedData\",\"offset\":0,\"slot\":\"0\",\"type\":\"t_uint256\"}],\"types\":{\"t_uint256\":{\"encoding\":\"inplace\",\"label\":\"uint256\",\"numberOfBytes\":\"32\"}}}",
+		},
+	}
+	tmpConfigData.Rules = []*RuleConfig{
+		{
+			Scope:        "invalidScope",
+			TemplateName: "SimpleStorage",
+		},
+	}
+
 	blob, err = toml.Marshal(tmpConfigData)
 	assert.Nil(t, err, "error marshalling test config file: %s", err)
-
 	err = ioutil.WriteFile(fileName, blob, 0644)
 	assert.Nil(t, err, "error writing new node info to file %s: %s", fileName, err)
 
 	_, err = ReadConfig(fileName)
-	assert.Nil(t, err, "expected no error, but got %v", err)
+	assert.Error(t, err, "expected error, but got %v", err)
 
-	tmpConfigData.Connection.ReconnectInterval = 10
+	tmpConfigData.Rules = []*RuleConfig{
+		{
+			Scope:        "all",
+			TemplateName: "",
+		},
+	}
+
 	blob, err = toml.Marshal(tmpConfigData)
 	assert.Nil(t, err, "error marshalling test config file: %s", err)
-
 	err = ioutil.WriteFile(fileName, blob, 0644)
 	assert.Nil(t, err, "error writing new node info to file %s: %s", fileName, err)
 
 	_, err = ReadConfig(fileName)
-	assert.Nil(t, err, "expected no error, but got %v", err)
+	assert.Error(t, err, "expected error, but got %v", err)
+
+	tmpConfigData.Rules = []*RuleConfig{
+		{
+			Scope:        "all",
+			TemplateName: "SimpleStorage",
+		},
+	}
+
+	blob, err = toml.Marshal(tmpConfigData)
+	assert.Nil(t, err, "error marshalling test config file: %s", err)
+	err = ioutil.WriteFile(fileName, blob, 0644)
+	assert.Nil(t, err, "error writing new node info to file %s: %s", fileName, err)
 
 	// test config.sample.toml is valid
 	_, err = ReadConfig("../config.sample.toml")

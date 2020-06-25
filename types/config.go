@@ -1,12 +1,14 @@
 package types
 
 import (
+	"errors"
+	"fmt"
 	"os"
-
-	"quorumengineering/quorum-report/log"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/naoina/toml"
+
+	"quorumengineering/quorum-report/log"
 )
 
 type ElasticsearchConfig struct {
@@ -34,7 +36,7 @@ type TuningConfig struct {
 type AddressConfig struct {
 	Address      common.Address `toml:"address,omitempty"`
 	TemplateName string         `toml:"templateName,omitempty"`
-	From         uint64         `toml:"from,omitempty""`
+	From         uint64         `toml:"from,omitempty"`
 }
 
 type TemplateConfig struct {
@@ -43,10 +45,18 @@ type TemplateConfig struct {
 	StorageLayout string `toml:"storageLayout,omitempty"`
 }
 
+type RuleConfig struct {
+	Scope        string         `toml:"scope,omitempty"`
+	Deployer     common.Address `toml:"deployer,omitempty"`
+	TemplateName string         `toml:"templateName,omitempty"`
+	EIP165       string         `toml:"eip165,omitempty"`
+}
+
 type ReportingConfig struct {
 	Title     string
 	Addresses []*AddressConfig  `toml:"addresses,omitempty"`
 	Templates []*TemplateConfig `toml:"templates,omitempty"`
+	Rules     []*RuleConfig     `toml:"rules,omitempty"`
 	Database  *DatabaseConfig   `toml:"database,omitempty"`
 	Server    struct {
 		RPCAddr     string   `toml:"rpcAddr"`
@@ -61,6 +71,25 @@ type ReportingConfig struct {
 		MaxReconnectTries int    `toml:"maxReconnectTries,omitempty"`
 	}
 	Tuning TuningConfig `toml:"tuning,omitempty"`
+}
+
+func ReadConfig(configFile string) (ReportingConfig, error) {
+	f, err := os.Open(configFile)
+	if err != nil {
+		return ReportingConfig{}, err
+	}
+	defer f.Close()
+	var input ReportingConfig
+	if err = toml.NewDecoder(f).Decode(&input); err != nil {
+		return ReportingConfig{}, err
+	}
+	// validate config rules
+	if err = input.Validate(); err != nil {
+		return ReportingConfig{}, err
+	}
+
+	input.SetDefaults()
+	return input, nil
 }
 
 func (rc *ReportingConfig) SetDefaults() {
@@ -81,17 +110,22 @@ func (rc *ReportingConfig) SetDefaults() {
 	}
 }
 
-func ReadConfig(configFile string) (ReportingConfig, error) {
-	f, err := os.Open(configFile)
-	if err != nil {
-		return ReportingConfig{}, err
+func (rc *ReportingConfig) Validate() error {
+	for _, template := range rc.Templates {
+		if template.TemplateName == "" {
+			return errors.New(fmt.Sprintf("empty template name: %v", template))
+		}
+		if template.ABI == "" {
+			return errors.New(fmt.Sprintf("empty template ABI: %v", template))
+		}
 	}
-	defer f.Close()
-	var input ReportingConfig
-	if err = toml.NewDecoder(f).Decode(&input); err != nil {
-		return ReportingConfig{}, err
+	for _, rule := range rc.Rules {
+		if rule.Scope != AllScope && rule.Scope != InternalScope && rule.Scope != ExternalScope {
+			return errors.New(fmt.Sprintf("invalid rule scope: %v", rule))
+		}
+		if rule.TemplateName == "" {
+			return errors.New(fmt.Sprintf("invalid rule template name: %v", rule))
+		}
 	}
-
-	input.SetDefaults()
-	return input, nil
+	return nil
 }
