@@ -8,7 +8,6 @@ import (
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/event"
 
 	"quorumengineering/quorum-report/client"
 	"quorumengineering/quorum-report/database"
@@ -31,8 +30,9 @@ type MonitorService struct {
 	batchWriter    *BatchWriter
 	totalWorkers   int
 
-	// stop feed
-	stopFeed event.Feed
+	// To check we have actually shut down before returning
+	shutdownChannel chan struct{}
+	shutdownWg      sync.WaitGroup
 }
 
 func NewMonitorService(db database.Database, quorumClient client.Client, consensus string, config types.ReportingConfig) *MonitorService {
@@ -62,6 +62,7 @@ func NewMonitorService(db database.Database, quorumClient client.Client, consens
 		batchWriteChan:     batchWriteChan,
 		batchWriter:        NewBatchWriter(db, batchWriteChan, config.Tuning.BlockProcessingFlushPeriod),
 		totalWorkers:       3 * runtime.NumCPU(),
+		shutdownChannel:    make(chan struct{}),
 	}
 }
 
@@ -78,22 +79,17 @@ func (m *MonitorService) Start() error {
 }
 
 func (m *MonitorService) Stop() {
-	m.stopFeed.Send(types.StopEvent{})
+	close(m.shutdownChannel)
+	m.shutdownWg.Wait()
 	log.Info("Monitor service stopped")
-}
-
-func (m *MonitorService) subscribeStopEvent() (chan types.StopEvent, event.Subscription) {
-	c := make(chan types.StopEvent)
-	s := m.stopFeed.Subscribe(c)
-	return c, s
 }
 
 func (m *MonitorService) startBatchWriter() {
 	log.Info("Starting batch writer")
 	go func() {
-		stopChan, stopSubscription := m.subscribeStopEvent()
-		defer stopSubscription.Unsubscribe()
-		m.batchWriter.Run(stopChan)
+		m.shutdownWg.Add(1)
+		m.batchWriter.Run(m.shutdownChannel)
+		m.shutdownWg.Done()
 	}()
 }
 
@@ -101,14 +97,14 @@ func (m *MonitorService) startWorkers() {
 	log.Info("Starting block processor workers")
 	for i := 0; i < m.totalWorkers; i++ {
 		go func() {
-			stopChan, stopSubscription := m.subscribeStopEvent()
-			defer stopSubscription.Unsubscribe()
-			m.startWorker(stopChan)
+			m.shutdownWg.Add(1)
+			m.startWorker(m.shutdownChannel)
+			m.shutdownWg.Done()
 		}()
 	}
 }
 
-func (m *MonitorService) startWorker(stopChan <-chan types.StopEvent) {
+func (m *MonitorService) startWorker(stopChan <-chan struct{}) {
 	for {
 		select {
 		case block := <-m.newBlockChan:
@@ -127,9 +123,6 @@ func (m *MonitorService) startWorker(stopChan <-chan types.StopEvent) {
 }
 
 func (m *MonitorService) run() {
-	stopChan, stopSubscription := m.subscribeStopEvent()
-	defer stopSubscription.Unsubscribe()
-
 	/*
 		We want to sync historical blocks as well as listen to the chain head simultaneously,
 		whilst also being able to abort if we are shutting down and retry later if the connection
@@ -150,6 +143,8 @@ func (m *MonitorService) run() {
 	*/
 
 	log.Info("Start to sync blocks...")
+	m.shutdownWg.Add(1)
+
 	for {
 		chStopChan := make(chan bool)
 		cancelChan := make(chan bool)
@@ -182,10 +177,11 @@ func (m *MonitorService) run() {
 		}
 
 		select {
-		case <-stopChan:
+		case <-m.shutdownChannel:
 			close(chStopChan)
 			<-cancelChan
 			wg.Wait()
+			m.shutdownWg.Done()
 			return
 		case <-cancelChan:
 			wg.Wait()
