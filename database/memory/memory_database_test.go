@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/state"
 	"github.com/stretchr/testify/assert"
 
 	"quorumengineering/quorum-report/database"
@@ -96,11 +95,11 @@ func TestMemoryDB_WriteBlocks(t *testing.T) {
 func TestMemoryDB(t *testing.T) {
 	// test data
 	db := NewMemoryDB()
-	rawStorage := map[common.Address]*state.DumpAccount{
+	rawStorage := map[common.Address]*types.AccountState{
 		address: {
-			Storage: map[common.Hash]string{
-				common.HexToHash("0x0000000000000000000000000000000000000000000000000000000000000000"): "2a",
-				common.HexToHash("0x0000000000000000000000000000000000000000000000000000000000000001"): "2b",
+			Storage: map[types.Hash]string{
+				types.NewHash("0x0000000000000000000000000000000000000000000000000000000000000000"): "2a",
+				types.NewHash("0x0000000000000000000000000000000000000000000000000000000000000001"): "2b",
 			},
 		},
 	}
@@ -276,7 +275,7 @@ func testIndexBlock(t *testing.T, db database.Database, address common.Address, 
 	}
 }
 
-func testIndexStorage(t *testing.T, db database.Database, blockNumber uint64, rawStorage map[common.Address]*state.DumpAccount) {
+func testIndexStorage(t *testing.T, db database.Database, blockNumber uint64, rawStorage map[common.Address]*types.AccountState) {
 	err := db.IndexStorage(rawStorage, blockNumber)
 	if err != nil {
 		t.Fatalf("expected no error, but got %v", err)

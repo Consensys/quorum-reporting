@@ -2,7 +2,6 @@ package database
 
 import (
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/state"
 
 	"quorumengineering/quorum-report/types"
 )
@@ -51,7 +50,7 @@ type TransactionDB interface {
 // IndexDB stores the location to find all transactions/ events/ storage for a contract.
 type IndexDB interface {
 	IndexBlocks([]common.Address, []*types.Block) error
-	IndexStorage(map[common.Address]*state.DumpAccount, uint64) error
+	IndexStorage(map[common.Address]*types.AccountState, uint64) error
 	GetContractCreationTransaction(common.Address) (common.Hash, error)
 	GetAllTransactionsToAddress(common.Address, *types.QueryOptions) ([]common.Hash, error)
 	GetTransactionsToAddressTotal(common.Address, *types.QueryOptions) (uint64, error)
@@ -59,6 +58,6 @@ type IndexDB interface {
 	GetTransactionsInternalToAddressTotal(common.Address, *types.QueryOptions) (uint64, error)
 	GetAllEventsFromAddress(common.Address, *types.QueryOptions) ([]*types.Event, error)
 	GetEventsFromAddressTotal(common.Address, *types.QueryOptions) (uint64, error)
-	GetStorage(common.Address, uint64) (map[common.Hash]string, error)
+	GetStorage(common.Address, uint64) (map[types.Hash]string, error)
 	GetLastFiltered(common.Address) (uint64, error)
 }

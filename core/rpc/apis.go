@@ -184,7 +184,7 @@ func (r *RPCAPIs) GetAllEventsFromAddress(req *http.Request, args *AddressWithOp
 	return nil
 }
 
-func (r *RPCAPIs) GetStorage(req *http.Request, args *AddressWithOptionalBlock, reply *map[common.Hash]string) error {
+func (r *RPCAPIs) GetStorage(req *http.Request, args *AddressWithOptionalBlock, reply *map[types.Hash]string) error {
 	if args.Address == nil {
 		return ErrNoAddress
 	}
@@ -233,7 +233,13 @@ func (r *RPCAPIs) GetStorageHistory(req *http.Request, args *AddressWithBlockRan
 		if rawStorage == nil {
 			continue
 		}
-		historicStorage, err := storageparsing.ParseRawStorage(rawStorage, parsedAbi)
+		//TODO: temporary
+		converted := make(map[common.Hash]string)
+		for k, v := range rawStorage {
+			converted[common.HexToHash(k.String())] = v
+		}
+		//
+		historicStorage, err := storageparsing.ParseRawStorage(converted, parsedAbi)
 		if err != nil {
 			return err
 		}

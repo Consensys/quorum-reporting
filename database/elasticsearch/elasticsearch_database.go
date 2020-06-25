@@ -12,7 +12,6 @@ import (
 	"github.com/elastic/go-elasticsearch/v7/esapi"
 	"github.com/elastic/go-elasticsearch/v7/esutil"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/state"
 
 	"quorumengineering/quorum-report/database"
 	"quorumengineering/quorum-report/log"
@@ -442,7 +441,7 @@ func (es *ElasticsearchDB) IndexBlocks(addresses []common.Address, blocks []*typ
 	return es.updateAllLastFiltered(addresses, blocks[len(blocks)-1].Number)
 }
 
-func (es *ElasticsearchDB) IndexStorage(rawStorage map[common.Address]*state.DumpAccount, blockNumber uint64) error {
+func (es *ElasticsearchDB) IndexStorage(rawStorage map[common.Address]*types.AccountState, blockNumber uint64) error {
 	biState := es.apiClient.GetBulkHandler(StateIndex)
 	biStorage := es.apiClient.GetBulkHandler(StorageIndex)
 
@@ -455,10 +454,10 @@ func (es *ElasticsearchDB) IndexStorage(rawStorage map[common.Address]*state.Dum
 		stateObj := State{
 			Address:     address,
 			BlockNumber: blockNumber,
-			StorageRoot: common.HexToHash(dumpAccount.Root),
+			StorageRoot: dumpAccount.Root,
 		}
 		storageMap := Storage{
-			StorageRoot: common.HexToHash(dumpAccount.Root),
+			StorageRoot: dumpAccount.Root,
 			StorageMap:  dumpAccount.Storage,
 		}
 
@@ -481,7 +480,7 @@ func (es *ElasticsearchDB) IndexStorage(rawStorage map[common.Address]*state.Dum
 			context.Background(),
 			esutil.BulkIndexerItem{
 				Action:     "create",
-				DocumentID: "0x" + dumpAccount.Root,
+				DocumentID: dumpAccount.Root.String(),
 				Body:       esutil.NewJSONReader(storageMap),
 				OnSuccess: func(ctx context.Context, item esutil.BulkIndexerItem, item2 esutil.BulkIndexerResponseItem) {
 					wg.Done()
@@ -635,7 +634,7 @@ func (es *ElasticsearchDB) GetEventsFromAddressTotal(address common.Address, opt
 	return results.Count, nil
 }
 
-func (es *ElasticsearchDB) GetStorage(address common.Address, blockNumber uint64) (map[common.Hash]string, error) {
+func (es *ElasticsearchDB) GetStorage(address common.Address, blockNumber uint64) (map[types.Hash]string, error) {
 	fetchReq := esapi.GetRequest{
 		Index:      StateIndex,
 		DocumentID: address.String() + "-" + strconv.FormatUint(blockNumber, 10),

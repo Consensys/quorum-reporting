@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/state"
 
 	"quorumengineering/quorum-report/client"
 	"quorumengineering/quorum-report/log"
@@ -18,7 +17,7 @@ type FilterServiceDB interface {
 	GetLastFiltered(common.Address) (uint64, error)
 	GetAddresses() ([]common.Address, error)
 	IndexBlocks([]common.Address, []*types.Block) error
-	IndexStorage(map[common.Address]*state.DumpAccount, uint64) error
+	IndexStorage(map[common.Address]*types.AccountState, uint64) error
 }
 
 // FilterService filters transactions and storage based on registered address list.

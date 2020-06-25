@@ -4,10 +4,10 @@ import (
 	"sync"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/state"
 
 	"quorumengineering/quorum-report/client"
 	"quorumengineering/quorum-report/log"
+	"quorumengineering/quorum-report/types"
 )
 
 type StorageFilter struct {
@@ -27,7 +27,7 @@ func (sf *StorageFilter) IndexStorage(addresses []common.Address, startBlockNumb
 	for i := startBlockNumber; i <= endBlockNumber; i++ {
 		wg.Add(1)
 		go func(blockNumber uint64) {
-			rawStorage := make(map[common.Address]*state.DumpAccount)
+			rawStorage := make(map[common.Address]*types.AccountState)
 			for _, address := range addresses {
 				log.Info("Pulling (indexing) contract storage", "address", address.String(), "block number", blockNumber)
 				dumpAccount, err := client.DumpAddress(sf.quorumClient, address, blockNumber)

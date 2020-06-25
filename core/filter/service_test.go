@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/state"
 
 	"quorumengineering/quorum-report/client"
 	"quorumengineering/quorum-report/types"
@@ -14,9 +13,9 @@ import (
 func TestIndexBlock(t *testing.T) {
 	// setup
 	mockRPC := map[string]interface{}{
-		"debug_dumpAddress<common.Address Value>0x4": &state.DumpAccount{},
-		"debug_dumpAddress<common.Address Value>0x5": &state.DumpAccount{},
-		"debug_dumpAddress<common.Address Value>0x6": &state.DumpAccount{},
+		"debug_dumpAddress<common.Address Value>0x4": &types.AccountState{},
+		"debug_dumpAddress<common.Address Value>0x5": &types.AccountState{},
+		"debug_dumpAddress<common.Address Value>0x6": &types.AccountState{},
 	}
 	db := &FakeDB{[]common.Address{{1}, {2}}, map[common.Address]uint64{{1}: 3, {2}: 5}}
 	fs := NewFilterService(db, client.NewStubQuorumClient(nil, mockRPC))
@@ -72,7 +71,7 @@ func (f *FakeDB) GetLastPersistedBlockNumber() (uint64, error) {
 	return 0, errors.New("not implemented")
 }
 
-func (f *FakeDB) IndexStorage(map[common.Address]*state.DumpAccount, uint64) error {
+func (f *FakeDB) IndexStorage(map[common.Address]*types.AccountState, uint64) error {
 	return nil
 }
 

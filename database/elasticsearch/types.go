@@ -22,12 +22,12 @@ type Template struct {
 type State struct {
 	Address     common.Address `json:"address"`
 	BlockNumber uint64         `json:"blockNumber"`
-	StorageRoot common.Hash    `json:"storageRoot"`
+	StorageRoot types.Hash     `json:"storageRoot"`
 }
 
 type Storage struct {
-	StorageRoot common.Hash            `json:"storageRoot"`
-	StorageMap  map[common.Hash]string `json:"storageMap"`
+	StorageRoot types.Hash            `json:"storageRoot"`
+	StorageMap  map[types.Hash]string `json:"storageMap"`
 }
 
 //

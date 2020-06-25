@@ -5,7 +5,6 @@ import (
 	"sync"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/state"
 
 	"quorumengineering/quorum-report/database"
 	"quorumengineering/quorum-report/log"
@@ -64,13 +63,13 @@ func NewTxIndexer() *TxIndexer {
 
 type StorageIndexer struct {
 	root    map[uint64]string
-	storage map[string]map[common.Hash]string
+	storage map[string]map[types.Hash]string
 }
 
 func NewStorageIndexer() *StorageIndexer {
 	return &StorageIndexer{
 		root:    make(map[uint64]string),
-		storage: make(map[string]map[common.Hash]string),
+		storage: make(map[string]map[types.Hash]string),
 	}
 }
 
@@ -277,13 +276,13 @@ func (db *MemoryDB) ReadTransaction(hash common.Hash) (*types.Transaction, error
 	return nil, errors.New("transaction does not exist")
 }
 
-func (db *MemoryDB) IndexStorage(rawStorage map[common.Address]*state.DumpAccount, blockNumber uint64) error {
+func (db *MemoryDB) IndexStorage(rawStorage map[common.Address]*types.AccountState, blockNumber uint64) error {
 	db.mux.Lock()
 	defer db.mux.Unlock()
 	for address, dumpAccount := range rawStorage {
-		db.storageIndexDB[address].root[blockNumber] = dumpAccount.Root
-		if _, ok := db.storageIndexDB[address].storage[dumpAccount.Root]; !ok {
-			db.storageIndexDB[address].storage[dumpAccount.Root] = dumpAccount.Storage
+		db.storageIndexDB[address].root[blockNumber] = dumpAccount.Root.String()
+		if _, ok := db.storageIndexDB[address].storage[dumpAccount.Root.String()]; !ok {
+			db.storageIndexDB[address].storage[dumpAccount.Root.String()] = dumpAccount.Storage
 		}
 	}
 	return nil
@@ -365,7 +364,7 @@ func (db *MemoryDB) GetEventsFromAddressTotal(address common.Address, options *t
 	return uint64(len(db.eventIndexDB[address])), nil
 }
 
-func (db *MemoryDB) GetStorage(address common.Address, blockNumber uint64) (map[common.Hash]string, error) {
+func (db *MemoryDB) GetStorage(address common.Address, blockNumber uint64) (map[types.Hash]string, error) {
 	db.mux.RLock()
 	defer db.mux.RUnlock()
 	if !db.addressIsRegistered(address) {

@@ -6,9 +6,10 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/ethereum/go-ethereum/core/state"
 	"github.com/ethereum/go-ethereum/p2p"
 	"github.com/stretchr/testify/assert"
+
+	"quorumengineering/quorum-report/types"
 )
 
 func TestConsensus_BadResponse(t *testing.T) {
@@ -89,12 +90,8 @@ func TestDumpAddress_WithError(t *testing.T) {
 }
 
 func TestDumpAddress(t *testing.T) {
-	res := &state.DumpAccount{
-		Balance:  "10",
-		Nonce:    5,
-		Root:     "some root",
-		CodeHash: "some code hash",
-		Code:     "some code",
+	res := &types.AccountState{
+		Root: types.NewHash("0xefe5cb8d23d632b5d2cdd9f0a151c4b1a84ccb7afa1c57331009aa922d5e4f36"),
 	}
 	mockRPC := map[string]interface{}{
 		"debug_dumpAddress<common.Address Value>0x1": res,

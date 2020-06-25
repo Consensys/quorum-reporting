@@ -1,7 +1,6 @@
 package factory
 
 import (
-	"github.com/ethereum/go-ethereum/core/state"
 	"sync"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -202,7 +201,7 @@ func (cachingDB *DatabaseWithCache) IndexBlocks(addresses []common.Address, bloc
 	return cachingDB.db.IndexBlocks(addresses, blocks)
 }
 
-func (cachingDB *DatabaseWithCache) IndexStorage(rawStorage map[common.Address]*state.DumpAccount, blockNumber uint64) error {
+func (cachingDB *DatabaseWithCache) IndexStorage(rawStorage map[common.Address]*types.AccountState, blockNumber uint64) error {
 	return cachingDB.db.IndexStorage(rawStorage, blockNumber)
 }
 
@@ -244,7 +243,7 @@ func (cachingDB *DatabaseWithCache) GetEventsFromAddressTotal(address common.Add
 	return cachingDB.db.GetEventsFromAddressTotal(address, options)
 }
 
-func (cachingDB *DatabaseWithCache) GetStorage(address common.Address, blockNumber uint64) (map[common.Hash]string, error) {
+func (cachingDB *DatabaseWithCache) GetStorage(address common.Address, blockNumber uint64) (map[types.Hash]string, error) {
 	return cachingDB.db.GetStorage(address, blockNumber)
 }
 

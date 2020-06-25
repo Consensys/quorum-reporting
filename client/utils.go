@@ -7,15 +7,15 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/ethereum/go-ethereum/core/state"
 	"github.com/ethereum/go-ethereum/p2p"
 
 	"quorumengineering/quorum-report/log"
+	"quorumengineering/quorum-report/types"
 )
 
-func DumpAddress(c Client, address common.Address, blockNumber uint64) (*state.DumpAccount, error) {
+func DumpAddress(c Client, address common.Address, blockNumber uint64) (*types.AccountState, error) {
 	log.Debug("Fetching account dump", "account", address.String(), "blocknumber", blockNumber)
-	dumpAccount := &state.DumpAccount{}
+	dumpAccount := &types.AccountState{}
 	err := c.RPCCall(&dumpAccount, "debug_dumpAddress", address, hexutil.EncodeUint64(blockNumber))
 	if err != nil {
 		return nil, err
