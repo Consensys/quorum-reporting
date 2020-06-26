@@ -195,15 +195,6 @@ func (cachingDB *DatabaseWithCache) GetLastPersistedBlockNumber() (uint64, error
 	return cachingDB.db.GetLastPersistedBlockNumber()
 }
 
-func (cachingDB *DatabaseWithCache) WriteTransaction(tx *types.Transaction) error {
-	err := cachingDB.db.WriteTransaction(tx)
-	if err != nil {
-		return err
-	}
-	cachingDB.transactionCache.Add(tx.Hash, tx)
-	return nil
-}
-
 func (cachingDB *DatabaseWithCache) WriteTransactions(txns []*types.Transaction) error {
 	err := cachingDB.db.WriteTransactions(txns)
 	if err != nil {

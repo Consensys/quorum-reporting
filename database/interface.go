@@ -50,8 +50,6 @@ type BlockDB interface {
 
 // TransactionDB stores all transactions change a contract's state.
 type TransactionDB interface {
-	// Deprecated: Recommend using WriteTransactions
-	WriteTransaction(*types.Transaction) error
 	WriteTransactions([]*types.Transaction) error
 	ReadTransaction(common.Hash) (*types.Transaction, error)
 }

@@ -271,23 +271,16 @@ func (db *MemoryDB) GetLastPersistedBlockNumber() (uint64, error) {
 	return db.lastPersistedBlockNumber, nil
 }
 
-func (db *MemoryDB) WriteTransaction(transaction *types.Transaction) error {
+func (db *MemoryDB) WriteTransactions(transactions []*types.Transaction) error {
 	db.mux.Lock()
 	defer db.mux.Unlock()
-	if transaction != nil {
-		db.txDB[transaction.Hash] = transaction
-		log.Debug("Transaction stored", "hash", transaction.Hash.Hex())
-		return nil
-	}
-	return errors.New("transaction is nil")
-}
 
-func (db *MemoryDB) WriteTransactions(transactions []*types.Transaction) error {
 	for _, tx := range transactions {
-		err := db.WriteTransaction(tx)
-		if err != nil {
-			return err
+		if tx == nil {
+			return errors.New("transaction is nil")
 		}
+		db.txDB[tx.Hash] = tx
+		log.Debug("Transaction stored", "hash", tx.Hash.Hex())
 	}
 	return nil
 }

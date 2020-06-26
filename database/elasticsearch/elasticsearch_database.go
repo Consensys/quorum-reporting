@@ -434,18 +434,6 @@ func (es *ElasticsearchDB) GetLastPersistedBlockNumber() (uint64, error) {
 }
 
 // TransactionDB
-func (es *ElasticsearchDB) WriteTransaction(transaction *types.Transaction) error {
-	req := esapi.IndexRequest{
-		Index:      TransactionIndex,
-		DocumentID: transaction.Hash.String(),
-		Body:       esutil.NewJSONReader(transaction),
-		Refresh:    "true",
-	}
-
-	_, err := es.apiClient.DoRequest(req)
-	return err
-}
-
 func (es *ElasticsearchDB) WriteTransactions(transactions []*types.Transaction) error {
 	bi := es.apiClient.GetBulkHandler(TransactionIndex)
 
