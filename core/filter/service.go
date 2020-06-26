@@ -27,15 +27,15 @@ type FilterService struct {
 	storageFilter *StorageFilter
 
 	// To check we have actually shut down before returning
-	shutdownChannel chan struct{}
-	shutdownWg      sync.WaitGroup
+	shutdownChan chan struct{}
+	shutdownWg   sync.WaitGroup
 }
 
 func NewFilterService(db FilterServiceDB, client client.Client) *FilterService {
 	return &FilterService{
-		db:              db,
-		storageFilter:   NewStorageFilter(db, client),
-		shutdownChannel: make(chan struct{}),
+		db:            db,
+		storageFilter: NewStorageFilter(db, client),
+		shutdownChan:  make(chan struct{}),
 	}
 }
 
@@ -76,7 +76,7 @@ func (fs *FilterService) Start() error {
 					}
 					lastFiltered = endBlock
 				}
-			case <-fs.shutdownChannel:
+			case <-fs.shutdownChan:
 				fs.shutdownWg.Done()
 				return
 			}
@@ -86,7 +86,7 @@ func (fs *FilterService) Start() error {
 }
 
 func (fs *FilterService) Stop() {
-	close(fs.shutdownChannel)
+	close(fs.shutdownChan)
 	fs.shutdownWg.Wait()
 	log.Info("Filter service stopped")
 }

@@ -31,8 +31,8 @@ type MonitorService struct {
 	totalWorkers   int
 
 	// To check we have actually shut down before returning
-	shutdownChannel chan struct{}
-	shutdownWg      sync.WaitGroup
+	shutdownChan chan struct{}
+	shutdownWg   sync.WaitGroup
 }
 
 func NewMonitorService(db database.Database, quorumClient client.Client, consensus string, config types.ReportingConfig) *MonitorService {
@@ -62,7 +62,7 @@ func NewMonitorService(db database.Database, quorumClient client.Client, consens
 		batchWriteChan:     batchWriteChan,
 		batchWriter:        NewBatchWriter(db, batchWriteChan, config.Tuning.BlockProcessingFlushPeriod),
 		totalWorkers:       3 * runtime.NumCPU(),
-		shutdownChannel:    make(chan struct{}),
+		shutdownChan:       make(chan struct{}),
 	}
 }
 
@@ -79,7 +79,7 @@ func (m *MonitorService) Start() error {
 }
 
 func (m *MonitorService) Stop() {
-	close(m.shutdownChannel)
+	close(m.shutdownChan)
 	m.shutdownWg.Wait()
 	log.Info("Monitor service stopped")
 }
@@ -88,7 +88,7 @@ func (m *MonitorService) startBatchWriter() {
 	log.Info("Starting batch writer")
 	go func() {
 		m.shutdownWg.Add(1)
-		m.batchWriter.Run(m.shutdownChannel)
+		m.batchWriter.Run(m.shutdownChan)
 		m.shutdownWg.Done()
 	}()
 }
@@ -98,7 +98,7 @@ func (m *MonitorService) startWorkers() {
 	for i := 0; i < m.totalWorkers; i++ {
 		go func() {
 			m.shutdownWg.Add(1)
-			m.startWorker(m.shutdownChannel)
+			m.startWorker(m.shutdownChan)
 			m.shutdownWg.Done()
 		}()
 	}
@@ -177,7 +177,7 @@ func (m *MonitorService) run() {
 		}
 
 		select {
-		case <-m.shutdownChannel:
+		case <-m.shutdownChan:
 			close(chStopChan)
 			<-cancelChan
 			wg.Wait()
