@@ -3,8 +3,6 @@ package monitor
 import (
 	"time"
 
-	"github.com/ethereum/go-ethereum/event"
-
 	"quorumengineering/quorum-report/database"
 	"quorumengineering/quorum-report/log"
 	"quorumengineering/quorum-report/types"
@@ -28,8 +26,6 @@ type BatchWriter struct {
 
 	BatchWorkChan chan *BlockAndTransactions
 	db            database.Database
-
-	stopFeed event.Feed
 }
 
 func NewBatchWriter(db database.Database, batchWorkChan chan *BlockAndTransactions, flushPeriod int) *BatchWriter {
@@ -44,7 +40,7 @@ func NewBatchWriter(db database.Database, batchWorkChan chan *BlockAndTransactio
 	}
 }
 
-func (bw *BatchWriter) Run(stopChan <-chan types.StopEvent) {
+func (bw *BatchWriter) Run(stopChan <-chan struct{}) {
 	log.Info("Starting batch block processor", "timeout period", time.Duration(bw.flushPeriod)*time.Second, "max blocks", bw.maxBlocks, "max txns", bw.maxTransactions)
 
 	ticker := time.NewTicker(time.Duration(bw.flushPeriod) * time.Second)
