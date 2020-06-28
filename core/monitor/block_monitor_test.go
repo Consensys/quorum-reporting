@@ -61,7 +61,7 @@ func TestCreateBlock(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		bm := NewDefaultBlockMonitor(client.NewStubQuorumClient(nil, nil, nil), nil, tc.consensus)
+		bm := NewDefaultBlockMonitor(client.NewStubQuorumClient(nil, nil), nil, tc.consensus)
 		actual := bm.createBlock(tc.originalBlock)
 		if actual.Hash != tc.expectedBlock.Hash {
 			t.Fatalf("expected hash %v, but got %v", tc.expectedBlock.Hash.Hex(), actual.Hash.Hex())

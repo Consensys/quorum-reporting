@@ -19,7 +19,7 @@ func TestIndexBlock(t *testing.T) {
 		"debug_dumpAddress<common.Address Value>0x6": &state.DumpAccount{},
 	}
 	db := &FakeDB{[]common.Address{{1}, {2}}, map[common.Address]uint64{{1}: 3, {2}: 5}}
-	fs := NewFilterService(db, client.NewStubQuorumClient(nil, nil, mockRPC))
+	fs := NewFilterService(db, client.NewStubQuorumClient(nil, mockRPC))
 	// test fs.getLastFiltered
 	lastFilteredAll, lastFiltered, err := fs.getLastFiltered(6)
 	if err != nil {

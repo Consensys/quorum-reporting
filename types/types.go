@@ -11,6 +11,21 @@ type Template struct {
 	StorageLayout string `json:"storageLayout"`
 }
 
+// received from eth_getBlockByNumber
+type RawBlock struct {
+	Hash         string   `json:"hash"`
+	ParentHash   string   `json:"parentHash"`
+	StateRoot    string   `json:"stateRoot"`
+	TxRoot       string   `json:"txRoot"`
+	ReceiptRoot  string   `json:"receiptRoot"`
+	Number       string   `json:"number"`
+	GasLimit     string   `json:"gasLimit"`
+	GasUsed      string   `json:"gasUsed"`
+	Timestamp    string   `json:"timestamp"`
+	ExtraData    string   `json:"extraData"`
+	Transactions []string `json:"transactions"`
+}
+
 type Block struct {
 	Hash         common.Hash   `json:"hash"`
 	ParentHash   common.Hash   `json:"parentHash"`
@@ -21,7 +36,7 @@ type Block struct {
 	GasLimit     uint64        `json:"gasLimit"`
 	GasUsed      uint64        `json:"gasUsed"`
 	Timestamp    uint64        `json:"timestamp"`
-	ExtraData    hexutil.Bytes `json:"extraData"`
+	ExtraData    string        `json:"extraData"`
 	Transactions []common.Hash `json:"transactions"`
 }
 

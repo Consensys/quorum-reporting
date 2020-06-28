@@ -208,7 +208,7 @@ type Block struct {
 	GasLimit     uint64        `json:"gasLimit"`
 	GasUsed      uint64        `json:"gasUsed"`
 	Timestamp    uint64        `json:"timestamp"`
-	ExtraData    hexutil.Bytes `json:"extraData"`
+	ExtraData    string        `json:"extraData"`
 	Transactions []common.Hash `json:"transactions"`
 }
 
