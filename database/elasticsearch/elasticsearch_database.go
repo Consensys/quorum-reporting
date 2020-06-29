@@ -784,8 +784,6 @@ func (es *ElasticsearchDB) getTemplateByName(name string) (*Template, error) {
 		return nil, err
 	}
 
-	fmt.Println(string(body))
-
 	var template TemplateQueryResult
 	if err = json.Unmarshal(body, &template); err != nil {
 		return nil, err
