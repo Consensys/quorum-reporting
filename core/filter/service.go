@@ -1,11 +1,11 @@
 package filter
 
 import (
+	"sync"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/state"
-	"github.com/ethereum/go-ethereum/event"
 
 	"quorumengineering/quorum-report/client"
 	"quorumengineering/quorum-report/log"
@@ -25,24 +25,26 @@ type FilterServiceDB interface {
 type FilterService struct {
 	db            FilterServiceDB
 	storageFilter *StorageFilter
-	stopFeed      event.Feed
+
+	// To check we have actually shut down before returning
+	shutdownChan chan struct{}
+	shutdownWg   sync.WaitGroup
 }
 
 func NewFilterService(db FilterServiceDB, client client.Client) *FilterService {
 	return &FilterService{
 		db:            db,
 		storageFilter: NewStorageFilter(db, client),
+		shutdownChan:  make(chan struct{}),
 	}
 }
 
 func (fs *FilterService) Start() error {
 	log.Info("Starting filter service")
 
-	stopChan, stopSubscription := fs.subscribeStopEvent()
+	fs.shutdownWg.Add(1)
 
 	go func() {
-		defer stopSubscription.Unsubscribe()
-
 		// Filter tick every 2 seconds to index transactions/ storage
 		ticker := time.NewTicker(time.Second * 2)
 		defer ticker.Stop()
@@ -74,7 +76,8 @@ func (fs *FilterService) Start() error {
 					}
 					lastFiltered = endBlock
 				}
-			case <-stopChan:
+			case <-fs.shutdownChan:
+				fs.shutdownWg.Done()
 				return
 			}
 		}
@@ -83,14 +86,9 @@ func (fs *FilterService) Start() error {
 }
 
 func (fs *FilterService) Stop() {
-	fs.stopFeed.Send(types.StopEvent{})
+	close(fs.shutdownChan)
+	fs.shutdownWg.Wait()
 	log.Info("Filter service stopped")
-}
-
-func (fs *FilterService) subscribeStopEvent() (chan types.StopEvent, event.Subscription) {
-	c := make(chan types.StopEvent)
-	s := fs.stopFeed.Subscribe(c)
-	return c, s
 }
 
 // getLastFiltered finds the minimum value of "lastFiltered" across all addresses
