@@ -222,36 +222,29 @@ func (db *MemoryDB) GetTemplateDetails(templateName string) (*types.Template, er
 	}, nil
 }
 
-func (db *MemoryDB) WriteBlock(block *types.Block) error {
+func (db *MemoryDB) WriteBlocks(blocks []*types.Block) error {
 	db.mux.Lock()
 	defer db.mux.Unlock()
-	if block == nil {
-		return errors.New("block is nil")
-	}
-	blockNumber := block.Number
-	db.blockDB[blockNumber] = block
-	// Update last persisted block number.
-	if blockNumber == db.lastPersistedBlockNumber+1 {
-		for {
-			if _, ok := db.blockDB[blockNumber+1]; ok {
-				blockNumber++
-			} else {
-				break
-			}
-		}
-		db.lastPersistedBlockNumber = blockNumber
-	}
-	log.Debug("Block stored", "number", block.Number, "hash", block.Hash.String())
-	log.Debug("Last persisted block", "number", db.lastPersistedBlockNumber)
-	return nil
-}
 
-func (db *MemoryDB) WriteBlocks(blocks []*types.Block) error {
 	for _, block := range blocks {
-		err := db.WriteBlock(block)
-		if err != nil {
-			return err
+		if block == nil {
+			return errors.New("block is nil")
 		}
+		blockNumber := block.Number
+		db.blockDB[blockNumber] = block
+		// Update last persisted block number.
+		if blockNumber == db.lastPersistedBlockNumber+1 {
+			for {
+				if _, ok := db.blockDB[blockNumber+1]; ok {
+					blockNumber++
+				} else {
+					break
+				}
+			}
+			db.lastPersistedBlockNumber = blockNumber
+		}
+		log.Debug("Block stored", "number", block.Number, "hash", block.Hash.String())
+		log.Debug("Last persisted block", "number", db.lastPersistedBlockNumber)
 	}
 	return nil
 }

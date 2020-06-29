@@ -41,8 +41,6 @@ type TemplateDB interface {
 
 // BlockDB stores the block details for all blocks.
 type BlockDB interface {
-	// Deprecated: Recommend using WriteBlocks
-	WriteBlock(*types.Block) error
 	WriteBlocks([]*types.Block) error
 	ReadBlock(uint64) (*types.Block, error)
 	GetLastPersistedBlockNumber() (uint64, error)

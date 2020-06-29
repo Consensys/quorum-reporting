@@ -95,7 +95,7 @@ func TestAPIParsing(t *testing.T) {
 	if err != nil {
 		t.Fatalf("expected no error, but got %v", err)
 	}
-	err = db.WriteBlock(block)
+	err = db.WriteBlocks([]*types.Block{block})
 	if err != nil {
 		t.Fatalf("expected no error, but got %v", err)
 	}

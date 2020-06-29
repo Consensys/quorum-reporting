@@ -253,7 +253,7 @@ func testGetTemplates(t *testing.T, db database.Database, expected int) {
 }
 
 func testWriteBlock(t *testing.T, db database.Database, block *types.Block, expectedErr bool) {
-	err := db.WriteBlock(block)
+	err := db.WriteBlocks([]*types.Block{block})
 	if err != nil && !expectedErr {
 		t.Fatalf("expected no error, but got %v", err)
 	}
