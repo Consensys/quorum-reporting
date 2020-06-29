@@ -34,7 +34,8 @@ func NewDefaultBlockMonitor(quorumClient client.Client, newBlockChan chan *types
 }
 
 func (bm *DefaultBlockMonitor) ListenToChainHead(cancelChan chan bool, stopChan chan bool) error {
-	headers := make(chan *ethTypes.Header)
+	// make headers channel buffered so that it doesn't block websocket listener
+	headers := make(chan *ethTypes.Header, 10)
 	err := bm.quorumClient.SubscribeChainHead(headers)
 	if err != nil {
 		return err
