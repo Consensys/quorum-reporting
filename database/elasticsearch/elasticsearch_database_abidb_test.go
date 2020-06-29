@@ -130,11 +130,11 @@ func TestElasticsearchDB_AddContractABI(t *testing.T) {
 		DocumentID: addr.String(),
 	}
 	templateSearchResultValue := `{
-	       "_source": {
-	         "templateName": "template",
-	         "abi": "template abi",
-	         "storageAbi": "template storage layout",
-	       }
+		"_source" : {
+          "templateName" : "SimpleStorage",
+          "abi" : "[{\"constant\":false,\"inputs\":[{\"name\":\"_x\",\"type\":\"uint256\"}],\"name\":\"set\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[],\"name\":\"get\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"name\":\"_x\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"name\":\"msg\",\"type\":\"string\"},{\"indexed\":false,\"name\":\"value\",\"type\":\"uint256\"}],\"name\":\"LogSet\",\"type\":\"event\"}]",
+          "storageAbi" : "{\"storage\":[{\"astId\":3,\"contract\":\"scripts/simplestorage.sol:SimpleStorage\",\"label\":\"storedData\",\"offset\":0,\"slot\":\"0\",\"type\":\"t_uint256\"}],\"types\":{\"t_uint256\":{\"encoding\":\"inplace\",\"label\":\"uint256\",\"numberOfBytes\":\"32\"}}}"
+        }
 	}`
 
 	mockedClient.EXPECT().DoRequest(gomock.Any()) //for setup, not relevant to test
@@ -194,11 +194,11 @@ func TestElasticsearchDB_AddContractABI_WithError(t *testing.T) {
 		DocumentID: addr.String(),
 	}
 	templateSearchResultValue := `{
-	       "_source": {
-	         "templateName": "template",
-	         "abi": "template abi",
-	         "storageAbi": "template storage layout",
-	       }
+		"_source" : {
+          "templateName" : "SimpleStorage",
+          "abi" : "[{\"constant\":false,\"inputs\":[{\"name\":\"_x\",\"type\":\"uint256\"}],\"name\":\"set\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[],\"name\":\"get\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"name\":\"_x\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"name\":\"msg\",\"type\":\"string\"},{\"indexed\":false,\"name\":\"value\",\"type\":\"uint256\"}],\"name\":\"LogSet\",\"type\":\"event\"}]",
+          "storageAbi" : "{\"storage\":[{\"astId\":3,\"contract\":\"scripts/simplestorage.sol:SimpleStorage\",\"label\":\"storedData\",\"offset\":0,\"slot\":\"0\",\"type\":\"t_uint256\"}],\"types\":{\"t_uint256\":{\"encoding\":\"inplace\",\"label\":\"uint256\",\"numberOfBytes\":\"32\"}}}"
+        }
 	}`
 
 	mockedClient.EXPECT().DoRequest(gomock.Any()) //for setup, not relevant to test
@@ -349,11 +349,11 @@ func TestElasticsearchDB_AddStorageABI(t *testing.T) {
 		DocumentID: addr.String(),
 	}
 	templateSearchResultValue := `{
-	       "_source": {
-	         "templateName": "template",
-	         "abi": "template abi",
-	         "storageAbi": "template storage layout",
-	       }
+		"_source" : {
+          "templateName" : "SimpleStorage",
+          "abi" : "[{\"constant\":false,\"inputs\":[{\"name\":\"_x\",\"type\":\"uint256\"}],\"name\":\"set\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[],\"name\":\"get\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"name\":\"_x\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"name\":\"msg\",\"type\":\"string\"},{\"indexed\":false,\"name\":\"value\",\"type\":\"uint256\"}],\"name\":\"LogSet\",\"type\":\"event\"}]",
+          "storageAbi" : "{\"storage\":[{\"astId\":3,\"contract\":\"scripts/simplestorage.sol:SimpleStorage\",\"label\":\"storedData\",\"offset\":0,\"slot\":\"0\",\"type\":\"t_uint256\"}],\"types\":{\"t_uint256\":{\"encoding\":\"inplace\",\"label\":\"uint256\",\"numberOfBytes\":\"32\"}}}"
+        }
 	}`
 
 	mockedClient.EXPECT().DoRequest(gomock.Any()) //for setup, not relevant to test
@@ -413,11 +413,11 @@ func TestElasticsearchDB_AddStorageABI_WithError(t *testing.T) {
 		DocumentID: addr.String(),
 	}
 	templateSearchResultValue := `{
-	       "_source": {
-	         "templateName": "template",
-	         "abi": "template abi",
-	         "storageAbi": "template storage layout",
-	       }
+		"_source" : {
+          "templateName" : "SimpleStorage",
+          "abi" : "[{\"constant\":false,\"inputs\":[{\"name\":\"_x\",\"type\":\"uint256\"}],\"name\":\"set\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[],\"name\":\"get\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"name\":\"_x\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"name\":\"msg\",\"type\":\"string\"},{\"indexed\":false,\"name\":\"value\",\"type\":\"uint256\"}],\"name\":\"LogSet\",\"type\":\"event\"}]",
+          "storageAbi" : "{\"storage\":[{\"astId\":3,\"contract\":\"scripts/simplestorage.sol:SimpleStorage\",\"label\":\"storedData\",\"offset\":0,\"slot\":\"0\",\"type\":\"t_uint256\"}],\"types\":{\"t_uint256\":{\"encoding\":\"inplace\",\"label\":\"uint256\",\"numberOfBytes\":\"32\"}}}"
+        }
 	}`
 
 	mockedClient.EXPECT().DoRequest(gomock.Any()) //for setup, not relevant to test

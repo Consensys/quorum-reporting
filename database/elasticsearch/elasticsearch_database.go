@@ -341,20 +341,16 @@ func (es *ElasticsearchDB) GetTemplateDetails(templateName string) (*types.Templ
 
 // BlockDB
 func (es *ElasticsearchDB) WriteBlock(block *types.Block) error {
-	var internalBlock Block
-	internalBlock.From(block)
-
 	req := esapi.IndexRequest{
 		Index:      BlockIndex,
 		DocumentID: strconv.FormatUint(block.Number, 10),
-		Body:       esutil.NewJSONReader(internalBlock),
+		Body:       esutil.NewJSONReader(block),
 		Refresh:    "true",
 	}
 
 	if _, err := es.apiClient.DoRequest(req); err != nil {
 		return err
 	}
-
 	return es.updateLastPersisted(block.Number)
 }
 
@@ -373,25 +369,18 @@ func (es *ElasticsearchDB) WriteBlocks(blocks []*types.Block) error {
 	)
 	wg.Add(len(blocks))
 	for _, block := range blocks {
-		var dbBlock Block
-		dbBlock.From(block)
-		err := bi.Add(
-			context.Background(),
-			esutil.BulkIndexerItem{
-				Action:     "create",
-				DocumentID: strconv.FormatUint(block.Number, 10),
-				Body:       esutil.NewJSONReader(dbBlock),
-				OnSuccess: func(ctx context.Context, item esutil.BulkIndexerItem, item2 esutil.BulkIndexerResponseItem) {
-					wg.Done()
-				},
-				OnFailure: func(ctx context.Context, item esutil.BulkIndexerItem, item2 esutil.BulkIndexerResponseItem, err error) {
-					returnErr = err
-					wg.Done()
-				},
-			})
-		if err != nil {
-			return err
-		}
+		_ = bi.Add(context.Background(), esutil.BulkIndexerItem{
+			Action:     "create",
+			DocumentID: strconv.FormatUint(block.Number, 10),
+			Body:       esutil.NewJSONReader(block),
+			OnSuccess: func(ctx context.Context, item esutil.BulkIndexerItem, item2 esutil.BulkIndexerResponseItem) {
+				wg.Done()
+			},
+			OnFailure: func(ctx context.Context, item esutil.BulkIndexerItem, item2 esutil.BulkIndexerResponseItem, err error) {
+				returnErr = err
+				wg.Done()
+			},
+		})
 	}
 	wg.Wait()
 	if returnErr != nil {
@@ -420,11 +409,10 @@ func (es *ElasticsearchDB) ReadBlock(number uint64) (*types.Block, error) {
 	}
 
 	var blockResult BlockQueryResult
-	err = json.Unmarshal(body, &blockResult)
-	if err != nil {
+	if err = json.Unmarshal(body, &blockResult); err != nil {
 		return nil, err
 	}
-	return blockResult.Source.To(), nil
+	return blockResult.Source, nil
 }
 
 func (es *ElasticsearchDB) GetLastPersistedBlockNumber() (uint64, error) {
@@ -439,19 +427,18 @@ func (es *ElasticsearchDB) GetLastPersistedBlockNumber() (uint64, error) {
 	}
 
 	var lastPersisted LastPersistedResult
-	json.Unmarshal(body, &lastPersisted)
+	if err = json.Unmarshal(body, &lastPersisted); err != nil {
+		return 0, err
+	}
 	return lastPersisted.Source.LastPersisted, nil
 }
 
 // TransactionDB
 func (es *ElasticsearchDB) WriteTransaction(transaction *types.Transaction) error {
-	var tx Transaction
-	tx.From(transaction)
-
 	req := esapi.IndexRequest{
 		Index:      TransactionIndex,
 		DocumentID: transaction.Hash.String(),
-		Body:       esutil.NewJSONReader(tx),
+		Body:       esutil.NewJSONReader(transaction),
 		Refresh:    "true",
 	}
 
@@ -468,14 +455,12 @@ func (es *ElasticsearchDB) WriteTransactions(transactions []*types.Transaction) 
 	)
 	wg.Add(len(transactions))
 	for _, transaction := range transactions {
-		var tx Transaction
-		tx.From(transaction)
-		err := bi.Add(
+		_ = bi.Add(
 			context.Background(),
 			esutil.BulkIndexerItem{
 				Action:     "create",
 				DocumentID: transaction.Hash.String(),
-				Body:       esutil.NewJSONReader(tx),
+				Body:       esutil.NewJSONReader(transaction),
 				OnSuccess: func(ctx context.Context, item esutil.BulkIndexerItem, item2 esutil.BulkIndexerResponseItem) {
 					wg.Done()
 				},
@@ -484,9 +469,6 @@ func (es *ElasticsearchDB) WriteTransactions(transactions []*types.Transaction) 
 					wg.Done()
 				},
 			})
-		if err != nil {
-			return err
-		}
 	}
 
 	wg.Wait()
@@ -505,11 +487,10 @@ func (es *ElasticsearchDB) ReadTransaction(hash common.Hash) (*types.Transaction
 	}
 
 	var transactionResult TransactionQueryResult
-	err = json.Unmarshal(body, &transactionResult)
-	if err != nil {
+	if err = json.Unmarshal(body, &transactionResult); err != nil {
 		return nil, err
 	}
-	return transactionResult.Source.To(), nil
+	return transactionResult.Source, nil
 }
 
 // IndexDB
@@ -542,7 +523,7 @@ func (es *ElasticsearchDB) IndexStorage(rawStorage map[common.Address]*state.Dum
 			StorageMap:  dumpAccount.Storage,
 		}
 
-		biState.Add(
+		_ = biState.Add(
 			context.Background(),
 			esutil.BulkIndexerItem{
 				Action:     "create",
@@ -557,7 +538,7 @@ func (es *ElasticsearchDB) IndexStorage(rawStorage map[common.Address]*state.Dum
 				},
 			},
 		)
-		biStorage.Add(
+		_ = biStorage.Add(
 			context.Background(),
 			esutil.BulkIndexerItem{
 				Action:     "create",
@@ -681,7 +662,7 @@ func (es *ElasticsearchDB) GetAllEventsFromAddress(address common.Address, optio
 		Body:  strings.NewReader(queryString),
 		From:  &from,
 		Size:  &options.PageSize,
-		Sort:  []string{"blockNumber:desc", "logIndex:asc"},
+		Sort:  []string{"blockNumber:desc", "index:asc"},
 	}
 	results, err := es.doSearchRequest(req)
 	if err != nil {
@@ -691,10 +672,11 @@ func (es *ElasticsearchDB) GetAllEventsFromAddress(address common.Address, optio
 	convertedList := make([]*types.Event, len(results.Hits.Hits))
 	for i, result := range results.Hits.Hits {
 		marshalled, _ := json.Marshal(result.Source)
-		var event Event
-		json.Unmarshal(marshalled, &event)
-
-		convertedList[i] = event.To()
+		var event types.Event
+		if err = json.Unmarshal(marshalled, &event); err != nil {
+			return nil, err
+		}
+		convertedList[i] = &event
 	}
 
 	return convertedList, nil
@@ -727,7 +709,9 @@ func (es *ElasticsearchDB) GetStorage(address common.Address, blockNumber uint64
 		return nil, nil
 	}
 	var stateResult StateQueryResult
-	json.Unmarshal(body, &stateResult)
+	if err = json.Unmarshal(body, &stateResult); err != nil {
+		return nil, err
+	}
 
 	storageFetchReq := esapi.GetRequest{
 		Index:      StorageIndex,
@@ -741,8 +725,9 @@ func (es *ElasticsearchDB) GetStorage(address common.Address, blockNumber uint64
 		return nil, nil
 	}
 	var storageResult StorageQueryResult
-	json.Unmarshal(body, &storageResult)
-
+	if err = json.Unmarshal(body, &storageResult); err != nil {
+		return nil, err
+	}
 	return storageResult.Source.StorageMap, nil
 }
 
@@ -782,7 +767,9 @@ func (es *ElasticsearchDB) getContractByAddress(address common.Address) (*Contra
 	}
 
 	var contract ContractQueryResult
-	json.Unmarshal(body, &contract)
+	if err = json.Unmarshal(body, &contract); err != nil {
+		return nil, err
+	}
 	return &contract.Source, nil
 }
 
@@ -798,7 +785,9 @@ func (es *ElasticsearchDB) getTemplateByName(name string) (*Template, error) {
 	}
 
 	var template TemplateQueryResult
-	json.Unmarshal(body, &template)
+	if err = json.Unmarshal(body, &template); err != nil {
+		return nil, err
+	}
 	return &template.Source, nil
 }
 
@@ -823,7 +812,7 @@ func (es *ElasticsearchDB) updateAllLastFiltered(addresses []common.Address, las
 	bi := es.apiClient.GetBulkHandler(ContractIndex)
 
 	for _, address := range addresses {
-		bi.Add(
+		_ = bi.Add(
 			context.Background(),
 			esutil.BulkIndexerItem{
 				Action:     "update",
@@ -867,15 +856,13 @@ func (es *ElasticsearchDB) createEvents(events []*types.Event) error {
 		returnErr error
 	)
 	for _, event := range events {
-		var e Event
-		e.From(event)
 		wg.Add(1)
-		bi.Add(
+		_ = bi.Add(
 			context.Background(),
 			esutil.BulkIndexerItem{
 				Action:     "create",
 				DocumentID: strconv.FormatUint(event.BlockNumber, 10) + "-" + strconv.FormatUint(event.Index, 10),
-				Body:       esutil.NewJSONReader(e),
+				Body:       esutil.NewJSONReader(event),
 				OnSuccess: func(ctx context.Context, item esutil.BulkIndexerItem, item2 esutil.BulkIndexerResponseItem) {
 					wg.Done()
 				},
@@ -901,8 +888,7 @@ func (es *ElasticsearchDB) doSearchRequest(req esapi.SearchRequest) (*SearchQuer
 	}
 
 	var ret SearchQueryResult
-	err = json.Unmarshal(body, &ret)
-	if err != nil {
+	if err = json.Unmarshal(body, &ret); err != nil {
 		return nil, err
 	}
 	return &ret, nil
@@ -915,8 +901,7 @@ func (es *ElasticsearchDB) doCountRequest(req esapi.CountRequest) (*CountQueryRe
 	}
 
 	var ret CountQueryResult
-	err = json.Unmarshal(body, &ret)
-	if err != nil {
+	if err = json.Unmarshal(body, &ret); err != nil {
 		return nil, err
 	}
 	return &ret, nil
