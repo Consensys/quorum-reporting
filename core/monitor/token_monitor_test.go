@@ -3,6 +3,7 @@ package monitor
 import (
 	"context"
 	"math/big"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -19,6 +20,25 @@ import (
 type CustomEIP165StubClient struct {
 	*client.StubQuorumClient
 	implementedInterface string
+}
+
+func (stub *CustomEIP165StubClient) RPCCall(result interface{}, method string, args ...interface{}) error {
+	if method == "eth_call" {
+		msg := args[0].(ethereum.CallMsg)
+		if common.Bytes2Hex(msg.Data)[8:16] == "ffffffff" {
+			reflect.ValueOf(result).Elem().Set(reflect.ValueOf(common.LeftPadBytes([]byte{}, 32)))
+			return nil
+		}
+		if common.Bytes2Hex(msg.Data)[8:16] == "01ffc9a7" {
+			reflect.ValueOf(result).Elem().Set(reflect.ValueOf(common.LeftPadBytes([]byte{1}, 32)))
+			return nil
+		}
+		if common.Bytes2Hex(msg.Data)[8:16] == stub.implementedInterface {
+			reflect.ValueOf(result).Elem().Set(reflect.ValueOf(common.LeftPadBytes([]byte{1}, 32)))
+			return nil
+		}
+	}
+	return stub.StubQuorumClient.RPCCall(result, method, args)
 }
 
 func (stub *CustomEIP165StubClient) CallContract(ctx context.Context, msg ethereum.CallMsg, blockNumber *big.Int) ([]byte, error) {
@@ -38,10 +58,10 @@ func TestDefaultTokenMonitor_InspectTransaction_EIP165WithERC20_External(t *test
 	mockCallValue := make([]byte, 32)
 	mockCallValue[31] = 1
 	mockRPC := map[string]interface{}{
-		"eth_call<ethereum.CallMsg Value><*big.Int Value>": mockCallValue,
+		"eth_call<ethereum.CallMsg Value>0x1": mockCallValue,
 	}
 	stubClient := &CustomEIP165StubClient{
-		client.NewStubQuorumClient(nil, nil, mockRPC),
+		client.NewStubQuorumClient(nil, mockRPC),
 		"36372b07",
 	}
 
@@ -64,10 +84,10 @@ func TestDefaultTokenMonitor_InspectTransaction_EIP165WithERC20(t *testing.T) {
 	mockCallValue := make([]byte, 32)
 	mockCallValue[31] = 1
 	mockRPC := map[string]interface{}{
-		"eth_call<ethereum.CallMsg Value><*big.Int Value>": mockCallValue,
+		"eth_call<ethereum.CallMsg Value>0x1": mockCallValue,
 	}
 	stubClient := &CustomEIP165StubClient{
-		client.NewStubQuorumClient(nil, nil, mockRPC),
+		client.NewStubQuorumClient(nil, mockRPC),
 		"36372b07",
 	}
 
@@ -124,10 +144,10 @@ func TestDefaultTokenMonitor_InspectTransaction_EIP165WithERC721_External(t *tes
 	mockCallValue := make([]byte, 32)
 	mockCallValue[31] = 1
 	mockRPC := map[string]interface{}{
-		"eth_call<ethereum.CallMsg Value><*big.Int Value>": mockCallValue,
+		"eth_call<ethereum.CallMsg Value>0x1": mockCallValue,
 	}
 	stubClient := &CustomEIP165StubClient{
-		client.NewStubQuorumClient(nil, nil, mockRPC),
+		client.NewStubQuorumClient(nil, mockRPC),
 		"80ac58cd",
 	}
 
@@ -150,10 +170,10 @@ func TestDefaultTokenMonitor_InspectTransaction_EIP165WithERC721(t *testing.T) {
 	mockCallValue := make([]byte, 32)
 	mockCallValue[31] = 1
 	mockRPC := map[string]interface{}{
-		"eth_call<ethereum.CallMsg Value><*big.Int Value>": mockCallValue,
+		"eth_call<ethereum.CallMsg Value>0x1": mockCallValue,
 	}
 	stubClient := &CustomEIP165StubClient{
-		client.NewStubQuorumClient(nil, nil, mockRPC),
+		client.NewStubQuorumClient(nil, mockRPC),
 		"80ac58cd",
 	}
 
@@ -215,7 +235,7 @@ func TestDefaultTokenMonitor_InspectTransaction_BytecodeInspection(t *testing.T)
 		"eth_call<ethereum.CallMsg Value><*big.Int Value>":                                                    make([]byte, 32),
 		"eth_getCode<common.Address Value>0xefe5cb8d23d632b5d2cdd9f0a151c4b1a84ccb7afa1c57331009aa922d5e4f36": hexutil.Bytes(common.Hex2Bytes(erc20ContractCode)),
 	}
-	stubClient := client.NewStubQuorumClient(nil, nil, mockRPC)
+	stubClient := client.NewStubQuorumClient(nil, mockRPC)
 
 	tx := &types.Transaction{
 		Hash:        common.HexToHash("0xf4f803b8d6c6b38e0b15d6cfe80fd1dcea4270ad24e93385fca36512bb9c2c59"),

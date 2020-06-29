@@ -113,7 +113,7 @@ func (c *webSocketClient) sendRPCMsg(ch chan<- *message, method string, args ...
 		msg.Params = params
 	}
 	c.setPendingRPC(msg.ID, ch)
-	log.Debug("Send JSON RPC message", "msg.Method", msg.Method, "args", args)
+	log.Debug("Send JSON RPC message", "msg.Method", msg.Method, "args", args, "msg.ID", msg.ID)
 	c.connWriteMux.Lock()
 	defer c.connWriteMux.Unlock()
 	if err := c.conn.WriteJSON(msg); err != nil {

@@ -77,7 +77,7 @@ func CallEIP165(c Client, address common.Address, interfaceId []byte, blockNum *
 		Data: calldata,
 	}
 
-	var res hexutil.Bytes
+	var res []byte
 	err := c.RPCCall(&res, "eth_call", msg, hexutil.EncodeBig(blockNum))
 	if err != nil {
 		return false, err
