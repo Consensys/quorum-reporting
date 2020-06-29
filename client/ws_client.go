@@ -159,7 +159,6 @@ func (c *webSocketClient) listen() {
 		} else if receivedMsg.Method == "eth_subscription" {
 			// handle chain head message
 			var subMsg subMessage
-			log.Debug("hello", "receivedMsg.Result", receivedMsg.Params, "c.chainHeadSubscribedId", c.chainHeadSubscribedId, "subMsg.ID", subMsg.ID)
 			err = json.Unmarshal(receivedMsg.Params, &subMsg)
 			if err != nil {
 				log.Error("Decode subscription message error", "error", err)

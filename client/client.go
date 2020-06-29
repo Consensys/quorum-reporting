@@ -4,9 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"time"
+
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/machinebox/graphql"
-	"time"
 
 	graphqlQuery "quorumengineering/quorum-report/graphql"
 	"quorumengineering/quorum-report/log"
