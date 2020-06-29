@@ -27,6 +27,8 @@ type RPCService struct {
 }
 
 func NewRPCService(db database.Database, config types.ReportingConfig) *RPCService {
+	go MakeServer(db, config)
+
 	apis := []ethRPC.API{
 		{
 			"reporting",
@@ -44,17 +46,18 @@ func NewRPCService(db database.Database, config types.ReportingConfig) *RPCServi
 }
 
 func (r *RPCService) Start() error {
+
 	log.Info("Starting rpc service")
 
-	var modules []string
-	for _, apis := range r.apis {
-		modules = append(modules, apis.Namespace)
-	}
-	listener, _, err := ethRPC.StartHTTPEndpoint(r.httpEndpoint, r.apis, modules, r.cors, r.vhosts, defaultHTTPTimeouts)
-	if err != nil {
-		return err
-	}
-	r.listener = listener
+	//var modules []string
+	//for _, apis := range r.apis {
+	//	modules = append(modules, apis.Namespace)
+	//}
+	//listener, _, err := ethRPC.StartHTTPEndpoint(r.httpEndpoint, r.apis, modules, r.cors, r.vhosts, defaultHTTPTimeouts)
+	//if err != nil {
+	//	return err
+	//}
+	//r.listener = listener
 	log.Info("RPC HTTP endpoint opened", "url", fmt.Sprintf("http://%s", r.httpEndpoint))
 	return nil
 }

@@ -6,21 +6,11 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/stretchr/testify/assert"
 
 	"quorumengineering/quorum-report/database/memory"
 	"quorumengineering/quorum-report/types"
 )
-
-func TestAPIValidation(t *testing.T) {
-	var err error
-	db := memory.NewMemoryDB()
-	apis := NewRPCAPIs(db)
-	// Test AddAddress validation
-	err = apis.AddAddress(common.Address{0}, nil)
-	if err == nil || err.Error() != "invalid input" {
-		t.Fatalf("expected %v, but got %v", "invalid input", err)
-	}
-}
 
 const validABI = `
 [
@@ -73,23 +63,26 @@ var (
 	}
 )
 
+func TestAPIValidation(t *testing.T) {
+	apis := NewRPCAPIs(memory.NewMemoryDB())
+
+	err := apis.AddAddress(common.Address{}, nil)
+	assert.EqualError(t, err, "invalid input")
+}
+
 func TestAPIParsing(t *testing.T) {
-	var err error
 	db := memory.NewMemoryDB()
 	apis := NewRPCAPIs(db)
-	err = apis.AddAddress(address, nil)
-	if err != nil {
-		t.Fatalf("expected no error, but got %v", err)
-	}
+	err := apis.AddAddress(address, nil)
+	assert.Nil(t, err)
+
 	// Test AddABI string to ABI parsing.
 	err = apis.AddABI(address, "hello")
-	if err == nil || err.Error() != "invalid character 'h' looking for beginning of value" {
-		t.Fatalf("expected %v, but got %v", "invalid input", err)
-	}
+	assert.EqualError(t, err, "invalid character 'h' looking for beginning of value")
+
 	err = apis.AddABI(address, validABI)
-	if err != nil {
-		t.Fatalf("expected no error, but got %v", err)
-	}
+	assert.Nil(t, err)
+
 	// Set up test data.
 	err = db.WriteTransactions([]*types.Transaction{tx1, tx2, tx3})
 	if err != nil {
@@ -101,69 +94,40 @@ func TestAPIParsing(t *testing.T) {
 	}
 	// Test GetTransaction parse transaction data.
 	parsedTx1, err := apis.GetTransaction(tx1.Hash)
-	if err != nil {
-		t.Fatalf("expected no error, but got %v", err)
-	}
-	if parsedTx1.Sig != "constructor(uint256)" {
-		t.Fatalf("expected %v, but got %v", "constructor(uint256)", parsedTx1.Sig)
-	}
-	if parsedTx1.ParsedData["_initVal"].(*big.Int).Cmp(big.NewInt(42)) != 0 {
-		t.Fatalf("expected %v, but got %v", 42, parsedTx1.ParsedData["_initVal"])
-	}
+	assert.Nil(t, err)
+	assert.Equal(t, "constructor(uint256)", parsedTx1.Sig)
+	assert.Equal(t, big.NewInt(42), parsedTx1.ParsedData["_initVal"])
+
 	parsedTx2, err := apis.GetTransaction(tx2.Hash)
-	if err != nil {
-		t.Fatalf("expected no error, but got %v", err)
-	}
-	if parsedTx2.Sig != "set(uint256)" {
-		t.Fatalf("expected %v, but got %v", "set(uint256)", parsedTx2.Sig)
-	}
-	if parsedTx2.ParsedData["_x"].(*big.Int).Cmp(big.NewInt(999)) != 0 {
-		t.Fatalf("expected %v, but got %v", 999, parsedTx2.ParsedData["_x"])
-	}
-	if parsedTx2.Func4Bytes.String() != "0x60fe47b1" {
-		t.Fatalf("expected %v, but got %v", "0x60fe47b1", parsedTx2.Func4Bytes.String())
-	}
+	assert.Nil(t, err)
+	assert.Equal(t, "set(uint256)", parsedTx2.Sig)
+	assert.Equal(t, big.NewInt(999), parsedTx2.ParsedData["_x"])
+	assert.Equal(t, "0x60fe47b1", parsedTx2.Func4Bytes.String())
+
 	parsedTx3, err := apis.GetTransaction(tx3.Hash)
-	if err != nil {
-		t.Fatalf("expected no error, but got %v", err)
-	}
-	if parsedTx3.ParsedEvents[0].Sig != "event valueSet(uint256 _value)" {
-		t.Fatalf("expected %v, but got %v", "event valueSet(uint256 _value)", parsedTx3.ParsedEvents[0].Sig)
-	}
-	if parsedTx3.ParsedEvents[0].ParsedData["_value"].(*big.Int).Cmp(big.NewInt(1000)) != 0 {
-		t.Fatalf("expected %v, but got %v", 1000, parsedTx3.ParsedEvents[0].ParsedData["_value"])
-	}
+	assert.Nil(t, err)
+	assert.Equal(t, "event valueSet(uint256 _value)", parsedTx3.ParsedEvents[0].Sig)
+	assert.Equal(t, big.NewInt(1000), parsedTx3.ParsedEvents[0].ParsedData["_value"])
+
 	// Test GetAllEventsFromAddress parse event.
 	err = db.IndexBlocks([]common.Address{address}, []*types.Block{block})
-	if err != nil {
-		t.Fatalf("expected no error, but got %v", err)
-	}
+	assert.Nil(t, err)
+
 	eventsResp, err := apis.GetAllEventsFromAddress(address, nil)
-	if err != nil {
-		t.Fatalf("expected no error, but got %v", err)
-	}
-	if eventsResp.Events[0].Sig != "event valueSet(uint256 _value)" {
-		t.Fatalf("expected %v, but got %v", "event valueSet(uint256 _value)", eventsResp.Events[0].Sig)
-	}
-	if eventsResp.Events[0].ParsedData["_value"].(*big.Int).Cmp(big.NewInt(1000)) != 0 {
-		t.Fatalf("expected %v, but got %v", 1000, eventsResp.Events[0].ParsedData["_value"])
-	}
+	assert.Nil(t, err)
+	assert.Equal(t, "event valueSet(uint256 _value)", eventsResp.Events[0].Sig)
+	assert.Equal(t, big.NewInt(1000), eventsResp.Events[0].ParsedData["_value"])
 }
 
 func TestAddAddressWithFrom(t *testing.T) {
-	var err error
 	db := memory.NewMemoryDB()
 	apis := NewRPCAPIs(db)
 	from := uint64(100)
-	err = apis.AddAddress(address, &from)
-	if err != nil {
-		t.Fatalf("expected no error, but got %v", err)
-	}
+
+	err := apis.AddAddress(address, &from)
+	assert.Nil(t, err)
+
 	lastFiltered, err := db.GetLastFiltered(address)
-	if err != nil {
-		t.Fatalf("expected no error, but got %v", err)
-	}
-	if lastFiltered != from-1 {
-		t.Fatalf("expected %v, but got %v", from-1, lastFiltered)
-	}
+	assert.Nil(t, err)
+	assert.Equal(t, from-1, lastFiltered)
 }

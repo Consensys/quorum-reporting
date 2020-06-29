@@ -8,11 +8,13 @@ require (
 	github.com/gin-gonic/contrib v0.0.0-20191209060500-d6e26eeaa607
 	github.com/gin-gonic/gin v1.6.3
 	github.com/golang/mock v1.4.3
+	github.com/gorilla/rpc v1.2.1-0.20190627040322-27d3316e212c
 	github.com/gorilla/websocket v1.4.2
 	github.com/hashicorp/golang-lru v0.5.4
 	github.com/machinebox/graphql v0.2.2
 	github.com/matryer/is v1.3.0 // indirect
 	github.com/naoina/toml v0.1.2-0.20170918210437-9fafd6967416
+	github.com/rs/cors v1.7.0
 	github.com/sirupsen/logrus v1.6.0
 	github.com/stretchr/testify v1.4.0
 	golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2
