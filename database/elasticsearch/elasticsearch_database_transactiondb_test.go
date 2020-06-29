@@ -47,13 +47,10 @@ func TestElasticsearchDB_WriteTransaction_WithError(t *testing.T) {
 
 	mockedClient := elasticsearch_mocks.NewMockAPIClient(ctrl)
 
-	var convertedTx Transaction
-	convertedTx.From(&testTransaction)
-
 	req := esapi.IndexRequest{
 		Index:      TransactionIndex,
 		DocumentID: testTransaction.Hash.String(),
-		Body:       esutil.NewJSONReader(convertedTx),
+		Body:       esutil.NewJSONReader(&testTransaction),
 		Refresh:    "true",
 	}
 
@@ -72,15 +69,12 @@ func TestElasticsearchDB_WriteTransaction(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	var convertedTx Transaction
-	convertedTx.From(&testTransaction)
-
 	mockedClient := elasticsearch_mocks.NewMockAPIClient(ctrl)
 
 	req := esapi.IndexRequest{
 		Index:      TransactionIndex,
 		DocumentID: testTransaction.Hash.String(),
-		Body:       esutil.NewJSONReader(convertedTx),
+		Body:       esutil.NewJSONReader(&testTransaction),
 		Refresh:    "true",
 	}
 
@@ -142,9 +136,7 @@ func TestElasticsearchDB_ReadTransaction(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	var convertedTx Transaction
-	convertedTx.From(&testTransaction)
-	asJson, _ := json.Marshal(convertedTx)
+	asJson, _ := json.Marshal(testTransaction)
 
 	mockedClient := elasticsearch_mocks.NewMockAPIClient(ctrl)
 

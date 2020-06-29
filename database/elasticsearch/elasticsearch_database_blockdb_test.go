@@ -385,25 +385,19 @@ func TestElasticsearchDB_WriteBlocks_MultipleBlocks(t *testing.T) {
 	mockedClient := elasticsearch_mocks.NewMockAPIClient(ctrl)
 	mockedBulkIndexer := elasticsearch_mocks.NewMockBulkIndexer(ctrl)
 
-	var (
-		dbBlockOne Block
-		dbBlockTwo Block
-	)
 	blockTwo := testBlock
 	p := &blockTwo
 	p.Number = testBlock.Number + 1
-	dbBlockOne.From(&testBlock)
-	dbBlockTwo.From(p)
 
 	req := esutil.BulkIndexerItem{
 		Action:     "create",
 		DocumentID: "10",
-		Body:       esutil.NewJSONReader(dbBlockOne),
+		Body:       esutil.NewJSONReader(&testBlock),
 	}
 	req2 := esutil.BulkIndexerItem{
 		Action:     "create",
 		DocumentID: "11",
-		Body:       esutil.NewJSONReader(dbBlockTwo),
+		Body:       esutil.NewJSONReader(p),
 	}
 	lastPersistedRequest := esapi.GetRequest{
 		Index:      MetaIndex,

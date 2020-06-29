@@ -75,7 +75,7 @@ type InternalCall struct {
 }
 
 type Event struct {
-	Index            uint64
+	Index            uint64         `json:"index"`
 	Address          common.Address `json:"address"`
 	Topics           []common.Hash  `json:"topics"`
 	Data             hexutil.Bytes  `json:"data"`

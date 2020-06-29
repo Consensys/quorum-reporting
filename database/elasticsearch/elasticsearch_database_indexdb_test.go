@@ -248,7 +248,7 @@ func TestElasticsearchDB_GetAllEventsByAddress_WithError(t *testing.T) {
 		Body:  strings.NewReader(queryString),
 		From:  &from,
 		Size:  &size,
-		Sort:  []string{"blockNumber:desc", "logIndex:asc"},
+		Sort:  []string{"blockNumber:desc", "index:asc"},
 	}
 
 	mockedClient.EXPECT().DoRequest(gomock.Any()) //for setup, not relevant to test
@@ -277,7 +277,7 @@ func TestElasticsearchDB_GetAllEventsByAddress_WithSingleResult(t *testing.T) {
     "address": "0x1932c48b2bf8102ba33b4a6b545c32236e342f34",
     "blockNumber": 9,
     "data": "0x00000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000001153657474696e672076616c756520746f20000000000000000000000000000000",
-    "logIndex": 0,
+    "index": 0,
     "topics": [
       "0x446ca621af471b81ed3b6ae41d33349b4a872bb20f2eae9a2be6cdd82db0901f"
     ],
@@ -296,7 +296,7 @@ func TestElasticsearchDB_GetAllEventsByAddress_WithSingleResult(t *testing.T) {
 		Body:  strings.NewReader(queryString),
 		From:  &from,
 		Size:  &size,
-		Sort:  []string{"blockNumber:desc", "logIndex:asc"},
+		Sort:  []string{"blockNumber:desc", "index:asc"},
 	}
 
 	mockedClient.EXPECT().DoRequest(gomock.Any()) //for setup, not relevant to test
@@ -330,7 +330,7 @@ func TestElasticsearchDB_GetAllEventsByAddress_WithNoResult(t *testing.T) {
 		Body:  strings.NewReader(queryString),
 		From:  &from,
 		Size:  &size,
-		Sort:  []string{"blockNumber:desc", "logIndex:asc"},
+		Sort:  []string{"blockNumber:desc", "index:asc"},
 	}
 
 	mockedClient.EXPECT().DoRequest(gomock.Any()) //for setup, not relevant to test
@@ -357,7 +357,7 @@ func TestElasticsearchDB_GetAllEventsByAddress_MultipleResults(t *testing.T) {
 		"address": "0x1932c48b2bf8102ba33b4a6b545c32236e342f34",
 		"blockNumber": 9,
 		"data": "0x00000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000001153657474696e672076616c756520746f20000000000000000000000000000000",
-		"logIndex": 0,
+		"index": 0,
 		"topics": [
 		  "0x446ca621af471b81ed3b6ae41d33349b4a872bb20f2eae9a2be6cdd82db0901f"
 		],
@@ -369,7 +369,7 @@ func TestElasticsearchDB_GetAllEventsByAddress_MultipleResults(t *testing.T) {
 		"address": "0x1932c48b2bf8102ba33b4a6b545c32236e342f34",
 		"blockNumber": 9,
 		"data": "0x00000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000001153657474696e672076616c756520746f20000000000000000000000000000000",
-		"logIndex": 1,
+		"index": 1,
 		"topics": [
 		  "0x446ca621af471b81ed3b6ae41d33349b4a872bb20f2eae9a2be6cdd82db0901f"
 		],
@@ -389,7 +389,7 @@ func TestElasticsearchDB_GetAllEventsByAddress_MultipleResults(t *testing.T) {
 		Body:  strings.NewReader(queryString),
 		From:  &from,
 		Size:  &size,
-		Sort:  []string{"blockNumber:desc", "logIndex:asc"},
+		Sort:  []string{"blockNumber:desc", "index:asc"},
 	}
 
 	mockedClient.EXPECT().DoRequest(gomock.Any()) //for setup, not relevant to test
