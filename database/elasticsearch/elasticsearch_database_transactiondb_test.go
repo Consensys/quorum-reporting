@@ -40,6 +40,27 @@ var testTransaction = types.Transaction{
 	InternalCalls:     nil,
 }
 
+func TestElasticsearchDB_WriteSingleTransaction(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockedClient := elasticsearch_mocks.NewMockAPIClient(ctrl)
+
+	req := esapi.IndexRequest{
+		Index:      TransactionIndex,
+		DocumentID: testTransaction.Hash.String(),
+		Body:       esutil.NewJSONReader(&testTransaction),
+		Refresh:    "true",
+	}
+
+	mockedClient.EXPECT().DoRequest(gomock.Any()) //for setup, not relevant to test
+	mockedClient.EXPECT().DoRequest(NewIndexRequestMatcher(req)).Return(nil, nil)
+
+	db, _ := New(mockedClient)
+	err := db.WriteTransactions([]*types.Transaction{&testTransaction})
+	assert.Nil(t, err, "unexpected error")
+}
+
 func TestElasticsearchDB_WriteTransactions_WithError(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
@@ -52,16 +73,21 @@ func TestElasticsearchDB_WriteTransactions_WithError(t *testing.T) {
 		DocumentID: testTransaction.Hash.String(),
 		Body:       esutil.NewJSONReader(&testTransaction),
 	}
+	reqMatcher := NewBulkIndexerItemMatcher(req)
 
 	mockedClient.EXPECT().DoRequest(gomock.Any()) //for setup, not relevant to test
 	mockedClient.EXPECT().GetBulkHandler(TransactionIndex).Return(mockedBulkIndexer)
-	mockedBulkIndexer.EXPECT().Add(gomock.Any(), NewBulkIndexerItemMatcher(req)).
+	mockedBulkIndexer.EXPECT().Add(gomock.Any(), reqMatcher).
 		Do(func(ctx context.Context, item esutil.BulkIndexerItem) {
 			item.OnFailure(context.Background(), req, esutil.BulkIndexerResponseItem{}, errors.New("test error"))
 		})
+	mockedBulkIndexer.EXPECT().Add(gomock.Any(), reqMatcher).
+		Do(func(ctx context.Context, item esutil.BulkIndexerItem) {
+			item.OnSuccess(context.Background(), req, esutil.BulkIndexerResponseItem{})
+		})
 
 	db, _ := New(mockedClient)
-	err := db.WriteTransactions([]*types.Transaction{&testTransaction})
+	err := db.WriteTransactions([]*types.Transaction{&testTransaction, &testTransaction})
 	assert.EqualError(t, err, "test error")
 }
 
