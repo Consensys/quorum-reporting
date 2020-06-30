@@ -79,16 +79,21 @@ func (c *webSocketClient) dial(rawUrl string) error {
 func (c *webSocketClient) subscribeChainHead(ch chan<- *ethTypes.Header) error {
 	c.chainHeadChan = ch
 	c.chainHeadSubscribedId = c.nextID()
+
 	params, _ := json.Marshal([]interface{}{"newHeads"})
+
 	msg := &message{
 		Version: "2.0",
 		ID:      c.chainHeadSubscribedId,
 		Method:  "eth_subscribe",
 		Params:  params,
 	}
+
 	log.Debug("Send subscribe chain head message", "msg", msg)
+
 	c.connWriteMux.Lock()
 	defer c.connWriteMux.Unlock()
+
 	// send subscription message
 	if err := c.conn.WriteJSON(msg); err != nil {
 		log.Error("Subscribe chain head error", "error", err)
@@ -112,10 +117,13 @@ func (c *webSocketClient) sendRPCMsg(ch chan<- *message, method string, args ...
 		}
 		msg.Params = params
 	}
+
 	c.setPendingRPC(msg.ID, ch)
 	log.Debug("Send JSON RPC message", "msg.Method", msg.Method, "args", args, "msg.ID", msg.ID)
+
 	c.connWriteMux.Lock()
 	defer c.connWriteMux.Unlock()
+
 	if err := c.conn.WriteJSON(msg); err != nil {
 		log.Error("Write JSON RPC message error", "error", err, "msg", msg)
 		return err
@@ -144,12 +152,14 @@ func (c *webSocketClient) listen() {
 			}
 			return
 		}
+
 		log.Debug("WebSocket message received", "msg", string(msg))
 		var receivedMsg message
-		err = json.Unmarshal(msg, &receivedMsg)
-		if err != nil {
+		if err = json.Unmarshal(msg, &receivedMsg); err != nil {
 			log.Error("Decode message error", "error", err)
+			continue
 		}
+
 		if ch := c.getPendingRPC(receivedMsg.ID); ch != nil {
 			// handle rpc message
 			ch <- &receivedMsg
@@ -159,15 +169,15 @@ func (c *webSocketClient) listen() {
 		} else if receivedMsg.Method == "eth_subscription" {
 			// handle chain head message
 			var subMsg subMessage
-			err = json.Unmarshal(receivedMsg.Params, &subMsg)
-			if err != nil {
+			if err = json.Unmarshal(receivedMsg.Params, &subMsg); err != nil {
 				log.Error("Decode subscription message error", "error", err)
+				continue
 			}
 			if subMsg.ID == c.chainHeadSubscribedId {
 				var chainHead *ethTypes.Header
-				err = json.Unmarshal(subMsg.Result, &chainHead)
-				if err != nil {
+				if err = json.Unmarshal(subMsg.Result, &chainHead); err != nil {
 					log.Error("Decode chain head error", "error", err)
+					continue
 				}
 				c.chainHeadChan <- chainHead
 			} else {
