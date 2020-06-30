@@ -11,7 +11,6 @@ import (
 	"github.com/elastic/go-elasticsearch/v7/esapi"
 	"github.com/elastic/go-elasticsearch/v7/esutil"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 
@@ -31,7 +30,7 @@ var testBlock = types.Block{
 	GasLimit:    50,
 	GasUsed:     50,
 	Timestamp:   100,
-	ExtraData:   hexutil.Bytes(common.Hex2Bytes("extradata")),
+	ExtraData:   "extradata",
 	Transactions: []common.Hash{
 		common.HexToHash("0xf4f803b8d6c6b38e0b15d6cfe80fd1dcea4270ad24e93385fca36512bb9c2c59"),
 		common.HexToHash("0x693f3f411b7811eabc76d3fffa2c3760d9b8a3534fba8de5832a5dc06bcbc43a"),

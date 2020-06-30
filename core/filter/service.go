@@ -71,7 +71,7 @@ func (fs *FilterService) Start() error {
 					}
 					err := fs.index(lastFilteredAll, lastFiltered+1, endBlock)
 					if err != nil {
-						log.Warn("Index block failed", "block number", lastFiltered, "err", err)
+						log.Warn("Index block failed", "lastFiltered", lastFiltered, "err", err)
 						break
 					}
 					lastFiltered = endBlock

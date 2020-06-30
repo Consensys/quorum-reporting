@@ -1,17 +1,13 @@
 package client
 
 import (
-	"context"
 	"io"
 	"io/ioutil"
-	"math/big"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 
-	"github.com/ethereum/go-ethereum/common"
-	ethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/gorilla/websocket"
 	"github.com/stretchr/testify/assert"
 )
@@ -82,23 +78,8 @@ func TestStubQuorumClient(t *testing.T) {
 	mockRPC := map[string]interface{}{
 		"rpc_method": "hi",
 	}
-	blocks := []*ethTypes.Block{
-		ethTypes.NewBlockWithHeader(&ethTypes.Header{Number: big.NewInt(1)}),
-		ethTypes.NewBlockWithHeader(&ethTypes.Header{Number: big.NewInt(2)}),
-	}
-	var (
-		block *ethTypes.Block
-		err   error
-	)
-	c := NewStubQuorumClient(blocks, mockGraphQL, mockRPC)
-
-	// test BlockByNumber
-	block, err = c.BlockByNumber(context.Background(), big.NewInt(2))
-	assert.Nil(t, err, "expected no error, but got %v", err)
-	assert.Equal(t, common.HexToHash("0x7e9de74f52b93e8175fa5be8badb83102236ca56d5716a9ffad04192ad23ba27"), block.Hash())
-
-	block, err = c.BlockByNumber(context.Background(), big.NewInt(3))
-	assert.EqualError(t, err, "not found", "unexpected error message")
+	var err error
+	c := NewStubQuorumClient(mockGraphQL, mockRPC)
 
 	// test mock GraphQL
 	var resp map[string]interface{}
@@ -111,10 +92,10 @@ func TestStubQuorumClient(t *testing.T) {
 
 	// test mock RPC
 	var res string
-	err = c.RPCCall(context.Background(), &res, "rpc_method")
+	err = c.RPCCall(&res, "rpc_method")
 	assert.Nil(t, err, "expected no error, but got %v", err)
 	assert.Equal(t, "hi", res, "expected res hi, but got %v", res)
 
-	err = c.RPCCall(context.Background(), &res, "rpc_nil")
+	err = c.RPCCall(&res, "rpc_nil")
 	assert.EqualError(t, err, "not found", "unexpected error message")
 }

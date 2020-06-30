@@ -5,8 +5,6 @@ import (
 	"testing"
 
 	"github.com/ethereum/go-ethereum/common"
-	ethTypes "github.com/ethereum/go-ethereum/core/types"
-
 	"quorumengineering/quorum-report/client"
 	"quorumengineering/quorum-report/graphql"
 	"quorumengineering/quorum-report/types"
@@ -14,68 +12,97 @@ import (
 
 func TestCreateBlock(t *testing.T) {
 	cases := []struct {
-		originalBlock *ethTypes.Block
+		originalBlock *types.RawBlock
 		expectedBlock *types.Block
 		consensus     string
 	}{
-		{ethTypes.NewBlock(&ethTypes.Header{Number: big.NewInt(42), Time: 1_000_000_000}, nil, nil, nil),
+		{
+			&types.RawBlock{
+				Number:    "0x2A",
+				Timestamp: "0x3B9ACA00",
+				GasLimit:  "0x2fa023db",
+				GasUsed:   "0x6b8a",
+			},
 			&types.Block{
-				Hash:         common.HexToHash("0x1e492b9b3fceea83d5a94abf3486f2ee03b609ab7a8500af28d90f02ddbce7b9"),
 				Number:       uint64(42),
-				Transactions: []common.Hash{},
 				Timestamp:    1_000_000_000,
+				Transactions: []common.Hash{},
+				GasLimit:     799024091,
+				GasUsed:      27530,
 			},
 			"istanbul",
 		},
-		{ethTypes.NewBlock(&ethTypes.Header{Number: big.NewInt(42), Time: 1_000_000_000}, []*ethTypes.Transaction{
-			ethTypes.NewTransaction(0, common.Address{0}, nil, 0, nil, nil),
-		}, nil, nil),
+		{
+			&types.RawBlock{
+				Number:       "0x2A",
+				Timestamp:    "0x3B9ACA00",
+				Transactions: []string{"0x0000000000000000000000000000000000000000000000000000000000000000"},
+				GasLimit:     "0x2fa023db",
+				GasUsed:      "0x6b8a",
+			},
 			&types.Block{
-				Hash:         common.HexToHash("0x58e58dae7e4bbcb4459b0ee01c2e87d2840b12bfdd3f26dd2f9b3b5b0f4f23cd"),
 				Number:       uint64(42),
+				Timestamp:    1_000_000_000,
 				Transactions: []common.Hash{common.BigToHash(big.NewInt(0))},
-				Timestamp:    1_000_000_000,
+				GasLimit:     799024091,
+				GasUsed:      27530,
 			},
 			"istanbul",
 		},
-		{ethTypes.NewBlock(&ethTypes.Header{Number: big.NewInt(42), Time: 1_000_000_000}, nil, nil, nil),
+		{
+			&types.RawBlock{
+				Number:    "0x2A",
+				Timestamp: "0x3B9ACA00",
+				GasLimit:  "0x2fa023db",
+				GasUsed:   "0x6b8a",
+			},
 			&types.Block{
-				Hash:         common.HexToHash("0x1e492b9b3fceea83d5a94abf3486f2ee03b609ab7a8500af28d90f02ddbce7b9"),
 				Number:       uint64(42),
-				Transactions: []common.Hash{},
 				Timestamp:    1,
+				Transactions: []common.Hash{},
+				GasLimit:     799024091,
+				GasUsed:      27530,
 			},
 			"raft",
 		},
-		{ethTypes.NewBlock(&ethTypes.Header{Number: big.NewInt(42), Time: 1_000_000_000}, []*ethTypes.Transaction{
-			ethTypes.NewTransaction(0, common.Address{0}, nil, 0, nil, nil),
-		}, nil, nil),
+		{
+			&types.RawBlock{
+				Number:       "0x2A",
+				Timestamp:    "0x3B9ACA00",
+				Transactions: []string{"0x0000000000000000000000000000000000000000000000000000000000000000"},
+				GasLimit:     "0x2fa023db",
+				GasUsed:      "0x6b8a",
+			},
 			&types.Block{
-				Hash:         common.HexToHash("0x58e58dae7e4bbcb4459b0ee01c2e87d2840b12bfdd3f26dd2f9b3b5b0f4f23cd"),
 				Number:       uint64(42),
-				Transactions: []common.Hash{common.BigToHash(big.NewInt(0))},
 				Timestamp:    1,
+				Transactions: []common.Hash{common.BigToHash(big.NewInt(0))},
+				GasLimit:     799024091,
+				GasUsed:      27530,
 			},
 			"raft",
 		},
 	}
 
 	for _, tc := range cases {
-		bm := NewDefaultBlockMonitor(client.NewStubQuorumClient(nil, nil, nil), nil, tc.consensus)
+		bm := NewDefaultBlockMonitor(client.NewStubQuorumClient(nil, nil), nil, tc.consensus)
 		actual := bm.createBlock(tc.originalBlock)
-		if actual.Hash != tc.expectedBlock.Hash {
-			t.Fatalf("expected hash %v, but got %v", tc.expectedBlock.Hash.Hex(), actual.Hash.Hex())
-		}
 		if actual.Number != tc.expectedBlock.Number {
 			t.Fatalf("expected block number %v, but got %v", tc.expectedBlock.Number, actual.Number)
-		}
-		if len(actual.Transactions) != len(tc.expectedBlock.Transactions) {
-			t.Fatalf("expected %v transactions, but got %v", len(tc.expectedBlock.Transactions), len(actual.Transactions))
 		}
 		if tc.consensus == "raft" && actual.Timestamp != tc.expectedBlock.Timestamp {
 			t.Fatalf("expected timestamp %d for raft, but got %v", tc.expectedBlock.Timestamp, actual.Timestamp)
 		} else if actual.Timestamp != tc.expectedBlock.Timestamp {
 			t.Fatalf("expected timestamp %d for %s, but got %v", tc.expectedBlock.Timestamp, tc.consensus, actual.Timestamp)
+		}
+		if len(actual.Transactions) != len(tc.expectedBlock.Transactions) {
+			t.Fatalf("expected %v transactions, but got %v", len(tc.expectedBlock.Transactions), len(actual.Transactions))
+		}
+		if actual.GasLimit != tc.expectedBlock.GasLimit {
+			t.Fatalf("expected gas limit %v, but got %v", tc.expectedBlock.GasLimit, actual.GasLimit)
+		}
+		if actual.GasUsed != tc.expectedBlock.GasUsed {
+			t.Fatalf("expected gas used %v, but got %v", tc.expectedBlock.GasUsed, actual.GasUsed)
 		}
 	}
 }
@@ -84,7 +111,7 @@ func TestCurrentBlock(t *testing.T) {
 	mockGraphQL := map[string]map[string]interface{}{
 		graphql.CurrentBlockQuery(): {"block": interface{}(map[string]interface{}{"number": "0x10"})},
 	}
-	bm := NewDefaultBlockMonitor(client.NewStubQuorumClient(nil, mockGraphQL, nil), nil, "raft")
+	bm := NewDefaultBlockMonitor(client.NewStubQuorumClient(mockGraphQL, nil), nil, "raft")
 	currentBlockNumber, err := bm.currentBlockNumber()
 	if err != nil {
 		t.Fatalf("expected no error, but got %v", err)

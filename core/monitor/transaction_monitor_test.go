@@ -66,7 +66,7 @@ func TestCreateTransaction(t *testing.T) {
 			},
 		},
 	}
-	tm := NewDefaultTransactionMonitor(client.NewStubQuorumClient(nil, mockGraphQL, mockRPC))
+	tm := NewDefaultTransactionMonitor(client.NewStubQuorumClient(mockGraphQL, mockRPC))
 	tx, err := tm.createTransaction(testBlock, common.HexToHash("0xe625ba9f14eed0671508966080fb01374d0a3a16b9cee545a324179b75f30aa8"))
 	if err != nil {
 		t.Fatalf("expected no error, but got %v", err)
@@ -139,7 +139,7 @@ func TestTransactionMonitor_PullTransactions(t *testing.T) {
 		},
 	}
 
-	tm := NewDefaultTransactionMonitor(client.NewStubQuorumClient(nil, mockGraphQL, mockRPC))
+	tm := NewDefaultTransactionMonitor(client.NewStubQuorumClient(mockGraphQL, mockRPC))
 
 	txs, err := tm.PullTransactions(block)
 	assert.Nil(t, err, "unexpected error")

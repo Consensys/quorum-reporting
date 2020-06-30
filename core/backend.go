@@ -27,18 +27,17 @@ type Backend struct {
 func New(config types.ReportingConfig) (*Backend, error) {
 	quorumClient, err := client.NewQuorumClient(config.Connection.WSUrl, config.Connection.GraphQLUrl)
 	if err != nil {
+		log.Error("Failed to initialize Quorum Client", "err", err)
+		// auto reconnect
 		if config.Connection.MaxReconnectTries == 0 {
 			return nil, err
 		}
-
 		for i := 0; i < config.Connection.MaxReconnectTries && err != nil; i++ {
-			log.Error("Failed to connect to Quorum RPC", "err", err)
 			log.Error("Trying to reconnect", "wait-time", config.Connection.ReconnectInterval)
 			time.Sleep(time.Duration(config.Connection.ReconnectInterval) * time.Second)
 			quorumClient, err = client.NewQuorumClient(config.Connection.WSUrl, config.Connection.GraphQLUrl)
 		}
-
-		//max retries reached but still erroring, abort
+		// max retries reached but still erroring, abort
 		if err != nil {
 			return nil, err
 		}
@@ -87,7 +86,7 @@ func New(config types.ReportingConfig) (*Backend, error) {
 			if err := db.AssignTemplate(address.Address, address.TemplateName); err != nil {
 				return nil, err
 			}
-			log.Info("Assign template to initial registered contract", "template", address.TemplateName, "address", address.Address)
+			log.Info("Assign template to initial registered contract", "template", address.TemplateName, "address", address.Address.Hex())
 		}
 	}
 

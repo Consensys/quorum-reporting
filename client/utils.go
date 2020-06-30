@@ -1,7 +1,6 @@
 package client
 
 import (
-	"context"
 	"errors"
 	"math/big"
 
@@ -17,7 +16,7 @@ import (
 func DumpAddress(c Client, address common.Address, blockNumber uint64) (*state.DumpAccount, error) {
 	log.Debug("Fetching account dump", "account", address.String(), "blocknumber", blockNumber)
 	dumpAccount := &state.DumpAccount{}
-	err := c.RPCCall(context.Background(), &dumpAccount, "debug_dumpAddress", address, hexutil.EncodeUint64(blockNumber))
+	err := c.RPCCall(&dumpAccount, "debug_dumpAddress", address, hexutil.EncodeUint64(blockNumber))
 	if err != nil {
 		return nil, err
 	}
@@ -33,7 +32,7 @@ func TraceTransaction(c Client, txHash common.Hash) (map[string]interface{}, err
 	type TraceConfig struct {
 		Tracer string
 	}
-	err := c.RPCCall(context.Background(), &resp, "debug_traceTransaction", txHash, &TraceConfig{Tracer: "callTracer"})
+	err := c.RPCCall(&resp, "debug_traceTransaction", txHash, &TraceConfig{Tracer: "callTracer"})
 	if err != nil {
 		return nil, err
 	}
@@ -42,7 +41,7 @@ func TraceTransaction(c Client, txHash common.Hash) (map[string]interface{}, err
 
 func GetCode(c Client, address common.Address, blockHash common.Hash) (hexutil.Bytes, error) {
 	var res hexutil.Bytes
-	if err := c.RPCCall(context.Background(), &res, "eth_getCode", address, blockHash.String()); err != nil {
+	if err := c.RPCCall(&res, "eth_getCode", address, blockHash.String()); err != nil {
 		return nil, err
 	}
 	return res, nil
@@ -52,7 +51,7 @@ func Consensus(c Client) (string, error) {
 	log.Debug("Fetching consensus info")
 
 	var resp p2p.NodeInfo
-	err := c.RPCCall(context.Background(), &resp, "admin_nodeInfo")
+	err := c.RPCCall(&resp, "admin_nodeInfo")
 	if err != nil {
 		return "", err
 	}
@@ -78,12 +77,13 @@ func CallEIP165(c Client, address common.Address, interfaceId []byte, blockNum *
 		Data: calldata,
 	}
 
-	result, err := c.CallContract(context.Background(), msg, blockNum)
+	var res []byte
+	err := c.RPCCall(&res, "eth_call", msg, hexutil.EncodeBig(blockNum))
 	if err != nil {
 		return false, err
 	}
-	if len(result) != 32 {
+	if len(res) != 32 {
 		return false, nil
 	}
-	return result[len(result)-1] == 0x1, nil
+	return res[len(res)-1] == 0x1, nil
 }
