@@ -222,36 +222,29 @@ func (db *MemoryDB) GetTemplateDetails(templateName string) (*types.Template, er
 	}, nil
 }
 
-func (db *MemoryDB) WriteBlock(block *types.Block) error {
+func (db *MemoryDB) WriteBlocks(blocks []*types.Block) error {
 	db.mux.Lock()
 	defer db.mux.Unlock()
-	if block == nil {
-		return errors.New("block is nil")
-	}
-	blockNumber := block.Number
-	db.blockDB[blockNumber] = block
-	// Update last persisted block number.
-	if blockNumber == db.lastPersistedBlockNumber+1 {
-		for {
-			if _, ok := db.blockDB[blockNumber+1]; ok {
-				blockNumber++
-			} else {
-				break
-			}
-		}
-		db.lastPersistedBlockNumber = blockNumber
-	}
-	log.Debug("Block stored", "number", block.Number, "hash", block.Hash.String())
-	log.Debug("Last persisted block", "number", db.lastPersistedBlockNumber)
-	return nil
-}
 
-func (db *MemoryDB) WriteBlocks(blocks []*types.Block) error {
 	for _, block := range blocks {
-		err := db.WriteBlock(block)
-		if err != nil {
-			return err
+		if block == nil {
+			return errors.New("block is nil")
 		}
+		blockNumber := block.Number
+		db.blockDB[blockNumber] = block
+		// Update last persisted block number.
+		if blockNumber == db.lastPersistedBlockNumber+1 {
+			for {
+				if _, ok := db.blockDB[blockNumber+1]; ok {
+					blockNumber++
+				} else {
+					break
+				}
+			}
+			db.lastPersistedBlockNumber = blockNumber
+		}
+		log.Debug("Block stored", "number", block.Number, "hash", block.Hash.String())
+		log.Debug("Last persisted block", "number", db.lastPersistedBlockNumber)
 	}
 	return nil
 }
@@ -271,23 +264,16 @@ func (db *MemoryDB) GetLastPersistedBlockNumber() (uint64, error) {
 	return db.lastPersistedBlockNumber, nil
 }
 
-func (db *MemoryDB) WriteTransaction(transaction *types.Transaction) error {
+func (db *MemoryDB) WriteTransactions(transactions []*types.Transaction) error {
 	db.mux.Lock()
 	defer db.mux.Unlock()
-	if transaction != nil {
-		db.txDB[transaction.Hash] = transaction
-		log.Debug("Transaction stored", "hash", transaction.Hash.Hex())
-		return nil
-	}
-	return errors.New("transaction is nil")
-}
 
-func (db *MemoryDB) WriteTransactions(transactions []*types.Transaction) error {
 	for _, tx := range transactions {
-		err := db.WriteTransaction(tx)
-		if err != nil {
-			return err
+		if tx == nil {
+			return errors.New("transaction is nil")
 		}
+		db.txDB[tx.Hash] = tx
+		log.Debug("Transaction stored", "hash", tx.Hash.Hex())
 	}
 	return nil
 }

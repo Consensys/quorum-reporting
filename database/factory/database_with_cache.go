@@ -153,22 +153,10 @@ func (cachingDB *DatabaseWithCache) GetTemplateDetails(templateName string) (*ty
 	return cachingDB.db.GetTemplateDetails(templateName)
 }
 
-func (cachingDB *DatabaseWithCache) WriteBlock(block *types.Block) error {
-	// make sure write block is mutual exclusive so that last persisted is updated correctly
+func (cachingDB *DatabaseWithCache) WriteBlocks(blocks []*types.Block) error {
 	cachingDB.blockMux.Lock()
 	defer cachingDB.blockMux.Unlock()
-	err := cachingDB.db.WriteBlock(block)
-	if err != nil {
-		return err
-	}
-	cachingDB.blockCache.Add(block.Number, block)
-	return nil
-}
-
-func (cachingDB *DatabaseWithCache) WriteBlocks(blocks []*types.Block) error {
-	// make sure write block is mutual exclusive so that last persisted is updated correctly
-	err := cachingDB.db.WriteBlocks(blocks)
-	if err != nil {
+	if err := cachingDB.db.WriteBlocks(blocks); err != nil {
 		return err
 	}
 	for _, block := range blocks {
@@ -193,15 +181,6 @@ func (cachingDB *DatabaseWithCache) GetLastPersistedBlockNumber() (uint64, error
 	cachingDB.blockMux.RLock()
 	defer cachingDB.blockMux.RUnlock()
 	return cachingDB.db.GetLastPersistedBlockNumber()
-}
-
-func (cachingDB *DatabaseWithCache) WriteTransaction(tx *types.Transaction) error {
-	err := cachingDB.db.WriteTransaction(tx)
-	if err != nil {
-		return err
-	}
-	cachingDB.transactionCache.Add(tx.Hash, tx)
-	return nil
 }
 
 func (cachingDB *DatabaseWithCache) WriteTransactions(txns []*types.Transaction) error {
