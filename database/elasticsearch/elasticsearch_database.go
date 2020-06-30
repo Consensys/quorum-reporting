@@ -434,7 +434,26 @@ func (es *ElasticsearchDB) GetLastPersistedBlockNumber() (uint64, error) {
 }
 
 // TransactionDB
+func (es *ElasticsearchDB) WriteTransaction(transaction *types.Transaction) error {
+	req := esapi.IndexRequest{
+		Index:      TransactionIndex,
+		DocumentID: transaction.Hash.String(),
+		Body:       esutil.NewJSONReader(transaction),
+		Refresh:    "true",
+	}
+
+	_, err := es.apiClient.DoRequest(req)
+	return err
+}
+
 func (es *ElasticsearchDB) WriteTransactions(transactions []*types.Transaction) error {
+	if len(transactions) == 0 {
+		return nil
+	}
+	if len(transactions) == 1 {
+		return es.WriteTransaction(transactions[0])
+	}
+
 	bi := es.apiClient.GetBulkHandler(TransactionIndex)
 
 	var (
@@ -771,8 +790,6 @@ func (es *ElasticsearchDB) getTemplateByName(name string) (*Template, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	fmt.Println(string(body))
 
 	var template TemplateQueryResult
 	if err = json.Unmarshal(body, &template); err != nil {

@@ -156,7 +156,6 @@ func (cachingDB *DatabaseWithCache) GetTemplateDetails(templateName string) (*ty
 func (cachingDB *DatabaseWithCache) WriteBlocks(blocks []*types.Block) error {
 	cachingDB.blockMux.Lock()
 	defer cachingDB.blockMux.Unlock()
-
 	if err := cachingDB.db.WriteBlocks(blocks); err != nil {
 		return err
 	}
