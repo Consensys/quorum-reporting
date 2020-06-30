@@ -447,6 +447,13 @@ func (es *ElasticsearchDB) WriteTransaction(transaction *types.Transaction) erro
 }
 
 func (es *ElasticsearchDB) WriteTransactions(transactions []*types.Transaction) error {
+	if len(transactions) == 0 {
+		return nil
+	}
+	if len(transactions) == 1 {
+		return es.WriteTransaction(transactions[0])
+	}
+
 	bi := es.apiClient.GetBulkHandler(TransactionIndex)
 
 	var (

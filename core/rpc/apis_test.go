@@ -91,19 +91,11 @@ func TestAPIParsing(t *testing.T) {
 		t.Fatalf("expected no error, but got %v", err)
 	}
 	// Set up test data.
-	err = db.WriteTransaction(tx1)
+	err = db.WriteTransactions([]*types.Transaction{tx1, tx2, tx3})
 	if err != nil {
 		t.Fatalf("expected no error, but got %v", err)
 	}
-	err = db.WriteTransaction(tx2)
-	if err != nil {
-		t.Fatalf("expected no error, but got %v", err)
-	}
-	err = db.WriteTransaction(tx3)
-	if err != nil {
-		t.Fatalf("expected no error, but got %v", err)
-	}
-	err = db.WriteBlock(block)
+	err = db.WriteBlocks([]*types.Block{block})
 	if err != nil {
 		t.Fatalf("expected no error, but got %v", err)
 	}

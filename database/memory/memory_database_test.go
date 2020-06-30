@@ -124,9 +124,7 @@ func TestMemoryDB(t *testing.T) {
 	testGetTemplates(t, db, 2)
 	testGetStorageLayout(t, db, address, testTemplateStorage)
 	// 4. Write transaction and get it.
-	testWriteTransaction(t, db, tx1, false)
-	testWriteTransaction(t, db, tx2, false)
-	testWriteTransaction(t, db, tx3, false)
+	testWriteTransactions(t, db, tx1, tx2, tx3)
 	testReadTransaction(t, db, tx1.Hash, tx1)
 	// 5. Write block and get it. Check last persisted block number.
 	testGetLastPersistedBlockNumeber(t, db, 0)
@@ -255,7 +253,7 @@ func testGetTemplates(t *testing.T, db database.Database, expected int) {
 }
 
 func testWriteBlock(t *testing.T, db database.Database, block *types.Block, expectedErr bool) {
-	err := db.WriteBlock(block)
+	err := db.WriteBlocks([]*types.Block{block})
 	if err != nil && !expectedErr {
 		t.Fatalf("expected no error, but got %v", err)
 	}
@@ -284,13 +282,10 @@ func testGetLastPersistedBlockNumeber(t *testing.T, db database.Database, expect
 	}
 }
 
-func testWriteTransaction(t *testing.T, db database.Database, tx *types.Transaction, expectedErr bool) {
-	err := db.WriteTransaction(tx)
-	if err != nil && !expectedErr {
+func testWriteTransactions(t *testing.T, db database.Database, txs ...*types.Transaction) {
+	err := db.WriteTransactions(txs)
+	if err != nil {
 		t.Fatalf("expected no error, but got %v", err)
-	}
-	if err == nil && expectedErr {
-		t.Fatalf("expected error but got nil")
 	}
 }
 

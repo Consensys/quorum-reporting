@@ -21,25 +21,23 @@ import (
 
 //Tests
 
-var (
-	testBlock = types.Block{
-		Hash:        common.HexToHash("0x4b603921305ebaa48d863b9f577059a63c653cd8e952372622923708fb657806"),
-		ParentHash:  common.HexToHash("0x5cde17410e3bb729f745870e166a767bcf07287c0f80bbcb38303eba8dbe5053"),
-		StateRoot:   common.HexToHash("0x309e12409dc1ff594e12ed7baf41a9190385bc7e32f9c0926dccd95f0a8f62f6"),
-		TxRoot:      common.HexToHash("0x6473d4f7a3a5638e56fec88a60f765ed321bd15dfade365f232d0b1250a42de0"),
-		ReceiptRoot: common.HexToHash("0xe65c3585a018f660d1457358967875d1526ebab3e1ce8198757585217fc013b8"),
-		Number:      10,
-		GasLimit:    50,
-		GasUsed:     50,
-		Timestamp:   100,
-		ExtraData:   hexutil.Bytes(common.Hex2Bytes("extradata")),
-		Transactions: []common.Hash{
-			common.HexToHash("0xf4f803b8d6c6b38e0b15d6cfe80fd1dcea4270ad24e93385fca36512bb9c2c59"),
-			common.HexToHash("0x693f3f411b7811eabc76d3fffa2c3760d9b8a3534fba8de5832a5dc06bcbc43a"),
-			common.HexToHash("0x5c83fa5955aff33c61813105851777bcd2adc85deb9af6286ba42c05cd768de0"),
-		},
-	}
-)
+var testBlock = types.Block{
+	Hash:        common.HexToHash("0x4b603921305ebaa48d863b9f577059a63c653cd8e952372622923708fb657806"),
+	ParentHash:  common.HexToHash("0x5cde17410e3bb729f745870e166a767bcf07287c0f80bbcb38303eba8dbe5053"),
+	StateRoot:   common.HexToHash("0x309e12409dc1ff594e12ed7baf41a9190385bc7e32f9c0926dccd95f0a8f62f6"),
+	TxRoot:      common.HexToHash("0x6473d4f7a3a5638e56fec88a60f765ed321bd15dfade365f232d0b1250a42de0"),
+	ReceiptRoot: common.HexToHash("0xe65c3585a018f660d1457358967875d1526ebab3e1ce8198757585217fc013b8"),
+	Number:      10,
+	GasLimit:    50,
+	GasUsed:     50,
+	Timestamp:   100,
+	ExtraData:   hexutil.Bytes(common.Hex2Bytes("extradata")),
+	Transactions: []common.Hash{
+		common.HexToHash("0xf4f803b8d6c6b38e0b15d6cfe80fd1dcea4270ad24e93385fca36512bb9c2c59"),
+		common.HexToHash("0x693f3f411b7811eabc76d3fffa2c3760d9b8a3534fba8de5832a5dc06bcbc43a"),
+		common.HexToHash("0x5c83fa5955aff33c61813105851777bcd2adc85deb9af6286ba42c05cd768de0"),
+	},
+}
 
 func TestElasticsearchDB_WriteBlock_WithError(t *testing.T) {
 	ctrl := gomock.NewController(t)
@@ -377,6 +375,97 @@ func TestElasticsearchDB_WriteBlocks_SingleBlock(t *testing.T) {
 	err := db.WriteBlocks([]*types.Block{&testBlock})
 
 	assert.Nil(t, err, "unexpected error")
+}
+
+func TestElasticsearchDB_WriteBlocks_WithErrorOnLastPersisted(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockedClient := elasticsearch_mocks.NewMockAPIClient(ctrl)
+	mockedBulkIndexer := elasticsearch_mocks.NewMockBulkIndexer(ctrl)
+
+	blockTwo := testBlock
+	p := &blockTwo
+	p.Number = testBlock.Number + 1
+
+	req := esutil.BulkIndexerItem{
+		Action:     "create",
+		DocumentID: "10",
+		Body:       esutil.NewJSONReader(&testBlock),
+	}
+	req2 := esutil.BulkIndexerItem{
+		Action:     "create",
+		DocumentID: "11",
+		Body:       esutil.NewJSONReader(p),
+	}
+	lastPersistedRequest := esapi.GetRequest{
+		Index:      MetaIndex,
+		DocumentID: "lastPersisted",
+	}
+
+	mockedClient.EXPECT().DoRequest(gomock.Any()) //for setup, not relevant to test
+	mockedClient.EXPECT().GetBulkHandler(BlockIndex).Return(mockedBulkIndexer)
+	mockedBulkIndexer.EXPECT().
+		Add(gomock.Any(), NewBulkIndexerItemMatcher(req)).
+		Do(func(ctx context.Context, item esutil.BulkIndexerItem) {
+			item.OnSuccess(context.Background(), req, esutil.BulkIndexerResponseItem{})
+		})
+	mockedBulkIndexer.EXPECT().
+		Add(gomock.Any(), NewBulkIndexerItemMatcher(req2)).
+		Do(func(ctx context.Context, item esutil.BulkIndexerItem) {
+			item.OnSuccess(context.Background(), req2, esutil.BulkIndexerResponseItem{})
+		})
+	mockedClient.EXPECT().
+		DoRequest(NewGetRequestMatcher(lastPersistedRequest)).
+		Return(nil, errors.New("test error - last persisted"))
+
+	db, _ := New(mockedClient)
+
+	err := db.WriteBlocks([]*types.Block{&testBlock, p})
+
+	assert.EqualError(t, err, "test error - last persisted")
+}
+
+func TestElasticsearchDB_WriteBlocks_WithErrorOnBlockSave(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockedClient := elasticsearch_mocks.NewMockAPIClient(ctrl)
+	mockedBulkIndexer := elasticsearch_mocks.NewMockBulkIndexer(ctrl)
+
+	blockTwo := testBlock
+	p := &blockTwo
+	p.Number = testBlock.Number + 1
+
+	req := esutil.BulkIndexerItem{
+		Action:     "create",
+		DocumentID: "10",
+		Body:       esutil.NewJSONReader(&testBlock),
+	}
+	req2 := esutil.BulkIndexerItem{
+		Action:     "create",
+		DocumentID: "11",
+		Body:       esutil.NewJSONReader(p),
+	}
+
+	mockedClient.EXPECT().DoRequest(gomock.Any()) //for setup, not relevant to test
+	mockedClient.EXPECT().GetBulkHandler(BlockIndex).Return(mockedBulkIndexer)
+	mockedBulkIndexer.EXPECT().
+		Add(gomock.Any(), NewBulkIndexerItemMatcher(req)).
+		Do(func(ctx context.Context, item esutil.BulkIndexerItem) {
+			item.OnFailure(context.Background(), req, esutil.BulkIndexerResponseItem{}, errors.New("test error"))
+		})
+	mockedBulkIndexer.EXPECT().
+		Add(gomock.Any(), NewBulkIndexerItemMatcher(req2)).
+		Do(func(ctx context.Context, item esutil.BulkIndexerItem) {
+			item.OnFailure(context.Background(), req2, esutil.BulkIndexerResponseItem{}, errors.New("test error"))
+		})
+
+	db, _ := New(mockedClient)
+
+	err := db.WriteBlocks([]*types.Block{&testBlock, p})
+
+	assert.EqualError(t, err, "test error")
 }
 
 func TestElasticsearchDB_WriteBlocks_MultipleBlocks(t *testing.T) {
