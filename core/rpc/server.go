@@ -23,7 +23,7 @@ func MakeServer(db database.Database, config types.ReportingConfig) {
 	s.RegisterCodec(json.NewCodec(), "application/json")
 	s.RegisterService(NewRPCAPIs(db), "reporting")
 
-	handler := cors.Default().Handler(s)
+	handler := cors.New(cors.Options{AllowedOrigins: config.Server.RPCCorsList}).Handler(s)
 
 	srv := &http.Server{
 		Addr:    config.Server.RPCAddr,
@@ -35,5 +35,4 @@ func MakeServer(db database.Database, config types.ReportingConfig) {
 	}
 
 	go srv.ListenAndServe()
-
 }

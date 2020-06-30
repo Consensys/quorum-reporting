@@ -2,6 +2,7 @@ package rpc
 
 import (
 	"math/big"
+	"net/http"
 	"testing"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -22,6 +23,8 @@ const validABI = `
 ]`
 
 var (
+	dummyReq = &http.Request{}
+
 	address = common.HexToAddress("0x0000000000000000000000000000000000000001")
 	block   = &types.Block{
 		Hash:   common.BytesToHash([]byte("dummy")),
@@ -66,7 +69,7 @@ var (
 func TestAPIValidation(t *testing.T) {
 	apis := NewRPCAPIs(memory.NewMemoryDB())
 
-	err := apis.AddAddress(common.Address{}, nil)
+	err := apis.AddAddress(dummyReq, &AddressWithOptionalBlock{Address: &common.Address{}}, nil)
 	assert.EqualError(t, err, "invalid input")
 }
 
