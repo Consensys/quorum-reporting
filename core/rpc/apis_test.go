@@ -76,38 +76,38 @@ func TestAPIValidation(t *testing.T) {
 func TestAPIParsing(t *testing.T) {
 	db := memory.NewMemoryDB()
 	apis := NewRPCAPIs(db)
-	err := apis.AddAddress(address, nil)
+	err := apis.AddAddress(dummyReq, &AddressWithOptionalBlock{Address: &address}, nil)
 	assert.Nil(t, err)
 
 	// Test AddABI string to ABI parsing.
-	err = apis.AddABI(address, "hello")
+	err = apis.AddABI(dummyReq, &AddressWithData{&address, "hello"}, nil)
 	assert.EqualError(t, err, "invalid character 'h' looking for beginning of value")
 
-	err = apis.AddABI(address, validABI)
+	err = apis.AddABI(dummyReq, &AddressWithData{&address, validABI}, nil)
 	assert.Nil(t, err)
 
 	// Set up test data.
 	err = db.WriteTransactions([]*types.Transaction{tx1, tx2, tx3})
-	if err != nil {
-		t.Fatalf("expected no error, but got %v", err)
-	}
+	assert.Nil(t, err)
+
 	err = db.WriteBlocks([]*types.Block{block})
-	if err != nil {
-		t.Fatalf("expected no error, but got %v", err)
-	}
+	assert.Nil(t, err)
 	// Test GetTransaction parse transaction data.
-	parsedTx1, err := apis.GetTransaction(tx1.Hash)
+	parsedTx1 := &types.ParsedTransaction{}
+	err = apis.GetTransaction(dummyReq, &tx1.Hash, parsedTx1)
 	assert.Nil(t, err)
 	assert.Equal(t, "constructor(uint256)", parsedTx1.Sig)
 	assert.Equal(t, big.NewInt(42), parsedTx1.ParsedData["_initVal"])
 
-	parsedTx2, err := apis.GetTransaction(tx2.Hash)
+	parsedTx2 := &types.ParsedTransaction{}
+	err = apis.GetTransaction(dummyReq, &tx2.Hash, parsedTx2)
 	assert.Nil(t, err)
 	assert.Equal(t, "set(uint256)", parsedTx2.Sig)
 	assert.Equal(t, big.NewInt(999), parsedTx2.ParsedData["_x"])
 	assert.Equal(t, "0x60fe47b1", parsedTx2.Func4Bytes.String())
 
-	parsedTx3, err := apis.GetTransaction(tx3.Hash)
+	parsedTx3 := &types.ParsedTransaction{}
+	err = apis.GetTransaction(dummyReq, &tx3.Hash, parsedTx3)
 	assert.Nil(t, err)
 	assert.Equal(t, "event valueSet(uint256 _value)", parsedTx3.ParsedEvents[0].Sig)
 	assert.Equal(t, big.NewInt(1000), parsedTx3.ParsedEvents[0].ParsedData["_value"])
@@ -116,7 +116,8 @@ func TestAPIParsing(t *testing.T) {
 	err = db.IndexBlocks([]common.Address{address}, []*types.Block{block})
 	assert.Nil(t, err)
 
-	eventsResp, err := apis.GetAllEventsFromAddress(address, nil)
+	eventsResp := &EventsResp{}
+	err = apis.GetAllEventsFromAddress(dummyReq, &AddressWithOptions{Address: &address}, eventsResp)
 	assert.Nil(t, err)
 	assert.Equal(t, "event valueSet(uint256 _value)", eventsResp.Events[0].Sig)
 	assert.Equal(t, big.NewInt(1000), eventsResp.Events[0].ParsedData["_value"])
@@ -127,7 +128,12 @@ func TestAddAddressWithFrom(t *testing.T) {
 	apis := NewRPCAPIs(db)
 	from := uint64(100)
 
-	err := apis.AddAddress(address, &from)
+	params := &AddressWithOptionalBlock{
+		Address:     &address,
+		BlockNumber: &from,
+	}
+
+	err := apis.AddAddress(dummyReq, params, nil)
 	assert.Nil(t, err)
 
 	lastFiltered, err := db.GetLastFiltered(address)
