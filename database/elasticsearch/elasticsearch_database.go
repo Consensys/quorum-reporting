@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"quorumengineering/quorum-report/database"
 	"strconv"
 	"strings"
 	"sync"
@@ -187,57 +188,17 @@ func (es *ElasticsearchDB) GetContractTemplate(address common.Address) (string, 
 	return contract.TemplateName, nil
 }
 
-//ABIDB
-func (es *ElasticsearchDB) AddContractABI(address common.Address, abi string) error {
-	// check contract & template existence before updating
-	contract, err := es.getContractByAddress(address)
-	if err != nil {
-		return err
-	}
-	// create new template named contract.Address.String()
-	template, err := es.getTemplateByName(contract.TemplateName)
-	if err != nil && err != ErrNotFound {
-		return err
-	}
-	// check contract.Address.String() template exists
-	_, err = es.getTemplateByName(contract.Address.String())
-	if err != nil && err != ErrNotFound {
-		return err
-	}
-	if err == ErrNotFound {
-		if template == nil {
-			if err := es.createTemplate(contract.Address.String(), abi, ""); err != nil {
-				return err
-			}
-		} else {
-			if err := es.createTemplate(contract.Address.String(), abi, template.StorageABI); err != nil {
-				return err
-			}
-		}
-	} else {
-		// update contract.Address.String() template
-		updateRequest := esapi.UpdateRequest{
-			Index:      TemplateIndex,
-			DocumentID: contract.Address.String(),
-			Body:       strings.NewReader(fmt.Sprintf(`{"doc":{"abi":%s, "storageAbi":%s}}`, abi, template.StorageABI)),
-			Refresh:    "true",
-		}
-		if _, err := es.apiClient.DoRequest(updateRequest); err != nil {
-			return err
-		}
-	}
-	// update template name
-	return es.updateContract(contract.Address, "templateName", contract.Address.String())
-}
-
+//TemplateDB
 func (es *ElasticsearchDB) GetContractABI(address common.Address) (string, error) {
+
 	contract, err := es.getContractByAddress(address)
-	if err != nil && err != ErrNotFound {
+	if err != nil && err != database.ErrNotFound {
 		return "", err
 	}
+
 	if contract != nil {
 		template, err := es.getTemplateByName(contract.TemplateName)
-		if err != nil && err != ErrNotFound {
+		if err != nil && err != database.ErrNotFound {
 			return "", err
 		}
 		if template != nil {
@@ -247,56 +208,14 @@ func (es *ElasticsearchDB) GetContractABI(address common.Address) (string, error
 	return "", nil
 }
 
-func (es *ElasticsearchDB) AddStorageLayout(address common.Address, layout string) error {
-	// check contract & template existence before updating
-	contract, err := es.getContractByAddress(address)
-	if err != nil {
-		return err
-	}
-	// create new template named contract.Address.String()
-	template, err := es.getTemplateByName(contract.TemplateName)
-	if err != nil && err != ErrNotFound {
-		return err
-	}
-	// check contract.Address.String() template exists
-	_, err = es.getTemplateByName(contract.Address.String())
-	if err != nil && err != ErrNotFound {
-		return err
-	}
-	if err == ErrNotFound {
-		if template == nil {
-			if err := es.createTemplate(contract.Address.String(), "", layout); err != nil {
-				return err
-			}
-		} else {
-			if err := es.createTemplate(contract.Address.String(), template.ABI, layout); err != nil {
-				return err
-			}
-		}
-	} else {
-		// update contract.Address.String() template
-		updateRequest := esapi.UpdateRequest{
-			Index:      TemplateIndex,
-			DocumentID: contract.Address.String(),
-			Body:       strings.NewReader(fmt.Sprintf(`{"doc":{"abi":%s, "storageAbi":%s}}`, template.ABI, layout)),
-			Refresh:    "true",
-		}
-		if _, err := es.apiClient.DoRequest(updateRequest); err != nil {
-			return err
-		}
-	}
-	// update template name
-	return es.updateContract(contract.Address, "templateName", contract.Address.String())
-}
-
 func (es *ElasticsearchDB) GetStorageLayout(address common.Address) (string, error) {
 	contract, err := es.getContractByAddress(address)
-	if err != nil && err != ErrNotFound {
+	if err != nil && err != database.ErrNotFound {
 		return "", err
 	}
 	if contract != nil {
 		template, err := es.getTemplateByName(contract.TemplateName)
-		if err != nil && err != ErrNotFound {
+		if err != nil && err != database.ErrNotFound {
 			return "", err
 		}
 		if template != nil {
@@ -307,7 +226,20 @@ func (es *ElasticsearchDB) GetStorageLayout(address common.Address) (string, err
 }
 
 func (es *ElasticsearchDB) AddTemplate(name string, abi string, layout string) error {
-	return es.createTemplate(name, abi, layout)
+	template := Template{
+		TemplateName: name,
+		ABI:          abi,
+		StorageABI:   layout,
+	}
+
+	req := esapi.IndexRequest{
+		Index:      TemplateIndex,
+		DocumentID: name,
+		Body:       esutil.NewJSONReader(template),
+		Refresh:    "true",
+	}
+	_, err := es.apiClient.DoRequest(req)
+	return err
 }
 
 func (es *ElasticsearchDB) AssignTemplate(address common.Address, name string) error {
@@ -709,10 +641,10 @@ func (es *ElasticsearchDB) GetStorage(address common.Address, blockNumber uint64
 		DocumentID: address.String() + "-" + strconv.FormatUint(blockNumber, 10),
 	}
 	body, err := es.apiClient.DoRequest(fetchReq)
-	if err != nil && err != ErrNotFound {
+	if err != nil && err != database.ErrNotFound {
 		return nil, err
 	}
-	if err == ErrNotFound {
+	if err == database.ErrNotFound {
 		return nil, nil
 	}
 	var stateResult StateQueryResult
@@ -725,10 +657,10 @@ func (es *ElasticsearchDB) GetStorage(address common.Address, blockNumber uint64
 		DocumentID: stateResult.Source.StorageRoot.String(),
 	}
 	body, err = es.apiClient.DoRequest(storageFetchReq)
-	if err != nil && err != ErrNotFound {
+	if err != nil && err != database.ErrNotFound {
 		return nil, err
 	}
-	if err == ErrNotFound {
+	if err == database.ErrNotFound {
 		return nil, nil
 	}
 	var storageResult StorageQueryResult
@@ -796,23 +728,6 @@ func (es *ElasticsearchDB) getTemplateByName(name string) (*Template, error) {
 		return nil, err
 	}
 	return &template.Source, nil
-}
-
-func (es *ElasticsearchDB) createTemplate(name, abi, layout string) error {
-	template := Template{
-		TemplateName: name,
-		ABI:          abi,
-		StorageABI:   layout,
-	}
-
-	req := esapi.IndexRequest{
-		Index:      TemplateIndex,
-		DocumentID: name,
-		Body:       esutil.NewJSONReader(template),
-		Refresh:    "true",
-	}
-	_, err := es.apiClient.DoRequest(req)
-	return err
 }
 
 func (es *ElasticsearchDB) updateAllLastFiltered(addresses []common.Address, lastFiltered uint64) error {

@@ -7,6 +7,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 
+	"quorumengineering/quorum-report/core/services"
 	"quorumengineering/quorum-report/database/memory"
 	"quorumengineering/quorum-report/types"
 )
@@ -14,7 +15,7 @@ import (
 func TestAPIValidation(t *testing.T) {
 	var err error
 	db := memory.NewMemoryDB()
-	apis := NewRPCAPIs(db)
+	apis := NewRPCAPIs(db, services.NewDefaultContractManager(db))
 	// Test AddAddress validation
 	err = apis.AddAddress(common.Address{0}, nil)
 	if err == nil || err.Error() != "invalid input" {
@@ -76,7 +77,7 @@ var (
 func TestAPIParsing(t *testing.T) {
 	var err error
 	db := memory.NewMemoryDB()
-	apis := NewRPCAPIs(db)
+	apis := NewRPCAPIs(db, services.NewDefaultContractManager(db))
 	err = apis.AddAddress(address, nil)
 	if err != nil {
 		t.Fatalf("expected no error, but got %v", err)
@@ -153,7 +154,7 @@ func TestAPIParsing(t *testing.T) {
 func TestAddAddressWithFrom(t *testing.T) {
 	var err error
 	db := memory.NewMemoryDB()
-	apis := NewRPCAPIs(db)
+	apis := NewRPCAPIs(db, services.NewDefaultContractManager(db))
 	from := uint64(100)
 	err = apis.AddAddress(address, &from)
 	if err != nil {
