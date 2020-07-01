@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/gorilla/rpc/v2"
@@ -27,13 +28,18 @@ type RPCService struct {
 	db          database.Database
 
 	httpServer *http.Server
+
+	httpServerErrorChannel chan error
+	shutdownWg             sync.WaitGroup
 }
 
-func NewRPCService(db database.Database, config types.ReportingConfig) *RPCService {
+func NewRPCService(db database.Database, config types.ReportingConfig, backendErrorChan chan error) *RPCService {
 	return &RPCService{
 		cors:        config.Server.RPCCorsList,
 		httpAddress: config.Server.RPCAddr,
 		db:          db,
+
+		httpServerErrorChannel: backendErrorChan,
 	}
 }
 
@@ -56,9 +62,12 @@ func (r *RPCService) Start() error {
 		IdleTimeout:  IdleTimeout,
 	}
 
+	r.shutdownWg.Add(1)
 	go func() {
-		if err := r.httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		defer r.shutdownWg.Done()
+		if err := r.httpServer.ListenAndServe(); err != http.ErrServerClosed {
 			log.Error("Unable to start JSON-RPC server", "err", err)
+			r.httpServerErrorChannel <- err
 		}
 	}()
 
@@ -71,8 +80,11 @@ func (r *RPCService) Stop() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	if err := r.httpServer.Shutdown(ctx); err != nil {
-		log.Error("JSON-RPC server shutdown failed", "err", err)
+	if r.httpServer != nil {
+		if err := r.httpServer.Shutdown(ctx); err != nil {
+			log.Error("JSON-RPC server shutdown failed", "err", err)
+		}
+		r.shutdownWg.Wait()
 	}
 
 	log.Info("RPC HTTP endpoint closed", "url", fmt.Sprintf("http://%s", r.httpServer.Addr))

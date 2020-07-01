@@ -22,6 +22,8 @@ type Backend struct {
 	filter  *filter.FilterService
 	rpc     *rpc.RPCService
 	db      database.Database
+
+	backendErrorChan chan error
 }
 
 func New(config types.ReportingConfig) (*Backend, error) {
@@ -90,12 +92,18 @@ func New(config types.ReportingConfig) (*Backend, error) {
 		}
 	}
 
+	backendErrorChan := make(chan error)
 	return &Backend{
-		monitor: monitor.NewMonitorService(db, quorumClient, consensus, config),
-		filter:  filter.NewFilterService(db, quorumClient),
-		rpc:     rpc.NewRPCService(db, config),
-		db:      db,
+		monitor:          monitor.NewMonitorService(db, quorumClient, consensus, config),
+		filter:           filter.NewFilterService(db, quorumClient),
+		rpc:              rpc.NewRPCService(db, config, backendErrorChan),
+		db:               db,
+		backendErrorChan: backendErrorChan,
 	}, nil
+}
+
+func (b *Backend) GetBackendErrorChannel() chan error {
+	return b.backendErrorChan
 }
 
 func (b *Backend) Start() error {

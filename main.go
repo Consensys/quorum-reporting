@@ -71,7 +71,10 @@ func run() error {
 	sigc := make(chan os.Signal, 1)
 	signal.Notify(sigc, syscall.SIGINT, syscall.SIGTERM)
 	defer signal.Stop(sigc)
-	<-sigc
+	select {
+	case <-sigc:
+	case <-backend.GetBackendErrorChannel(): //Check for errors that will warrant an application shutdown
+	}
 	log.Info("Received interrupt signal, shutting down...")
 	return nil
 }
