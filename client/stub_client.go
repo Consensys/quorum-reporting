@@ -46,3 +46,5 @@ func (qc *StubQuorumClient) RPCCall(result interface{}, method string, args ...i
 	}
 	return errors.New("not found")
 }
+
+func (qc *StubQuorumClient) Stop() {}

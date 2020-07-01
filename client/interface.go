@@ -12,4 +12,6 @@ type Client interface {
 	ExecuteGraphQLQuery(interface{}, string) error
 	// RPCCall makes a JSON RPC call to the Geth RPC server
 	RPCCall(interface{}, string, ...interface{}) error
+	// Stop quorum client connection
+	Stop()
 }
