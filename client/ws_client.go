@@ -2,15 +2,18 @@ package client
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
-	ethTypes "github.com/ethereum/go-ethereum/core/types"
-	"github.com/gorilla/websocket"
-	"quorumengineering/quorum-report/log"
 	"strconv"
 	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
+
+	ethTypes "github.com/ethereum/go-ethereum/core/types"
+	"github.com/gorilla/websocket"
+
+	"quorumengineering/quorum-report/log"
 )
 
 type message struct {
@@ -43,6 +46,7 @@ func (err *msgError) Error() string {
 type webSocketClient struct {
 	rawUrl                      string
 	conn                        *websocket.Conn
+	connMux                     sync.Mutex
 	connWriteMux                sync.Mutex
 	idCounter                   uint32
 	chainHeadSubscriptionId     string
@@ -65,26 +69,28 @@ func newWebSocketClient(rawUrl string) (*webSocketClient, error) {
 }
 
 func (c *webSocketClient) dial(rawUrl string) error {
+	c.connMux.Lock()
+	defer c.connMux.Unlock()
+
 	conn, _, err := websocket.DefaultDialer.Dial(rawUrl, nil)
 	if err != nil {
-		log.Error("Dial websocket endpoint error", "error", err)
+		log.Error("Dial WebSocket endpoint error", "error", err)
 		return err
 	}
-	if c.conn != nil {
-		// prevent connection leak
-		c.conn.Close()
-	}
+	log.Info("Dial to WebSocket endpoint success", "rawUrl", rawUrl)
 	c.conn = conn
-	if c.chainHeadSubscriptionId != "" {
-		if err := c.subscribeChainHead(c.chainHeadChan); err != nil {
-			return err
-		}
-	}
+
 	return nil
 }
 
 // subscribe header
 func (c *webSocketClient) subscribeChainHead(ch chan<- *ethTypes.Header) error {
+	c.connMux.Lock()
+	defer c.connMux.Unlock()
+	if c.conn == nil {
+		return errors.New("no WebSocket connection")
+	}
+
 	c.chainHeadChan = ch
 	c.chainHeadSubscriptionCallId = c.nextID()
 
@@ -112,6 +118,12 @@ func (c *webSocketClient) subscribeChainHead(ch chan<- *ethTypes.Header) error {
 
 // send rpc call
 func (c *webSocketClient) sendRPCMsg(ch chan<- *message, method string, args ...interface{}) error {
+	c.connMux.Lock()
+	defer c.connMux.Unlock()
+	if c.conn == nil {
+		return errors.New("no WebSocket connection")
+	}
+
 	msg := &message{
 		Version: "2.0",
 		ID:      c.nextID(),
@@ -150,6 +162,9 @@ func (c *webSocketClient) listen(shutdownChan <-chan struct{}) {
 		default:
 		}
 
+		// TODO: we may potentially need c.conn protected with lock.
+		// Currently, listen function is running in a single go routine and all resetConn function calls are initiated
+		// from here. Therefore, it does not require lock protection.
 		if c.conn == nil {
 			if err := c.dial(c.rawUrl); err != nil {
 				log.Error("Dialing failed", "error", err)
@@ -160,6 +175,13 @@ func (c *webSocketClient) listen(shutdownChan <-chan struct{}) {
 				ticker.Stop()
 				continue
 			}
+			if c.chainHeadSubscriptionId != "" {
+				if err := c.subscribeChainHead(c.chainHeadChan); err != nil {
+					log.Debug("Reconnect subscribe to chain head failed")
+					c.resetConn()
+					continue
+				}
+			}
 		}
 
 		// read message
@@ -167,9 +189,7 @@ func (c *webSocketClient) listen(shutdownChan <-chan struct{}) {
 		if err != nil {
 			log.Error("WebSocket read message error", "error", err)
 			if strings.Contains(err.Error(), "EOF") {
-				// reset connection
-				c.conn.Close()
-				c.conn = nil
+				c.resetConn()
 			}
 			continue
 		}
@@ -233,4 +253,13 @@ func (c *webSocketClient) getPendingRPC(id string) chan<- *message {
 
 func (c *webSocketClient) nextID() string {
 	return strconv.Itoa(int(atomic.AddUint32(&c.idCounter, 1)))
+}
+
+func (c *webSocketClient) resetConn() {
+	log.Debug("Reset WebSocket connection")
+	// reset connection
+	c.connMux.Lock()
+	c.conn.Close()
+	c.conn = nil
+	c.connMux.Unlock()
 }
