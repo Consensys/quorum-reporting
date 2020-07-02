@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"sync"
 	"time"
 
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
@@ -17,10 +18,17 @@ import (
 type QuorumClient struct {
 	wsClient      *webSocketClient
 	graphqlClient *graphql.Client
+
+	// To check we have actually shut down before returning
+	shutdownChan chan struct{}
+	shutdownWg   sync.WaitGroup
 }
 
 func NewQuorumClient(rawUrl, qgUrl string) (*QuorumClient, error) {
-	quorumClient := &QuorumClient{nil, graphql.NewClient(qgUrl)}
+	quorumClient := &QuorumClient{
+		graphqlClient: graphql.NewClient(qgUrl),
+		shutdownChan:  make(chan struct{}),
+	}
 
 	log.Debug("Connecting to Quorum WebSocket endpoint", "rawUrl", rawUrl)
 	wsClient, err := newWebSocketClient(rawUrl)
@@ -39,7 +47,11 @@ func NewQuorumClient(rawUrl, qgUrl string) (*QuorumClient, error) {
 	log.Debug("Connected to GraphQL endpoint")
 
 	// Start websocket receiver.
-	go quorumClient.wsClient.listen()
+	go func() {
+		quorumClient.shutdownWg.Add(1)
+		quorumClient.wsClient.listen(quorumClient.shutdownChan)
+		quorumClient.shutdownWg.Done()
+	}()
 
 	return quorumClient, nil
 }
@@ -69,6 +81,9 @@ func (qc *QuorumClient) RPCCall(result interface{}, method string, args ...inter
 	defer ticker.Stop()
 	select {
 	case response := <-resultChan:
+		if response == nil {
+			return errors.New("nil rpc response")
+		}
 		log.Debug("rpc call response", "response", string(response.Result))
 		if response.Error != nil {
 			return response.Error
@@ -77,4 +92,13 @@ func (qc *QuorumClient) RPCCall(result interface{}, method string, args ...inter
 	case <-ticker.C:
 		return errors.New("rpc call timeout")
 	}
+}
+
+func (qc *QuorumClient) Stop() {
+	close(qc.shutdownChan)
+	if qc.wsClient.conn != nil {
+		qc.wsClient.conn.Close()
+	}
+	qc.shutdownWg.Wait()
+	log.Info("Quorum client stopped")
 }

@@ -18,10 +18,11 @@ import (
 
 // Backend wraps MonitorService and QuorumClient, controls the start/stop of the reporting tool.
 type Backend struct {
-	monitor *monitor.MonitorService
-	filter  *filter.FilterService
-	rpc     *rpc.RPCService
-	db      database.Database
+	monitor      *monitor.MonitorService
+	filter       *filter.FilterService
+	rpc          *rpc.RPCService
+	db           database.Database
+	quorumClient client.Client
 
 	backendErrorChan chan error
 }
@@ -94,10 +95,11 @@ func New(config types.ReportingConfig) (*Backend, error) {
 
 	backendErrorChan := make(chan error)
 	return &Backend{
-		monitor:          monitor.NewMonitorService(db, quorumClient, consensus, config),
-		filter:           filter.NewFilterService(db, quorumClient),
-		rpc:              rpc.NewRPCService(db, config, backendErrorChan),
-		db:               db,
+		monitor:      monitor.NewMonitorService(db, quorumClient, consensus, config),
+		filter:       filter.NewFilterService(db, quorumClient),
+		rpc:          rpc.NewRPCService(db, config, backendErrorChan),
+		db:           db,
+		quorumClient: quorumClient,
 		backendErrorChan: backendErrorChan,
 	}, nil
 }
@@ -120,8 +122,12 @@ func (b *Backend) Start() error {
 }
 
 func (b *Backend) Stop() {
+	// stop services
 	b.rpc.Stop()
 	b.filter.Stop()
 	b.monitor.Stop()
+	// stop db connection
 	b.db.Stop()
+	// stop quorum client
+	b.quorumClient.Stop()
 }
