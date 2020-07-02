@@ -75,7 +75,7 @@ func TestAPIValidation(t *testing.T) {
 
 func TestAPIParsing(t *testing.T) {
 	db := memory.NewMemoryDB()
-	apis := NewRPCAPIs(db)
+	apis := NewRPCAPIs(db, NewDefaultContractManager(db))
 	err := apis.AddAddress(dummyReq, &AddressWithOptionalBlock{Address: &address}, nil)
 	assert.Nil(t, err)
 
@@ -125,7 +125,7 @@ func TestAPIParsing(t *testing.T) {
 
 func TestAddAddressWithFrom(t *testing.T) {
 	db := memory.NewMemoryDB()
-	apis := NewRPCAPIs(db)
+	apis := NewRPCAPIs(db, NewDefaultContractManager(db))
 	from := uint64(100)
 
 	params := &AddressWithOptionalBlock{

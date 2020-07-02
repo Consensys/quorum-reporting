@@ -15,13 +15,12 @@ import (
 )
 
 type RPCAPIs struct {
-	db database.Database
+	db                      database.Database
+	contractTemplateManager ContractTemplateManager
 }
 
-func NewRPCAPIs(db database.Database) *RPCAPIs {
-	return &RPCAPIs{
-		db,
-	}
+func NewRPCAPIs(db database.Database, contractTemplateManager ContractTemplateManager) *RPCAPIs {
+	return &RPCAPIs{db, contractTemplateManager}
 }
 
 func (r *RPCAPIs) GetLastPersistedBlockNumber(req *http.Request, args *NullArgs, reply *uint64) error {

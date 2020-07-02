@@ -48,7 +48,7 @@ func (r *RPCService) Start() error {
 
 	jsonrpcServer := rpc.NewServer()
 	jsonrpcServer.RegisterCodec(json.NewCodec(), "application/json")
-	if err := jsonrpcServer.RegisterService(NewRPCAPIs(r.db), "reporting"); err != nil {
+	if err := jsonrpcServer.RegisterService(NewRPCAPIs(r.db, NewDefaultContractManager(r.db)), "reporting"); err != nil {
 		return err
 	}
 
