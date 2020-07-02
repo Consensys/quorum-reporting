@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"quorumengineering/quorum-report/database"
 	"strconv"
 	"strings"
 	"sync"
@@ -15,6 +14,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/state"
 
+	"quorumengineering/quorum-report/database"
 	"quorumengineering/quorum-report/log"
 	"quorumengineering/quorum-report/types"
 )
