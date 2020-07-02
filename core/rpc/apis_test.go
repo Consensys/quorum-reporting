@@ -67,7 +67,8 @@ var (
 )
 
 func TestAPIValidation(t *testing.T) {
-	apis := NewRPCAPIs(memory.NewMemoryDB())
+	db := memory.NewMemoryDB()
+	apis := NewRPCAPIs(db, NewDefaultContractManager(db))
 
 	err := apis.AddAddress(dummyReq, &AddressWithOptionalBlock{Address: &common.Address{}}, nil)
 	assert.EqualError(t, err, "invalid input")

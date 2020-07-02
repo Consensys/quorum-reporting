@@ -263,7 +263,7 @@ func (r *RPCAPIs) AddABI(req *http.Request, args *AddressWithData, reply *NullAr
 	if _, err := abi.JSON(strings.NewReader(args.Data)); err != nil {
 		return err
 	}
-	return r.db.AddContractABI(*args.Address, args.Data)
+	return r.contractTemplateManager.AddContractABI(*args.Address, args.Data)
 }
 
 func (r *RPCAPIs) GetABI(req *http.Request, address *common.Address, reply *string) error {
@@ -280,7 +280,7 @@ func (r *RPCAPIs) AddStorageABI(req *http.Request, args *AddressWithData, reply 
 	if err := json.Unmarshal([]byte(args.Data), &storageAbi); err != nil {
 		return errors.New("invalid JSON: " + err.Error())
 	}
-	return r.db.AddStorageLayout(*args.Address, args.Data)
+	return r.contractTemplateManager.AddStorageLayout(*args.Address, args.Data)
 }
 
 func (r *RPCAPIs) GetStorageABI(req *http.Request, address *common.Address, reply *string) error {
