@@ -8,7 +8,6 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 
-	"quorumengineering/quorum-report/core/services"
 	"quorumengineering/quorum-report/core/storageparsing"
 	"quorumengineering/quorum-report/database"
 	"quorumengineering/quorum-report/types"
@@ -16,10 +15,10 @@ import (
 
 type RPCAPIs struct {
 	db                      database.Database
-	contractTemplateManager services.ContractTemplateManager
+	contractTemplateManager ContractTemplateManager
 }
 
-func NewRPCAPIs(db database.Database, contractTemplateManager services.ContractTemplateManager) *RPCAPIs {
+func NewRPCAPIs(db database.Database, contractTemplateManager ContractTemplateManager) *RPCAPIs {
 	return &RPCAPIs{db, contractTemplateManager}
 }
 

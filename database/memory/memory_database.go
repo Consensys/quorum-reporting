@@ -201,12 +201,7 @@ func (db *MemoryDB) GetTemplateDetails(templateName string) (*types.Template, er
 	db.mux.RLock()
 	defer db.mux.RUnlock()
 
-	allTemplates, _ := db.GetTemplates()
-	found := false
-	for _, tmplName := range allTemplates {
-		found = found || templateName == tmplName
-	}
-	if !found {
+	if (db.abiDB[templateName] == "") && (db.storageLayoutDB[templateName] == "") {
 		return nil, database.ErrNotFound
 	}
 

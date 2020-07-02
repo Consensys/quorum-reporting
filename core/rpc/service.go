@@ -7,7 +7,6 @@ import (
 
 	ethRPC "github.com/ethereum/go-ethereum/rpc"
 
-	"quorumengineering/quorum-report/core/services"
 	"quorumengineering/quorum-report/database"
 	"quorumengineering/quorum-report/log"
 	"quorumengineering/quorum-report/types"
@@ -32,7 +31,7 @@ func NewRPCService(db database.Database, config types.ReportingConfig) *RPCServi
 		{
 			"reporting",
 			"1.0",
-			NewRPCAPIs(db, services.NewDefaultContractManager(db)),
+			NewRPCAPIs(db, NewDefaultContractManager(db)),
 			true,
 		},
 	}
