@@ -188,9 +188,7 @@ func (c *webSocketClient) listen(shutdownChan <-chan struct{}) {
 		_, msg, err := c.conn.ReadMessage()
 		if err != nil {
 			log.Error("WebSocket read message error", "error", err)
-			if strings.Contains(err.Error(), "EOF") {
-				c.resetConn()
-			}
+			c.resetConn()
 			continue
 		}
 		log.Debug("WebSocket message received", "msg", string(msg))
@@ -261,5 +259,9 @@ func (c *webSocketClient) resetConn() {
 	c.connMux.Lock()
 	c.conn.Close()
 	c.conn = nil
+	for _, ch := range c.rpcPendingResp {
+		close(ch)
+	}
+	c.rpcPendingResp = make(map[string]chan<- *message)
 	c.connMux.Unlock()
 }

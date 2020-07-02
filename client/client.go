@@ -81,6 +81,9 @@ func (qc *QuorumClient) RPCCall(result interface{}, method string, args ...inter
 	defer ticker.Stop()
 	select {
 	case response := <-resultChan:
+		if response == nil {
+			return errors.New("nil rpc response")
+		}
 		log.Debug("rpc call response", "response", string(response.Result))
 		if response.Error != nil {
 			return response.Error
