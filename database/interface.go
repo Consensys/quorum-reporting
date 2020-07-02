@@ -27,10 +27,6 @@ type AddressDB interface {
 
 // TemplateDB stores contract ABI/ Storage Layout of registered address
 type TemplateDB interface {
-	// Deprecated: Recommend using AddTemplate + AssignTemplate
-	AddContractABI(common.Address, string) error
-	// Deprecated: Recommend using AddTemplate + AssignTemplate
-	AddStorageLayout(common.Address, string) error
 	AddTemplate(string, string, string) error
 	AssignTemplate(common.Address, string) error
 	GetContractABI(common.Address) (string, error)

@@ -31,7 +31,7 @@ func NewRPCService(db database.Database, config types.ReportingConfig) *RPCServi
 		{
 			"reporting",
 			"1.0",
-			NewRPCAPIs(db),
+			NewRPCAPIs(db, NewDefaultContractManager(db)),
 			true,
 		},
 	}

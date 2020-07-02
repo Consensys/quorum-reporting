@@ -7,6 +7,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/state"
 
+	"quorumengineering/quorum-report/database"
 	"quorumengineering/quorum-report/log"
 	"quorumengineering/quorum-report/types"
 )
@@ -151,26 +152,10 @@ func (db *MemoryDB) GetContractTemplate(address common.Address) (string, error) 
 	return db.templateDB[address], nil
 }
 
-func (db *MemoryDB) AddContractABI(address common.Address, abi string) error {
-	db.mux.Lock()
-	defer db.mux.Unlock()
-	db.templateDB[address] = address.Hex()
-	db.abiDB[address.Hex()] = abi
-	return nil
-}
-
 func (db *MemoryDB) GetContractABI(address common.Address) (string, error) {
 	db.mux.RLock()
 	defer db.mux.RUnlock()
 	return db.abiDB[db.templateDB[address]], nil
-}
-
-func (db *MemoryDB) AddStorageLayout(address common.Address, layout string) error {
-	db.mux.Lock()
-	defer db.mux.Unlock()
-	db.templateDB[address] = address.Hex()
-	db.storageLayoutDB[address.Hex()] = layout
-	return nil
 }
 
 func (db *MemoryDB) GetStorageLayout(address common.Address) (string, error) {
@@ -199,14 +184,14 @@ func (db *MemoryDB) GetTemplates() ([]string, error) {
 	defer db.mux.RUnlock()
 	// merge abiDB and storageLayoutDB to find the full template name list
 	templateNames := make(map[string]bool)
-	for template, _ := range db.abiDB {
+	for template := range db.abiDB {
 		templateNames[template] = true
 	}
-	for template, _ := range db.storageLayoutDB {
+	for template := range db.storageLayoutDB {
 		templateNames[template] = true
 	}
 	res := make([]string, 0)
-	for template, _ := range templateNames {
+	for template := range templateNames {
 		res = append(res, template)
 	}
 	return res, nil
@@ -215,6 +200,11 @@ func (db *MemoryDB) GetTemplates() ([]string, error) {
 func (db *MemoryDB) GetTemplateDetails(templateName string) (*types.Template, error) {
 	db.mux.RLock()
 	defer db.mux.RUnlock()
+
+	if (db.abiDB[templateName] == "") && (db.storageLayoutDB[templateName] == "") {
+		return nil, database.ErrNotFound
+	}
+
 	return &types.Template{
 		TemplateName:  templateName,
 		ABI:           db.abiDB[templateName],
@@ -288,6 +278,8 @@ func (db *MemoryDB) ReadTransaction(hash common.Hash) (*types.Transaction, error
 }
 
 func (db *MemoryDB) IndexStorage(rawStorage map[common.Address]*state.DumpAccount, blockNumber uint64) error {
+	db.mux.Lock()
+	defer db.mux.Unlock()
 	for address, dumpAccount := range rawStorage {
 		db.storageIndexDB[address].root[blockNumber] = dumpAccount.Root
 		if _, ok := db.storageIndexDB[address].storage[dumpAccount.Root]; !ok {

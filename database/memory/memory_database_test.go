@@ -99,7 +99,6 @@ func TestMemoryDB(t *testing.T) {
 	// test data
 	db := NewMemoryDB()
 	testABI, _ := abi.JSON(strings.NewReader(jsondata))
-	testStorageLayout := "test storage layout"
 	rawStorage := map[common.Address]*state.DumpAccount{
 		address: {
 			Storage: map[common.Hash]string{
@@ -113,25 +112,21 @@ func TestMemoryDB(t *testing.T) {
 	// 1. Add an address and get it.
 	testAddAddresses(t, db, []common.Address{address}, false)
 	testGetAddresses(t, db, 1)
-	// 2. Add contract ABI/ storage layout and get it.
-	testAddContractABI(t, db, address, jsondata, false)
-	testGetContractABI(t, db, address, &testABI)
-	testAddStorageLayout(t, db, address, testStorageLayout, false)
-	testGetStorageLayout(t, db, address, testStorageLayout)
-	// 3. Add template, assign template, get templates
+	// 2. Add template, assign template, get templates
 	testAddTemplate(t, db, testTemplateName, jsondata, testTemplateStorage, false)
 	testAssignTemplate(t, db, address, testTemplateName, false)
-	testGetTemplates(t, db, 2)
+	testGetTemplates(t, db, 1)
 	testGetStorageLayout(t, db, address, testTemplateStorage)
-	// 4. Write transaction and get it.
+	testGetContractABI(t, db, address, &testABI)
+	// 3. Write transaction and get it.
 	testWriteTransactions(t, db, tx1, tx2, tx3)
 	testReadTransaction(t, db, tx1.Hash, tx1)
-	// 5. Write block and get it. Check last persisted block number.
+	// 4. Write block and get it. Check last persisted block number.
 	testGetLastPersistedBlockNumeber(t, db, 0)
 	testWriteBlock(t, db, block, false)
 	testReadBlock(t, db, 1, block.Hash)
 	testGetLastPersistedBlockNumeber(t, db, 1)
-	// 6. Index block and check last filtered. Retrieve all transactions/ events.
+	// 5. Index block and check last filtered. Retrieve all transactions/ events.
 	testGetLastFiltered(t, db, address, 0)
 	testIndexStorage(t, db, 1, rawStorage)
 	testIndexBlock(t, db, address, block)
@@ -143,7 +138,7 @@ func TestMemoryDB(t *testing.T) {
 	testGetTransactionsInternalToAddressTotal(t, db, address, 1)
 	testGetAllEventsByAddress(t, db, address, 1)
 	testGetStorage(t, db, address, 1, 2)
-	// 7. Delete address and check last filtered
+	// 6. Delete address and check last filtered
 	testDeleteAddress(t, db, address, false)
 	testGetLastFiltered(t, db, address, 0)
 }
@@ -178,16 +173,6 @@ func testGetAddresses(t *testing.T, db database.Database, expected int) {
 	}
 }
 
-func testAddContractABI(t *testing.T, db database.Database, address common.Address, contractABI string, expectedErr bool) {
-	err := db.AddContractABI(address, contractABI)
-	if err != nil && !expectedErr {
-		t.Fatalf("expected no error, but got %v", err)
-	}
-	if err == nil && expectedErr {
-		t.Fatalf("expected error but got nil")
-	}
-}
-
 func testGetContractABI(t *testing.T, db database.Database, address common.Address, expected *abi.ABI) {
 	retrieved, err := db.GetContractABI(address)
 	parsed, _ := abi.JSON(strings.NewReader(retrieved))
@@ -199,16 +184,6 @@ func testGetContractABI(t *testing.T, db database.Database, address common.Addre
 	}
 	if len(parsed.Methods) != len(expected.Methods) {
 		t.Fatalf("expected %v methods, but got %v", len(expected.Methods), len(parsed.Methods))
-	}
-}
-
-func testAddStorageLayout(t *testing.T, db database.Database, address common.Address, storageLayout string, expectedErr bool) {
-	err := db.AddStorageLayout(address, storageLayout)
-	if err != nil && !expectedErr {
-		t.Fatalf("expected no error, but got %v", err)
-	}
-	if err == nil && expectedErr {
-		t.Fatalf("expected error but got nil")
 	}
 }
 

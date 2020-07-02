@@ -14,13 +14,12 @@ import (
 )
 
 type RPCAPIs struct {
-	db database.Database
+	db                      database.Database
+	contractTemplateManager ContractTemplateManager
 }
 
-func NewRPCAPIs(db database.Database) *RPCAPIs {
-	return &RPCAPIs{
-		db,
-	}
+func NewRPCAPIs(db database.Database, contractTemplateManager ContractTemplateManager) *RPCAPIs {
+	return &RPCAPIs{db, contractTemplateManager}
 }
 
 func (r *RPCAPIs) GetLastPersistedBlockNumber() (uint64, error) {
@@ -232,7 +231,7 @@ func (r *RPCAPIs) AddABI(address common.Address, data string) error {
 	if _, err := abi.JSON(strings.NewReader(data)); err != nil {
 		return err
 	}
-	return r.db.AddContractABI(address, data)
+	return r.contractTemplateManager.AddContractABI(address, data)
 }
 
 func (r *RPCAPIs) GetABI(address common.Address) (string, error) {
@@ -244,7 +243,7 @@ func (r *RPCAPIs) AddStorageABI(address common.Address, data string) error {
 	if err := json.Unmarshal([]byte(data), &storageAbi); err != nil {
 		return errors.New("invalid JSON: " + err.Error())
 	}
-	return r.db.AddStorageLayout(address, data)
+	return r.contractTemplateManager.AddStorageLayout(address, data)
 }
 
 func (r *RPCAPIs) GetStorageABI(address common.Address) (string, error) {
