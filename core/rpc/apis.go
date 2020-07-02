@@ -226,14 +226,14 @@ func (r *RPCAPIs) GetStorageHistory(req *http.Request, args *AddressWithBlockRan
 }
 
 func (r *RPCAPIs) AddAddress(req *http.Request, args *AddressWithOptionalBlock, reply *NullArgs) error {
-	if *args.Address == (common.Address{}) {
+	if args.Address == (common.Address{}) {
 		return errors.New("invalid input")
 	}
 	if args.BlockNumber != nil && *args.BlockNumber > 0 {
 		// add address from
-		return r.db.AddAddressFrom(*args.Address, *args.BlockNumber)
+		return r.db.AddAddressFrom(args.Address, *args.BlockNumber)
 	}
-	return r.db.AddAddresses([]common.Address{*args.Address})
+	return r.db.AddAddresses([]common.Address{args.Address})
 }
 
 func (r *RPCAPIs) DeleteAddress(req *http.Request, address *common.Address, reply *NullArgs) error {

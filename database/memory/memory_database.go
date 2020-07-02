@@ -428,12 +428,12 @@ func (db *MemoryDB) indexTransaction(filteredAddresses map[common.Address]bool, 
 	} else if filteredAddresses[tx.To] {
 		db.txIndexDB[tx.To].txsTo = append(db.txIndexDB[tx.To].txsTo, tx.Hash)
 		log.Debug("Indexed tx recipient", "tx", tx.Hash.Hex(), "recipient", tx.To.Hex())
-	} else {
-		for _, internalCall := range tx.InternalCalls {
-			if filteredAddresses[internalCall.To] {
-				db.txIndexDB[internalCall.To].txsInternalTo = append(db.txIndexDB[internalCall.To].txsInternalTo, tx.Hash)
-				log.Debug("Indexed transactions internal calls", "tx", tx.Hash.Hex(), "internal-recipient", internalCall.To.Hex())
-			}
+	}
+
+	for _, internalCall := range tx.InternalCalls {
+		if filteredAddresses[internalCall.To] {
+			db.txIndexDB[internalCall.To].txsInternalTo = append(db.txIndexDB[internalCall.To].txsInternalTo, tx.Hash)
+			log.Debug("Indexed transactions internal calls", "tx", tx.Hash.Hex(), "internal-recipient", internalCall.To.Hex())
 		}
 	}
 	// Index events emitted by the given address

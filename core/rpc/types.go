@@ -32,7 +32,7 @@ type AddressWithBlock struct {
 }
 
 type AddressWithOptionalBlock struct {
-	Address     *common.Address
+	Address     common.Address
 	BlockNumber *uint64
 }
 
