@@ -801,6 +801,7 @@ func (es *ElasticsearchDB) createEvents(events []*types.Event) error {
 
 func (es *ElasticsearchDB) Stop() {
 	es.apiClient.CloseIndexers()
+	log.Info("Elasticsearch indexers closed")
 }
 
 func (es *ElasticsearchDB) doSearchRequest(req esapi.SearchRequest) (*SearchQueryResult, error) {
