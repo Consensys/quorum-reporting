@@ -28,7 +28,7 @@ type TemplateArgs struct {
 
 type AddressWithBlock struct {
 	Address     *common.Address
-	BlockNumber uint64
+	BlockNumber *uint64
 }
 
 type AddressWithOptionalBlock struct {

@@ -178,7 +178,20 @@ func (r *RPCAPIs) GetAllEventsFromAddress(req *http.Request, args *AddressWithOp
 }
 
 func (r *RPCAPIs) GetStorage(req *http.Request, args *AddressWithBlock, reply *map[common.Hash]string) error {
-	result, err := r.db.GetStorage(*args.Address, args.BlockNumber)
+	if args.Address == nil {
+		return errors.New("no address given")
+	}
+	if args.BlockNumber == nil {
+		lastFiltered, err := r.db.GetLastFiltered(*args.Address)
+		if err != nil {
+			if err == database.ErrNotFound {
+				return errors.New("address is not indexed")
+			}
+			return err
+		}
+		args.BlockNumber = &lastFiltered
+	}
+	result, err := r.db.GetStorage(*args.Address, *args.BlockNumber)
 	if err != nil {
 		return err
 	}
