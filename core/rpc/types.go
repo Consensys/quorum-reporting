@@ -1,10 +1,13 @@
 package rpc
 
 import (
+	"errors"
 	"github.com/ethereum/go-ethereum/common"
 
 	"quorumengineering/quorum-report/types"
 )
+
+var ErrNoAddress = errors.New("address not provided")
 
 //Inputs
 
@@ -26,13 +29,8 @@ type TemplateArgs struct {
 	StorageLayout string
 }
 
-type AddressWithBlock struct {
-	Address     *common.Address
-	BlockNumber *uint64
-}
-
 type AddressWithOptionalBlock struct {
-	Address     common.Address
+	Address     *common.Address
 	BlockNumber *uint64
 }
 

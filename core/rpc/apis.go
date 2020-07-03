@@ -94,6 +94,9 @@ func (r *RPCAPIs) GetContractCreationTransaction(req *http.Request, address *com
 }
 
 func (r *RPCAPIs) GetAllTransactionsToAddress(req *http.Request, args *AddressWithOptions, reply *TransactionsResp) error {
+	if args.Address == nil {
+		return ErrNoAddress
+	}
 	if args.Options == nil {
 		args.Options = &types.QueryOptions{}
 	}
@@ -117,6 +120,9 @@ func (r *RPCAPIs) GetAllTransactionsToAddress(req *http.Request, args *AddressWi
 }
 
 func (r *RPCAPIs) GetAllTransactionsInternalToAddress(req *http.Request, args *AddressWithOptions, reply *TransactionsResp) error {
+	if args.Address == nil {
+		return ErrNoAddress
+	}
 	if args.Options == nil {
 		args.Options = &types.QueryOptions{}
 	}
@@ -140,6 +146,9 @@ func (r *RPCAPIs) GetAllTransactionsInternalToAddress(req *http.Request, args *A
 }
 
 func (r *RPCAPIs) GetAllEventsFromAddress(req *http.Request, args *AddressWithOptions, reply *EventsResp) error {
+	if args.Address == nil {
+		return ErrNoAddress
+	}
 	if args.Options == nil {
 		args.Options = &types.QueryOptions{}
 	}
@@ -177,9 +186,9 @@ func (r *RPCAPIs) GetAllEventsFromAddress(req *http.Request, args *AddressWithOp
 	return nil
 }
 
-func (r *RPCAPIs) GetStorage(req *http.Request, args *AddressWithBlock, reply *map[common.Hash]string) error {
+func (r *RPCAPIs) GetStorage(req *http.Request, args *AddressWithOptionalBlock, reply *map[common.Hash]string) error {
 	if args.Address == nil {
-		return errors.New("no address given")
+		return ErrNoAddress
 	}
 	if args.BlockNumber == nil {
 		lastFiltered, err := r.db.GetLastFiltered(*args.Address)
@@ -200,6 +209,10 @@ func (r *RPCAPIs) GetStorage(req *http.Request, args *AddressWithBlock, reply *m
 }
 
 func (r *RPCAPIs) GetStorageHistory(req *http.Request, args *AddressWithBlockRange, reply *types.ReportingResponseTemplate) error {
+	if args.Address == nil {
+		return ErrNoAddress
+	}
+
 	rawAbi, err := r.db.GetStorageLayout(*args.Address)
 	if err != nil {
 		return err
@@ -239,14 +252,15 @@ func (r *RPCAPIs) GetStorageHistory(req *http.Request, args *AddressWithBlockRan
 }
 
 func (r *RPCAPIs) AddAddress(req *http.Request, args *AddressWithOptionalBlock, reply *NullArgs) error {
-	if args.Address == (common.Address{}) {
-		return errors.New("invalid input")
+	if args.Address == nil {
+		return ErrNoAddress
 	}
+
 	if args.BlockNumber != nil && *args.BlockNumber > 0 {
 		// add address from
-		return r.db.AddAddressFrom(args.Address, *args.BlockNumber)
+		return r.db.AddAddressFrom(*args.Address, *args.BlockNumber)
 	}
-	return r.db.AddAddresses([]common.Address{args.Address})
+	return r.db.AddAddresses([]common.Address{*args.Address})
 }
 
 func (r *RPCAPIs) DeleteAddress(req *http.Request, address *common.Address, reply *NullArgs) error {
@@ -272,6 +286,10 @@ func (r *RPCAPIs) GetContractTemplate(req *http.Request, address *common.Address
 }
 
 func (r *RPCAPIs) AddABI(req *http.Request, args *AddressWithData, reply *NullArgs) error {
+	if args.Address == nil {
+		return ErrNoAddress
+	}
+
 	// check ABI is valid
 	if _, err := abi.JSON(strings.NewReader(args.Data)); err != nil {
 		return err
@@ -289,6 +307,10 @@ func (r *RPCAPIs) GetABI(req *http.Request, address *common.Address, reply *stri
 }
 
 func (r *RPCAPIs) AddStorageABI(req *http.Request, args *AddressWithData, reply *NullArgs) error {
+	if args.Address == nil {
+		return ErrNoAddress
+	}
+
 	var storageAbi types.SolidityStorageDocument
 	if err := json.Unmarshal([]byte(args.Data), &storageAbi); err != nil {
 		return errors.New("invalid JSON: " + err.Error())
@@ -319,6 +341,9 @@ func (r *RPCAPIs) AddTemplate(req *http.Request, args *TemplateArgs, reply *Null
 }
 
 func (r *RPCAPIs) AssignTemplate(req *http.Request, args *AddressWithData, reply *NullArgs) error {
+	if args.Address == nil {
+		return ErrNoAddress
+	}
 	return r.db.AssignTemplate(*args.Address, args.Data)
 }
 
