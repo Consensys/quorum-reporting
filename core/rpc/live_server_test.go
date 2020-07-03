@@ -235,7 +235,7 @@ func TestNewRPCAPIs_AddAddress_WithEmptyAddress(t *testing.T) {
 
 	var errorMessage string
 	_ = json.Unmarshal(rpcResponse.Error, &errorMessage)
-	assert.Equal(t, "invalid input", errorMessage)
+	assert.Equal(t, "address not provided", errorMessage)
 }
 
 func TestNewRPCAPIs_AddAddress(t *testing.T) {

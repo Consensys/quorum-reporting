@@ -76,14 +76,14 @@ func TestAPIValidation(t *testing.T) {
 	db := memory.NewMemoryDB()
 	apis := NewRPCAPIs(db, NewDefaultContractManager(db))
 
-	err := apis.AddAddress(dummyReq, &AddressWithOptionalBlock{Address: common.Address{}}, nil)
-	assert.EqualError(t, err, "invalid input")
+	err := apis.AddAddress(dummyReq, &AddressWithOptionalBlock{}, nil)
+	assert.EqualError(t, err, "address not provided")
 }
 
 func TestAPIParsing(t *testing.T) {
 	db := memory.NewMemoryDB()
 	apis := NewRPCAPIs(db, NewDefaultContractManager(db))
-	err := apis.AddAddress(dummyReq, &AddressWithOptionalBlock{Address: address}, nil)
+	err := apis.AddAddress(dummyReq, &AddressWithOptionalBlock{Address: &address}, nil)
 	assert.Nil(t, err)
 
 	// Test AddABI string to ABI parsing.
@@ -136,7 +136,7 @@ func TestAddAddressWithFrom(t *testing.T) {
 	from := uint64(100)
 
 	params := &AddressWithOptionalBlock{
-		Address:     address,
+		Address:     &address,
 		BlockNumber: &from,
 	}
 
