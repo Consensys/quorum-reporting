@@ -1,68 +1,92 @@
 package rpc
 
 import (
+	"context"
 	"fmt"
-	"net"
+	"net/http"
+	"sync"
 	"time"
 
-	ethRPC "github.com/ethereum/go-ethereum/rpc"
+	"github.com/gorilla/rpc/v2"
+	"github.com/gorilla/rpc/v2/json"
+	"github.com/rs/cors"
 
 	"quorumengineering/quorum-report/database"
 	"quorumengineering/quorum-report/log"
 	"quorumengineering/quorum-report/types"
 )
 
-var defaultHTTPTimeouts = ethRPC.HTTPTimeouts{
-	ReadTimeout:  30 * time.Second,
-	WriteTimeout: 30 * time.Second,
-	IdleTimeout:  120 * time.Second,
-}
+const (
+	ReadTimeout  = 30 * time.Second
+	WriteTimeout = 30 * time.Second
+	IdleTimeout  = 120 * time.Second
+)
 
 type RPCService struct {
-	httpEndpoint string
-	vhosts       []string
-	cors         []string
-	apis         []ethRPC.API
-	listener     net.Listener
+	cors        []string
+	httpAddress string
+	db          database.Database
+
+	httpServer *http.Server
+
+	httpServerErrorChannel chan error
+	shutdownWg             sync.WaitGroup
 }
 
-func NewRPCService(db database.Database, config types.ReportingConfig) *RPCService {
-	apis := []ethRPC.API{
-		{
-			"reporting",
-			"1.0",
-			NewRPCAPIs(db, NewDefaultContractManager(db)),
-			true,
-		},
-	}
+func NewRPCService(db database.Database, config types.ReportingConfig, backendErrorChan chan error) *RPCService {
 	return &RPCService{
-		httpEndpoint: config.Server.RPCAddr,
-		vhosts:       config.Server.RPCVHosts,
-		cors:         config.Server.RPCCorsList,
-		apis:         apis,
+		cors:        config.Server.RPCCorsList,
+		httpAddress: config.Server.RPCAddr,
+		db:          db,
+
+		httpServerErrorChannel: backendErrorChan,
 	}
 }
 
 func (r *RPCService) Start() error {
-	log.Info("Starting rpc service")
+	log.Info("Starting JSON-RPC server")
 
-	var modules []string
-	for _, apis := range r.apis {
-		modules = append(modules, apis.Namespace)
-	}
-	listener, _, err := ethRPC.StartHTTPEndpoint(r.httpEndpoint, r.apis, modules, r.cors, r.vhosts, defaultHTTPTimeouts)
-	if err != nil {
+	jsonrpcServer := rpc.NewServer()
+	jsonrpcServer.RegisterCodec(json.NewCodec(), "application/json")
+	if err := jsonrpcServer.RegisterService(NewRPCAPIs(r.db, NewDefaultContractManager(r.db)), "reporting"); err != nil {
 		return err
 	}
-	r.listener = listener
-	log.Info("RPC HTTP endpoint opened", "url", fmt.Sprintf("http://%s", r.httpEndpoint))
+
+	serverWithCors := cors.New(cors.Options{AllowedOrigins: r.cors}).Handler(jsonrpcServer)
+	r.httpServer = &http.Server{
+		Addr:    r.httpAddress,
+		Handler: serverWithCors,
+
+		ReadTimeout:  ReadTimeout,
+		WriteTimeout: WriteTimeout,
+		IdleTimeout:  IdleTimeout,
+	}
+
+	r.shutdownWg.Add(1)
+	go func() {
+		defer r.shutdownWg.Done()
+		if err := r.httpServer.ListenAndServe(); err != http.ErrServerClosed {
+			log.Error("Unable to start JSON-RPC server", "err", err)
+			r.httpServerErrorChannel <- err
+		}
+	}()
+
+	log.Info("JSON-RPC HTTP endpoint opened", "url", fmt.Sprintf("http://%s", r.httpServer.Addr))
 	return nil
 }
 
 func (r *RPCService) Stop() {
-	if r.listener != nil {
-		r.listener.Close()
+	log.Info("Stopping JSON-RPC server")
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	if r.httpServer != nil {
+		if err := r.httpServer.Shutdown(ctx); err != nil {
+			log.Error("JSON-RPC server shutdown failed", "err", err)
+		}
+		r.shutdownWg.Wait()
 	}
-	log.Info("RPC HTTP endpoint closed", "url", fmt.Sprintf("http://%s", r.httpEndpoint))
+
+	log.Info("RPC HTTP endpoint closed", "url", fmt.Sprintf("http://%s", r.httpServer.Addr))
 	log.Info("RPC service stopped")
 }

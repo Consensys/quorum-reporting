@@ -3,6 +3,7 @@ package rpc
 import (
 	"encoding/json"
 	"errors"
+	"net/http"
 	"strings"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
@@ -22,33 +23,43 @@ func NewRPCAPIs(db database.Database, contractTemplateManager ContractTemplateMa
 	return &RPCAPIs{db, contractTemplateManager}
 }
 
-func (r *RPCAPIs) GetLastPersistedBlockNumber() (uint64, error) {
-	return r.db.GetLastPersistedBlockNumber()
-}
-
-func (r *RPCAPIs) GetBlock(blockNumber uint64) (*types.Block, error) {
-	return r.db.ReadBlock(blockNumber)
-}
-
-func (r *RPCAPIs) GetTransaction(hash common.Hash) (*types.ParsedTransaction, error) {
-	tx, err := r.db.ReadTransaction(hash)
+func (r *RPCAPIs) GetLastPersistedBlockNumber(req *http.Request, args *NullArgs, reply *uint64) error {
+	val, err := r.db.GetLastPersistedBlockNumber()
 	if err != nil {
-		return nil, err
+		return err
+	}
+	*reply = val
+	return nil
+}
+
+func (r *RPCAPIs) GetBlock(req *http.Request, blockNumber *uint64, reply *types.Block) error {
+	block, err := r.db.ReadBlock(*blockNumber)
+	if err != nil {
+		return err
+	}
+	*reply = *block
+	return nil
+}
+
+func (r *RPCAPIs) GetTransaction(req *http.Request, hash *common.Hash, reply *types.ParsedTransaction) error {
+	tx, err := r.db.ReadTransaction(*hash)
+	if err != nil {
+		return err
 	}
 	address := tx.To
-	if address == (common.Address{0}) {
+	if address == (common.Address{}) {
 		address = tx.CreatedContract
 	}
 	contractABI, err := r.db.GetContractABI(address)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	parsedTx := &types.ParsedTransaction{
 		RawTransaction: tx,
 	}
 	if contractABI != "" {
 		if err = parsedTx.ParseTransaction(contractABI); err != nil {
-			return nil, err
+			return err
 		}
 	}
 	parsedTx.ParsedEvents = make([]*types.ParsedEvent, len(parsedTx.RawTransaction.Events))
@@ -58,89 +69,102 @@ func (r *RPCAPIs) GetTransaction(hash common.Hash) (*types.ParsedTransaction, er
 		}
 		contractABI, err := r.db.GetContractABI(e.Address)
 		if err != nil {
-			return nil, err
+			return err
 		}
 		if contractABI != "" {
 			if err := parsedTx.ParsedEvents[i].ParseEvent(contractABI); err != nil {
-				return nil, err
+				return err
 			}
 		}
 	}
-	return parsedTx, nil
+	*reply = *parsedTx
+	return nil
 }
 
-func (r *RPCAPIs) GetContractCreationTransaction(address common.Address) (common.Hash, error) {
-	txHash, err := r.db.GetContractCreationTransaction(address)
+func (r *RPCAPIs) GetContractCreationTransaction(req *http.Request, address *common.Address, reply *common.Hash) error {
+	txHash, err := r.db.GetContractCreationTransaction(*address)
 	if err != nil {
-		return common.Hash{0}, err
+		return err
 	}
-	if txHash == (common.Hash{0}) {
-		return common.Hash{0}, errors.New("contract creation tx not found")
+	if txHash == (common.Hash{}) {
+		return errors.New("contract creation tx not found")
 	}
-	return txHash, nil
+	*reply = txHash
+	return nil
 }
 
-func (r *RPCAPIs) GetAllTransactionsToAddress(address common.Address, options *types.QueryOptions) (*TransactionsResp, error) {
-	if options == nil {
-		options = &types.QueryOptions{}
+func (r *RPCAPIs) GetAllTransactionsToAddress(req *http.Request, args *AddressWithOptions, reply *TransactionsResp) error {
+	if args.Address == nil {
+		return ErrNoAddress
 	}
-	options.SetDefaults()
+	if args.Options == nil {
+		args.Options = &types.QueryOptions{}
+	}
+	args.Options.SetDefaults()
 
-	total, err := r.db.GetTransactionsToAddressTotal(address, options)
+	total, err := r.db.GetTransactionsToAddressTotal(*args.Address, args.Options)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	txs, err := r.db.GetAllTransactionsToAddress(address, options)
+	txs, err := r.db.GetAllTransactionsToAddress(*args.Address, args.Options)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return &TransactionsResp{
+	*reply = TransactionsResp{
 		Transactions: txs,
 		Total:        total,
-		Options:      options,
-	}, nil
+		Options:      args.Options,
+	}
+	return nil
 }
 
-func (r *RPCAPIs) GetAllTransactionsInternalToAddress(address common.Address, options *types.QueryOptions) (*TransactionsResp, error) {
-	if options == nil {
-		options = &types.QueryOptions{}
+func (r *RPCAPIs) GetAllTransactionsInternalToAddress(req *http.Request, args *AddressWithOptions, reply *TransactionsResp) error {
+	if args.Address == nil {
+		return ErrNoAddress
 	}
-	options.SetDefaults()
+	if args.Options == nil {
+		args.Options = &types.QueryOptions{}
+	}
+	args.Options.SetDefaults()
 
-	total, err := r.db.GetTransactionsInternalToAddressTotal(address, options)
+	total, err := r.db.GetTransactionsInternalToAddressTotal(*args.Address, args.Options)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	txs, err := r.db.GetAllTransactionsInternalToAddress(address, options)
+	txs, err := r.db.GetAllTransactionsInternalToAddress(*args.Address, args.Options)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return &TransactionsResp{
+	*reply = TransactionsResp{
 		Transactions: txs,
 		Total:        total,
-		Options:      options,
-	}, nil
+		Options:      args.Options,
+	}
+	return nil
 }
 
-func (r *RPCAPIs) GetAllEventsFromAddress(address common.Address, options *types.QueryOptions) (*EventsResp, error) {
-	if options == nil {
-		options = &types.QueryOptions{}
+func (r *RPCAPIs) GetAllEventsFromAddress(req *http.Request, args *AddressWithOptions, reply *EventsResp) error {
+	if args.Address == nil {
+		return ErrNoAddress
 	}
-	options.SetDefaults()
+	if args.Options == nil {
+		args.Options = &types.QueryOptions{}
+	}
+	args.Options.SetDefaults()
 
-	total, err := r.db.GetEventsFromAddressTotal(address, options)
+	total, err := r.db.GetEventsFromAddressTotal(*args.Address, args.Options)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	events, err := r.db.GetAllEventsFromAddress(address, options)
+	events, err := r.db.GetAllEventsFromAddress(*args.Address, args.Options)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	contractABI, err := r.db.GetContractABI(address)
+	contractABI, err := r.db.GetContractABI(*args.Address)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	parsedEvents := make([]*types.ParsedEvent, len(events))
 	for i, e := range events {
@@ -149,128 +173,194 @@ func (r *RPCAPIs) GetAllEventsFromAddress(address common.Address, options *types
 		}
 		if contractABI != "" {
 			if err = parsedEvents[i].ParseEvent(contractABI); err != nil {
-				return nil, err
+				return err
 			}
 		}
 	}
 
-	return &EventsResp{
+	*reply = EventsResp{
 		Events:  parsedEvents,
 		Total:   total,
-		Options: options,
-	}, nil
+		Options: args.Options,
+	}
+	return nil
 }
 
-func (r *RPCAPIs) GetStorage(address common.Address, blockNumber uint64) (map[common.Hash]string, error) {
-	return r.db.GetStorage(address, blockNumber)
-}
-
-func (r *RPCAPIs) GetStorageHistory(address common.Address, startBlockNumber, endBlockNumber uint64) (*types.ReportingResponseTemplate, error) {
-	rawAbi, err := r.db.GetStorageLayout(address)
+func (r *RPCAPIs) GetStorage(req *http.Request, args *AddressWithOptionalBlock, reply *map[common.Hash]string) error {
+	if args.Address == nil {
+		return ErrNoAddress
+	}
+	if args.BlockNumber == nil {
+		lastFiltered, err := r.db.GetLastFiltered(*args.Address)
+		if err != nil {
+			if err == database.ErrNotFound {
+				return errors.New("address is not indexed")
+			}
+			return err
+		}
+		args.BlockNumber = &lastFiltered
+	}
+	result, err := r.db.GetStorage(*args.Address, *args.BlockNumber)
 	if err != nil {
-		return nil, err
+		return err
+	}
+	*reply = result
+	return nil
+}
+
+func (r *RPCAPIs) GetStorageHistory(req *http.Request, args *AddressWithBlockRange, reply *types.ReportingResponseTemplate) error {
+	if args.Address == nil {
+		return ErrNoAddress
+	}
+
+	rawAbi, err := r.db.GetStorageLayout(*args.Address)
+	if err != nil {
+		return err
 	}
 	if rawAbi == "" {
-		return nil, errors.New("no Storage Layout present to parse with")
+		return errors.New("no Storage Layout present to parse with")
 	}
 	var parsedAbi types.SolidityStorageDocument
 	if err = json.Unmarshal([]byte(rawAbi), &parsedAbi); err != nil {
-		return nil, errors.New("unable to decode Storage Layout: " + err.Error())
+		return errors.New("unable to decode Storage Layout: " + err.Error())
 	}
 
 	// TODO: implement GetStorageRoot to reduce the response list
 	historicStates := []*types.ParsedState{}
-	for i := startBlockNumber; i <= endBlockNumber; i++ {
-		rawStorage, err := r.db.GetStorage(address, i)
+	for i := args.StartBlockNumber; i <= args.EndBlockNumber; i++ {
+		rawStorage, err := r.db.GetStorage(*args.Address, i)
 		if err != nil {
-			return nil, err
+			return err
 		}
 		if rawStorage == nil {
 			continue
 		}
 		historicStorage, err := storageparsing.ParseRawStorage(rawStorage, parsedAbi)
 		if err != nil {
-			return nil, err
+			return err
 		}
 		historicStates = append(historicStates, &types.ParsedState{
 			BlockNumber:     i,
 			HistoricStorage: historicStorage,
 		})
 	}
-	return &types.ReportingResponseTemplate{
-		Address:       address,
+	*reply = types.ReportingResponseTemplate{
+		Address:       *args.Address,
 		HistoricState: historicStates,
-	}, nil
+	}
+	return nil
 }
 
-func (r *RPCAPIs) AddAddress(address common.Address, from *uint64) error {
-	if address == (common.Address{}) {
-		return errors.New("invalid input")
+func (r *RPCAPIs) AddAddress(req *http.Request, args *AddressWithOptionalBlock, reply *NullArgs) error {
+	if args.Address == nil {
+		return ErrNoAddress
 	}
-	if from != nil && *from > 0 {
+
+	if args.BlockNumber != nil && *args.BlockNumber > 0 {
 		// add address from
-		return r.db.AddAddressFrom(address, *from)
+		return r.db.AddAddressFrom(*args.Address, *args.BlockNumber)
 	}
-	return r.db.AddAddresses([]common.Address{address})
+	return r.db.AddAddresses([]common.Address{*args.Address})
 }
 
-func (r *RPCAPIs) DeleteAddress(address common.Address) error {
-	return r.db.DeleteAddress(address)
+func (r *RPCAPIs) DeleteAddress(req *http.Request, address *common.Address, reply *NullArgs) error {
+	return r.db.DeleteAddress(*address)
 }
 
-func (r *RPCAPIs) GetAddresses() ([]common.Address, error) {
-	return r.db.GetAddresses()
-}
-
-func (r *RPCAPIs) GetContractTemplate(address common.Address) (string, error) {
-	return r.db.GetContractTemplate(address)
-}
-
-func (r *RPCAPIs) AddABI(address common.Address, data string) error {
-	// check ABI is valid
-	if _, err := abi.JSON(strings.NewReader(data)); err != nil {
+func (r *RPCAPIs) GetAddresses(req *http.Request, args *NullArgs, reply *[]common.Address) error {
+	result, err := r.db.GetAddresses()
+	if err != nil {
 		return err
 	}
-	return r.contractTemplateManager.AddContractABI(address, data)
+	*reply = result
+	return nil
 }
 
-func (r *RPCAPIs) GetABI(address common.Address) (string, error) {
-	return r.db.GetContractABI(address)
+func (r *RPCAPIs) GetContractTemplate(req *http.Request, address *common.Address, reply *string) error {
+	result, err := r.db.GetContractTemplate(*address)
+	if err != nil {
+		return err
+	}
+	*reply = result
+	return nil
 }
 
-func (r *RPCAPIs) AddStorageABI(address common.Address, data string) error {
+func (r *RPCAPIs) AddABI(req *http.Request, args *AddressWithData, reply *NullArgs) error {
+	if args.Address == nil {
+		return ErrNoAddress
+	}
+
+	// check ABI is valid
+	if _, err := abi.JSON(strings.NewReader(args.Data)); err != nil {
+		return err
+	}
+	return r.contractTemplateManager.AddContractABI(*args.Address, args.Data)
+}
+
+func (r *RPCAPIs) GetABI(req *http.Request, address *common.Address, reply *string) error {
+	result, err := r.db.GetContractABI(*address)
+	if err != nil {
+		return err
+	}
+	*reply = result
+	return nil
+}
+
+func (r *RPCAPIs) AddStorageABI(req *http.Request, args *AddressWithData, reply *NullArgs) error {
+	if args.Address == nil {
+		return ErrNoAddress
+	}
+
 	var storageAbi types.SolidityStorageDocument
-	if err := json.Unmarshal([]byte(data), &storageAbi); err != nil {
+	if err := json.Unmarshal([]byte(args.Data), &storageAbi); err != nil {
 		return errors.New("invalid JSON: " + err.Error())
 	}
-	return r.contractTemplateManager.AddStorageLayout(address, data)
+	return r.contractTemplateManager.AddStorageLayout(*args.Address, args.Data)
 }
 
-func (r *RPCAPIs) GetStorageABI(address common.Address) (string, error) {
-	return r.db.GetStorageLayout(address)
+func (r *RPCAPIs) GetStorageABI(req *http.Request, address *common.Address, reply *string) error {
+	result, err := r.db.GetStorageLayout(*address)
+	if err != nil {
+		return err
+	}
+	*reply = result
+	return nil
 }
 
-func (r *RPCAPIs) AddTemplate(name string, abiData string, layout string) error {
+func (r *RPCAPIs) AddTemplate(req *http.Request, args *TemplateArgs, reply *NullArgs) error {
 	// check ABI is valid
-	if _, err := abi.JSON(strings.NewReader(abiData)); err != nil {
+	if _, err := abi.JSON(strings.NewReader(args.Abi)); err != nil {
 		return err
 	}
 	// check storage layout is valid
 	var storageAbi types.SolidityStorageDocument
-	if err := json.Unmarshal([]byte(layout), &storageAbi); err != nil {
+	if err := json.Unmarshal([]byte(args.StorageLayout), &storageAbi); err != nil {
 		return errors.New("invalid JSON: " + err.Error())
 	}
-	return r.db.AddTemplate(name, abiData, layout)
+	return r.db.AddTemplate(args.Name, args.Abi, args.StorageLayout)
 }
 
-func (r *RPCAPIs) AssignTemplate(address common.Address, name string) error {
-	return r.db.AssignTemplate(address, name)
+func (r *RPCAPIs) AssignTemplate(req *http.Request, args *AddressWithData, reply *NullArgs) error {
+	if args.Address == nil {
+		return ErrNoAddress
+	}
+	return r.db.AssignTemplate(*args.Address, args.Data)
 }
 
-func (r *RPCAPIs) GetTemplates() ([]string, error) {
-	return r.db.GetTemplates()
+func (r *RPCAPIs) GetTemplates(req *http.Request, args *NullArgs, result *[]string) error {
+	templates, err := r.db.GetTemplates()
+	if err != nil {
+		return err
+	}
+	*result = templates
+	return nil
 }
 
-func (r *RPCAPIs) GetTemplateDetails(templateName string) (*types.Template, error) {
-	return r.db.GetTemplateDetails(templateName)
+func (r *RPCAPIs) GetTemplateDetails(req *http.Request, templateName *string, reply *types.Template) error {
+	template, err := r.db.GetTemplateDetails(*templateName)
+	if err != nil {
+		return err
+	}
+	*reply = *template
+	return nil
 }
