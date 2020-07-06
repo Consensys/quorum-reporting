@@ -1,12 +1,11 @@
 package monitor
 
 import (
+	"encoding/json"
 	"runtime"
-	"strings"
 	"sync"
 	"time"
 
-	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 
 	"quorumengineering/quorum-report/client"
@@ -41,13 +40,14 @@ func NewMonitorService(db database.Database, quorumClient client.Client, consens
 	for _, rule := range config.Rules {
 		template, _ := db.GetTemplateDetails(rule.TemplateName)
 		if template != nil {
-			abi, _ := abi.JSON(strings.NewReader(template.ABI))
+			var abi types.ABIStructure
+			json.Unmarshal([]byte(template.ABI), &abi)
 			rules = append(rules, TokenRule{
 				scope:        rule.Scope,
 				deployer:     rule.Deployer,
 				templateName: rule.TemplateName,
 				eip165:       rule.EIP165,
-				abi:          abi,
+				abi:          abi.To(),
 			})
 		}
 	}

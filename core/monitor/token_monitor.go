@@ -4,7 +4,6 @@ import (
 	"math/big"
 	"strings"
 
-	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 
@@ -18,7 +17,7 @@ type TokenRule struct {
 	deployer     common.Address
 	templateName string
 	eip165       string
-	abi          abi.ABI
+	abi          *types.ContractABI
 }
 
 type AddressWithMeta struct {
@@ -148,14 +147,14 @@ func (tm *DefaultTokenMonitor) checkBytecodeForTokens(rule TokenRule, data hexut
 	return ""
 }
 
-func (tm *DefaultTokenMonitor) checkAbiMatch(abiToCheck abi.ABI, data hexutil.Bytes) bool {
-	for _, b := range abiToCheck.Methods {
-		if !strings.Contains(data.String(), common.Bytes2Hex(b.ID())) {
+func (tm *DefaultTokenMonitor) checkAbiMatch(abiToCheck *types.ContractABI, data hexutil.Bytes) bool {
+	for _, b := range abiToCheck.Functions {
+		if !strings.Contains(data.String(), b.Signature()) {
 			return false
 		}
 	}
 	for _, event := range abiToCheck.Events {
-		if !strings.Contains(data.String(), event.ID().Hex()[2:]) {
+		if !strings.Contains(data.String(), event.Signature()) {
 			return false
 		}
 	}
