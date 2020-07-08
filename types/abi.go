@@ -3,119 +3,20 @@ package types
 import (
 	"encoding/hex"
 	"fmt"
-	"golang.org/x/crypto/sha3"
 	"strings"
 )
 
-// JSON formatted type
-
-type ABIStructure []ABIStructureEntry
-
-type ABIStructureEntry struct {
-	Type            string                 `json:"type"` //TODO: should default to "function"
-	Name            string                 `json:"name"` //TODO: if type is "constructor", then name should be blank
-	Inputs          []ABIStructureArgument `json:"inputs"`
-	Outputs         []ABIStructureArgument `json:"outputs"`
-	StateMutability string                 `json:"stateMutability"`
-	Anonymous       bool                   `json:"anonymous"`
-}
-
-type ABIStructureArgument struct {
-	Name       string                 `json:"name"`
-	Type       string                 `json:"type"`
-	Components []ABIStructureArgument `json:"components"`
-	Indexed    bool                   `json:"indexed"`
-}
-
-func (abi ABIStructure) To() *ContractABI {
-	contractAbi := new(ContractABI)
-
-	for _, entry := range abi {
-		switch entry.Type {
-		case "constructor", "receive", "fallback":
-			//Nothing to do as they have no impact for the ABI
-			//Only here to show the have been intentionally left out
-		case "", "function":
-			var inputs []ContractABIFunctionArgument
-			for _, input := range entry.Inputs {
-				inputs = append(inputs, input.ToFunctionArgument())
-			}
-			var outputs []ContractABIFunctionArgument
-			for _, output := range entry.Outputs {
-				outputs = append(outputs, output.ToFunctionArgument())
-			}
-
-			stateMutability := entry.StateMutability
-			if stateMutability == "" {
-				stateMutability = "nonpayable"
-			}
-
-			functionDefinition := ContractABIFunction{
-				Type:            "function",
-				Name:            entry.Name,
-				Inputs:          inputs,
-				Outputs:         outputs,
-				StateMutability: stateMutability,
-			}
-			contractAbi.Functions = append(contractAbi.Functions, functionDefinition)
-		case "event":
-			var inputs []ContractABIEventArgument
-			for _, input := range entry.Inputs {
-				inputs = append(inputs, input.ToEventArgument())
-			}
-			eventDefinition := ContractABIEvent{
-				Type:      "event",
-				Name:      entry.Name,
-				Inputs:    inputs,
-				Anonymous: entry.Anonymous,
-			}
-			contractAbi.Events = append(contractAbi.Events, eventDefinition)
-		}
-	}
-
-	return contractAbi
-}
-
-func (entry ABIStructureArgument) ToFunctionArgument() ContractABIFunctionArgument {
-	var components []ContractABIFunctionArgument
-	for _, component := range entry.Components {
-		components = append(components, component.ToFunctionArgument())
-	}
-
-	return ContractABIFunctionArgument{
-		Name:       entry.Name,
-		Type:       entry.Type,
-		Components: components,
-	}
-}
-
-func (entry ABIStructureArgument) ToEventArgument() ContractABIEventArgument {
-	var components []ContractABIEventArgument
-	for _, component := range entry.Components {
-		components = append(components, component.ToEventArgument())
-	}
-
-	return ContractABIEventArgument{
-		Name:       entry.Name,
-		Type:       entry.Type,
-		Components: components,
-		Indexed:    entry.Indexed,
-	}
-}
-
-// Internal representation
-
 type ContractABI struct {
-	Functions []ContractABIFunction
-	Events    []ContractABIEvent
+	Constructor ContractABIFunction
+	Functions   []ContractABIFunction
+	Events      []ContractABIEvent
 }
 
 type ContractABIFunction struct {
-	Type            string
-	Name            string
-	Inputs          []ContractABIFunctionArgument
-	Outputs         []ContractABIFunctionArgument
-	StateMutability string
+	Type    string
+	Name    string
+	Inputs  []ContractABIArgument
+	Outputs []ContractABIArgument
 }
 
 func (function ContractABIFunction) String() string {
@@ -126,36 +27,110 @@ func (function ContractABIFunction) String() string {
 	return fmt.Sprintf("%s(%s)", function.Name, strings.Join(inputSigs, ","))
 }
 
-func (function ContractABIFunction) Signature() string {
-	definition := function.String()
-
-	d := sha3.NewLegacyKeccak256()
-	d.Write([]byte(definition))
-	d.Sum(nil)
-
-	hsh := d.Sum(nil)[:4]
-	return hex.EncodeToString(hsh)
+func (function ContractABIFunction) StringNoName() string {
+	var inputSigs []string
+	for _, input := range function.Inputs {
+		inputSigs = append(inputSigs, input.StringNoName())
+	}
+	return fmt.Sprintf("%s(%s)", function.Name, strings.Join(inputSigs, ","))
 }
 
-type ContractABIFunctionArgument struct {
+func (function ContractABIFunction) Signature() string {
+	return hex.EncodeToString(hash(function.StringNoName())[:4])
+}
+
+func (function ContractABIFunction) Parse(data []byte) map[string]interface{} {
+	return ParseAllData(function.Inputs, data)
+}
+
+type ContractABIArgument struct {
 	Name       string
 	Type       string
-	Components []ContractABIFunctionArgument
+	Components []ContractABIArgument
 }
 
-func (arg ContractABIFunctionArgument) String() string {
-	if arg.Type == "tuple" || arg.Type == "tuple[]" {
-		arraySuffix := ""
-		if arg.Type == "tuple[]" {
-			arraySuffix = "[]"
-		}
-		var inputSigs []string
+func (arg ContractABIArgument) String() string {
+	if strings.HasPrefix(arg.Type, "tuple") {
+		var componentSigs []string
 		for _, input := range arg.Components {
-			inputSigs = append(inputSigs, input.String())
+			componentSigs = append(componentSigs, input.String())
 		}
-		return fmt.Sprintf("(%s)%s", strings.Join(inputSigs, ","), arraySuffix)
+		return fmt.Sprintf("(%s)%s %s", strings.Join(componentSigs, ","), arg.Type[5:], arg.Name)
+	}
+	return fmt.Sprintf("%s %s", arg.Type, arg.Name)
+}
+
+func (arg ContractABIArgument) StringNoName() string {
+	if strings.HasPrefix(arg.Type, "tuple") {
+		var componentSigs []string
+		for _, input := range arg.Components {
+			componentSigs = append(componentSigs, input.StringNoName())
+		}
+		return fmt.Sprintf("(%s)%s", strings.Join(componentSigs, ","), arg.Type[5:])
 	}
 	return arg.Type
+}
+
+/*
++-----------------+--------+---------+
+|      Type       | Static | Dynamic |
++-----------------+--------+---------+
+| uint<x>         | ✔      |         |
+| int<x>          | ✔      |         |
+| address         | ✔      |         |
+| bool            | ✔      |         |
+| bytes<x>        | ✔      |         |
+| bytes           |        | ✔       |
+| string          |        | ✔       |
+| T[]             |        | ✔       |
+| T<static>[m]    | ✔      |         |
+| T<dynamic>[m]   |        | ✔       |
+| Tuple<static>   | ✔      |         |
+| Tuple<dynamic>  |        | ✔       |
++-----------------+--------+---------+
+
+Note: a tuple is dynamic if at least one element is dynamic
+
+Note: fixed sized arrays are not explicitly handled because they only
+		depend on their type to determine if they're static or not
+*/
+func (arg ContractABIArgument) IsDynamic() bool {
+	if strings.HasSuffix(arg.Type, "[]") {
+		return true
+	}
+
+	if arg.Type == "bytes" || arg.Type == "string" {
+		return true
+	}
+	// the case for fixed size array (dynamic array would be handled above)
+	if arg.Type == "bytes[" || arg.Type == "string[" {
+		return true
+	}
+
+	if strings.HasPrefix(arg.Type, "uint") {
+		return false
+	}
+	if strings.HasPrefix(arg.Type, "int") {
+		return false
+	}
+	if strings.HasPrefix(arg.Type, "bytes") {
+		return false
+	}
+	if strings.HasPrefix(arg.Type, "address") {
+		return false
+	}
+	if strings.HasPrefix(arg.Type, "bool") {
+		return false
+	}
+
+	if strings.HasPrefix(arg.Type, "tuple") {
+		for _, comp := range arg.Components {
+			if comp.IsDynamic() {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 type ContractABIEvent struct {
@@ -173,39 +148,29 @@ func (event ContractABIEvent) String() string {
 	return fmt.Sprintf("%s(%s)", event.Name, strings.Join(inputSigs, ","))
 }
 
-func (event ContractABIEvent) Signature() string {
-	definition := event.String()
-
-	d := sha3.NewLegacyKeccak256()
-	d.Write([]byte(definition))
-	d.Sum(nil)
-
-	hsh := d.Sum(nil)
-	return hex.EncodeToString(hsh)
+func (event ContractABIEvent) StringNoName() string {
+	var inputSigs []string
+	for _, input := range event.Inputs {
+		inputSigs = append(inputSigs, input.StringNoName())
+	}
+	return fmt.Sprintf("%s(%s)", event.Name, strings.Join(inputSigs, ","))
 }
 
-func (event ContractABIEvent) ParseData(data []byte) map[string]interface{} {
+func (event ContractABIEvent) Signature() string {
+	return "0x" + hex.EncodeToString(hash(event.StringNoName()))
+}
 
+func (event ContractABIEvent) Parse(data []byte) map[string]interface{} {
+	var args []ContractABIArgument
+	for _, arg := range event.Inputs {
+		if !arg.Indexed {
+			args = append(args, ContractABIArgument{arg.Name, arg.Type, arg.Components})
+		}
+	}
+	return ParseAllData(args, data)
 }
 
 type ContractABIEventArgument struct {
-	Name       string
-	Type       string
-	Components []ContractABIEventArgument
-	Indexed    bool
-}
-
-func (arg ContractABIEventArgument) String() string {
-	if arg.Type == "tuple" || arg.Type == "tuple[]" {
-		arraySuffix := ""
-		if arg.Type == "tuple[]" {
-			arraySuffix = "[]"
-		}
-		var inputSigs []string
-		for _, input := range arg.Components {
-			inputSigs = append(inputSigs, input.String())
-		}
-		return fmt.Sprintf("(%s)%s", strings.Join(inputSigs, ","), arraySuffix)
-	}
-	return arg.Type
+	ContractABIArgument
+	Indexed bool
 }
