@@ -1,7 +1,7 @@
 package monitor
 
 import (
-	"encoding/json"
+	"fmt"
 	"runtime"
 	"sync"
 	"time"
@@ -34,20 +34,22 @@ type MonitorService struct {
 	shutdownWg   sync.WaitGroup
 }
 
-func NewMonitorService(db database.Database, quorumClient client.Client, consensus string, config types.ReportingConfig) *MonitorService {
+func NewMonitorService(db database.Database, quorumClient client.Client, consensus string, config types.ReportingConfig) (*MonitorService, error) {
 	// rules are only parsed once during monitor service initialization
 	var rules []TokenRule
 	for _, rule := range config.Rules {
 		template, _ := db.GetTemplateDetails(rule.TemplateName)
 		if template != nil {
-			var abi types.ABIStructure
-			json.Unmarshal([]byte(template.ABI), &abi)
+			abi, err := types.NewABIStructureFromJSON(template.ABI)
+			if err != nil {
+				return nil, fmt.Errorf("could not parse ABI: %s", err.Error())
+			}
 			rules = append(rules, TokenRule{
 				scope:        rule.Scope,
 				deployer:     rule.Deployer,
 				templateName: rule.TemplateName,
 				eip165:       rule.EIP165,
-				abi:          abi.To(),
+				abi:          abi.ToInternalABI(),
 			})
 		}
 	}
@@ -63,7 +65,7 @@ func NewMonitorService(db database.Database, quorumClient client.Client, consens
 		batchWriter:        NewBatchWriter(db, batchWriteChan, config.Tuning.BlockProcessingFlushPeriod),
 		totalWorkers:       3 * runtime.NumCPU(),
 		shutdownChan:       make(chan struct{}),
-	}
+	}, nil
 }
 
 func (m *MonitorService) Start() error {

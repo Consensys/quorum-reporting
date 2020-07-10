@@ -1,14 +1,64 @@
 package types
 
+import "encoding/json"
+
+// Defined according to https://solidity.readthedocs.io/en/develop/abi-spec.html#json
+
 type ABIStructure []ABIStructureEntry
 
+func NewABIStructureFromJSON(abi string) (ABIStructure, error) {
+	var structure ABIStructure
+	err := json.Unmarshal([]byte(abi), &structure)
+	return structure, err
+}
+
+func (abi ABIStructure) ToInternalABI() *ContractABI {
+	contractAbi := new(ContractABI)
+
+	for _, entry := range abi {
+		switch entry.Type {
+		case "receive", "fallback":
+		//Nothing to do as they have no impact for the ABI
+		//Only here to show the have been intentionally left out
+		case "constructor":
+			function := entry.AsFunction()
+			contractAbi.Constructor = ContractABIFunction{"constructor", "", function.Inputs, nil}
+		case "", "function":
+			contractAbi.Functions = append(contractAbi.Functions, entry.AsFunction())
+		case "event":
+			contractAbi.Events = append(contractAbi.Events, entry.AsEvent())
+		}
+	}
+
+	return contractAbi
+}
+
 type ABIStructureEntry struct {
-	Type            string                 `json:"type"` //TODO: should default to "function"
-	Name            string                 `json:"name"` //TODO: if type is "constructor", then name should be blank
-	Inputs          []ABIStructureArgument `json:"inputs"`
-	Outputs         []ABIStructureArgument `json:"outputs"`
-	StateMutability string                 `json:"stateMutability"`
-	Anonymous       bool                   `json:"anonymous"`
+	Type      string                 `json:"type"`
+	Name      string                 `json:"name"`
+	Inputs    []ABIStructureArgument `json:"inputs"`
+	Outputs   []ABIStructureArgument `json:"outputs"`
+	Anonymous bool                   `json:"anonymous"`
+}
+
+func (entry ABIStructureEntry) AsFunction() ContractABIFunction {
+	var inputs []ContractABIArgument
+	for _, input := range entry.Inputs {
+		inputs = append(inputs, input.AsArgument())
+	}
+	var outputs []ContractABIArgument
+	for _, output := range entry.Outputs {
+		outputs = append(outputs, output.AsArgument())
+	}
+	return ContractABIFunction{"function", entry.Name, inputs, outputs}
+}
+
+func (entry ABIStructureEntry) AsEvent() ContractABIEvent {
+	var inputs []ContractABIEventArgument
+	for _, input := range entry.Inputs {
+		inputs = append(inputs, input.AsIndexedArgument())
+	}
+	return ContractABIEvent{"event", entry.Name, inputs, entry.Anonymous}
 }
 
 type ABIStructureArgument struct {
@@ -18,90 +68,14 @@ type ABIStructureArgument struct {
 	Indexed    bool                   `json:"indexed"`
 }
 
-func (abi ABIStructure) To() *ContractABI {
-	contractAbi := new(ContractABI)
-
-	for _, entry := range abi {
-		switch entry.Type {
-		case "receive", "fallback":
-		//Nothing to do as they have no impact for the ABI
-		//Only here to show the have been intentionally left out
-		case "constructor":
-			var inputs []ContractABIArgument
-			for _, input := range entry.Inputs {
-				inputs = append(inputs, input.ToFunctionArgument())
-			}
-			contractAbi.Constructor = ContractABIFunction{
-				Type:    "constructor",
-				Name:    "",
-				Inputs:  inputs,
-				Outputs: nil,
-			}
-		case "", "function":
-			var inputs []ContractABIArgument
-			for _, input := range entry.Inputs {
-				inputs = append(inputs, input.ToFunctionArgument())
-			}
-			var outputs []ContractABIArgument
-			for _, output := range entry.Outputs {
-				outputs = append(outputs, output.ToFunctionArgument())
-			}
-
-			stateMutability := entry.StateMutability
-			if stateMutability == "" {
-				stateMutability = "nonpayable"
-			}
-
-			functionDefinition := ContractABIFunction{
-				Type:    "function",
-				Name:    entry.Name,
-				Inputs:  inputs,
-				Outputs: outputs,
-			}
-			contractAbi.Functions = append(contractAbi.Functions, functionDefinition)
-		case "event":
-			var inputs []ContractABIEventArgument
-			for _, input := range entry.Inputs {
-				inputs = append(inputs, input.ToEventArgument())
-			}
-			eventDefinition := ContractABIEvent{
-				Type:      "event",
-				Name:      entry.Name,
-				Inputs:    inputs,
-				Anonymous: entry.Anonymous,
-			}
-			contractAbi.Events = append(contractAbi.Events, eventDefinition)
-		}
+func (arg ABIStructureArgument) AsArgument() ContractABIArgument {
+	var components []ContractABIArgument
+	for _, component := range arg.Components {
+		components = append(components, component.AsArgument())
 	}
-
-	return contractAbi
+	return ContractABIArgument{arg.Name, arg.Type, components}
 }
 
-func (entry ABIStructureArgument) ToFunctionArgument() ContractABIArgument {
-	var components []ContractABIArgument
-	for _, component := range entry.Components {
-		components = append(components, component.ToFunctionArgument())
-	}
-
-	return ContractABIArgument{
-		Name:       entry.Name,
-		Type:       entry.Type,
-		Components: components,
-	}
-}
-
-func (entry ABIStructureArgument) ToEventArgument() ContractABIEventArgument {
-	var components []ContractABIArgument
-	for _, component := range entry.Components {
-		components = append(components, component.ToFunctionArgument())
-	}
-
-	return ContractABIEventArgument{
-		ContractABIArgument: ContractABIArgument{
-			Name:       entry.Name,
-			Type:       entry.Type,
-			Components: components,
-		},
-		Indexed: entry.Indexed,
-	}
+func (arg ABIStructureArgument) AsIndexedArgument() ContractABIEventArgument {
+	return ContractABIEventArgument{arg.AsArgument(), arg.Indexed}
 }

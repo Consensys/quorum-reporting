@@ -289,8 +289,7 @@ func (r *RPCAPIs) AddABI(req *http.Request, args *AddressWithData, reply *NullAr
 	}
 
 	// check ABI is valid
-	var contractAbi types.ABIStructure
-	if err := json.Unmarshal([]byte(args.Data), &contractAbi); err != nil {
+	if _, err := types.NewABIStructureFromJSON(args.Data); err != nil {
 		return err
 	}
 	return r.contractTemplateManager.AddContractABI(*args.Address, args.Data)
@@ -328,8 +327,7 @@ func (r *RPCAPIs) GetStorageABI(req *http.Request, address *common.Address, repl
 
 func (r *RPCAPIs) AddTemplate(req *http.Request, args *TemplateArgs, reply *NullArgs) error {
 	// check ABI is valid
-	var contractAbi types.ABIStructure
-	if err := json.Unmarshal([]byte(args.Abi), &contractAbi); err != nil {
+	if _, err := types.NewABIStructureFromJSON(args.Abi); err != nil {
 		return err
 	}
 	// check storage layout is valid

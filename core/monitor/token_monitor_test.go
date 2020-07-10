@@ -255,27 +255,27 @@ func TestDefaultTokenMonitor_InspectTransaction_BytecodeInspection(t *testing.T)
 		result map[common.Address]string
 	}{
 		{
-			TokenRule{scope: types.InternalScope, templateName: "ERC721", abi: erc721Abi.To()},
+			TokenRule{scope: types.InternalScope, templateName: "ERC721", abi: erc721Abi.ToInternalABI()},
 			map[common.Address]string{}, //No result as contract is ERC20, not ERC721
 		},
 		{
-			TokenRule{scope: types.InternalScope, templateName: "ERC20", abi: erc20Abi.To()},
+			TokenRule{scope: types.InternalScope, templateName: "ERC20", abi: erc20Abi.ToInternalABI()},
 			map[common.Address]string{common.HexToAddress("0xcc11df45aba0a4ff198b18300d0b148ad2468834"): "ERC20"},
 		},
 		{
-			TokenRule{scope: types.AllScope, templateName: "ERC20", abi: erc20Abi.To()},
+			TokenRule{scope: types.AllScope, templateName: "ERC20", abi: erc20Abi.ToInternalABI()},
 			map[common.Address]string{common.HexToAddress("0xcc11df45aba0a4ff198b18300d0b148ad2468834"): "ERC20"},
 		},
 		{
-			TokenRule{scope: types.ExternalScope, templateName: "ERC20", abi: erc20Abi.To()},
+			TokenRule{scope: types.ExternalScope, templateName: "ERC20", abi: erc20Abi.ToInternalABI()},
 			map[common.Address]string{},
 		},
 		{
-			TokenRule{scope: types.AllScope, templateName: "ERC20", deployer: common.HexToAddress("0x586e8164bc8863013fe8f1b82092b028a5f8afad"), abi: erc20Abi.To()},
+			TokenRule{scope: types.AllScope, templateName: "ERC20", deployer: common.HexToAddress("0x586e8164bc8863013fe8f1b82092b028a5f8afad"), abi: erc20Abi.ToInternalABI()},
 			map[common.Address]string{common.HexToAddress("0xcc11df45aba0a4ff198b18300d0b148ad2468834"): "ERC20"},
 		},
 		{
-			TokenRule{scope: types.InternalScope, templateName: "ERC20", deployer: common.HexToAddress("0xcc11df45aba0a4ff198b18300d0b148ad2468834"), abi: erc20Abi.To()}, //TODO: can this be AllScoped?
+			TokenRule{scope: types.InternalScope, templateName: "ERC20", deployer: common.HexToAddress("0xcc11df45aba0a4ff198b18300d0b148ad2468834"), abi: erc20Abi.ToInternalABI()}, //TODO: can this be AllScoped?
 			map[common.Address]string{},
 		},
 	}

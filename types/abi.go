@@ -39,7 +39,7 @@ func (function ContractABIFunction) Signature() string {
 	return hex.EncodeToString(hash(function.StringNoName())[:4])
 }
 
-func (function ContractABIFunction) Parse(data []byte) map[string]interface{} {
+func (function ContractABIFunction) Parse(data []byte) (map[string]interface{}, error) {
 	return ParseAllData(function.Inputs, data)
 }
 
@@ -157,10 +157,10 @@ func (event ContractABIEvent) StringNoName() string {
 }
 
 func (event ContractABIEvent) Signature() string {
-	return "0x" + hex.EncodeToString(hash(event.StringNoName()))
+	return hex.EncodeToString(hash(event.StringNoName()))
 }
 
-func (event ContractABIEvent) Parse(data []byte) map[string]interface{} {
+func (event ContractABIEvent) Parse(data []byte) (map[string]interface{}, error) {
 	var args []ContractABIArgument
 	for _, arg := range event.Inputs {
 		if !arg.Indexed {

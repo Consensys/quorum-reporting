@@ -154,7 +154,7 @@ func (tm *DefaultTokenMonitor) checkAbiMatch(abiToCheck *types.ContractABI, data
 		}
 	}
 	for _, event := range abiToCheck.Events {
-		if !strings.Contains(data.String(), event.Signature()[2:]) {
+		if !strings.Contains(data.String(), event.Signature()) {
 			return false
 		}
 	}

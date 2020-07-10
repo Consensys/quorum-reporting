@@ -93,13 +93,18 @@ func New(config types.ReportingConfig) (*Backend, error) {
 		}
 	}
 
+	monitorService, err := monitor.NewMonitorService(db, quorumClient, consensus, config)
+	if err != nil {
+		return nil, err
+	}
+
 	backendErrorChan := make(chan error)
 	return &Backend{
-		monitor:      monitor.NewMonitorService(db, quorumClient, consensus, config),
-		filter:       filter.NewFilterService(db, quorumClient),
-		rpc:          rpc.NewRPCService(db, config, backendErrorChan),
-		db:           db,
-		quorumClient: quorumClient,
+		monitor:          monitorService,
+		filter:           filter.NewFilterService(db, quorumClient),
+		rpc:              rpc.NewRPCService(db, config, backendErrorChan),
+		db:               db,
+		quorumClient:     quorumClient,
 		backendErrorChan: backendErrorChan,
 	}, nil
 }

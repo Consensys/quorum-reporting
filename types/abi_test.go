@@ -18,16 +18,17 @@ func TestEventParsing(t *testing.T) {
 	var tx Transaction
 	json.Unmarshal([]byte(testTx), &tx)
 
-	var structure ABIStructure
-	json.Unmarshal([]byte(abiTx), &structure)
+	structure, _ := NewABIStructureFromJSON(abiTx)
 
-	abi := structure.To()
+	abi := structure.ToInternalABI()
 
 	allParsedResults := make(map[string]interface{})
 	for _, c := range tx.Events {
 		for _, ev := range abi.Events {
-			if ev.Signature() == c.Topics[0].String() {
-				allParsedResults[ev.Name] = ev.Parse(c.Data)
+			if "0x"+ev.Signature() == c.Topics[0].String() {
+				result, err := ev.Parse(c.Data)
+				assert.Nil(t, err)
+				allParsedResults[ev.Name] = result
 			}
 		}
 	}
