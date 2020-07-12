@@ -51,7 +51,7 @@ func (indexer *DefaultBlockIndexer) indexEvents(transactions []*types.Transactio
 	var pendingIndexEvents []*types.Event
 	for _, transaction := range transactions {
 		for _, event := range transaction.Events {
-			if indexer.addresses[event.Address] {
+			if indexer.addresses[common.HexToAddress(event.Address.Hex())] {
 				pendingIndexEvents = append(pendingIndexEvents, event)
 			}
 		}

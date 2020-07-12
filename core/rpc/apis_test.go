@@ -26,6 +26,7 @@ var (
 	dummyReq = &http.Request{}
 
 	address = common.HexToAddress("0x0000000000000000000000000000000000000001")
+	addr    = types.NewAddress("0x0000000000000000000000000000000000000001")
 	block   = &types.Block{
 		Hash:   types.NewHash("0xc7fd1915b4b8ac6344e750e4eaeacf9114d4e185f9c10b6b3bc7049511a96998"),
 		Number: 1,
@@ -63,7 +64,7 @@ var (
 		Events: []*types.Event{
 			{
 				Data:    hexutil.MustDecode("0x00000000000000000000000000000000000000000000000000000000000003e8"),
-				Address: address,
+				Address: addr,
 				Topics:  []types.Hash{types.NewHash("0xefe5cb8d23d632b5d2cdd9f0a151c4b1a84ccb7afa1c57331009aa922d5e4f36")},
 			},
 		},

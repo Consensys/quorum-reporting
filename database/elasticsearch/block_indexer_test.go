@@ -45,13 +45,13 @@ var (
 			Hash: common.HexToHash("0xf4f803b8d6c6b38e0b15d6cfe80fd1dcea4270ad24e93385fca36512bb9c2c59"),
 			Events: []*types.Event{
 				{
-					Address: common.HexToAddress("0x9d13c6d3afe1721beef56b55d303b09e021e27ab"),
+					Address: types.NewAddress("0x9d13c6d3afe1721beef56b55d303b09e021e27ab"),
 				},
 				{
-					Address: common.HexToAddress("0x9d13c6d3afe1721beef56b55d303b09e021e27ab"),
+					Address: types.NewAddress("0x9d13c6d3afe1721beef56b55d303b09e021e27ab"),
 				},
 				{
-					Address: common.HexToAddress("0x9d13c6d3afe1721beef56b55d303b09123456789"),
+					Address: types.NewAddress("0x9d13c6d3afe1721beef56b55d303b09123456789"),
 				},
 			},
 		},

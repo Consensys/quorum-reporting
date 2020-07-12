@@ -437,8 +437,9 @@ func (db *MemoryDB) indexTransaction(filteredAddresses map[common.Address]bool, 
 	}
 	// Index events emitted by the given address
 	for _, event := range tx.Events {
-		if filteredAddresses[event.Address] {
-			db.eventIndexDB[event.Address] = append(db.eventIndexDB[event.Address], event)
+		addr := common.HexToAddress(event.Address.Hex())
+		if filteredAddresses[addr] {
+			db.eventIndexDB[addr] = append(db.eventIndexDB[addr], event)
 			log.Debug("Indexed emitted event", "tx", event.TransactionHash.Hex(), "address", event.Address.Hex())
 		}
 	}

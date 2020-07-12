@@ -103,7 +103,7 @@ func (tm *DefaultTransactionMonitor) createTransaction(block *types.Block, hash 
 		}
 		e := &types.Event{
 			Index:            l.Index,
-			Address:          common.HexToAddress(l.Account.Address),
+			Address:          types.NewAddress(l.Account.Address),
 			Topics:           topics,
 			Data:             hexutil.MustDecode(l.Data),
 			BlockNumber:      block.Number,

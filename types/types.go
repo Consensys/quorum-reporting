@@ -75,13 +75,13 @@ type InternalCall struct {
 }
 
 type Event struct {
-	Index            uint64         `json:"index"`
-	Address          common.Address `json:"address"`
-	Topics           []Hash         `json:"topics"`
-	Data             hexutil.Bytes  `json:"data"`
-	BlockNumber      uint64         `json:"blockNumber"`
-	BlockHash        Hash           `json:"blockHash"`
-	TransactionHash  common.Hash    `json:"transactionHash"`
-	TransactionIndex uint64         `json:"transactionIndex"`
-	Timestamp        uint64         `json:"timestamp"`
+	Index            uint64        `json:"index"`
+	Address          Address       `json:"address"`
+	Topics           []Hash        `json:"topics"`
+	Data             hexutil.Bytes `json:"data"`
+	BlockNumber      uint64        `json:"blockNumber"`
+	BlockHash        Hash          `json:"blockHash"`
+	TransactionHash  common.Hash   `json:"transactionHash"`
+	TransactionIndex uint64        `json:"transactionIndex"`
+	Timestamp        uint64        `json:"timestamp"`
 }

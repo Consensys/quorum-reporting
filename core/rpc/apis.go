@@ -65,7 +65,7 @@ func (r *RPCAPIs) GetTransaction(req *http.Request, hash *common.Hash, reply *ty
 		parsedTx.ParsedEvents[i] = &types.ParsedEvent{
 			RawEvent: e,
 		}
-		contractABI, err := r.db.GetContractABI(e.Address)
+		contractABI, err := r.db.GetContractABI(common.HexToAddress(e.Address.Hex()))
 		if err != nil {
 			return err
 		}

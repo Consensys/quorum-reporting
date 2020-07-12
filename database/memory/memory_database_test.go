@@ -18,6 +18,7 @@ const jsondata = `
 
 var (
 	address        = common.HexToAddress("0x0000000000000000000000000000000000000001")
+	addr           = types.NewAddress("0x0000000000000000000000000000000000000001")
 	uselessAddress = common.HexToAddress("0x0000000000000000000000000000000000000002")
 
 	tx1 = &types.Transaction{
@@ -48,7 +49,7 @@ var (
 		Value:       666,
 		Events: []*types.Event{
 			{}, // dummy event
-			{Address: address},
+			{Address: addr},
 		},
 	}
 	block = &types.Block{
