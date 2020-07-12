@@ -32,6 +32,10 @@ var (
 		Transactions: []common.Hash{
 			common.BytesToHash([]byte("tx1")), common.BytesToHash([]byte("tx2")), common.BytesToHash([]byte("tx3")),
 		},
+		ParentHash:  types.NewHash(""),
+		ReceiptRoot: types.NewHash(""),
+		TxRoot:      types.NewHash(""),
+		StateRoot:   types.NewHash(""),
 	}
 	tx1 = &types.Transaction{ // deployment
 		Hash:            common.BytesToHash([]byte("tx1")),

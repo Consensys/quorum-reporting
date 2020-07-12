@@ -22,10 +22,10 @@ import (
 
 var testBlock = types.Block{
 	Hash:        common.HexToHash("0x4b603921305ebaa48d863b9f577059a63c653cd8e952372622923708fb657806"),
-	ParentHash:  common.HexToHash("0x5cde17410e3bb729f745870e166a767bcf07287c0f80bbcb38303eba8dbe5053"),
-	StateRoot:   common.HexToHash("0x309e12409dc1ff594e12ed7baf41a9190385bc7e32f9c0926dccd95f0a8f62f6"),
-	TxRoot:      common.HexToHash("0x6473d4f7a3a5638e56fec88a60f765ed321bd15dfade365f232d0b1250a42de0"),
-	ReceiptRoot: common.HexToHash("0xe65c3585a018f660d1457358967875d1526ebab3e1ce8198757585217fc013b8"),
+	ParentHash:  types.NewHash("0x5cde17410e3bb729f745870e166a767bcf07287c0f80bbcb38303eba8dbe5053"),
+	StateRoot:   types.NewHash("0x309e12409dc1ff594e12ed7baf41a9190385bc7e32f9c0926dccd95f0a8f62f6"),
+	TxRoot:      types.NewHash("0x6473d4f7a3a5638e56fec88a60f765ed321bd15dfade365f232d0b1250a42de0"),
+	ReceiptRoot: types.NewHash("0xe65c3585a018f660d1457358967875d1526ebab3e1ce8198757585217fc013b8"),
 	Number:      10,
 	GasLimit:    50,
 	GasUsed:     50,

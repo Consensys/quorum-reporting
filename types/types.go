@@ -28,10 +28,10 @@ type RawBlock struct {
 
 type Block struct {
 	Hash         common.Hash   `json:"hash"`
-	ParentHash   common.Hash   `json:"parentHash"`
-	StateRoot    common.Hash   `json:"stateRoot"`
-	TxRoot       common.Hash   `json:"txRoot"`
-	ReceiptRoot  common.Hash   `json:"receiptRoot"`
+	ParentHash   Hash          `json:"parentHash"`
+	StateRoot    Hash          `json:"stateRoot"`
+	TxRoot       Hash          `json:"txRoot"`
+	ReceiptRoot  Hash          `json:"receiptRoot"`
 	Number       uint64        `json:"number"`
 	GasLimit     uint64        `json:"gasLimit"`
 	GasUsed      uint64        `json:"gasUsed"`

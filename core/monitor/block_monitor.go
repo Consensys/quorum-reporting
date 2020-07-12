@@ -105,10 +105,10 @@ func (bm *DefaultBlockMonitor) createBlock(block *types.RawBlock) *types.Block {
 
 	return &types.Block{
 		Hash:         common.HexToHash(block.Hash),
-		ParentHash:   common.HexToHash(block.ParentHash),
-		StateRoot:    common.HexToHash(block.StateRoot),
-		TxRoot:       common.HexToHash(block.TxRoot),
-		ReceiptRoot:  common.HexToHash(block.ReceiptRoot),
+		ParentHash:   types.NewHash(block.ParentHash),
+		StateRoot:    types.NewHash(block.StateRoot),
+		TxRoot:       types.NewHash(block.TxRoot),
+		ReceiptRoot:  types.NewHash(block.ReceiptRoot),
 		Number:       hexutil.MustDecodeUint64(block.Number),
 		GasLimit:     hexutil.MustDecodeUint64(block.GasLimit),
 		GasUsed:      hexutil.MustDecodeUint64(block.GasUsed),
