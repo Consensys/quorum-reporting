@@ -52,7 +52,7 @@ var (
 		},
 	}
 	block = &types.Block{
-		Hash:   common.BytesToHash([]byte("dummy")),
+		Hash:   types.NewHash("dummy"),
 		Number: 1,
 		Transactions: []common.Hash{
 			common.BytesToHash([]byte("tx1")), common.BytesToHash([]byte("tx2")), common.BytesToHash([]byte("tx3")),
@@ -225,7 +225,7 @@ func testWriteBlock(t *testing.T, db database.Database, block *types.Block, expe
 	}
 }
 
-func testReadBlock(t *testing.T, db database.Database, blockNumber uint64, expected common.Hash) {
+func testReadBlock(t *testing.T, db database.Database, blockNumber uint64, expected types.Hash) {
 	block, err := db.ReadBlock(blockNumber)
 	if err != nil {
 		t.Fatalf("expected no error, but got %v", err)

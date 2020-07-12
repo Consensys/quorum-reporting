@@ -27,7 +27,7 @@ type RawBlock struct {
 }
 
 type Block struct {
-	Hash         common.Hash   `json:"hash"`
+	Hash         Hash          `json:"hash"`
 	ParentHash   Hash          `json:"parentHash"`
 	StateRoot    Hash          `json:"stateRoot"`
 	TxRoot       Hash          `json:"txRoot"`
@@ -44,7 +44,7 @@ type Transaction struct {
 	Hash              common.Hash     `json:"hash"`
 	Status            bool            `json:"status"`
 	BlockNumber       uint64          `json:"blockNumber"`
-	BlockHash         common.Hash     `json:"blockHash"`
+	BlockHash         Hash            `json:"blockHash"`
 	Index             uint64          `json:"index"`
 	Nonce             uint64          `json:"nonce"`
 	From              common.Address  `json:"from"`
@@ -80,7 +80,7 @@ type Event struct {
 	Topics           []common.Hash  `json:"topics"`
 	Data             hexutil.Bytes  `json:"data"`
 	BlockNumber      uint64         `json:"blockNumber"`
-	BlockHash        common.Hash    `json:"blockHash"`
+	BlockHash        Hash           `json:"blockHash"`
 	TransactionHash  common.Hash    `json:"transactionHash"`
 	TransactionIndex uint64         `json:"transactionIndex"`
 	Timestamp        uint64         `json:"timestamp"`

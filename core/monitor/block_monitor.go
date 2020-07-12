@@ -104,7 +104,7 @@ func (bm *DefaultBlockMonitor) createBlock(block *types.RawBlock) *types.Block {
 	}
 
 	return &types.Block{
-		Hash:         common.HexToHash(block.Hash),
+		Hash:         types.NewHash(block.Hash),
 		ParentHash:   types.NewHash(block.ParentHash),
 		StateRoot:    types.NewHash(block.StateRoot),
 		TxRoot:       types.NewHash(block.TxRoot),

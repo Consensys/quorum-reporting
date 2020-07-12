@@ -10,7 +10,7 @@ import (
 
 var (
 	testIndexBlock = &types.Block{
-		Hash:   common.HexToHash("0x4b603921305ebaa48d863b9f577059a63c653cd8e952372622923708fb657806"),
+		Hash:   types.NewHash("0x4b603921305ebaa48d863b9f577059a63c653cd8e952372622923708fb657806"),
 		Number: 10,
 		Transactions: []common.Hash{
 			common.HexToHash("0xf4f803b8d6c6b38e0b15d6cfe80fd1dcea4270ad24e93385fca36512bb9c2c59"),

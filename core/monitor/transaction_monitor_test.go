@@ -132,7 +132,7 @@ func TestTransactionMonitor_PullTransactions(t *testing.T) {
 		},
 	}
 	block := &types.Block{
-		Hash:   common.BytesToHash([]byte("dummy")),
+		Hash:   types.NewHash("0xd3b57e8a791a134ddf47772f12fdddbf67480377e633bf55f411166d3be7d66f"),
 		Number: 2,
 		Transactions: []common.Hash{
 			common.HexToHash("0xe625ba9f14eed0671508966080fb01374d0a3a16b9cee545a324179b75f30aa8"),

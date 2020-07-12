@@ -39,7 +39,7 @@ func TraceTransaction(c Client, txHash common.Hash) (map[string]interface{}, err
 	return resp, nil
 }
 
-func GetCode(c Client, address common.Address, blockHash common.Hash) (hexutil.Bytes, error) {
+func GetCode(c Client, address common.Address, blockHash types.Hash) (hexutil.Bytes, error) {
 	var res hexutil.Bytes
 	if err := c.RPCCall(&res, "eth_getCode", address, blockHash.String()); err != nil {
 		return nil, err

@@ -110,7 +110,7 @@ func TestGetCode(t *testing.T) {
 	}
 	stubClient := NewStubQuorumClient(nil, mockRPC)
 
-	blockHash := common.HexToHash("0xe625ba9f14eed0671508966080fb01374d0a3a16b9cee545a324179b75f30aa8")
+	blockHash := types.NewHash("0xe625ba9f14eed0671508966080fb01374d0a3a16b9cee545a324179b75f30aa8")
 	address := common.HexToAddress("0x1349f3e1b8d71effb47b840594ff27da7e603d17")
 
 	code, err := GetCode(stubClient, address, blockHash)
@@ -121,7 +121,7 @@ func TestGetCode(t *testing.T) {
 func TestGetCode_WithError(t *testing.T) {
 	stubClient := NewStubQuorumClient(nil, nil)
 
-	blockHash := common.HexToHash("0xe625ba9f14eed0671508966080fb01374d0a3a16b9cee545a324179b75f30aa8")
+	blockHash := types.NewHash("0xe625ba9f14eed0671508966080fb01374d0a3a16b9cee545a324179b75f30aa8")
 	address := common.HexToAddress("0x1349f3e1b8d71effb47b840594ff27da7e603d17")
 
 	code, err := GetCode(stubClient, address, blockHash)

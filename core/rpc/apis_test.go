@@ -27,7 +27,7 @@ var (
 
 	address = common.HexToAddress("0x0000000000000000000000000000000000000001")
 	block   = &types.Block{
-		Hash:   common.BytesToHash([]byte("dummy")),
+		Hash:   types.NewHash("0xc7fd1915b4b8ac6344e750e4eaeacf9114d4e185f9c10b6b3bc7049511a96998"),
 		Number: 1,
 		Transactions: []common.Hash{
 			common.BytesToHash([]byte("tx1")), common.BytesToHash([]byte("tx2")), common.BytesToHash([]byte("tx3")),

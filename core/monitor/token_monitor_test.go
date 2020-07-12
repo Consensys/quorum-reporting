@@ -65,7 +65,7 @@ func TestDefaultTokenMonitor_InspectTransaction_EIP165WithERC20_External(t *test
 
 	tx := &types.Transaction{
 		Hash:            common.HexToHash("0xf4f803b8d6c6b38e0b15d6cfe80fd1dcea4270ad24e93385fca36512bb9c2c59"),
-		BlockHash:       common.HexToHash("0xefe5cb8d23d632b5d2cdd9f0a151c4b1a84ccb7afa1c57331009aa922d5e4f36"),
+		BlockHash:       types.NewHash("0xefe5cb8d23d632b5d2cdd9f0a151c4b1a84ccb7afa1c57331009aa922d5e4f36"),
 		BlockNumber:     1,
 		CreatedContract: common.Address{9, 8, 7},
 	}
@@ -91,7 +91,7 @@ func TestDefaultTokenMonitor_InspectTransaction_EIP165WithERC20(t *testing.T) {
 
 	tx := &types.Transaction{
 		Hash:        common.HexToHash("0xf4f803b8d6c6b38e0b15d6cfe80fd1dcea4270ad24e93385fca36512bb9c2c59"),
-		BlockHash:   common.HexToHash("0xefe5cb8d23d632b5d2cdd9f0a151c4b1a84ccb7afa1c57331009aa922d5e4f36"),
+		BlockHash:   types.NewHash("0xefe5cb8d23d632b5d2cdd9f0a151c4b1a84ccb7afa1c57331009aa922d5e4f36"),
 		BlockNumber: 1,
 		InternalCalls: []*types.InternalCall{
 			{
@@ -151,7 +151,7 @@ func TestDefaultTokenMonitor_InspectTransaction_EIP165WithERC721_External(t *tes
 
 	tx := &types.Transaction{
 		Hash:            common.HexToHash("0xf4f803b8d6c6b38e0b15d6cfe80fd1dcea4270ad24e93385fca36512bb9c2c59"),
-		BlockHash:       common.HexToHash("0xefe5cb8d23d632b5d2cdd9f0a151c4b1a84ccb7afa1c57331009aa922d5e4f36"),
+		BlockHash:       types.NewHash("0xefe5cb8d23d632b5d2cdd9f0a151c4b1a84ccb7afa1c57331009aa922d5e4f36"),
 		BlockNumber:     1,
 		CreatedContract: common.Address{9, 8, 7},
 	}
@@ -177,7 +177,7 @@ func TestDefaultTokenMonitor_InspectTransaction_EIP165WithERC721(t *testing.T) {
 
 	tx := &types.Transaction{
 		Hash:        common.HexToHash("0xf4f803b8d6c6b38e0b15d6cfe80fd1dcea4270ad24e93385fca36512bb9c2c59"),
-		BlockHash:   common.HexToHash("0xefe5cb8d23d632b5d2cdd9f0a151c4b1a84ccb7afa1c57331009aa922d5e4f36"),
+		BlockHash:   types.NewHash("0xefe5cb8d23d632b5d2cdd9f0a151c4b1a84ccb7afa1c57331009aa922d5e4f36"),
 		BlockNumber: 1,
 		InternalCalls: []*types.InternalCall{
 			{
@@ -238,7 +238,7 @@ func TestDefaultTokenMonitor_InspectTransaction_BytecodeInspection(t *testing.T)
 
 	tx := &types.Transaction{
 		Hash:        common.HexToHash("0xf4f803b8d6c6b38e0b15d6cfe80fd1dcea4270ad24e93385fca36512bb9c2c59"),
-		BlockHash:   common.HexToHash("0xefe5cb8d23d632b5d2cdd9f0a151c4b1a84ccb7afa1c57331009aa922d5e4f36"),
+		BlockHash:   types.NewHash("0xefe5cb8d23d632b5d2cdd9f0a151c4b1a84ccb7afa1c57331009aa922d5e4f36"),
 		BlockNumber: 1,
 		InternalCalls: []*types.InternalCall{
 			{
