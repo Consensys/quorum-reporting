@@ -82,7 +82,7 @@ func (tm *DefaultTransactionMonitor) createTransaction(block *types.Block, hash 
 		BlockHash:         block.Hash,
 		Index:             txOrigin.Index,
 		Nonce:             nonce,
-		From:              common.HexToAddress(txOrigin.From.Address),
+		From:              types.NewAddress(txOrigin.From.Address),
 		To:                common.HexToAddress(txOrigin.To.Address),
 		Value:             value,
 		Gas:               gas,

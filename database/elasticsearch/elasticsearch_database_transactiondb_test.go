@@ -26,7 +26,7 @@ var testTransaction = types.Transaction{
 	BlockHash:         types.NewHash(""),
 	Index:             0,
 	Nonce:             4,
-	From:              common.HexToAddress("0x586e8164bc8863013fe8f1b82092b028a5f8afad"),
+	From:              types.NewAddress("0x586e8164bc8863013fe8f1b82092b028a5f8afad"),
 	To:                common.HexToAddress("0xcc11df45aba0a4ff198b18300d0b148ad2468834"),
 	Value:             10,
 	Gas:               30,

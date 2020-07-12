@@ -47,7 +47,7 @@ type Transaction struct {
 	BlockHash         Hash            `json:"blockHash"`
 	Index             uint64          `json:"index"`
 	Nonce             uint64          `json:"nonce"`
-	From              common.Address  `json:"from"`
+	From              Address         `json:"from"`
 	To                common.Address  `json:"to"`
 	Value             uint64          `json:"value"`
 	Gas               uint64          `json:"gas"`

@@ -48,7 +48,7 @@ func (tm *DefaultTokenMonitor) InspectTransaction(tx *types.Transaction) (map[co
 		addresses = append(addresses, AddressWithMeta{
 			address:  tx.CreatedContract,
 			scope:    types.ExternalScope,
-			deployer: tx.From,
+			deployer: common.HexToAddress(tx.From.Hex()),
 		})
 	}
 	for _, ic := range tx.InternalCalls {

@@ -24,7 +24,7 @@ var (
 	tx1 = &types.Transaction{
 		Hash:            common.BytesToHash([]byte("tx1")),
 		BlockNumber:     1,
-		From:            common.HexToAddress("0x0000000000000000000000000000000000000009"),
+		From:            types.NewAddress("0x0000000000000000000000000000000000000009"),
 		To:              common.Address{0},
 		Value:           666,
 		CreatedContract: address,
@@ -32,7 +32,7 @@ var (
 	tx2 = &types.Transaction{
 		Hash:        common.BytesToHash([]byte("tx2")),
 		BlockNumber: 1,
-		From:        common.HexToAddress("0x0000000000000000000000000000000000000009"),
+		From:        types.NewAddress("0x0000000000000000000000000000000000000009"),
 		To:          uselessAddress,
 		Value:       666,
 		InternalCalls: []*types.InternalCall{
@@ -44,7 +44,7 @@ var (
 	tx3 = &types.Transaction{
 		Hash:        common.BytesToHash([]byte("tx3")),
 		BlockNumber: 1,
-		From:        common.HexToAddress("0x0000000000000000000000000000000000000010"),
+		From:        types.NewAddress("0x0000000000000000000000000000000000000010"),
 		To:          address,
 		Value:       666,
 		Events: []*types.Event{

@@ -83,7 +83,7 @@ func TestCreateTransaction(t *testing.T) {
 	if tx.Index != 0 {
 		t.Fatalf("expected index %v, but got %v", 0, tx.Index)
 	}
-	if tx.From != common.HexToAddress("0xed9d02e382b34818e88b88a309c7fe71e65f419d") {
+	if tx.From != types.NewAddress("0xed9d02e382b34818e88b88a309c7fe71e65f419d") {
 		t.Fatalf("expected from %v, but got %v", "0xed9d02e382b34818e88b88a309c7fe71e65f419d", tx.From.Hex())
 	}
 	if tx.Gas != 4700000 {
@@ -159,7 +159,7 @@ func TestTransactionMonitor_PullTransactions(t *testing.T) {
 	if tx.Index != 0 {
 		t.Fatalf("expected index %v, but got %v", 0, tx.Index)
 	}
-	if tx.From != common.HexToAddress("0xed9d02e382b34818e88b88a309c7fe71e65f419d") {
+	if tx.From != types.NewAddress("0xed9d02e382b34818e88b88a309c7fe71e65f419d") {
 		t.Fatalf("expected from %v, but got %v", "0xed9d02e382b34818e88b88a309c7fe71e65f419d", tx.From.Hex())
 	}
 	if tx.Gas != 4700000 {
