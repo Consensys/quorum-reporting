@@ -7,6 +7,11 @@ import (
 	"strings"
 )
 
+var (
+	EmptyHash    = NewHash("")
+	EmptyAddress = NewAddress("")
+)
+
 type Address string
 
 // NewAddressFromHex creates a new address from a given hex string
