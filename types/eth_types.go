@@ -31,7 +31,7 @@ func NewAddress(hexString string) Address {
 	if len(hexString) > 40 {
 		return Address(hexString[:40])
 	}
-	return Address(fmt.Sprintf("%40v", hexString))
+	return Address(fmt.Sprintf("%040v", hexString))
 }
 
 func (addr Address) MarshalJSON() ([]byte, error) {
@@ -74,7 +74,7 @@ func NewHash(hexString string) Hash {
 	if len(hexString) > 64 {
 		return Hash(hexString[:64])
 	}
-	return Hash(fmt.Sprintf("%64v", hexString))
+	return Hash(fmt.Sprintf("%064v", hexString))
 }
 
 func (hsh Hash) MarshalJSON() ([]byte, error) {
