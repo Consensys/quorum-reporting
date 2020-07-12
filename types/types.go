@@ -16,8 +16,8 @@ type RawBlock struct {
 	Hash         string   `json:"hash"`
 	ParentHash   string   `json:"parentHash"`
 	StateRoot    string   `json:"stateRoot"`
-	TxRoot       string   `json:"txRoot"`
-	ReceiptRoot  string   `json:"receiptRoot"`
+	TxRoot       string   `json:"transactionsRoot"`
+	ReceiptRoot  string   `json:"receiptsRoot"`
 	Number       string   `json:"number"`
 	GasLimit     string   `json:"gasLimit"`
 	GasUsed      string   `json:"gasUsed"`
