@@ -101,7 +101,7 @@ func TestCreateTransaction(t *testing.T) {
 	if len(tx.Events) != 1 {
 		t.Fatalf("expected %v events, but got %v", 1, len(tx.Events))
 	}
-	if tx.Events[0].Topics[0] != common.HexToHash("0xefe5cb8d23d632b5d2cdd9f0a151c4b1a84ccb7afa1c57331009aa922d5e4f36") {
+	if tx.Events[0].Topics[0] != types.NewHash("0xefe5cb8d23d632b5d2cdd9f0a151c4b1a84ccb7afa1c57331009aa922d5e4f36") {
 		t.Fatalf("expected event topic %v, but got %v", "0xefe5cb8d23d632b5d2cdd9f0a151c4b1a84ccb7afa1c57331009aa922d5e4f36", tx.Events[0].Topics[0].Hex())
 	}
 	if len(tx.InternalCalls) != 1 {
@@ -177,7 +177,7 @@ func TestTransactionMonitor_PullTransactions(t *testing.T) {
 	if len(tx.Events) != 1 {
 		t.Fatalf("expected %v events, but got %v", 1, len(tx.Events))
 	}
-	if tx.Events[0].Topics[0] != common.HexToHash("0xefe5cb8d23d632b5d2cdd9f0a151c4b1a84ccb7afa1c57331009aa922d5e4f36") {
+	if tx.Events[0].Topics[0] != types.NewHash("0xefe5cb8d23d632b5d2cdd9f0a151c4b1a84ccb7afa1c57331009aa922d5e4f36") {
 		t.Fatalf("expected event topic %v, but got %v", "0xefe5cb8d23d632b5d2cdd9f0a151c4b1a84ccb7afa1c57331009aa922d5e4f36", tx.Events[0].Topics[0].Hex())
 	}
 	if len(tx.InternalCalls) != 1 {

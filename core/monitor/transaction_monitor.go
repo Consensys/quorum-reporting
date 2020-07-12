@@ -97,9 +97,9 @@ func (tm *DefaultTransactionMonitor) createTransaction(block *types.Block, hash 
 	}
 	events := []*types.Event{}
 	for _, l := range txOrigin.Logs {
-		topics := []common.Hash{}
+		topics := []types.Hash{}
 		for _, t := range l.Topics {
-			topics = append(topics, common.HexToHash(t))
+			topics = append(topics, types.NewHash(t))
 		}
 		e := &types.Event{
 			Index:            l.Index,

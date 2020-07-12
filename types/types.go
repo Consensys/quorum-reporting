@@ -77,7 +77,7 @@ type InternalCall struct {
 type Event struct {
 	Index            uint64         `json:"index"`
 	Address          common.Address `json:"address"`
-	Topics           []common.Hash  `json:"topics"`
+	Topics           []Hash         `json:"topics"`
 	Data             hexutil.Bytes  `json:"data"`
 	BlockNumber      uint64         `json:"blockNumber"`
 	BlockHash        Hash           `json:"blockHash"`
