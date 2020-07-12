@@ -95,7 +95,7 @@ func TestDefaultTokenMonitor_InspectTransaction_EIP165WithERC20(t *testing.T) {
 		BlockNumber: 1,
 		InternalCalls: []*types.InternalCall{
 			{
-				From: common.HexToAddress("0x586e8164bc8863013fe8f1b82092b028a5f8afad"),
+				From: types.NewAddress("0x586e8164bc8863013fe8f1b82092b028a5f8afad"),
 				To:   common.HexToAddress("0xcc11df45aba0a4ff198b18300d0b148ad2468834"),
 				Type: "CREATE",
 			},
@@ -181,7 +181,7 @@ func TestDefaultTokenMonitor_InspectTransaction_EIP165WithERC721(t *testing.T) {
 		BlockNumber: 1,
 		InternalCalls: []*types.InternalCall{
 			{
-				From: common.HexToAddress("0x586e8164bc8863013fe8f1b82092b028a5f8afad"),
+				From: types.NewAddress("0x586e8164bc8863013fe8f1b82092b028a5f8afad"),
 				To:   common.HexToAddress("0xcc11df45aba0a4ff198b18300d0b148ad2468834"),
 				Type: "CREATE",
 			},
@@ -242,7 +242,7 @@ func TestDefaultTokenMonitor_InspectTransaction_BytecodeInspection(t *testing.T)
 		BlockNumber: 1,
 		InternalCalls: []*types.InternalCall{
 			{
-				From: common.HexToAddress("0x586e8164bc8863013fe8f1b82092b028a5f8afad"),
+				From: types.NewAddress("0x586e8164bc8863013fe8f1b82092b028a5f8afad"),
 				To:   common.HexToAddress("0xcc11df45aba0a4ff198b18300d0b148ad2468834"),
 				Type: "CREATE",
 			},

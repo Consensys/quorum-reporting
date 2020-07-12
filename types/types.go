@@ -64,7 +64,7 @@ type Transaction struct {
 }
 
 type InternalCall struct {
-	From    common.Address `json:"from"`
+	From    Address        `json:"from"`
 	To      common.Address `json:"to"`
 	Gas     uint64         `json:"gas"`
 	GasUsed uint64         `json:"gasUsed"`

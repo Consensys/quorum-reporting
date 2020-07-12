@@ -56,7 +56,7 @@ func (tm *DefaultTokenMonitor) InspectTransaction(tx *types.Transaction) (map[co
 			addresses = append(addresses, AddressWithMeta{
 				address:  ic.To,
 				scope:    types.InternalScope,
-				deployer: ic.From,
+				deployer: common.HexToAddress(ic.From.Hex()),
 			})
 		}
 	}

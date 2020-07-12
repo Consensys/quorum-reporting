@@ -142,7 +142,7 @@ func (tm *DefaultTransactionMonitor) createTransaction(block *types.Block, hash 
 				}
 			}
 			tx.InternalCalls[i] = &types.InternalCall{
-				From:    common.HexToAddress(respCallMap["from"].(string)),
+				From:    types.NewAddress(respCallMap["from"].(string)),
 				To:      common.HexToAddress(respCallMap["to"].(string)),
 				Gas:     gas,
 				GasUsed: gasUsed,
