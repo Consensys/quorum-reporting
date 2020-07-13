@@ -130,7 +130,7 @@ func (bm *DefaultBlockMonitor) currentBlockNumber() (uint64, error) {
 	return hexutil.DecodeUint64(currentBlockResult.Block.Number)
 }
 
-func (bm *DefaultBlockMonitor) syncBlocks(start, end uint64, stopChan chan bool) *types.SyncError {
+func (bm *DefaultBlockMonitor) syncBlocks(start, end uint64, stopChan chan bool) *SyncError {
 	if start > end {
 		return nil
 	}
@@ -146,7 +146,7 @@ func (bm *DefaultBlockMonitor) syncBlocks(start, end uint64, stopChan chan bool)
 		var blockOrigin types.RawBlock
 		err := bm.quorumClient.RPCCall(&blockOrigin, "eth_getBlockByNumber", hexutil.EncodeUint64(i), false)
 		if err != nil {
-			return types.NewSyncError(err.Error(), i)
+			return NewSyncError(err.Error(), i)
 		}
 
 		select {
