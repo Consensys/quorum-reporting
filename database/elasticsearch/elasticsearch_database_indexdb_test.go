@@ -22,7 +22,7 @@ func TestElasticsearchDB_GetContractCreationTransaction(t *testing.T) {
 	mockedClient := elasticsearch_mocks.NewMockAPIClient(ctrl)
 
 	addr := common.HexToAddress("0x1932c48b2bf8102ba33b4a6b545c32236e342f34")
-	creationTx := common.HexToHash("0xd09fc502b74c7e6015e258e3aed2d724cb50317684a46e00355e50b1b21c6446")
+	creationTx := types.NewHash("0xd09fc502b74c7e6015e258e3aed2d724cb50317684a46e00355e50b1b21c6446")
 
 	searchRequest := esapi.GetRequest{
 		Index:      ContractIndex,
@@ -69,7 +69,7 @@ func TestElasticsearchDB_GetContractCreationTransaction_WithError(t *testing.T) 
 	txHash, err := db.GetContractCreationTransaction(addr)
 
 	assert.EqualError(t, err, "test error", "unexpected error message")
-	assert.Equal(t, txHash, common.Hash{}, "unexpected returned tx hash")
+	assert.Equal(t, types.Hash(""), txHash, "unexpected returned tx hash")
 }
 
 func TestElasticsearchDB_GetAllTransactionsToAddress_WithError(t *testing.T) {

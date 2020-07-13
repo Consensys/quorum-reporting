@@ -4,7 +4,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
 
@@ -93,9 +92,9 @@ func (bm *DefaultBlockMonitor) processChainHead(header *ethTypes.Header) {
 }
 
 func (bm *DefaultBlockMonitor) createBlock(block *types.RawBlock) *types.Block {
-	txs := []common.Hash{}
+	txs := []types.Hash{}
 	for _, tx := range block.Transactions {
-		txs = append(txs, common.HexToHash(tx))
+		txs = append(txs, types.NewHash(tx))
 	}
 
 	timestamp := hexutil.MustDecodeUint64(block.Timestamp)

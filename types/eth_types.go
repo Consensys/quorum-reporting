@@ -100,6 +100,10 @@ func (hsh *Hash) Hex() string {
 	return "0x" + string(*hsh)
 }
 
+func (hsh *Hash) IsEmpty() bool {
+	return *hsh == "" || *hsh == "0000000000000000000000000000000000000000000000000000000000000000"
+}
+
 func fromHex(hexString string) ([]byte, error) {
 	if len(hexString) >= 2 && hexString[:2] == "0x" {
 		hexString = hexString[2:]

@@ -29,8 +29,8 @@ var (
 	block   = &types.Block{
 		Hash:   types.NewHash("0xc7fd1915b4b8ac6344e750e4eaeacf9114d4e185f9c10b6b3bc7049511a96998"),
 		Number: 1,
-		Transactions: []common.Hash{
-			common.BytesToHash([]byte("tx1")), common.BytesToHash([]byte("tx2")), common.BytesToHash([]byte("tx3")),
+		Transactions: []types.Hash{
+			types.NewHash("0x1a6f4292bac138df9a7854a07c93fd14ca7de53265e8fe01b6c986f97d6c1ee7"), types.NewHash("tx2"), types.NewHash("tx3"),
 		},
 		ParentHash:  types.NewHash(""),
 		ReceiptRoot: types.NewHash(""),
@@ -38,7 +38,7 @@ var (
 		StateRoot:   types.NewHash(""),
 	}
 	tx1 = &types.Transaction{ // deployment
-		Hash:            common.BytesToHash([]byte("tx1")),
+		Hash:            types.NewHash("0x1a6f4292bac138df9a7854a07c93fd14ca7de53265e8fe01b6c986f97d6c1ee7"),
 		BlockNumber:     1,
 		From:            types.NewAddress("0x0000000000000000000000000000000000000009"),
 		To:              common.Address{},
@@ -46,7 +46,7 @@ var (
 		CreatedContract: address,
 	}
 	tx2 = &types.Transaction{ // set
-		Hash:            common.BytesToHash([]byte("tx2")),
+		Hash:            types.NewHash("tx2"),
 		BlockNumber:     1,
 		From:            types.NewAddress("0x0000000000000000000000000000000000000009"),
 		To:              address,
@@ -54,7 +54,7 @@ var (
 		CreatedContract: common.Address{0},
 	}
 	tx3 = &types.Transaction{ // private
-		Hash:            common.BytesToHash([]byte("tx3")),
+		Hash:            types.NewHash("tx3"),
 		BlockNumber:     1,
 		From:            types.NewAddress("0x0000000000000000000000000000000000000009"),
 		To:              address,

@@ -39,7 +39,10 @@ func (r *RPCAPIs) GetBlock(req *http.Request, blockNumber *uint64, reply *types.
 	return nil
 }
 
-func (r *RPCAPIs) GetTransaction(req *http.Request, hash *common.Hash, reply *types.ParsedTransaction) error {
+func (r *RPCAPIs) GetTransaction(req *http.Request, hash *types.Hash, reply *types.ParsedTransaction) error {
+	if hash.IsEmpty() {
+		return errors.New("no transaction hash given")
+	}
 	tx, err := r.db.ReadTransaction(*hash)
 	if err != nil {
 		return err
@@ -79,12 +82,12 @@ func (r *RPCAPIs) GetTransaction(req *http.Request, hash *common.Hash, reply *ty
 	return nil
 }
 
-func (r *RPCAPIs) GetContractCreationTransaction(req *http.Request, address *common.Address, reply *common.Hash) error {
+func (r *RPCAPIs) GetContractCreationTransaction(req *http.Request, address *common.Address, reply *types.Hash) error {
 	txHash, err := r.db.GetContractCreationTransaction(*address)
 	if err != nil {
 		return err
 	}
-	if txHash == (common.Hash{}) {
+	if txHash.IsEmpty() {
 		return errors.New("contract creation tx not found")
 	}
 	*reply = txHash

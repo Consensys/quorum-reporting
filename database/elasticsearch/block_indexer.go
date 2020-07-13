@@ -14,7 +14,7 @@ type DefaultBlockIndexer struct {
 	// TODO: May convert all functions into an interface. DefaultBlockIndexer can then accept all database implementation and move to a util package.
 	updateContract  func(common.Address, string, string) error
 	createEvents    func([]*types.Event) error
-	readTransaction func(common.Hash) (*types.Transaction, error)
+	readTransaction func(types.Hash) (*types.Transaction, error)
 }
 
 func NewBlockIndexer(addresses []common.Address, blocks []*types.Block, db *ElasticsearchDB) *DefaultBlockIndexer {

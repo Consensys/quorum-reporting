@@ -134,7 +134,7 @@ func TestRPCAPIs_GetContractCreationTransaction(t *testing.T) {
 	_ = json.Unmarshal(rpcResponse.Result, &txHash)
 
 	assert.Equal(t, "null", string(rpcResponse.Error))
-	assert.Equal(t, "0x0000000000000000000000000000000000000000000000000000000000747831", txHash)
+	assert.Equal(t, "0x1a6f4292bac138df9a7854a07c93fd14ca7de53265e8fe01b6c986f97d6c1ee7", txHash)
 }
 
 func TestRPCAPIs_GetContractCreationTransaction_CreationTxNotFound(t *testing.T) {

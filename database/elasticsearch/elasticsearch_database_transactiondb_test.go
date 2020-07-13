@@ -20,7 +20,7 @@ import (
 //Tests
 
 var testTransaction = types.Transaction{
-	Hash:              common.HexToHash("0xf4f803b8d6c6b38e0b15d6cfe80fd1dcea4270ad24e93385fca36512bb9c2c59"),
+	Hash:              types.NewHash("0xf4f803b8d6c6b38e0b15d6cfe80fd1dcea4270ad24e93385fca36512bb9c2c59"),
 	Status:            true,
 	BlockNumber:       1,
 	BlockHash:         types.NewHash(""),

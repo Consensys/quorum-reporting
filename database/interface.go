@@ -44,17 +44,17 @@ type BlockDB interface {
 // TransactionDB stores all transactions change a contract's state.
 type TransactionDB interface {
 	WriteTransactions([]*types.Transaction) error
-	ReadTransaction(common.Hash) (*types.Transaction, error)
+	ReadTransaction(types.Hash) (*types.Transaction, error)
 }
 
 // IndexDB stores the location to find all transactions/ events/ storage for a contract.
 type IndexDB interface {
 	IndexBlocks([]common.Address, []*types.Block) error
 	IndexStorage(map[common.Address]*types.AccountState, uint64) error
-	GetContractCreationTransaction(common.Address) (common.Hash, error)
-	GetAllTransactionsToAddress(common.Address, *types.QueryOptions) ([]common.Hash, error)
+	GetContractCreationTransaction(common.Address) (types.Hash, error)
+	GetAllTransactionsToAddress(common.Address, *types.QueryOptions) ([]types.Hash, error)
 	GetTransactionsToAddressTotal(common.Address, *types.QueryOptions) (uint64, error)
-	GetAllTransactionsInternalToAddress(common.Address, *types.QueryOptions) ([]common.Hash, error)
+	GetAllTransactionsInternalToAddress(common.Address, *types.QueryOptions) ([]types.Hash, error)
 	GetTransactionsInternalToAddressTotal(common.Address, *types.QueryOptions) (uint64, error)
 	GetAllEventsFromAddress(common.Address, *types.QueryOptions) ([]*types.Event, error)
 	GetEventsFromAddressTotal(common.Address, *types.QueryOptions) (uint64, error)

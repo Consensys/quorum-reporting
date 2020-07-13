@@ -1,6 +1,6 @@
 package graphql
 
-import "github.com/ethereum/go-ethereum/common"
+import "quorumengineering/quorum-report/types"
 
 // templates for GraphQL queries
 
@@ -14,7 +14,7 @@ func CurrentBlockQuery() string {
 	`
 }
 
-func TransactionDetailQuery(hash common.Hash) string {
+func TransactionDetailQuery(hash types.Hash) string {
 	return `query { transaction(hash:"` + hash.Hex() + `") {
         hash
         status

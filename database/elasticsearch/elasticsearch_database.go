@@ -86,7 +86,7 @@ func (es *ElasticsearchDB) AddAddresses(addresses []common.Address) error {
 			contract := Contract{
 				Address:             address,
 				TemplateName:        address.String(),
-				CreationTransaction: common.Hash{},
+				CreationTransaction: "",
 				LastFiltered:        0,
 			}
 			wg.Add(1)
@@ -114,7 +114,7 @@ func (es *ElasticsearchDB) AddAddresses(addresses []common.Address) error {
 	contract := Contract{
 		Address:             addresses[0],
 		TemplateName:        addresses[0].String(),
-		CreationTransaction: common.Hash{},
+		CreationTransaction: "",
 		LastFiltered:        0,
 	}
 
@@ -133,7 +133,7 @@ func (es *ElasticsearchDB) AddAddressFrom(address common.Address, from uint64) e
 	contract := Contract{
 		Address:             address,
 		TemplateName:        address.String(),
-		CreationTransaction: common.Hash{},
+		CreationTransaction: "",
 		LastFiltered:        from - 1,
 	}
 
@@ -413,7 +413,7 @@ func (es *ElasticsearchDB) WriteTransactions(transactions []*types.Transaction) 
 	return returnErr
 }
 
-func (es *ElasticsearchDB) ReadTransaction(hash common.Hash) (*types.Transaction, error) {
+func (es *ElasticsearchDB) ReadTransaction(hash types.Hash) (*types.Transaction, error) {
 	fetchReq := esapi.GetRequest{
 		Index:      TransactionIndex,
 		DocumentID: hash.String(),
@@ -500,15 +500,15 @@ func (es *ElasticsearchDB) IndexStorage(rawStorage map[common.Address]*types.Acc
 	return returnErr
 }
 
-func (es *ElasticsearchDB) GetContractCreationTransaction(address common.Address) (common.Hash, error) {
+func (es *ElasticsearchDB) GetContractCreationTransaction(address common.Address) (types.Hash, error) {
 	contract, err := es.getContractByAddress(address)
 	if err != nil {
-		return common.Hash{}, err
+		return "", err
 	}
 	return contract.CreationTransaction, nil
 }
 
-func (es *ElasticsearchDB) GetAllTransactionsToAddress(address common.Address, options *types.QueryOptions) ([]common.Hash, error) {
+func (es *ElasticsearchDB) GetAllTransactionsToAddress(address common.Address, options *types.QueryOptions) ([]types.Hash, error) {
 	queryString := fmt.Sprintf(QueryByToAddressWithOptionsTemplate(options), address.String())
 
 	from := options.PageSize * options.PageNumber
@@ -527,10 +527,10 @@ func (es *ElasticsearchDB) GetAllTransactionsToAddress(address common.Address, o
 		return nil, err
 	}
 
-	converted := make([]common.Hash, len(results.Hits.Hits))
+	converted := make([]types.Hash, len(results.Hits.Hits))
 	for i, result := range results.Hits.Hits {
-		addr := result.Source["hash"].(string)
-		converted[i] = common.HexToHash(addr)
+		hsh := result.Source["hash"].(string)
+		converted[i] = types.NewHash(hsh)
 	}
 
 	return converted, nil
@@ -550,7 +550,7 @@ func (es *ElasticsearchDB) GetTransactionsToAddressTotal(address common.Address,
 	return results.Count, nil
 }
 
-func (es *ElasticsearchDB) GetAllTransactionsInternalToAddress(address common.Address, options *types.QueryOptions) ([]common.Hash, error) {
+func (es *ElasticsearchDB) GetAllTransactionsInternalToAddress(address common.Address, options *types.QueryOptions) ([]types.Hash, error) {
 	queryString := fmt.Sprintf(QueryInternalTransactionsWithOptionsTemplate(options), address.String())
 
 	from := options.PageSize * options.PageNumber
@@ -569,10 +569,10 @@ func (es *ElasticsearchDB) GetAllTransactionsInternalToAddress(address common.Ad
 		return nil, err
 	}
 
-	converted := make([]common.Hash, len(results.Hits.Hits))
+	converted := make([]types.Hash, len(results.Hits.Hits))
 	for i, result := range results.Hits.Hits {
-		addr := result.Source["hash"].(string)
-		converted[i] = common.HexToHash(addr)
+		hsh := result.Source["hash"].(string)
+		converted[i] = types.NewHash(hsh)
 	}
 
 	return converted, nil

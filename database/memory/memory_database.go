@@ -20,7 +20,7 @@ type MemoryDB struct {
 	storageLayoutDB map[string]string
 	// blockchain data
 	blockDB                  map[uint64]*types.Block
-	txDB                     map[common.Hash]*types.Transaction
+	txDB                     map[types.Hash]*types.Transaction
 	lastPersistedBlockNumber uint64
 	// index data
 	txIndexDB      map[common.Address]*TxIndexer
@@ -38,7 +38,7 @@ func NewMemoryDB() *MemoryDB {
 		abiDB:                    make(map[string]string),
 		storageLayoutDB:          make(map[string]string),
 		blockDB:                  make(map[uint64]*types.Block),
-		txDB:                     make(map[common.Hash]*types.Transaction),
+		txDB:                     make(map[types.Hash]*types.Transaction),
 		txIndexDB:                make(map[common.Address]*TxIndexer),
 		eventIndexDB:             make(map[common.Address][]*types.Event),
 		storageIndexDB:           make(map[common.Address]*StorageIndexer),
@@ -48,16 +48,16 @@ func NewMemoryDB() *MemoryDB {
 }
 
 type TxIndexer struct {
-	contractCreationTx common.Hash
-	txsTo              []common.Hash
-	txsInternalTo      []common.Hash
+	contractCreationTx types.Hash
+	txsTo              []types.Hash
+	txsInternalTo      []types.Hash
 }
 
 func NewTxIndexer() *TxIndexer {
 	return &TxIndexer{
-		contractCreationTx: common.Hash{},
-		txsTo:              []common.Hash{},
-		txsInternalTo:      []common.Hash{},
+		contractCreationTx: "",
+		txsTo:              []types.Hash{},
+		txsInternalTo:      []types.Hash{},
 	}
 }
 
@@ -267,7 +267,7 @@ func (db *MemoryDB) WriteTransactions(transactions []*types.Transaction) error {
 	return nil
 }
 
-func (db *MemoryDB) ReadTransaction(hash common.Hash) (*types.Transaction, error) {
+func (db *MemoryDB) ReadTransaction(hash types.Hash) (*types.Transaction, error) {
 	db.mux.RLock()
 	defer db.mux.RUnlock()
 	if tx, ok := db.txDB[hash]; ok {
@@ -295,16 +295,16 @@ func (db *MemoryDB) IndexBlocks(addresses []common.Address, blocks []*types.Bloc
 	return nil
 }
 
-func (db *MemoryDB) GetContractCreationTransaction(address common.Address) (common.Hash, error) {
+func (db *MemoryDB) GetContractCreationTransaction(address common.Address) (types.Hash, error) {
 	db.mux.RLock()
 	defer db.mux.RUnlock()
 	if !db.addressIsRegistered(address) {
-		return common.Hash{}, errors.New("address is not registered")
+		return "", errors.New("address is not registered")
 	}
 	return db.txIndexDB[address].contractCreationTx, nil
 }
 
-func (db *MemoryDB) GetAllTransactionsToAddress(address common.Address, options *types.QueryOptions) ([]common.Hash, error) {
+func (db *MemoryDB) GetAllTransactionsToAddress(address common.Address, options *types.QueryOptions) ([]types.Hash, error) {
 	// TODO: MemoryDB doesn't implement query options
 	db.mux.RLock()
 	defer db.mux.RUnlock()
@@ -324,7 +324,7 @@ func (db *MemoryDB) GetTransactionsToAddressTotal(address common.Address, option
 	return uint64(len(db.txIndexDB[address].txsTo)), nil
 }
 
-func (db *MemoryDB) GetAllTransactionsInternalToAddress(address common.Address, options *types.QueryOptions) ([]common.Hash, error) {
+func (db *MemoryDB) GetAllTransactionsInternalToAddress(address common.Address, options *types.QueryOptions) ([]types.Hash, error) {
 	// TODO: MemoryDB doesn't implement query options
 	db.mux.RLock()
 	defer db.mux.RUnlock()

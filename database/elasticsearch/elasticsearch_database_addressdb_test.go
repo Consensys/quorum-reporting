@@ -29,7 +29,7 @@ func TestAddSingleAddress(t *testing.T) {
 	contract := Contract{
 		Address:             addr,
 		TemplateName:        addr.String(),
-		CreationTransaction: common.Hash{},
+		CreationTransaction: "",
 		LastFiltered:        0,
 	}
 
@@ -65,7 +65,7 @@ func TestAddMultipleAddresses(t *testing.T) {
 	contract1 := Contract{
 		Address:             addr1,
 		TemplateName:        addr1.String(),
-		CreationTransaction: common.Hash{},
+		CreationTransaction: "",
 		LastFiltered:        0,
 	}
 	req1 := esutil.BulkIndexerItem{
@@ -76,7 +76,7 @@ func TestAddMultipleAddresses(t *testing.T) {
 	contract2 := Contract{
 		Address:             addr2,
 		TemplateName:        addr2.String(),
-		CreationTransaction: common.Hash{},
+		CreationTransaction: "",
 		LastFiltered:        0,
 	}
 	req2 := esutil.BulkIndexerItem{
@@ -131,7 +131,7 @@ func TestAddSingleAddressWithError(t *testing.T) {
 	contract := Contract{
 		Address:             addr,
 		TemplateName:        addr.String(),
-		CreationTransaction: common.Hash{},
+		CreationTransaction: "",
 		LastFiltered:        0,
 	}
 
@@ -167,7 +167,7 @@ func TestAddMultipleAddressWithError(t *testing.T) {
 	contract1 := Contract{
 		Address:             addr1,
 		TemplateName:        addr1.String(),
-		CreationTransaction: common.Hash{},
+		CreationTransaction: "",
 		LastFiltered:        0,
 	}
 	req1 := esutil.BulkIndexerItem{
@@ -178,7 +178,7 @@ func TestAddMultipleAddressWithError(t *testing.T) {
 	contract2 := Contract{
 		Address:             addr2,
 		TemplateName:        addr2.String(),
-		CreationTransaction: common.Hash{},
+		CreationTransaction: "",
 		LastFiltered:        0,
 	}
 	req2 := esutil.BulkIndexerItem{

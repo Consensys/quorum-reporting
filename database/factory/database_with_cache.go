@@ -180,20 +180,20 @@ func (cachingDB *DatabaseWithCache) WriteTransactions(txns []*types.Transaction)
 		return err
 	}
 	for _, tx := range txns {
-		cachingDB.transactionCache.Add(tx.Hash, tx)
+		cachingDB.transactionCache.Add(tx.Hash.String(), tx)
 	}
 	return nil
 }
 
-func (cachingDB *DatabaseWithCache) ReadTransaction(hash common.Hash) (*types.Transaction, error) {
-	if cachedTx, ok := cachingDB.transactionCache.Get(hash); ok {
+func (cachingDB *DatabaseWithCache) ReadTransaction(hash types.Hash) (*types.Transaction, error) {
+	if cachedTx, ok := cachingDB.transactionCache.Get(hash.String()); ok {
 		return cachedTx.(*types.Transaction), nil
 	}
 	tx, err := cachingDB.db.ReadTransaction(hash)
 	if err != nil {
 		return nil, err
 	}
-	cachingDB.transactionCache.Add(tx.Hash, tx)
+	cachingDB.transactionCache.Add(tx.Hash.String(), tx)
 	return tx, nil
 }
 
@@ -205,25 +205,25 @@ func (cachingDB *DatabaseWithCache) IndexStorage(rawStorage map[common.Address]*
 	return cachingDB.db.IndexStorage(rawStorage, blockNumber)
 }
 
-func (cachingDB *DatabaseWithCache) GetContractCreationTransaction(address common.Address) (common.Hash, error) {
+func (cachingDB *DatabaseWithCache) GetContractCreationTransaction(address common.Address) (types.Hash, error) {
 	if cachedHash, ok := cachingDB.contractCreationCache.Get(address); ok {
-		return cachedHash.(common.Hash), nil
+		return cachedHash.(types.Hash), nil
 	}
 	hash, err := cachingDB.db.GetContractCreationTransaction(address)
 	if err != nil {
-		return common.Hash{}, err
+		return "", err
 	}
-	if hash != common.HexToHash("0x0000000000000000000000000000000000000000000000000000000000000000") {
+	if hash.IsEmpty() {
 		cachingDB.contractCreationCache.Add(address, hash)
 	}
 	return hash, nil
 }
 
-func (cachingDB *DatabaseWithCache) GetAllTransactionsToAddress(address common.Address, options *types.QueryOptions) ([]common.Hash, error) {
+func (cachingDB *DatabaseWithCache) GetAllTransactionsToAddress(address common.Address, options *types.QueryOptions) ([]types.Hash, error) {
 	return cachingDB.db.GetAllTransactionsToAddress(address, options)
 }
 
-func (cachingDB *DatabaseWithCache) GetAllTransactionsInternalToAddress(address common.Address, options *types.QueryOptions) ([]common.Hash, error) {
+func (cachingDB *DatabaseWithCache) GetAllTransactionsInternalToAddress(address common.Address, options *types.QueryOptions) ([]types.Hash, error) {
 	return cachingDB.db.GetAllTransactionsInternalToAddress(address, options)
 }
 

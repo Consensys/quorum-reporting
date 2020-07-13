@@ -26,21 +26,21 @@ type RawBlock struct {
 }
 
 type Block struct {
-	Hash         Hash          `json:"hash"`
-	ParentHash   Hash          `json:"parentHash"`
-	StateRoot    Hash          `json:"stateRoot"`
-	TxRoot       Hash          `json:"txRoot"`
-	ReceiptRoot  Hash          `json:"receiptRoot"`
-	Number       uint64        `json:"number"`
-	GasLimit     uint64        `json:"gasLimit"`
-	GasUsed      uint64        `json:"gasUsed"`
-	Timestamp    uint64        `json:"timestamp"`
-	ExtraData    string        `json:"extraData"`
-	Transactions []common.Hash `json:"transactions"`
+	Hash         Hash   `json:"hash"`
+	ParentHash   Hash   `json:"parentHash"`
+	StateRoot    Hash   `json:"stateRoot"`
+	TxRoot       Hash   `json:"txRoot"`
+	ReceiptRoot  Hash   `json:"receiptRoot"`
+	Number       uint64 `json:"number"`
+	GasLimit     uint64 `json:"gasLimit"`
+	GasUsed      uint64 `json:"gasUsed"`
+	Timestamp    uint64 `json:"timestamp"`
+	ExtraData    string `json:"extraData"`
+	Transactions []Hash `json:"transactions"`
 }
 
 type Transaction struct {
-	Hash              common.Hash     `json:"hash"`
+	Hash              Hash            `json:"hash"`
 	Status            bool            `json:"status"`
 	BlockNumber       uint64          `json:"blockNumber"`
 	BlockHash         Hash            `json:"blockHash"`
@@ -74,13 +74,13 @@ type InternalCall struct {
 }
 
 type Event struct {
-	Index            uint64      `json:"index"`
-	Address          Address     `json:"address"`
-	Topics           []Hash      `json:"topics"`
-	Data             HexData     `json:"data"`
-	BlockNumber      uint64      `json:"blockNumber"`
-	BlockHash        Hash        `json:"blockHash"`
-	TransactionHash  common.Hash `json:"transactionHash"`
-	TransactionIndex uint64      `json:"transactionIndex"`
-	Timestamp        uint64      `json:"timestamp"`
+	Index            uint64  `json:"index"`
+	Address          Address `json:"address"`
+	Topics           []Hash  `json:"topics"`
+	Data             HexData `json:"data"`
+	BlockNumber      uint64  `json:"blockNumber"`
+	BlockHash        Hash    `json:"blockHash"`
+	TransactionHash  Hash    `json:"transactionHash"`
+	TransactionIndex uint64  `json:"transactionIndex"`
+	Timestamp        uint64  `json:"timestamp"`
 }

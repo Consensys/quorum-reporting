@@ -39,7 +39,7 @@ func (tm *DefaultTransactionMonitor) PullTransactions(block *types.Block) ([]*ty
 	return fetchedTransactions, nil
 }
 
-func (tm *DefaultTransactionMonitor) createTransaction(block *types.Block, hash common.Hash) (*types.Transaction, error) {
+func (tm *DefaultTransactionMonitor) createTransaction(block *types.Block, hash types.Hash) (*types.Transaction, error) {
 	log.Debug("Processing transaction", "hash", hash.String())
 
 	var txResult graphql.TransactionResult

@@ -22,7 +22,7 @@ var (
 	uselessAddress = common.HexToAddress("0x0000000000000000000000000000000000000002")
 
 	tx1 = &types.Transaction{
-		Hash:            common.BytesToHash([]byte("tx1")),
+		Hash:            types.NewHash("0x1a6f4292bac138df9a7854a07c93fd14ca7de53265e8fe01b6c986f97d6c1ee7"),
 		BlockNumber:     1,
 		From:            types.NewAddress("0x0000000000000000000000000000000000000009"),
 		To:              common.Address{0},
@@ -30,7 +30,7 @@ var (
 		CreatedContract: address,
 	}
 	tx2 = &types.Transaction{
-		Hash:        common.BytesToHash([]byte("tx2")),
+		Hash:        types.NewHash("tx2"),
 		BlockNumber: 1,
 		From:        types.NewAddress("0x0000000000000000000000000000000000000009"),
 		To:          uselessAddress,
@@ -42,7 +42,7 @@ var (
 		},
 	}
 	tx3 = &types.Transaction{
-		Hash:        common.BytesToHash([]byte("tx3")),
+		Hash:        types.NewHash("tx3"),
 		BlockNumber: 1,
 		From:        types.NewAddress("0x0000000000000000000000000000000000000010"),
 		To:          address,
@@ -55,8 +55,8 @@ var (
 	block = &types.Block{
 		Hash:   types.NewHash("dummy"),
 		Number: 1,
-		Transactions: []common.Hash{
-			common.BytesToHash([]byte("tx1")), common.BytesToHash([]byte("tx2")), common.BytesToHash([]byte("tx3")),
+		Transactions: []types.Hash{
+			types.NewHash("0x1a6f4292bac138df9a7854a07c93fd14ca7de53265e8fe01b6c986f97d6c1ee7"), types.NewHash("tx2"), types.NewHash("tx3"),
 		},
 	}
 )
@@ -128,10 +128,10 @@ func TestMemoryDB(t *testing.T) {
 	testIndexStorage(t, db, 1, rawStorage)
 	testIndexBlock(t, db, address, block)
 	testGetLastFiltered(t, db, address, 1)
-	testGetContractCreationTransaction(t, db, address, common.BytesToHash([]byte("tx1")))
-	testGetAllTransactionsToAddress(t, db, address, common.BytesToHash([]byte("tx3")))
+	testGetContractCreationTransaction(t, db, address, types.NewHash("0x1a6f4292bac138df9a7854a07c93fd14ca7de53265e8fe01b6c986f97d6c1ee7"))
+	testGetAllTransactionsToAddress(t, db, address, types.NewHash("tx3"))
 	testGetTransactionsToAddressTotal(t, db, address, 1)
-	testGetAllTransactionsInternalToAddress(t, db, address, common.BytesToHash([]byte("tx2")))
+	testGetAllTransactionsInternalToAddress(t, db, address, types.NewHash("tx2"))
 	testGetTransactionsInternalToAddressTotal(t, db, address, 1)
 	testGetAllEventsByAddress(t, db, address, 1)
 	testGetStorage(t, db, address, 1, 2)
@@ -253,7 +253,7 @@ func testWriteTransactions(t *testing.T, db database.Database, txs ...*types.Tra
 	}
 }
 
-func testReadTransaction(t *testing.T, db database.Database, hash common.Hash, expected *types.Transaction) {
+func testReadTransaction(t *testing.T, db database.Database, hash types.Hash, expected *types.Transaction) {
 	tx, err := db.ReadTransaction(hash)
 	if err != nil {
 		t.Fatalf("expected no error, but got %v", err)
@@ -293,7 +293,7 @@ func testGetLastFiltered(t *testing.T, db database.Database, address common.Addr
 	}
 }
 
-func testGetContractCreationTransaction(t *testing.T, db database.Database, address common.Address, expected common.Hash) {
+func testGetContractCreationTransaction(t *testing.T, db database.Database, address common.Address, expected types.Hash) {
 	actual, err := db.GetContractCreationTransaction(address)
 	if err != nil {
 		t.Fatalf("expected no error, but got %v", err)
@@ -303,7 +303,7 @@ func testGetContractCreationTransaction(t *testing.T, db database.Database, addr
 	}
 }
 
-func testGetAllTransactionsToAddress(t *testing.T, db database.Database, address common.Address, expected common.Hash) {
+func testGetAllTransactionsToAddress(t *testing.T, db database.Database, address common.Address, expected types.Hash) {
 	txs, err := db.GetAllTransactionsToAddress(address, nil)
 	if err != nil {
 		t.Fatalf("expected no error, but got %v", err)
@@ -323,7 +323,7 @@ func testGetTransactionsToAddressTotal(t *testing.T, db database.Database, addre
 	}
 }
 
-func testGetAllTransactionsInternalToAddress(t *testing.T, db database.Database, address common.Address, expected common.Hash) {
+func testGetAllTransactionsInternalToAddress(t *testing.T, db database.Database, address common.Address, expected types.Hash) {
 	txs, err := db.GetAllTransactionsInternalToAddress(address, nil)
 	if err != nil {
 		t.Fatalf("expected no error, but got %v", err)

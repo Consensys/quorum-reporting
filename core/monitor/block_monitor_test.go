@@ -1,10 +1,8 @@
 package monitor
 
 import (
-	"math/big"
 	"testing"
 
-	"github.com/ethereum/go-ethereum/common"
 	"quorumengineering/quorum-report/client"
 	"quorumengineering/quorum-report/graphql"
 	"quorumengineering/quorum-report/types"
@@ -26,7 +24,7 @@ func TestCreateBlock(t *testing.T) {
 			&types.Block{
 				Number:       uint64(42),
 				Timestamp:    1_000_000_000,
-				Transactions: []common.Hash{},
+				Transactions: []types.Hash{},
 				GasLimit:     799024091,
 				GasUsed:      27530,
 			},
@@ -43,7 +41,7 @@ func TestCreateBlock(t *testing.T) {
 			&types.Block{
 				Number:       uint64(42),
 				Timestamp:    1_000_000_000,
-				Transactions: []common.Hash{common.BigToHash(big.NewInt(0))},
+				Transactions: []types.Hash{types.NewHash("")},
 				GasLimit:     799024091,
 				GasUsed:      27530,
 			},
@@ -59,7 +57,7 @@ func TestCreateBlock(t *testing.T) {
 			&types.Block{
 				Number:       uint64(42),
 				Timestamp:    1,
-				Transactions: []common.Hash{},
+				Transactions: []types.Hash{},
 				GasLimit:     799024091,
 				GasUsed:      27530,
 			},
@@ -76,7 +74,7 @@ func TestCreateBlock(t *testing.T) {
 			&types.Block{
 				Number:       uint64(42),
 				Timestamp:    1,
-				Transactions: []common.Hash{common.BigToHash(big.NewInt(0))},
+				Transactions: []types.Hash{types.NewHash("")},
 				GasLimit:     799024091,
 				GasUsed:      27530,
 			},

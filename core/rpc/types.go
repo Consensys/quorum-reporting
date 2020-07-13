@@ -43,7 +43,7 @@ type AddressWithBlockRange struct {
 //Outputs
 
 type TransactionsResp struct {
-	Transactions []common.Hash       `json:"transactions"`
+	Transactions []types.Hash        `json:"transactions"`
 	Total        uint64              `json:"total"`
 	Options      *types.QueryOptions `json:"options"`
 }

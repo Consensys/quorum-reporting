@@ -3,7 +3,6 @@ package monitor
 import (
 	"testing"
 
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/assert"
 
 	"quorumengineering/quorum-report/client"
@@ -46,7 +45,7 @@ func TestCreateTransaction(t *testing.T) {
 		Timestamp: uint64(0x1000),
 	}
 	mockGraphQL := map[string]map[string]interface{}{
-		graphql.TransactionDetailQuery(common.HexToHash("0xe625ba9f14eed0671508966080fb01374d0a3a16b9cee545a324179b75f30aa8")): {
+		graphql.TransactionDetailQuery(types.NewHash("0xe625ba9f14eed0671508966080fb01374d0a3a16b9cee545a324179b75f30aa8")): {
 			"transaction": interface{}(graphqlResp),
 		},
 	}
@@ -67,11 +66,11 @@ func TestCreateTransaction(t *testing.T) {
 		},
 	}
 	tm := NewDefaultTransactionMonitor(client.NewStubQuorumClient(mockGraphQL, mockRPC))
-	tx, err := tm.createTransaction(testBlock, common.HexToHash("0xe625ba9f14eed0671508966080fb01374d0a3a16b9cee545a324179b75f30aa8"))
+	tx, err := tm.createTransaction(testBlock, types.NewHash("0xe625ba9f14eed0671508966080fb01374d0a3a16b9cee545a324179b75f30aa8"))
 	if err != nil {
 		t.Fatalf("expected no error, but got %v", err)
 	}
-	if tx.Hash != common.HexToHash("0xe625ba9f14eed0671508966080fb01374d0a3a16b9cee545a324179b75f30aa8") {
+	if tx.Hash != types.NewHash("0xe625ba9f14eed0671508966080fb01374d0a3a16b9cee545a324179b75f30aa8") {
 		t.Fatalf("expected hash %v, but got %v", "0xe625ba9f14eed0671508966080fb01374d0a3a16b9cee545a324179b75f30aa8", tx.Hash.Hex())
 	}
 	if !tx.Status {
@@ -111,7 +110,7 @@ func TestCreateTransaction(t *testing.T) {
 
 func TestTransactionMonitor_PullTransactions(t *testing.T) {
 	mockGraphQL := map[string]map[string]interface{}{
-		graphql.TransactionDetailQuery(common.HexToHash("0xe625ba9f14eed0671508966080fb01374d0a3a16b9cee545a324179b75f30aa8")): {
+		graphql.TransactionDetailQuery(types.NewHash("0xe625ba9f14eed0671508966080fb01374d0a3a16b9cee545a324179b75f30aa8")): {
 			"transaction": interface{}(graphqlResp),
 		},
 	}
@@ -134,8 +133,8 @@ func TestTransactionMonitor_PullTransactions(t *testing.T) {
 	block := &types.Block{
 		Hash:   types.NewHash("0xd3b57e8a791a134ddf47772f12fdddbf67480377e633bf55f411166d3be7d66f"),
 		Number: 2,
-		Transactions: []common.Hash{
-			common.HexToHash("0xe625ba9f14eed0671508966080fb01374d0a3a16b9cee545a324179b75f30aa8"),
+		Transactions: []types.Hash{
+			types.NewHash("0xe625ba9f14eed0671508966080fb01374d0a3a16b9cee545a324179b75f30aa8"),
 		},
 	}
 
@@ -147,7 +146,7 @@ func TestTransactionMonitor_PullTransactions(t *testing.T) {
 
 	tx := txs[0]
 
-	if tx.Hash != common.HexToHash("0xe625ba9f14eed0671508966080fb01374d0a3a16b9cee545a324179b75f30aa8") {
+	if tx.Hash != types.NewHash("0xe625ba9f14eed0671508966080fb01374d0a3a16b9cee545a324179b75f30aa8") {
 		t.Fatalf("expected hash %v, but got %v", "0xe625ba9f14eed0671508966080fb01374d0a3a16b9cee545a324179b75f30aa8", tx.Hash.Hex())
 	}
 	if !tx.Status {
