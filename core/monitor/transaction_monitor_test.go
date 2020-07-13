@@ -89,11 +89,11 @@ func TestCreateTransaction(t *testing.T) {
 	if tx.Gas != 4700000 {
 		t.Fatalf("expected gas %v, but got %v", 4700000, tx.Gas)
 	}
-	if len(tx.Data) != 449 {
-		t.Fatalf("expected data length %v, but got %v", 449, len(tx.Data))
+	if len(tx.Data.AsBytes()) != 449 {
+		t.Fatalf("expected data length %v, but got %v", 449, len(tx.Data.AsBytes()))
 	}
-	if len(tx.PrivateData) != 0 {
-		t.Fatalf("expected private data length %v, but got %v", 0, len(tx.PrivateData))
+	if len(tx.PrivateData.AsBytes()) != 0 {
+		t.Fatalf("expected private data length %v, but got %v", 0, len(tx.PrivateData.AsBytes()))
 	}
 	if tx.IsPrivate {
 		t.Fatalf("expected isPrivate to be false, but got true")
@@ -165,11 +165,11 @@ func TestTransactionMonitor_PullTransactions(t *testing.T) {
 	if tx.Gas != 4700000 {
 		t.Fatalf("expected gas %v, but got %v", 4700000, tx.Gas)
 	}
-	if len(tx.Data) != 449 {
-		t.Fatalf("expected data length %v, but got %v", 449, len(tx.Data))
+	if len(tx.Data.AsBytes()) != 449 {
+		t.Fatalf("expected data length %v, but got %v", 449, len(tx.Data.AsBytes()))
 	}
-	if len(tx.PrivateData) != 0 {
-		t.Fatalf("expected private data length %v, but got %v", 0, len(tx.PrivateData))
+	if len(tx.PrivateData.AsBytes()) != 0 {
+		t.Fatalf("expected private data length %v, but got %v", 0, len(tx.PrivateData.AsBytes()))
 	}
 	if tx.IsPrivate {
 		t.Fatalf("expected isPrivate to be false, but got true")

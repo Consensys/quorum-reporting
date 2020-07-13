@@ -90,8 +90,8 @@ func (tm *DefaultTransactionMonitor) createTransaction(block *types.Block, hash 
 		GasPrice:          gasPrice,
 		CumulativeGasUsed: cumulativeGasUsed,
 		CreatedContract:   common.HexToAddress(txOrigin.CreatedContract.Address),
-		Data:              hexutil.MustDecode(txOrigin.InputData),
-		PrivateData:       hexutil.MustDecode(txOrigin.PrivateInputData),
+		Data:              types.NewHexData(txOrigin.InputData),
+		PrivateData:       types.NewHexData(txOrigin.PrivateInputData),
 		IsPrivate:         txOrigin.IsPrivate,
 		Timestamp:         block.Timestamp,
 	}

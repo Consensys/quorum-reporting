@@ -2,7 +2,6 @@ package types
 
 import (
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
 )
 
 type Template struct {
@@ -55,8 +54,8 @@ type Transaction struct {
 	GasUsed           uint64          `json:"gasUsed"`
 	CumulativeGasUsed uint64          `json:"cumulativeGasUsed"`
 	CreatedContract   common.Address  `json:"createdContract"`
-	Data              hexutil.Bytes   `json:"data"`
-	PrivateData       hexutil.Bytes   `json:"privateData"`
+	Data              HexData         `json:"data"`
+	PrivateData       HexData         `json:"privateData"`
 	IsPrivate         bool            `json:"isPrivate"`
 	Timestamp         uint64          `json:"timestamp"`
 	Events            []*Event        `json:"events"`

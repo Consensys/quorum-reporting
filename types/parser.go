@@ -35,9 +35,9 @@ func (ptx *ParsedTransaction) ParseTransaction(rawABI string) error {
 	// set defaults
 	var data []byte
 	if len(ptx.RawTransaction.PrivateData) > 0 {
-		data = ptx.RawTransaction.PrivateData
+		data = ptx.RawTransaction.PrivateData.AsBytes()
 	} else {
-		data = ptx.RawTransaction.Data
+		data = ptx.RawTransaction.Data.AsBytes()
 	}
 	ptx.ParsedData = map[string]interface{}{}
 	// parse transaction data
