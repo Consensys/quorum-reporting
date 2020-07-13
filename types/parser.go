@@ -60,7 +60,7 @@ func (ptx *ParsedTransaction) ParseTransaction(rawABI string) error {
 		if index := strings.Index(dataHex, "a165627a7a72305820"); index > 0 {
 			// search for pattern a165627a7a72305820 for solidity < 0.5.10
 			// <bytecode> + "a165627a7a72305820" + <256 bits whisperHash> + "0029"
-			index = (index - 2 + 18 + 64 + 4) / 2 // remove 0x, find hex position 18+64+4 after
+			index = (index + 18 + 64 + 4) / 2 // find hex position 18+64+4 after
 			result, err := internalAbi.Constructor.Parse(data[index:])
 			if err != nil {
 				return err
@@ -69,7 +69,7 @@ func (ptx *ParsedTransaction) ParseTransaction(rawABI string) error {
 		} else if index := strings.LastIndex(dataHex, "64736f6c6343"); index > 0 {
 			// search for pattern 64736f6c6343 for solidity >= 0.5.10,
 			// <bytecode> + "a265627a7a72305820" + <256 bits whisperHash> + "64736f6c6343" + compiler_version(e.g. 000608) + "0033"
-			index = (index - 2 + 12 + 6 + 4) / 2 // remove 0x, find hex position 12+6+4 after
+			index = (index + 12 + 6 + 4) / 2 // find hex position 12+6+4 after
 			result, err := internalAbi.Constructor.Parse(data[index:])
 			if err != nil {
 				return err
