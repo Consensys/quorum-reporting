@@ -105,7 +105,7 @@ func (pe *ParsedEvent) ParseEvent(rawABI string) error {
 	for _, ev := range internalAbi.Events {
 		if "0x"+ev.Signature() == pe.RawEvent.Topics[0].String() {
 			pe.Sig = "event " + ev.String()
-			result, err := ev.Parse(pe.RawEvent.Data)
+			result, err := ev.Parse(pe.RawEvent.Data.AsBytes())
 			if err != nil {
 				return err
 			}

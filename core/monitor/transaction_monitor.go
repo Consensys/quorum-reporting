@@ -105,7 +105,7 @@ func (tm *DefaultTransactionMonitor) createTransaction(block *types.Block, hash 
 			Index:            l.Index,
 			Address:          types.NewAddress(l.Account.Address),
 			Topics:           topics,
-			Data:             hexutil.MustDecode(l.Data),
+			Data:             types.NewHexData(l.Data),
 			BlockNumber:      block.Number,
 			BlockHash:        block.Hash,
 			TransactionHash:  tx.Hash,
@@ -147,8 +147,8 @@ func (tm *DefaultTransactionMonitor) createTransaction(block *types.Block, hash 
 				Gas:     gas,
 				GasUsed: gasUsed,
 				Value:   value,
-				Input:   hexutil.MustDecode(respCallMap["input"].(string)),
-				Output:  hexutil.MustDecode(respCallMap["output"].(string)),
+				Input:   types.NewHexData(respCallMap["input"].(string)),
+				Output:  types.NewHexData(respCallMap["output"].(string)),
 				Type:    respCallMap["type"].(string),
 			}
 		}

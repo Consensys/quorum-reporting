@@ -69,19 +69,19 @@ type InternalCall struct {
 	Gas     uint64         `json:"gas"`
 	GasUsed uint64         `json:"gasUsed"`
 	Value   uint64         `json:"value"`
-	Input   hexutil.Bytes  `json:"input"`
-	Output  hexutil.Bytes  `json:"output"`
+	Input   HexData        `json:"input"`
+	Output  HexData        `json:"output"`
 	Type    string         `json:"type"`
 }
 
 type Event struct {
-	Index            uint64        `json:"index"`
-	Address          Address       `json:"address"`
-	Topics           []Hash        `json:"topics"`
-	Data             hexutil.Bytes `json:"data"`
-	BlockNumber      uint64        `json:"blockNumber"`
-	BlockHash        Hash          `json:"blockHash"`
-	TransactionHash  common.Hash   `json:"transactionHash"`
-	TransactionIndex uint64        `json:"transactionIndex"`
-	Timestamp        uint64        `json:"timestamp"`
+	Index            uint64      `json:"index"`
+	Address          Address     `json:"address"`
+	Topics           []Hash      `json:"topics"`
+	Data             HexData     `json:"data"`
+	BlockNumber      uint64      `json:"blockNumber"`
+	BlockHash        Hash        `json:"blockHash"`
+	TransactionHash  common.Hash `json:"transactionHash"`
+	TransactionIndex uint64      `json:"transactionIndex"`
+	Timestamp        uint64      `json:"timestamp"`
 }

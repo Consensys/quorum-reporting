@@ -114,6 +114,13 @@ type AccountState struct {
 
 type HexData string
 
+func NewHexData(input string) HexData {
+	if strings.HasPrefix(input, "0x") {
+		return HexData(input[2:])
+	}
+	return HexData(input)
+}
+
 func (data HexData) MarshalJSON() ([]byte, error) {
 	return json.Marshal(data.String())
 }

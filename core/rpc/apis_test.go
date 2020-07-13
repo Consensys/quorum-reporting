@@ -63,7 +63,7 @@ var (
 		CreatedContract: common.Address{},
 		Events: []*types.Event{
 			{
-				Data:    hexutil.MustDecode("0x00000000000000000000000000000000000000000000000000000000000003e8"),
+				Data:    types.NewHexData("0x00000000000000000000000000000000000000000000000000000000000003e8"),
 				Address: addr,
 				Topics:  []types.Hash{types.NewHash("0xefe5cb8d23d632b5d2cdd9f0a151c4b1a84ccb7afa1c57331009aa922d5e4f36")},
 			},
