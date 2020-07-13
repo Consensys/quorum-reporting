@@ -13,9 +13,10 @@ import (
 func TestIndexBlock(t *testing.T) {
 	// setup
 	mockRPC := map[string]interface{}{
-		"debug_dumpAddress<common.Address Value>0x4": &types.AccountState{},
-		"debug_dumpAddress<common.Address Value>0x5": &types.AccountState{},
-		"debug_dumpAddress<common.Address Value>0x6": &types.AccountState{},
+		"debug_dumpAddress01000000000000000000000000000000000000000x4": &types.AccountState{},
+		"debug_dumpAddress01000000000000000000000000000000000000000x5": &types.AccountState{},
+		"debug_dumpAddress01000000000000000000000000000000000000000x6": &types.AccountState{},
+		"debug_dumpAddress02000000000000000000000000000000000000000x6": &types.AccountState{},
 	}
 	db := &FakeDB{[]common.Address{{1}, {2}}, map[common.Address]uint64{{1}: 3, {2}: 5}}
 	fs := NewFilterService(db, client.NewStubQuorumClient(nil, mockRPC))

@@ -1,28 +1,25 @@
 package client
 
 import (
+	"encoding/hex"
 	"errors"
-	"math/big"
-
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/ethereum/go-ethereum/p2p"
+	"fmt"
 
 	"quorumengineering/quorum-report/log"
 	"quorumengineering/quorum-report/types"
 )
 
-func DumpAddress(c Client, address common.Address, blockNumber uint64) (*types.AccountState, error) {
+func DumpAddress(c Client, address types.Address, blockNumber uint64) (*types.AccountState, error) {
 	log.Debug("Fetching account dump", "account", address.String(), "blocknumber", blockNumber)
 	dumpAccount := &types.AccountState{}
-	err := c.RPCCall(&dumpAccount, "debug_dumpAddress", address, hexutil.EncodeUint64(blockNumber))
+	err := c.RPCCall(&dumpAccount, "debug_dumpAddress", address, fmt.Sprintf("0x%x", blockNumber))
 	if err != nil {
 		return nil, err
 	}
 	return dumpAccount, nil
 }
 
-func TraceTransaction(c Client, txHash common.Hash) (map[string]interface{}, error) {
+func TraceTransaction(c Client, txHash types.Hash) (map[string]interface{}, error) {
 	log.Debug("Tracing transaction", "tx", txHash.String())
 
 	// Trace internal calls of the transaction
@@ -38,10 +35,10 @@ func TraceTransaction(c Client, txHash common.Hash) (map[string]interface{}, err
 	return resp, nil
 }
 
-func GetCode(c Client, address common.Address, blockHash types.Hash) (hexutil.Bytes, error) {
-	var res hexutil.Bytes
+func GetCode(c Client, address types.Address, blockHash types.Hash) (types.HexData, error) {
+	var res types.HexData
 	if err := c.RPCCall(&res, "eth_getCode", address, blockHash.String()); err != nil {
-		return nil, err
+		return "", err
 	}
 	return res, nil
 }
@@ -49,40 +46,51 @@ func GetCode(c Client, address common.Address, blockHash types.Hash) (hexutil.By
 func Consensus(c Client) (string, error) {
 	log.Debug("Fetching consensus info")
 
-	var resp p2p.NodeInfo
+	var resp map[string]interface{}
 	err := c.RPCCall(&resp, "admin_nodeInfo")
 	if err != nil {
 		return "", err
 	}
-	if resp.Protocols["istanbul"] != nil {
+	if resp["protocols"] == nil {
+		return "", errors.New("no consensus info found")
+	}
+	protocols, ok := resp["protocols"].(map[string]interface{})
+	if !ok {
+		return "", errors.New("invalid consensus info found")
+	}
+	if protocols["istanbul"] != nil {
 		return "istanbul", nil
 	}
-	protocol := resp.Protocols["eth"].(map[string]interface{})
+	protocol := protocols["eth"].(map[string]interface{})
 	return protocol["consensus"].(string), nil
 }
 
-func CallEIP165(c Client, address common.Address, interfaceId []byte, blockNum *big.Int) (bool, error) {
-	eip165Id := common.Hex2Bytes("01ffc9a70")
+func CallEIP165(c Client, address types.Address, interfaceId []byte, blockNum uint64) (bool, error) {
+	eip165Id, _ := hex.DecodeString("01ffc9a70")
 
 	//interfaceId should be 4 bytes long
 	if len(interfaceId) != 4 {
 		return false, errors.New("interfaceId wrong size")
 	}
 
-	calldata := hexutil.Bytes(append(eip165Id, common.RightPadBytes(interfaceId, 32)...))
+	paddedInterface := make([]byte, 32)
+	copy(paddedInterface, interfaceId)
+	calldata := append(eip165Id, paddedInterface...)
 
-	msg := types.CallArgs{
-		To:   &address,
-		Data: &calldata,
+	msg := types.EIP165Call{
+		To:   address,
+		Data: types.HexData(hex.EncodeToString(calldata)),
 	}
 
-	var res []byte
-	err := c.RPCCall(&res, "eth_call", msg, hexutil.EncodeBig(blockNum))
+	var res types.HexData
+	err := c.RPCCall(&res, "eth_call", msg, fmt.Sprintf("0x%x", blockNum))
 	if err != nil {
 		return false, err
 	}
-	if len(res) != 32 {
+
+	asBytes := res.AsBytes()
+	if len(asBytes) != 32 {
 		return false, nil
 	}
-	return res[len(res)-1] == 0x1, nil
+	return asBytes[len(asBytes)-1] == 0x1, nil
 }

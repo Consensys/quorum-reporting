@@ -8,7 +8,6 @@ import (
 	"testing"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/stretchr/testify/assert"
 
 	"quorumengineering/quorum-report/client"
@@ -22,17 +21,17 @@ type CustomEIP165StubClient struct {
 
 func (stub *CustomEIP165StubClient) RPCCall(result interface{}, method string, args ...interface{}) error {
 	if method == "eth_call" {
-		msg := args[0].(types.CallArgs)
-		if common.Bytes2Hex(*msg.Data)[8:16] == "ffffffff" {
-			reflect.ValueOf(result).Elem().Set(reflect.ValueOf(common.LeftPadBytes([]byte{}, 32)))
+		msg := args[0].(types.EIP165Call)
+		if msg.Data[8:16] == "ffffffff" {
+			reflect.ValueOf(result).Elem().Set(reflect.ValueOf(types.HexData("0000000000000000000000000000000000000000000000000000000000000000")))
 			return nil
 		}
-		if common.Bytes2Hex(*msg.Data)[8:16] == "01ffc9a7" {
-			reflect.ValueOf(result).Elem().Set(reflect.ValueOf(common.LeftPadBytes([]byte{1}, 32)))
+		if msg.Data[8:16] == "01ffc9a7" {
+			reflect.ValueOf(result).Elem().Set(reflect.ValueOf(types.HexData("0000000000000000000000000000000000000000000000000000000000000001")))
 			return nil
 		}
-		if common.Bytes2Hex(*msg.Data)[8:16] == stub.implementedInterface {
-			reflect.ValueOf(result).Elem().Set(reflect.ValueOf(common.LeftPadBytes([]byte{1}, 32)))
+		if string(msg.Data[8:16]) == stub.implementedInterface {
+			reflect.ValueOf(result).Elem().Set(reflect.ValueOf(types.HexData("0000000000000000000000000000000000000000000000000000000000000001")))
 			return nil
 		}
 	}
@@ -53,10 +52,8 @@ func (stub *CustomEIP165StubClient) CallContract(ctx context.Context, msg types.
 }
 
 func TestDefaultTokenMonitor_InspectTransaction_EIP165WithERC20_External(t *testing.T) {
-	mockCallValue := make([]byte, 32)
-	mockCallValue[31] = 1
 	mockRPC := map[string]interface{}{
-		"eth_call<types.CallArgs Value>0x1": mockCallValue,
+		"eth_call<types.EIP165Call Value>0x1": types.HexData("0000000000000000000000000000000000000000000000000000000000000001"),
 	}
 	stubClient := &CustomEIP165StubClient{
 		client.NewStubQuorumClient(nil, mockRPC),
@@ -79,10 +76,8 @@ func TestDefaultTokenMonitor_InspectTransaction_EIP165WithERC20_External(t *test
 }
 
 func TestDefaultTokenMonitor_InspectTransaction_EIP165WithERC20(t *testing.T) {
-	mockCallValue := make([]byte, 32)
-	mockCallValue[31] = 1
 	mockRPC := map[string]interface{}{
-		"eth_call<types.CallArgs Value>0x1": mockCallValue,
+		"eth_call<ethereum.CallMsg Value>0x1": types.HexData("0000000000000000000000000000000000000000000000000000000000000001"),
 	}
 	stubClient := &CustomEIP165StubClient{
 		client.NewStubQuorumClient(nil, mockRPC),
@@ -139,10 +134,8 @@ func TestDefaultTokenMonitor_InspectTransaction_EIP165WithERC20(t *testing.T) {
 }
 
 func TestDefaultTokenMonitor_InspectTransaction_EIP165WithERC721_External(t *testing.T) {
-	mockCallValue := make([]byte, 32)
-	mockCallValue[31] = 1
 	mockRPC := map[string]interface{}{
-		"eth_call<types.CallArgs Value>0x1": mockCallValue,
+		"eth_call<ethereum.CallMsg Value>0x1": types.HexData("0000000000000000000000000000000000000000000000000000000000000001"),
 	}
 	stubClient := &CustomEIP165StubClient{
 		client.NewStubQuorumClient(nil, mockRPC),
@@ -165,10 +158,8 @@ func TestDefaultTokenMonitor_InspectTransaction_EIP165WithERC721_External(t *tes
 }
 
 func TestDefaultTokenMonitor_InspectTransaction_EIP165WithERC721(t *testing.T) {
-	mockCallValue := make([]byte, 32)
-	mockCallValue[31] = 1
 	mockRPC := map[string]interface{}{
-		"eth_call<types.CallArgs Value>0x1": mockCallValue,
+		"eth_call<ethereum.CallMsg Value>0x1": types.HexData("0000000000000000000000000000000000000000000000000000000000000001"),
 	}
 	stubClient := &CustomEIP165StubClient{
 		client.NewStubQuorumClient(nil, mockRPC),
@@ -231,8 +222,8 @@ func TestDefaultTokenMonitor_InspectTransaction_BytecodeInspection(t *testing.T)
 	json.Unmarshal([]byte(`[{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"_owner","type":"address"},{"indexed":true,"internalType":"address","name":"_approved","type":"address"},{"indexed":true,"internalType":"uint256","name":"_tokenId","type":"uint256"}],"name":"Approval","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"_owner","type":"address"},{"indexed":true,"internalType":"address","name":"_operator","type":"address"},{"indexed":false,"internalType":"bool","name":"_approved","type":"bool"}],"name":"ApprovalForAll","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"_from","type":"address"},{"indexed":true,"internalType":"address","name":"_to","type":"address"},{"indexed":true,"internalType":"uint256","name":"_tokenId","type":"uint256"}],"name":"Transfer","type":"event"},{"inputs":[{"internalType":"address","name":"_approved","type":"address"},{"internalType":"uint256","name":"_tokenId","type":"uint256"}],"name":"approve","outputs":[],"stateMutability":"payable","type":"function"},{"inputs":[{"internalType":"address","name":"_owner","type":"address"}],"name":"balanceOf","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"_tokenId","type":"uint256"}],"name":"getApproved","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"_owner","type":"address"},{"internalType":"address","name":"_operator","type":"address"}],"name":"isApprovedForAll","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"_tokenId","type":"uint256"}],"name":"ownerOf","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"_from","type":"address"},{"internalType":"address","name":"_to","type":"address"},{"internalType":"uint256","name":"_tokenId","type":"uint256"}],"name":"safeTransferFrom","outputs":[],"stateMutability":"payable","type":"function"},{"inputs":[{"internalType":"address","name":"_from","type":"address"},{"internalType":"address","name":"_to","type":"address"},{"internalType":"uint256","name":"_tokenId","type":"uint256"},{"internalType":"bytes","name":"data","type":"bytes"}],"name":"safeTransferFrom","outputs":[],"stateMutability":"payable","type":"function"},{"inputs":[{"internalType":"address","name":"_operator","type":"address"},{"internalType":"bool","name":"_approved","type":"bool"}],"name":"setApprovalForAll","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"_from","type":"address"},{"internalType":"address","name":"_to","type":"address"},{"internalType":"uint256","name":"_tokenId","type":"uint256"}],"name":"transferFrom","outputs":[],"stateMutability":"payable","type":"function"}]`), &erc721Abi)
 
 	mockRPC := map[string]interface{}{
-		"eth_call<types.CallArgs Value><*big.Int Value>":                                                      make([]byte, 32),
-		"eth_getCode<common.Address Value>0xefe5cb8d23d632b5d2cdd9f0a151c4b1a84ccb7afa1c57331009aa922d5e4f36": hexutil.Bytes(common.Hex2Bytes(erc20ContractCode)),
+		"eth_call<ethereum.CallMsg Value><*big.Int Value>":                                                                      types.HexData("0000000000000000000000000000000000000000000000000000000000000000"),
+		"eth_getCodeCC11Df45ABA0a4fF198B18300D0B148Ad24688340xefe5cb8d23d632b5d2cdd9f0a151c4b1a84ccb7afa1c57331009aa922d5e4f36": types.HexData(erc20ContractCode),
 	}
 	stubClient := client.NewStubQuorumClient(nil, mockRPC)
 

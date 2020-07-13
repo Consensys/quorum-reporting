@@ -117,7 +117,7 @@ func (tm *DefaultTransactionMonitor) createTransaction(block *types.Block, hash 
 	tx.Events = events
 
 	var traceResp map[string]interface{}
-	traceResp, err = client.TraceTransaction(tm.quorumClient, tx.Hash)
+	traceResp, err = client.TraceTransaction(tm.quorumClient, types.NewHash(tx.Hash.Hex()))
 	if err != nil {
 		return nil, err
 	}

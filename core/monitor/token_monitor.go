@@ -1,11 +1,9 @@
 package monitor
 
 import (
-	"math/big"
 	"strings"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
 
 	"quorumengineering/quorum-report/client"
 	"quorumengineering/quorum-report/log"
@@ -80,7 +78,7 @@ func (tm *DefaultTokenMonitor) InspectTransaction(tx *types.Transaction) (map[co
 			}
 
 			// Check contract bytecode directly for all 4bytes presented in abi
-			contractBytecode, err := client.GetCode(tm.quorumClient, addressWithMeta.address, tx.BlockHash)
+			contractBytecode, err := client.GetCode(tm.quorumClient, types.NewAddress(addressWithMeta.address.Hex()), tx.BlockHash) //TODO: remove
 			if err != nil {
 				return nil, err
 			}
@@ -109,10 +107,11 @@ func (tm *DefaultTokenMonitor) checkRuleMeta(rule TokenRule, meta AddressWithMet
 	return true
 }
 
-func (tm *DefaultTokenMonitor) checkEIP165(rule TokenRule, address common.Address, blockNum uint64) (string, error) {
+func (tm *DefaultTokenMonitor) checkEIP165(rule TokenRule, addr common.Address, blockNum uint64) (string, error) {
+	address := types.NewAddress(addr.Hex()) //TODO: remove
 	if rule.eip165 != "" {
 		//check if the contract implements EIP165
-		eip165Call, err := client.CallEIP165(tm.quorumClient, address, common.Hex2Bytes("01ffc9a70"), new(big.Int).SetUint64(blockNum))
+		eip165Call, err := client.CallEIP165(tm.quorumClient, address, common.Hex2Bytes("01ffc9a70"), blockNum)
 		if err != nil {
 			return "", err
 		}
@@ -120,7 +119,7 @@ func (tm *DefaultTokenMonitor) checkEIP165(rule TokenRule, address common.Addres
 			return "", nil
 		}
 
-		eip165CallCheck, err := client.CallEIP165(tm.quorumClient, address, common.Hex2Bytes("ffffffff"), new(big.Int).SetUint64(blockNum))
+		eip165CallCheck, err := client.CallEIP165(tm.quorumClient, address, common.Hex2Bytes("ffffffff"), blockNum)
 		if err != nil {
 			return "", err
 		}
@@ -129,7 +128,7 @@ func (tm *DefaultTokenMonitor) checkEIP165(rule TokenRule, address common.Addres
 		}
 
 		//now we know it implements EIP165, so lets check the interfaces
-		detected, err := client.CallEIP165(tm.quorumClient, address, common.Hex2Bytes(rule.eip165), new(big.Int).SetUint64(blockNum))
+		detected, err := client.CallEIP165(tm.quorumClient, address, common.Hex2Bytes(rule.eip165), blockNum)
 		if err != nil {
 			return "", err
 		}
@@ -140,14 +139,14 @@ func (tm *DefaultTokenMonitor) checkEIP165(rule TokenRule, address common.Addres
 	return "", nil
 }
 
-func (tm *DefaultTokenMonitor) checkBytecodeForTokens(rule TokenRule, data hexutil.Bytes) string {
+func (tm *DefaultTokenMonitor) checkBytecodeForTokens(rule TokenRule, data types.HexData) string {
 	if tm.checkAbiMatch(rule.abi, data) {
 		return rule.templateName
 	}
 	return ""
 }
 
-func (tm *DefaultTokenMonitor) checkAbiMatch(abiToCheck *types.ContractABI, data hexutil.Bytes) bool {
+func (tm *DefaultTokenMonitor) checkAbiMatch(abiToCheck *types.ContractABI, data types.HexData) bool {
 	for _, b := range abiToCheck.Functions {
 		if !strings.Contains(data.String(), b.Signature()) {
 			return false

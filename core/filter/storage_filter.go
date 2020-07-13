@@ -29,8 +29,9 @@ func (sf *StorageFilter) IndexStorage(addresses []common.Address, startBlockNumb
 		go func(blockNumber uint64) {
 			rawStorage := make(map[common.Address]*types.AccountState)
 			for _, address := range addresses {
+				internalAddress := types.NewAddress(address.Hex())
 				log.Info("Pulling (indexing) contract storage", "address", address.String(), "block number", blockNumber)
-				dumpAccount, err := client.DumpAddress(sf.quorumClient, address, blockNumber)
+				dumpAccount, err := client.DumpAddress(sf.quorumClient, internalAddress, blockNumber)
 				rawStorage[address] = dumpAccount
 				if err != nil {
 					returnErr = err

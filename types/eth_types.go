@@ -121,3 +121,37 @@ type AccountState struct {
 	Root    Hash            `json:"root"`
 	Storage map[Hash]string `json:"storage,omitempty"`
 }
+
+type HexData string
+
+func (data HexData) MarshalJSON() ([]byte, error) {
+	return json.Marshal(data.String())
+}
+
+func (data *HexData) UnmarshalJSON(input []byte) error {
+	var unwrapped string
+	if err := json.Unmarshal(input, &unwrapped); err != nil {
+		return err
+	}
+	hexBytes, err := fromHex(unwrapped)
+	if err != nil {
+		return err
+	}
+	*data = HexData(hex.EncodeToString(hexBytes)) //Removes the leading "0x" if there
+	return nil
+}
+
+func (data *HexData) String() string {
+	return "0x" + string(*data)
+}
+
+func (data *HexData) AsBytes() []byte {
+	converted, _ := hex.DecodeString(string(*data))
+	return converted
+}
+
+// Call args for checking a contract for EIP165 interfaces
+type EIP165Call struct {
+	To   Address `json:"to"`
+	Data HexData `json:"data"`
+}
