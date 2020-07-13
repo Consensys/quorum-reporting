@@ -4,7 +4,6 @@ import (
 	"encoding/hex"
 	"errors"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
 	"strings"
 
 	"quorumengineering/quorum-report/log"
@@ -57,7 +56,7 @@ func (ptx *ParsedTransaction) ParseTransaction(rawABI string) error {
 	} else {
 		// contract deployment transaction
 		ptx.Sig = "constructor" + internalAbi.Constructor.String()
-		dataHex := hexutil.Encode(data)
+		dataHex := hex.EncodeToString(data)
 		if index := strings.Index(dataHex, "a165627a7a72305820"); index > 0 {
 			// search for pattern a165627a7a72305820 for solidity < 0.5.10
 			// <bytecode> + "a165627a7a72305820" + <256 bits whisperHash> + "0029"
