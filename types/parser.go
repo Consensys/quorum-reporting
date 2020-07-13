@@ -12,7 +12,7 @@ import (
 
 type ParsedTransaction struct {
 	Sig            string                 `json:"txSig"`
-	Func4Bytes     hexutil.Bytes          `json:"func4Bytes"`
+	Func4Bytes     HexData                `json:"func4Bytes"`
 	ParsedData     map[string]interface{} `json:"parsedData"`
 	ParsedEvents   []*ParsedEvent         `json:"parsedEvents"`
 	RawTransaction *Transaction           `json:"rawTransaction"`
@@ -42,10 +42,10 @@ func (ptx *ParsedTransaction) ParseTransaction(rawABI string) error {
 	ptx.ParsedData = map[string]interface{}{}
 	// parse transaction data
 	if ptx.RawTransaction.To != (common.Address{}) {
-		ptx.Func4Bytes = data[:4]
+		ptx.Func4Bytes = HexData(hex.EncodeToString(data[:4]))
 		// check against all abi methods
 		for _, method := range internalAbi.Functions {
-			if method.Signature() == hex.EncodeToString(ptx.Func4Bytes) {
+			if method.Signature() == string(ptx.Func4Bytes) {
 				ptx.Sig = method.String()
 				result, err := method.Parse(data[4:])
 				if err != nil {
