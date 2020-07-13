@@ -56,6 +56,10 @@ func (addr *Address) Hex() string {
 	return "0x" + string(*addr)
 }
 
+func (addr *Address) IsEmpty() bool {
+	return *addr == "" || *addr == "0000000000000000000000000000000000000000"
+}
+
 type Hash string
 
 // NewHashFromHex creates a new hash from a given hex string

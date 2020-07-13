@@ -9,7 +9,6 @@ import (
 
 	"github.com/elastic/go-elasticsearch/v7/esapi"
 	"github.com/elastic/go-elasticsearch/v7/esutil"
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 
@@ -27,12 +26,12 @@ var testTransaction = types.Transaction{
 	Index:             0,
 	Nonce:             4,
 	From:              types.NewAddress("0x586e8164bc8863013fe8f1b82092b028a5f8afad"),
-	To:                common.HexToAddress("0xcc11df45aba0a4ff198b18300d0b148ad2468834"),
+	To:                types.NewAddress("0xcc11df45aba0a4ff198b18300d0b148ad2468834"),
 	Value:             10,
 	Gas:               30,
 	GasUsed:           20,
 	CumulativeGasUsed: 40,
-	CreatedContract:   common.HexToAddress("0x67bb49f7bd40b6a1226d77dc07fb38f03680c94f"),
+	CreatedContract:   types.NewAddress("0x67bb49f7bd40b6a1226d77dc07fb38f03680c94f"),
 	Data:              types.NewHexData("0x4ae157f8a703379222a96b5c01ec83b11b0a0a579b4abc68a10a4c0e7d"),
 	PrivateData:       types.NewHexData("0x6060604052341561000f57600080fd5b60405160208061014983398101"),
 	IsPrivate:         true,

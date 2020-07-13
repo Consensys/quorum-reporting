@@ -1,8 +1,6 @@
 package database
 
 import (
-	"github.com/ethereum/go-ethereum/common"
-
 	"quorumengineering/quorum-report/types"
 )
 
@@ -17,19 +15,19 @@ type Database interface {
 
 // AddressDB stores registered addresses
 type AddressDB interface {
-	AddAddresses([]common.Address) error
-	AddAddressFrom(common.Address, uint64) error
-	DeleteAddress(common.Address) error
-	GetAddresses() ([]common.Address, error)
-	GetContractTemplate(common.Address) (string, error)
+	AddAddresses([]types.Address) error
+	AddAddressFrom(types.Address, uint64) error
+	DeleteAddress(types.Address) error
+	GetAddresses() ([]types.Address, error)
+	GetContractTemplate(types.Address) (string, error)
 }
 
 // TemplateDB stores contract ABI/ Storage Layout of registered address
 type TemplateDB interface {
 	AddTemplate(string, string, string) error
-	AssignTemplate(common.Address, string) error
-	GetContractABI(common.Address) (string, error)
-	GetStorageLayout(common.Address) (string, error)
+	AssignTemplate(types.Address, string) error
+	GetContractABI(types.Address) (string, error)
+	GetStorageLayout(types.Address) (string, error)
 	GetTemplates() ([]string, error)
 	GetTemplateDetails(string) (*types.Template, error)
 }
@@ -49,15 +47,15 @@ type TransactionDB interface {
 
 // IndexDB stores the location to find all transactions/ events/ storage for a contract.
 type IndexDB interface {
-	IndexBlocks([]common.Address, []*types.Block) error
-	IndexStorage(map[common.Address]*types.AccountState, uint64) error
-	GetContractCreationTransaction(common.Address) (types.Hash, error)
-	GetAllTransactionsToAddress(common.Address, *types.QueryOptions) ([]types.Hash, error)
-	GetTransactionsToAddressTotal(common.Address, *types.QueryOptions) (uint64, error)
-	GetAllTransactionsInternalToAddress(common.Address, *types.QueryOptions) ([]types.Hash, error)
-	GetTransactionsInternalToAddressTotal(common.Address, *types.QueryOptions) (uint64, error)
-	GetAllEventsFromAddress(common.Address, *types.QueryOptions) ([]*types.Event, error)
-	GetEventsFromAddressTotal(common.Address, *types.QueryOptions) (uint64, error)
-	GetStorage(common.Address, uint64) (map[types.Hash]string, error)
-	GetLastFiltered(common.Address) (uint64, error)
+	IndexBlocks([]types.Address, []*types.Block) error
+	IndexStorage(map[types.Address]*types.AccountState, uint64) error
+	GetContractCreationTransaction(types.Address) (types.Hash, error)
+	GetAllTransactionsToAddress(types.Address, *types.QueryOptions) ([]types.Hash, error)
+	GetTransactionsToAddressTotal(types.Address, *types.QueryOptions) (uint64, error)
+	GetAllTransactionsInternalToAddress(types.Address, *types.QueryOptions) ([]types.Hash, error)
+	GetTransactionsInternalToAddressTotal(types.Address, *types.QueryOptions) (uint64, error)
+	GetAllEventsFromAddress(types.Address, *types.QueryOptions) ([]*types.Event, error)
+	GetEventsFromAddressTotal(types.Address, *types.QueryOptions) (uint64, error)
+	GetStorage(types.Address, uint64) (map[types.Hash]string, error)
+	GetLastFiltered(types.Address) (uint64, error)
 }

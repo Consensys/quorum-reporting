@@ -3,7 +3,6 @@ package types
 import (
 	"encoding/hex"
 	"errors"
-	"github.com/ethereum/go-ethereum/common"
 	"strings"
 
 	"quorumengineering/quorum-report/log"
@@ -40,7 +39,7 @@ func (ptx *ParsedTransaction) ParseTransaction(rawABI string) error {
 	}
 	ptx.ParsedData = map[string]interface{}{}
 	// parse transaction data
-	if ptx.RawTransaction.To != (common.Address{}) {
+	if !ptx.RawTransaction.To.IsEmpty() {
 		ptx.Func4Bytes = HexData(hex.EncodeToString(data[:4]))
 		// check against all abi methods
 		for _, method := range internalAbi.Functions {

@@ -8,18 +8,18 @@ import (
 
 	"github.com/elastic/go-elasticsearch/v7/esapi"
 	"github.com/elastic/go-elasticsearch/v7/esutil"
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 
-	elasticsearch_mocks "quorumengineering/quorum-report/database/elasticsearch/mocks"
+	elasticsearchmocks "quorumengineering/quorum-report/database/elasticsearch/mocks"
+	"quorumengineering/quorum-report/types"
 )
 
 func TestElasticsearchDB_AddTemplate(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockedClient := elasticsearch_mocks.NewMockAPIClient(ctrl)
+	mockedClient := elasticsearchmocks.NewMockAPIClient(ctrl)
 
 	template := Template{
 		TemplateName: "test template",
@@ -48,9 +48,9 @@ func TestElasticsearchDB_AssignTemplate(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockedClient := elasticsearch_mocks.NewMockAPIClient(ctrl)
+	mockedClient := elasticsearchmocks.NewMockAPIClient(ctrl)
 
-	addr := common.HexToAddress("0x1932c48b2bf8102ba33b4a6b545c32236e342f34")
+	addr := types.NewAddress("0x1932c48b2bf8102ba33b4a6b545c32236e342f34")
 	templateName := "test template"
 
 	searchContractRequest := esapi.GetRequest{
@@ -92,9 +92,9 @@ func TestElasticsearchDB_GetContractABI(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockedClient := elasticsearch_mocks.NewMockAPIClient(ctrl)
+	mockedClient := elasticsearchmocks.NewMockAPIClient(ctrl)
 
-	addr := common.HexToAddress("0x1932c48b2bf8102ba33b4a6b545c32236e342f34")
+	addr := types.NewAddress("0x1932c48b2bf8102ba33b4a6b545c32236e342f34")
 
 	contractSearchRequest := esapi.GetRequest{
 		Index:      ContractIndex,
@@ -135,9 +135,9 @@ func TestElasticsearchDB_GetContractABI_ContractDoesntExist(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockedClient := elasticsearch_mocks.NewMockAPIClient(ctrl)
+	mockedClient := elasticsearchmocks.NewMockAPIClient(ctrl)
 
-	addr := common.HexToAddress("0x1932c48b2bf8102ba33b4a6b545c32236e342f34")
+	addr := types.NewAddress("0x1932c48b2bf8102ba33b4a6b545c32236e342f34")
 
 	searchRequest := esapi.GetRequest{
 		Index:      ContractIndex,
@@ -159,9 +159,9 @@ func TestElasticsearchDB_GetStorageABI(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockedClient := elasticsearch_mocks.NewMockAPIClient(ctrl)
+	mockedClient := elasticsearchmocks.NewMockAPIClient(ctrl)
 
-	addr := common.HexToAddress("0x1932c48b2bf8102ba33b4a6b545c32236e342f34")
+	addr := types.NewAddress("0x1932c48b2bf8102ba33b4a6b545c32236e342f34")
 
 	contractSearchRequest := esapi.GetRequest{
 		Index:      ContractIndex,
@@ -203,9 +203,9 @@ func TestElasticsearchDB_GetStorageABI_ContractDoesntExist(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockedClient := elasticsearch_mocks.NewMockAPIClient(ctrl)
+	mockedClient := elasticsearchmocks.NewMockAPIClient(ctrl)
 
-	addr := common.HexToAddress("0x1932c48b2bf8102ba33b4a6b545c32236e342f34")
+	addr := types.NewAddress("0x1932c48b2bf8102ba33b4a6b545c32236e342f34")
 
 	searchRequest := esapi.GetRequest{
 		Index:      ContractIndex,
@@ -227,7 +227,7 @@ func TestElasticsearchDB_GetTemplates_NoTemplate(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockedClient := elasticsearch_mocks.NewMockAPIClient(ctrl)
+	mockedClient := elasticsearchmocks.NewMockAPIClient(ctrl)
 
 	mockedClient.EXPECT().DoRequest(gomock.Any()) //for setup, not relevant to test
 	mockedClient.EXPECT().
@@ -253,7 +253,7 @@ func TestElasticsearchDB_GetTemplates_SingleTemplate(t *testing.T) {
 		return asInterface
 	}
 
-	mockedClient := elasticsearch_mocks.NewMockAPIClient(ctrl)
+	mockedClient := elasticsearchmocks.NewMockAPIClient(ctrl)
 
 	mockedClient.EXPECT().DoRequest(gomock.Any()) //for setup, not relevant to test
 	mockedClient.EXPECT().
@@ -281,7 +281,7 @@ func TestElasticsearchDB_GetTemplates_MultipleTemplates(t *testing.T) {
 		return asInterface
 	}
 
-	mockedClient := elasticsearch_mocks.NewMockAPIClient(ctrl)
+	mockedClient := elasticsearchmocks.NewMockAPIClient(ctrl)
 
 	mockedClient.EXPECT().DoRequest(gomock.Any()) //for setup, not relevant to test
 	mockedClient.EXPECT().
@@ -301,7 +301,7 @@ func TestElasticsearchDB_GetTemplates_WithError(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockedClient := elasticsearch_mocks.NewMockAPIClient(ctrl)
+	mockedClient := elasticsearchmocks.NewMockAPIClient(ctrl)
 
 	mockedClient.EXPECT().DoRequest(gomock.Any()) //for setup, not relevant to test
 	mockedClient.EXPECT().

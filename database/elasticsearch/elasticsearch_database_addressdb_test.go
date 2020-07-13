@@ -9,11 +9,11 @@ import (
 
 	"github.com/elastic/go-elasticsearch/v7/esapi"
 	"github.com/elastic/go-elasticsearch/v7/esutil"
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 
-	elasticsearch_mocks "quorumengineering/quorum-report/database/elasticsearch/mocks"
+	elasticsearchmocks "quorumengineering/quorum-report/database/elasticsearch/mocks"
+	"quorumengineering/quorum-report/types"
 )
 
 //Tests
@@ -22,9 +22,9 @@ func TestAddSingleAddress(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockedClient := elasticsearch_mocks.NewMockAPIClient(ctrl)
+	mockedClient := elasticsearchmocks.NewMockAPIClient(ctrl)
 
-	addr := common.HexToAddress("0x1932c48b2bf8102ba33b4a6b545c32236e342f34")
+	addr := types.NewAddress("0x1932c48b2bf8102ba33b4a6b545c32236e342f34")
 
 	contract := Contract{
 		Address:             addr,
@@ -47,7 +47,7 @@ func TestAddSingleAddress(t *testing.T) {
 
 	db, err := New(mockedClient)
 
-	err = db.AddAddresses([]common.Address{addr})
+	err = db.AddAddresses([]types.Address{addr})
 
 	assert.Nil(t, err, "expected error to be nil")
 }
@@ -56,11 +56,11 @@ func TestAddMultipleAddresses(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockedClient := elasticsearch_mocks.NewMockAPIClient(ctrl)
-	mockedBulkIndexer := elasticsearch_mocks.NewMockBulkIndexer(ctrl)
+	mockedClient := elasticsearchmocks.NewMockAPIClient(ctrl)
+	mockedBulkIndexer := elasticsearchmocks.NewMockBulkIndexer(ctrl)
 
-	addr1 := common.HexToAddress("0x1932c48b2bf8102ba33b4a6b545c32236e342f34")
-	addr2 := common.HexToAddress("0x1932c48b2bf8102ba33b4a6b545c32236e342f35")
+	addr1 := types.NewAddress("0x1932c48b2bf8102ba33b4a6b545c32236e342f34")
+	addr2 := types.NewAddress("0x1932c48b2bf8102ba33b4a6b545c32236e342f35")
 
 	contract1 := Contract{
 		Address:             addr1,
@@ -100,7 +100,7 @@ func TestAddMultipleAddresses(t *testing.T) {
 
 	db, _ := New(mockedClient)
 
-	err := db.AddAddresses([]common.Address{addr1, addr2})
+	err := db.AddAddresses([]types.Address{addr1, addr2})
 
 	assert.Nil(t, err, "expected error to be nil")
 }
@@ -109,13 +109,13 @@ func TestAddNoAddresses(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockedClient := elasticsearch_mocks.NewMockAPIClient(ctrl)
+	mockedClient := elasticsearchmocks.NewMockAPIClient(ctrl)
 
 	mockedClient.EXPECT().DoRequest(gomock.Any()) //for setup, not relevant to test
 
 	db, _ := New(mockedClient)
 
-	err := db.AddAddresses([]common.Address{})
+	err := db.AddAddresses([]types.Address{})
 
 	assert.Nil(t, err, "expected error to be nil")
 }
@@ -124,9 +124,9 @@ func TestAddSingleAddressWithError(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockedClient := elasticsearch_mocks.NewMockAPIClient(ctrl)
+	mockedClient := elasticsearchmocks.NewMockAPIClient(ctrl)
 
-	addr := common.HexToAddress("0x1932c48b2bf8102ba33b4a6b545c32236e342f34")
+	addr := types.NewAddress("0x1932c48b2bf8102ba33b4a6b545c32236e342f34")
 
 	contract := Contract{
 		Address:             addr,
@@ -149,7 +149,7 @@ func TestAddSingleAddressWithError(t *testing.T) {
 
 	db, _ := New(mockedClient)
 
-	err := db.AddAddresses([]common.Address{addr})
+	err := db.AddAddresses([]types.Address{addr})
 
 	assert.EqualError(t, err, "test error", "expected test error")
 }
@@ -158,11 +158,11 @@ func TestAddMultipleAddressWithError(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockedClient := elasticsearch_mocks.NewMockAPIClient(ctrl)
-	mockedBulkIndexer := elasticsearch_mocks.NewMockBulkIndexer(ctrl)
+	mockedClient := elasticsearchmocks.NewMockAPIClient(ctrl)
+	mockedBulkIndexer := elasticsearchmocks.NewMockBulkIndexer(ctrl)
 
-	addr1 := common.HexToAddress("0x1932c48b2bf8102ba33b4a6b545c32236e342f34")
-	addr2 := common.HexToAddress("0x1932c48b2bf8102ba33b4a6b545c32236e342f35")
+	addr1 := types.NewAddress("0x1932c48b2bf8102ba33b4a6b545c32236e342f34")
+	addr2 := types.NewAddress("0x1932c48b2bf8102ba33b4a6b545c32236e342f35")
 
 	contract1 := Contract{
 		Address:             addr1,
@@ -202,7 +202,7 @@ func TestAddMultipleAddressWithError(t *testing.T) {
 
 	db, _ := New(mockedClient)
 
-	err := db.AddAddresses([]common.Address{addr1, addr2})
+	err := db.AddAddresses([]types.Address{addr1, addr2})
 
 	assert.EqualError(t, err, "test error", "expected test error")
 }
@@ -211,9 +211,9 @@ func TestElasticsearchDB_DeleteAddress(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockedClient := elasticsearch_mocks.NewMockAPIClient(ctrl)
+	mockedClient := elasticsearchmocks.NewMockAPIClient(ctrl)
 
-	addr := common.HexToAddress("0x1932c48b2bf8102ba33b4a6b545c32236e342f34")
+	addr := types.NewAddress("0x1932c48b2bf8102ba33b4a6b545c32236e342f34")
 	req := esapi.DeleteRequest{
 		Index:      ContractIndex,
 		DocumentID: addr.String(),
@@ -234,9 +234,9 @@ func TestElasticsearchDB_DeleteAddress_WithError(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockedClient := elasticsearch_mocks.NewMockAPIClient(ctrl)
+	mockedClient := elasticsearchmocks.NewMockAPIClient(ctrl)
 
-	addr := common.HexToAddress("0x1932c48b2bf8102ba33b4a6b545c32236e342f34")
+	addr := types.NewAddress("0x1932c48b2bf8102ba33b4a6b545c32236e342f34")
 	req := esapi.DeleteRequest{
 		Index:      ContractIndex,
 		DocumentID: addr.String(),
@@ -257,7 +257,7 @@ func TestElasticsearchDB_GetAddresses_NoAddresses(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockedClient := elasticsearch_mocks.NewMockAPIClient(ctrl)
+	mockedClient := elasticsearchmocks.NewMockAPIClient(ctrl)
 
 	mockedClient.EXPECT().DoRequest(gomock.Any()) //for setup, not relevant to test
 	mockedClient.EXPECT().
@@ -275,8 +275,8 @@ func TestElasticsearchDB_GetAddresses_SingleAddress(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	sampleAddress := common.HexToAddress("0x1932c48b2bf8102ba33b4a6b545c32236e342f34")
-	createReturnValue := func(addr common.Address) interface{} {
+	sampleAddress := types.NewAddress("0x1932c48b2bf8102ba33b4a6b545c32236e342f34")
+	createReturnValue := func(addr types.Address) interface{} {
 		sampleReturnValue := `{"_source" : { "address": "%s"}}`
 		withAddress := fmt.Sprintf(sampleReturnValue, addr.String())
 		var asInterface map[string]interface{}
@@ -284,7 +284,7 @@ func TestElasticsearchDB_GetAddresses_SingleAddress(t *testing.T) {
 		return asInterface
 	}
 
-	mockedClient := elasticsearch_mocks.NewMockAPIClient(ctrl)
+	mockedClient := elasticsearchmocks.NewMockAPIClient(ctrl)
 
 	mockedClient.EXPECT().DoRequest(gomock.Any()) //for setup, not relevant to test
 	mockedClient.EXPECT().
@@ -303,9 +303,9 @@ func TestElasticsearchDB_GetAddresses_MultipleAddress(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	sampleAddress1 := common.HexToAddress("0x1932c48b2bf8102ba33b4a6b545c32236e342f34")
-	sampleAddress2 := common.HexToAddress("0x1932c48b2bf8102ba33b4a6b545c32236e342f35")
-	createReturnValue := func(addr common.Address) interface{} {
+	sampleAddress1 := types.NewAddress("0x1932c48b2bf8102ba33b4a6b545c32236e342f34")
+	sampleAddress2 := types.NewAddress("0x1932c48b2bf8102ba33b4a6b545c32236e342f35")
+	createReturnValue := func(addr types.Address) interface{} {
 		sampleReturnValue := `{"_source" : { "address": "%s"}}`
 		withAddress := fmt.Sprintf(sampleReturnValue, addr.String())
 		var asInterface map[string]interface{}
@@ -313,7 +313,7 @@ func TestElasticsearchDB_GetAddresses_MultipleAddress(t *testing.T) {
 		return asInterface
 	}
 
-	mockedClient := elasticsearch_mocks.NewMockAPIClient(ctrl)
+	mockedClient := elasticsearchmocks.NewMockAPIClient(ctrl)
 
 	mockedClient.EXPECT().DoRequest(gomock.Any()) //for setup, not relevant to test
 	mockedClient.EXPECT().
@@ -333,7 +333,7 @@ func TestElasticsearchDB_GetAddresses_WithError(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockedClient := elasticsearch_mocks.NewMockAPIClient(ctrl)
+	mockedClient := elasticsearchmocks.NewMockAPIClient(ctrl)
 
 	mockedClient.EXPECT().DoRequest(gomock.Any()) //for setup, not relevant to test
 	mockedClient.EXPECT().

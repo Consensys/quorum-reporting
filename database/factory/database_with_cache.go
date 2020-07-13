@@ -3,7 +3,6 @@ package factory
 import (
 	"sync"
 
-	"github.com/ethereum/go-ethereum/common"
 	lru "github.com/hashicorp/golang-lru"
 
 	"quorumengineering/quorum-report/database"
@@ -12,7 +11,7 @@ import (
 
 type DatabaseWithCache struct {
 	db                    database.Database
-	addressCache          map[common.Address]bool
+	addressCache          map[types.Address]bool
 	blockCache            *lru.Cache
 	transactionCache      *lru.Cache
 	storageCache          *lru.Cache
@@ -47,7 +46,7 @@ func NewDatabaseWithCache(db database.Database, cacheSize int) (database.Databas
 	if err != nil {
 		return nil, err
 	}
-	addressCache := make(map[common.Address]bool)
+	addressCache := make(map[types.Address]bool)
 	for _, address := range existingAddresses {
 		addressCache[address] = true
 	}
@@ -61,10 +60,10 @@ func NewDatabaseWithCache(db database.Database, cacheSize int) (database.Databas
 	}, nil
 }
 
-func (cachingDB *DatabaseWithCache) AddAddresses(addresses []common.Address) error {
+func (cachingDB *DatabaseWithCache) AddAddresses(addresses []types.Address) error {
 	cachingDB.addressMux.Lock()
 	defer cachingDB.addressMux.Unlock()
-	newAddresses := []common.Address{}
+	newAddresses := []types.Address{}
 	for _, address := range addresses {
 		if !cachingDB.addressCache[address] {
 			newAddresses = append(newAddresses, address)
@@ -81,7 +80,7 @@ func (cachingDB *DatabaseWithCache) AddAddresses(addresses []common.Address) err
 	return nil
 }
 
-func (cachingDB *DatabaseWithCache) AddAddressFrom(address common.Address, from uint64) error {
+func (cachingDB *DatabaseWithCache) AddAddressFrom(address types.Address, from uint64) error {
 	cachingDB.addressMux.Lock()
 	defer cachingDB.addressMux.Unlock()
 	if err := cachingDB.db.AddAddressFrom(address, from); err != nil {
@@ -93,7 +92,7 @@ func (cachingDB *DatabaseWithCache) AddAddressFrom(address common.Address, from 
 	return nil
 }
 
-func (cachingDB *DatabaseWithCache) DeleteAddress(address common.Address) error {
+func (cachingDB *DatabaseWithCache) DeleteAddress(address types.Address) error {
 	cachingDB.addressMux.Lock()
 	defer cachingDB.addressMux.Unlock()
 	if !cachingDB.addressCache[address] {
@@ -106,25 +105,25 @@ func (cachingDB *DatabaseWithCache) DeleteAddress(address common.Address) error 
 	return nil
 }
 
-func (cachingDB *DatabaseWithCache) GetAddresses() ([]common.Address, error) {
+func (cachingDB *DatabaseWithCache) GetAddresses() ([]types.Address, error) {
 	cachingDB.addressMux.RLock()
 	defer cachingDB.addressMux.RUnlock()
-	addresses := []common.Address{}
+	addresses := []types.Address{}
 	for address, _ := range cachingDB.addressCache {
 		addresses = append(addresses, address)
 	}
 	return addresses, nil
 }
 
-func (cachingDB *DatabaseWithCache) GetContractTemplate(address common.Address) (string, error) {
+func (cachingDB *DatabaseWithCache) GetContractTemplate(address types.Address) (string, error) {
 	return cachingDB.db.GetContractTemplate(address)
 }
 
-func (cachingDB *DatabaseWithCache) GetContractABI(address common.Address) (string, error) {
+func (cachingDB *DatabaseWithCache) GetContractABI(address types.Address) (string, error) {
 	return cachingDB.db.GetContractABI(address)
 }
 
-func (cachingDB *DatabaseWithCache) GetStorageLayout(address common.Address) (string, error) {
+func (cachingDB *DatabaseWithCache) GetStorageLayout(address types.Address) (string, error) {
 	return cachingDB.db.GetStorageLayout(address)
 }
 
@@ -132,7 +131,7 @@ func (cachingDB *DatabaseWithCache) AddTemplate(name string, abi string, layout 
 	return cachingDB.db.AddTemplate(name, abi, layout)
 }
 
-func (cachingDB *DatabaseWithCache) AssignTemplate(address common.Address, name string) error {
+func (cachingDB *DatabaseWithCache) AssignTemplate(address types.Address, name string) error {
 	return cachingDB.db.AssignTemplate(address, name)
 }
 
@@ -197,15 +196,15 @@ func (cachingDB *DatabaseWithCache) ReadTransaction(hash types.Hash) (*types.Tra
 	return tx, nil
 }
 
-func (cachingDB *DatabaseWithCache) IndexBlocks(addresses []common.Address, blocks []*types.Block) error {
+func (cachingDB *DatabaseWithCache) IndexBlocks(addresses []types.Address, blocks []*types.Block) error {
 	return cachingDB.db.IndexBlocks(addresses, blocks)
 }
 
-func (cachingDB *DatabaseWithCache) IndexStorage(rawStorage map[common.Address]*types.AccountState, blockNumber uint64) error {
+func (cachingDB *DatabaseWithCache) IndexStorage(rawStorage map[types.Address]*types.AccountState, blockNumber uint64) error {
 	return cachingDB.db.IndexStorage(rawStorage, blockNumber)
 }
 
-func (cachingDB *DatabaseWithCache) GetContractCreationTransaction(address common.Address) (types.Hash, error) {
+func (cachingDB *DatabaseWithCache) GetContractCreationTransaction(address types.Address) (types.Hash, error) {
 	if cachedHash, ok := cachingDB.contractCreationCache.Get(address); ok {
 		return cachedHash.(types.Hash), nil
 	}
@@ -219,35 +218,35 @@ func (cachingDB *DatabaseWithCache) GetContractCreationTransaction(address commo
 	return hash, nil
 }
 
-func (cachingDB *DatabaseWithCache) GetAllTransactionsToAddress(address common.Address, options *types.QueryOptions) ([]types.Hash, error) {
+func (cachingDB *DatabaseWithCache) GetAllTransactionsToAddress(address types.Address, options *types.QueryOptions) ([]types.Hash, error) {
 	return cachingDB.db.GetAllTransactionsToAddress(address, options)
 }
 
-func (cachingDB *DatabaseWithCache) GetAllTransactionsInternalToAddress(address common.Address, options *types.QueryOptions) ([]types.Hash, error) {
+func (cachingDB *DatabaseWithCache) GetAllTransactionsInternalToAddress(address types.Address, options *types.QueryOptions) ([]types.Hash, error) {
 	return cachingDB.db.GetAllTransactionsInternalToAddress(address, options)
 }
 
-func (cachingDB *DatabaseWithCache) GetAllEventsFromAddress(address common.Address, options *types.QueryOptions) ([]*types.Event, error) {
+func (cachingDB *DatabaseWithCache) GetAllEventsFromAddress(address types.Address, options *types.QueryOptions) ([]*types.Event, error) {
 	return cachingDB.db.GetAllEventsFromAddress(address, options)
 }
 
-func (cachingDB *DatabaseWithCache) GetTransactionsToAddressTotal(address common.Address, options *types.QueryOptions) (uint64, error) {
+func (cachingDB *DatabaseWithCache) GetTransactionsToAddressTotal(address types.Address, options *types.QueryOptions) (uint64, error) {
 	return cachingDB.db.GetTransactionsToAddressTotal(address, options)
 }
 
-func (cachingDB *DatabaseWithCache) GetTransactionsInternalToAddressTotal(address common.Address, options *types.QueryOptions) (uint64, error) {
+func (cachingDB *DatabaseWithCache) GetTransactionsInternalToAddressTotal(address types.Address, options *types.QueryOptions) (uint64, error) {
 	return cachingDB.db.GetTransactionsInternalToAddressTotal(address, options)
 }
 
-func (cachingDB *DatabaseWithCache) GetEventsFromAddressTotal(address common.Address, options *types.QueryOptions) (uint64, error) {
+func (cachingDB *DatabaseWithCache) GetEventsFromAddressTotal(address types.Address, options *types.QueryOptions) (uint64, error) {
 	return cachingDB.db.GetEventsFromAddressTotal(address, options)
 }
 
-func (cachingDB *DatabaseWithCache) GetStorage(address common.Address, blockNumber uint64) (map[types.Hash]string, error) {
+func (cachingDB *DatabaseWithCache) GetStorage(address types.Address, blockNumber uint64) (map[types.Hash]string, error) {
 	return cachingDB.db.GetStorage(address, blockNumber)
 }
 
-func (cachingDB *DatabaseWithCache) GetLastFiltered(address common.Address) (uint64, error) {
+func (cachingDB *DatabaseWithCache) GetLastFiltered(address types.Address) (uint64, error) {
 	return cachingDB.db.GetLastFiltered(address)
 }
 

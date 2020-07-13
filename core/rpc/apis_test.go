@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/assert"
 
 	"quorumengineering/quorum-report/database/memory"
@@ -24,9 +23,8 @@ const validABI = `
 var (
 	dummyReq = &http.Request{}
 
-	address = common.HexToAddress("0x0000000000000000000000000000000000000001")
-	addr    = types.NewAddress("0x0000000000000000000000000000000000000001")
-	block   = &types.Block{
+	addr  = types.NewAddress("0x0000000000000000000000000000000000000001")
+	block = &types.Block{
 		Hash:   types.NewHash("0xc7fd1915b4b8ac6344e750e4eaeacf9114d4e185f9c10b6b3bc7049511a96998"),
 		Number: 1,
 		Transactions: []types.Hash{
@@ -41,25 +39,25 @@ var (
 		Hash:            types.NewHash("0x1a6f4292bac138df9a7854a07c93fd14ca7de53265e8fe01b6c986f97d6c1ee7"),
 		BlockNumber:     1,
 		From:            types.NewAddress("0x0000000000000000000000000000000000000009"),
-		To:              common.Address{},
+		To:              "",
 		Data:            types.NewHexData("0x608060405234801561001057600080fd5b506040516020806101a18339810180604052602081101561003057600080fd5b81019080805190602001909291905050508060008190555050610149806100586000396000f3fe608060405234801561001057600080fd5b506004361061005e576000357c0100000000000000000000000000000000000000000000000000000000900480632a1afcd91461006357806360fe47b1146100815780636d4ce63c146100af575b600080fd5b61006b6100cd565b6040518082815260200191505060405180910390f35b6100ad6004803603602081101561009757600080fd5b81019080803590602001909291905050506100d3565b005b6100b7610114565b6040518082815260200191505060405180910390f35b60005481565b806000819055507fefe5cb8d23d632b5d2cdd9f0a151c4b1a84ccb7afa1c57331009aa922d5e4f36816040518082815260200191505060405180910390a150565b6000805490509056fea165627a7a7230582061f6956b053dbf99873b363ab3ba7bca70853ba5efbaff898cd840d71c54fc1d0029000000000000000000000000000000000000000000000000000000000000002a"),
-		CreatedContract: address,
+		CreatedContract: addr,
 	}
 	tx2 = &types.Transaction{ // set
 		Hash:            types.NewHash("tx2"),
 		BlockNumber:     1,
 		From:            types.NewAddress("0x0000000000000000000000000000000000000009"),
-		To:              address,
+		To:              addr,
 		Data:            types.NewHexData("0x60fe47b100000000000000000000000000000000000000000000000000000000000003e7"),
-		CreatedContract: common.Address{0},
+		CreatedContract: "",
 	}
 	tx3 = &types.Transaction{ // private
 		Hash:            types.NewHash("tx3"),
 		BlockNumber:     1,
 		From:            types.NewAddress("0x0000000000000000000000000000000000000009"),
-		To:              address,
+		To:              addr,
 		PrivateData:     types.NewHexData("0x60fe47b100000000000000000000000000000000000000000000000000000000000003e8"),
-		CreatedContract: common.Address{},
+		CreatedContract: "",
 		Events: []*types.Event{
 			{
 				Data:    types.NewHexData("0x00000000000000000000000000000000000000000000000000000000000003e8"),
@@ -70,7 +68,7 @@ var (
 		InternalCalls: []*types.InternalCall{
 			{
 				Type: "CALL",
-				To:   address,
+				To:   addr,
 			},
 		},
 	}
@@ -87,14 +85,14 @@ func TestAPIValidation(t *testing.T) {
 func TestAPIParsing(t *testing.T) {
 	db := memory.NewMemoryDB()
 	apis := NewRPCAPIs(db, NewDefaultContractManager(db))
-	err := apis.AddAddress(dummyReq, &AddressWithOptionalBlock{Address: &address}, nil)
+	err := apis.AddAddress(dummyReq, &AddressWithOptionalBlock{Address: &addr}, nil)
 	assert.Nil(t, err)
 
 	// Test AddABI string to ABI parsing.
-	err = apis.AddABI(dummyReq, &AddressWithData{&address, "hello"}, nil)
+	err = apis.AddABI(dummyReq, &AddressWithData{&addr, "hello"}, nil)
 	assert.EqualError(t, err, "invalid character 'h' looking for beginning of value")
 
-	err = apis.AddABI(dummyReq, &AddressWithData{&address, validABI}, nil)
+	err = apis.AddABI(dummyReq, &AddressWithData{&addr, validABI}, nil)
 	assert.Nil(t, err)
 
 	// Set up test data.
@@ -124,11 +122,11 @@ func TestAPIParsing(t *testing.T) {
 	assert.Equal(t, big.NewInt(1000), parsedTx3.ParsedEvents[0].ParsedData["_value"])
 
 	// Test GetAllEventsFromAddress parse event.
-	err = db.IndexBlocks([]common.Address{address}, []*types.Block{block})
+	err = db.IndexBlocks([]types.Address{addr}, []*types.Block{block})
 	assert.Nil(t, err)
 
 	eventsResp := &EventsResp{}
-	err = apis.GetAllEventsFromAddress(dummyReq, &AddressWithOptions{Address: &address}, eventsResp)
+	err = apis.GetAllEventsFromAddress(dummyReq, &AddressWithOptions{Address: &addr}, eventsResp)
 	assert.Nil(t, err)
 	assert.Equal(t, "event valueSet(uint256 _value)", eventsResp.Events[0].Sig)
 	assert.Equal(t, big.NewInt(1000), eventsResp.Events[0].ParsedData["_value"])
@@ -140,14 +138,14 @@ func TestAddAddressWithFrom(t *testing.T) {
 	from := uint64(100)
 
 	params := &AddressWithOptionalBlock{
-		Address:     &address,
+		Address:     &addr,
 		BlockNumber: &from,
 	}
 
 	err := apis.AddAddress(dummyReq, params, nil)
 	assert.Nil(t, err)
 
-	lastFiltered, err := db.GetLastFiltered(address)
+	lastFiltered, err := db.GetLastFiltered(addr)
 	assert.Nil(t, err)
 	assert.Equal(t, from-1, lastFiltered)
 }

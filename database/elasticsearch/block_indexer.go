@@ -1,24 +1,22 @@
 package elasticsearch
 
 import (
-	"github.com/ethereum/go-ethereum/common"
-
 	"quorumengineering/quorum-report/log"
 	"quorumengineering/quorum-report/types"
 )
 
 type DefaultBlockIndexer struct {
-	addresses map[common.Address]bool
+	addresses map[types.Address]bool
 	blocks    []*types.Block
 	// function pointers currently originated from ES database implementation only
 	// TODO: May convert all functions into an interface. DefaultBlockIndexer can then accept all database implementation and move to a util package.
-	updateContract  func(common.Address, string, string) error
+	updateContract  func(types.Address, string, string) error
 	createEvents    func([]*types.Event) error
 	readTransaction func(types.Hash) (*types.Transaction, error)
 }
 
-func NewBlockIndexer(addresses []common.Address, blocks []*types.Block, db *ElasticsearchDB) *DefaultBlockIndexer {
-	addressMap := map[common.Address]bool{}
+func NewBlockIndexer(addresses []types.Address, blocks []*types.Block, db *ElasticsearchDB) *DefaultBlockIndexer {
+	addressMap := map[types.Address]bool{}
 	for _, address := range addresses {
 		addressMap[address] = true
 	}
@@ -51,7 +49,7 @@ func (indexer *DefaultBlockIndexer) indexEvents(transactions []*types.Transactio
 	var pendingIndexEvents []*types.Event
 	for _, transaction := range transactions {
 		for _, event := range transaction.Events {
-			if indexer.addresses[common.HexToAddress(event.Address.Hex())] {
+			if indexer.addresses[event.Address] {
 				pendingIndexEvents = append(pendingIndexEvents, event)
 			}
 		}

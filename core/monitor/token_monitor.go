@@ -12,20 +12,20 @@ import (
 
 type TokenRule struct {
 	scope        string
-	deployer     common.Address
+	deployer     types.Address
 	templateName string
 	eip165       string
 	abi          *types.ContractABI
 }
 
 type AddressWithMeta struct {
-	address  common.Address
+	address  types.Address
 	scope    string
-	deployer common.Address
+	deployer types.Address
 }
 
 type TokenMonitor interface {
-	InspectTransaction(tx *types.Transaction) (map[common.Address]string, error)
+	InspectTransaction(tx *types.Transaction) (map[types.Address]string, error)
 }
 
 type DefaultTokenMonitor struct {
@@ -40,13 +40,13 @@ func NewDefaultTokenMonitor(quorumClient client.Client, rules []TokenRule) *Defa
 	}
 }
 
-func (tm *DefaultTokenMonitor) InspectTransaction(tx *types.Transaction) (map[common.Address]string, error) {
+func (tm *DefaultTokenMonitor) InspectTransaction(tx *types.Transaction) (map[types.Address]string, error) {
 	var addresses []AddressWithMeta
-	if (tx.CreatedContract != common.Address{}) {
+	if !tx.CreatedContract.IsEmpty() {
 		addresses = append(addresses, AddressWithMeta{
 			address:  tx.CreatedContract,
 			scope:    types.ExternalScope,
-			deployer: common.HexToAddress(tx.From.Hex()),
+			deployer: tx.From,
 		})
 	}
 	for _, ic := range tx.InternalCalls {
@@ -54,12 +54,12 @@ func (tm *DefaultTokenMonitor) InspectTransaction(tx *types.Transaction) (map[co
 			addresses = append(addresses, AddressWithMeta{
 				address:  ic.To,
 				scope:    types.InternalScope,
-				deployer: common.HexToAddress(ic.From.Hex()),
+				deployer: ic.From,
 			})
 		}
 	}
 
-	tokenContracts := make(map[common.Address]string)
+	tokenContracts := make(map[types.Address]string)
 
 	for _, addressWithMeta := range addresses {
 		for _, rule := range tm.rules {
@@ -100,14 +100,14 @@ func (tm *DefaultTokenMonitor) checkRuleMeta(rule TokenRule, meta AddressWithMet
 		if rule.scope != meta.scope {
 			return false
 		}
-		if rule.deployer != (common.Address{0}) && rule.deployer != meta.deployer {
+		if !rule.deployer.IsEmpty() && rule.deployer != meta.deployer {
 			return false
 		}
 	}
 	return true
 }
 
-func (tm *DefaultTokenMonitor) checkEIP165(rule TokenRule, addr common.Address, blockNum uint64) (string, error) {
+func (tm *DefaultTokenMonitor) checkEIP165(rule TokenRule, addr types.Address, blockNum uint64) (string, error) {
 	address := types.NewAddress(addr.Hex()) //TODO: remove
 	if rule.eip165 != "" {
 		//check if the contract implements EIP165

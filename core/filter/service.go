@@ -4,8 +4,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common"
-
 	"quorumengineering/quorum-report/client"
 	"quorumengineering/quorum-report/log"
 	"quorumengineering/quorum-report/types"
@@ -14,10 +12,10 @@ import (
 type FilterServiceDB interface {
 	ReadBlock(uint64) (*types.Block, error)
 	GetLastPersistedBlockNumber() (uint64, error)
-	GetLastFiltered(common.Address) (uint64, error)
-	GetAddresses() ([]common.Address, error)
-	IndexBlocks([]common.Address, []*types.Block) error
-	IndexStorage(map[common.Address]*types.AccountState, uint64) error
+	GetLastFiltered(types.Address) (uint64, error)
+	GetAddresses() ([]types.Address, error)
+	IndexBlocks([]types.Address, []*types.Block) error
+	IndexStorage(map[types.Address]*types.AccountState, uint64) error
 }
 
 // FilterService filters transactions and storage based on registered address list.
@@ -91,13 +89,13 @@ func (fs *FilterService) Stop() {
 }
 
 // getLastFiltered finds the minimum value of "lastFiltered" across all addresses
-func (fs *FilterService) getLastFiltered(current uint64) (map[common.Address]uint64, uint64, error) {
+func (fs *FilterService) getLastFiltered(current uint64) (map[types.Address]uint64, uint64, error) {
 	addresses, err := fs.db.GetAddresses()
 	if err != nil {
 		return nil, current, err
 	}
 
-	lastFiltered := make(map[common.Address]uint64)
+	lastFiltered := make(map[types.Address]uint64)
 	for _, address := range addresses {
 		curLastFiltered, err := fs.db.GetLastFiltered(address)
 		if err != nil {
@@ -113,18 +111,18 @@ func (fs *FilterService) getLastFiltered(current uint64) (map[common.Address]uin
 }
 
 type IndexBatch struct {
-	addresses []common.Address
+	addresses []types.Address
 	blocks    []*types.Block
 }
 
-func (fs *FilterService) index(lastFiltered map[common.Address]uint64, blockNumber uint64, endBlockNumber uint64) error {
+func (fs *FilterService) index(lastFiltered map[types.Address]uint64, blockNumber uint64, endBlockNumber uint64) error {
 	log.Info("Index registered address", "start-block", blockNumber, "end-block", endBlockNumber)
 	indexBatches := make([]IndexBatch, 0)
 	curBatch := IndexBatch{
-		addresses: make([]common.Address, 0),
+		addresses: make([]types.Address, 0),
 		blocks:    make([]*types.Block, 0),
 	}
-	addressInBatch := make(map[common.Address]bool)
+	addressInBatch := make(map[types.Address]bool)
 	for blockNumber <= endBlockNumber {
 		// check if a new batch should be created
 		oldBatch := curBatch
@@ -133,7 +131,7 @@ func (fs *FilterService) index(lastFiltered map[common.Address]uint64, blockNumb
 				if !addressInBatch[address] {
 					addrList := curBatch.addresses
 					curBatch = IndexBatch{
-						addresses: []common.Address{address},
+						addresses: []types.Address{address},
 						blocks:    make([]*types.Block, 0),
 					}
 					curBatch.addresses = append(curBatch.addresses, addrList...)

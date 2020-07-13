@@ -3,8 +3,6 @@ package types
 import (
 	"encoding/json"
 	"strconv"
-
-	"github.com/ethereum/go-ethereum/common"
 )
 
 type SolidityStorageEntries []SolidityStorageEntry
@@ -113,7 +111,7 @@ type StorageItem struct {
 }
 
 type ReportingResponseTemplate struct {
-	Address       common.Address `json:"address"`
+	Address       Address        `json:"address"`
 	HistoricState []*ParsedState `json:"historicState"`
 }
 

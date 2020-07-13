@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/naoina/toml"
 
 	"quorumengineering/quorum-report/log"
@@ -34,9 +33,9 @@ type TuningConfig struct {
 }
 
 type AddressConfig struct {
-	Address      common.Address `toml:"address,omitempty"`
-	TemplateName string         `toml:"templateName,omitempty"`
-	From         uint64         `toml:"from,omitempty"`
+	Address      Address `toml:"address,omitempty"`
+	TemplateName string  `toml:"templateName,omitempty"`
+	From         uint64  `toml:"from,omitempty"`
 }
 
 type TemplateConfig struct {
@@ -46,10 +45,10 @@ type TemplateConfig struct {
 }
 
 type RuleConfig struct {
-	Scope        string         `toml:"scope,omitempty"`
-	Deployer     common.Address `toml:"deployer,omitempty"`
-	TemplateName string         `toml:"templateName,omitempty"`
-	EIP165       string         `toml:"eip165,omitempty"`
+	Scope        string  `toml:"scope,omitempty"`
+	Deployer     Address `toml:"deployer,omitempty"`
+	TemplateName string  `toml:"templateName,omitempty"`
+	EIP165       string  `toml:"eip165,omitempty"`
 }
 
 type ReportingConfig struct {

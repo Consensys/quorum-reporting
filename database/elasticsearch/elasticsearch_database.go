@@ -11,8 +11,6 @@ import (
 
 	"github.com/elastic/go-elasticsearch/v7/esapi"
 	"github.com/elastic/go-elasticsearch/v7/esutil"
-	"github.com/ethereum/go-ethereum/common"
-
 	"quorumengineering/quorum-report/database"
 	"quorumengineering/quorum-report/log"
 	"quorumengineering/quorum-report/types"
@@ -70,7 +68,7 @@ func (es *ElasticsearchDB) init() error {
 }
 
 //AddressDB
-func (es *ElasticsearchDB) AddAddresses(addresses []common.Address) error {
+func (es *ElasticsearchDB) AddAddresses(addresses []types.Address) error {
 	if len(addresses) == 0 {
 		return nil
 	}
@@ -129,7 +127,7 @@ func (es *ElasticsearchDB) AddAddresses(addresses []common.Address) error {
 	return err
 }
 
-func (es *ElasticsearchDB) AddAddressFrom(address common.Address, from uint64) error {
+func (es *ElasticsearchDB) AddAddressFrom(address types.Address, from uint64) error {
 	contract := Contract{
 		Address:             address,
 		TemplateName:        address.String(),
@@ -148,7 +146,7 @@ func (es *ElasticsearchDB) AddAddressFrom(address common.Address, from uint64) e
 	return err
 }
 
-func (es *ElasticsearchDB) DeleteAddress(address common.Address) error {
+func (es *ElasticsearchDB) DeleteAddress(address types.Address) error {
 	deleteRequest := esapi.DeleteRequest{
 		Index:      ContractIndex,
 		DocumentID: address.String(),
@@ -164,22 +162,22 @@ func (es *ElasticsearchDB) DeleteAddress(address common.Address) error {
 	return nil
 }
 
-func (es *ElasticsearchDB) GetAddresses() ([]common.Address, error) {
+func (es *ElasticsearchDB) GetAddresses() ([]types.Address, error) {
 	results, err := es.apiClient.ScrollAllResults(ContractIndex, QueryAllAddressesTemplate)
 	if err != nil {
 		return nil, errors.New("error fetching addresses: " + err.Error())
 	}
-	converted := make([]common.Address, len(results))
+	converted := make([]types.Address, len(results))
 	for i, result := range results {
 		data := result.(map[string]interface{})["_source"].(map[string]interface{})
 		addr := data["address"].(string)
-		converted[i] = common.HexToAddress(addr)
+		converted[i] = types.NewAddress(addr)
 	}
 
 	return converted, nil
 }
 
-func (es *ElasticsearchDB) GetContractTemplate(address common.Address) (string, error) {
+func (es *ElasticsearchDB) GetContractTemplate(address types.Address) (string, error) {
 	contract, err := es.getContractByAddress(address)
 	if err != nil {
 		return "", err
@@ -188,7 +186,7 @@ func (es *ElasticsearchDB) GetContractTemplate(address common.Address) (string, 
 }
 
 //TemplateDB
-func (es *ElasticsearchDB) GetContractABI(address common.Address) (string, error) {
+func (es *ElasticsearchDB) GetContractABI(address types.Address) (string, error) {
 
 	contract, err := es.getContractByAddress(address)
 	if err != nil && err != database.ErrNotFound {
@@ -207,7 +205,7 @@ func (es *ElasticsearchDB) GetContractABI(address common.Address) (string, error
 	return "", nil
 }
 
-func (es *ElasticsearchDB) GetStorageLayout(address common.Address) (string, error) {
+func (es *ElasticsearchDB) GetStorageLayout(address types.Address) (string, error) {
 	contract, err := es.getContractByAddress(address)
 	if err != nil && err != database.ErrNotFound {
 		return "", err
@@ -241,7 +239,7 @@ func (es *ElasticsearchDB) AddTemplate(name string, abi string, layout string) e
 	return err
 }
 
-func (es *ElasticsearchDB) AssignTemplate(address common.Address, name string) error {
+func (es *ElasticsearchDB) AssignTemplate(address types.Address, name string) error {
 	return es.updateContract(address, "templateName", name)
 }
 
@@ -433,7 +431,7 @@ func (es *ElasticsearchDB) ReadTransaction(hash types.Hash) (*types.Transaction,
 
 // IndexDB
 
-func (es *ElasticsearchDB) IndexBlocks(addresses []common.Address, blocks []*types.Block) error {
+func (es *ElasticsearchDB) IndexBlocks(addresses []types.Address, blocks []*types.Block) error {
 	indexer := NewBlockIndexer(addresses, blocks, es)
 	if err := indexer.Index(); err != nil {
 		return err
@@ -441,7 +439,7 @@ func (es *ElasticsearchDB) IndexBlocks(addresses []common.Address, blocks []*typ
 	return es.updateAllLastFiltered(addresses, blocks[len(blocks)-1].Number)
 }
 
-func (es *ElasticsearchDB) IndexStorage(rawStorage map[common.Address]*types.AccountState, blockNumber uint64) error {
+func (es *ElasticsearchDB) IndexStorage(rawStorage map[types.Address]*types.AccountState, blockNumber uint64) error {
 	biState := es.apiClient.GetBulkHandler(StateIndex)
 	biStorage := es.apiClient.GetBulkHandler(StorageIndex)
 
@@ -500,7 +498,7 @@ func (es *ElasticsearchDB) IndexStorage(rawStorage map[common.Address]*types.Acc
 	return returnErr
 }
 
-func (es *ElasticsearchDB) GetContractCreationTransaction(address common.Address) (types.Hash, error) {
+func (es *ElasticsearchDB) GetContractCreationTransaction(address types.Address) (types.Hash, error) {
 	contract, err := es.getContractByAddress(address)
 	if err != nil {
 		return "", err
@@ -508,7 +506,7 @@ func (es *ElasticsearchDB) GetContractCreationTransaction(address common.Address
 	return contract.CreationTransaction, nil
 }
 
-func (es *ElasticsearchDB) GetAllTransactionsToAddress(address common.Address, options *types.QueryOptions) ([]types.Hash, error) {
+func (es *ElasticsearchDB) GetAllTransactionsToAddress(address types.Address, options *types.QueryOptions) ([]types.Hash, error) {
 	queryString := fmt.Sprintf(QueryByToAddressWithOptionsTemplate(options), address.String())
 
 	from := options.PageSize * options.PageNumber
@@ -536,7 +534,7 @@ func (es *ElasticsearchDB) GetAllTransactionsToAddress(address common.Address, o
 	return converted, nil
 }
 
-func (es *ElasticsearchDB) GetTransactionsToAddressTotal(address common.Address, options *types.QueryOptions) (uint64, error) {
+func (es *ElasticsearchDB) GetTransactionsToAddressTotal(address types.Address, options *types.QueryOptions) (uint64, error) {
 	queryString := fmt.Sprintf(QueryByToAddressWithOptionsTemplate(options), address.String())
 
 	req := esapi.CountRequest{
@@ -550,7 +548,7 @@ func (es *ElasticsearchDB) GetTransactionsToAddressTotal(address common.Address,
 	return results.Count, nil
 }
 
-func (es *ElasticsearchDB) GetAllTransactionsInternalToAddress(address common.Address, options *types.QueryOptions) ([]types.Hash, error) {
+func (es *ElasticsearchDB) GetAllTransactionsInternalToAddress(address types.Address, options *types.QueryOptions) ([]types.Hash, error) {
 	queryString := fmt.Sprintf(QueryInternalTransactionsWithOptionsTemplate(options), address.String())
 
 	from := options.PageSize * options.PageNumber
@@ -578,7 +576,7 @@ func (es *ElasticsearchDB) GetAllTransactionsInternalToAddress(address common.Ad
 	return converted, nil
 }
 
-func (es *ElasticsearchDB) GetTransactionsInternalToAddressTotal(address common.Address, options *types.QueryOptions) (uint64, error) {
+func (es *ElasticsearchDB) GetTransactionsInternalToAddressTotal(address types.Address, options *types.QueryOptions) (uint64, error) {
 	queryString := fmt.Sprintf(QueryInternalTransactionsWithOptionsTemplate(options), address.String())
 
 	req := esapi.CountRequest{
@@ -592,7 +590,7 @@ func (es *ElasticsearchDB) GetTransactionsInternalToAddressTotal(address common.
 	return results.Count, nil
 }
 
-func (es *ElasticsearchDB) GetAllEventsFromAddress(address common.Address, options *types.QueryOptions) ([]*types.Event, error) {
+func (es *ElasticsearchDB) GetAllEventsFromAddress(address types.Address, options *types.QueryOptions) ([]*types.Event, error) {
 	queryString := fmt.Sprintf(QueryByAddressWithOptionsTemplate(options), address.String())
 
 	from := options.PageSize * options.PageNumber
@@ -624,7 +622,7 @@ func (es *ElasticsearchDB) GetAllEventsFromAddress(address common.Address, optio
 	return convertedList, nil
 }
 
-func (es *ElasticsearchDB) GetEventsFromAddressTotal(address common.Address, options *types.QueryOptions) (uint64, error) {
+func (es *ElasticsearchDB) GetEventsFromAddressTotal(address types.Address, options *types.QueryOptions) (uint64, error) {
 	queryString := fmt.Sprintf(QueryByAddressWithOptionsTemplate(options), address.String())
 
 	req := esapi.CountRequest{
@@ -638,7 +636,7 @@ func (es *ElasticsearchDB) GetEventsFromAddressTotal(address common.Address, opt
 	return results.Count, nil
 }
 
-func (es *ElasticsearchDB) GetStorage(address common.Address, blockNumber uint64) (map[types.Hash]string, error) {
+func (es *ElasticsearchDB) GetStorage(address types.Address, blockNumber uint64) (map[types.Hash]string, error) {
 	fetchReq := esapi.GetRequest{
 		Index:      StateIndex,
 		DocumentID: address.String() + "-" + strconv.FormatUint(blockNumber, 10),
@@ -677,7 +675,7 @@ func (es *ElasticsearchDB) GetStorage(address common.Address, blockNumber uint64
 	return converted, nil
 }
 
-func (es *ElasticsearchDB) GetLastFiltered(address common.Address) (uint64, error) {
+func (es *ElasticsearchDB) GetLastFiltered(address types.Address) (uint64, error) {
 	contract, err := es.getContractByAddress(address)
 	if err != nil {
 		return 0, err
@@ -701,7 +699,7 @@ func (es *ElasticsearchDB) checkIsInitialized() (bool, error) {
 	return true, nil
 }
 
-func (es *ElasticsearchDB) getContractByAddress(address common.Address) (*Contract, error) {
+func (es *ElasticsearchDB) getContractByAddress(address types.Address) (*Contract, error) {
 	fetchReq := esapi.GetRequest{
 		Index:      ContractIndex,
 		DocumentID: address.String(),
@@ -737,7 +735,7 @@ func (es *ElasticsearchDB) getTemplateByName(name string) (*Template, error) {
 	return &template.Source, nil
 }
 
-func (es *ElasticsearchDB) updateAllLastFiltered(addresses []common.Address, lastFiltered uint64) error {
+func (es *ElasticsearchDB) updateAllLastFiltered(addresses []types.Address, lastFiltered uint64) error {
 	bi := es.apiClient.GetBulkHandler(ContractIndex)
 
 	for _, address := range addresses {
@@ -753,7 +751,7 @@ func (es *ElasticsearchDB) updateAllLastFiltered(addresses []common.Address, las
 	return nil
 }
 
-func (es *ElasticsearchDB) updateContract(address common.Address, property string, value string) error {
+func (es *ElasticsearchDB) updateContract(address types.Address, property string, value string) error {
 	//check contract exists before updating
 	_, err := es.getContractByAddress(address)
 	if err != nil {

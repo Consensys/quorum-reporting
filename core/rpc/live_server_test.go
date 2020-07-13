@@ -32,10 +32,10 @@ var (
 )
 
 func TestMain(m *testing.M) {
-	_ = apiDatabase.AddAddresses([]common.Address{address, common.HexToAddress("0x0000000000000000000000000000000000000009")})
+	_ = apiDatabase.AddAddresses([]types.Address{addr, types.NewAddress("0x0000000000000000000000000000000000000009")})
 	_ = apiDatabase.WriteBlocks([]*types.Block{block})
 	_ = apiDatabase.WriteTransactions([]*types.Transaction{tx1, tx2, tx3})
-	_ = apiDatabase.IndexBlocks([]common.Address{address}, []*types.Block{block})
+	_ = apiDatabase.IndexBlocks([]types.Address{addr}, []*types.Block{block})
 
 	rpcServer := SetupRpcServer(apiDatabase)
 	if err := rpcServer.Start(); err != nil {
@@ -124,7 +124,7 @@ func TestRPCAPIs_GetContractCreationTransaction(t *testing.T) {
 		Version: "2.0",
 		ID:      "67",
 		Method:  "reporting.GetContractCreationTransaction",
-		Params:  json.RawMessage(fmt.Sprintf(`["%s"]`, address.Hex())),
+		Params:  json.RawMessage(fmt.Sprintf(`["%s"]`, addr.Hex())),
 	}
 
 	rpcResponse, err := doRequest(msg)

@@ -48,7 +48,7 @@ func (r *RPCAPIs) GetTransaction(req *http.Request, hash *types.Hash, reply *typ
 		return err
 	}
 	address := tx.To
-	if address == (common.Address{}) {
+	if address.IsEmpty() {
 		address = tx.CreatedContract
 	}
 	contractABI, err := r.db.GetContractABI(address)
@@ -68,7 +68,7 @@ func (r *RPCAPIs) GetTransaction(req *http.Request, hash *types.Hash, reply *typ
 		parsedTx.ParsedEvents[i] = &types.ParsedEvent{
 			RawEvent: e,
 		}
-		contractABI, err := r.db.GetContractABI(common.HexToAddress(e.Address.Hex()))
+		contractABI, err := r.db.GetContractABI(e.Address)
 		if err != nil {
 			return err
 		}
@@ -82,7 +82,7 @@ func (r *RPCAPIs) GetTransaction(req *http.Request, hash *types.Hash, reply *typ
 	return nil
 }
 
-func (r *RPCAPIs) GetContractCreationTransaction(req *http.Request, address *common.Address, reply *types.Hash) error {
+func (r *RPCAPIs) GetContractCreationTransaction(req *http.Request, address *types.Address, reply *types.Hash) error {
 	txHash, err := r.db.GetContractCreationTransaction(*address)
 	if err != nil {
 		return err
@@ -267,14 +267,14 @@ func (r *RPCAPIs) AddAddress(req *http.Request, args *AddressWithOptionalBlock, 
 		// add address from
 		return r.db.AddAddressFrom(*args.Address, *args.BlockNumber)
 	}
-	return r.db.AddAddresses([]common.Address{*args.Address})
+	return r.db.AddAddresses([]types.Address{*args.Address})
 }
 
-func (r *RPCAPIs) DeleteAddress(req *http.Request, address *common.Address, reply *NullArgs) error {
+func (r *RPCAPIs) DeleteAddress(req *http.Request, address *types.Address, reply *NullArgs) error {
 	return r.db.DeleteAddress(*address)
 }
 
-func (r *RPCAPIs) GetAddresses(req *http.Request, args *NullArgs, reply *[]common.Address) error {
+func (r *RPCAPIs) GetAddresses(req *http.Request, args *NullArgs, reply *[]types.Address) error {
 	result, err := r.db.GetAddresses()
 	if err != nil {
 		return err
@@ -283,7 +283,7 @@ func (r *RPCAPIs) GetAddresses(req *http.Request, args *NullArgs, reply *[]commo
 	return nil
 }
 
-func (r *RPCAPIs) GetContractTemplate(req *http.Request, address *common.Address, reply *string) error {
+func (r *RPCAPIs) GetContractTemplate(req *http.Request, address *types.Address, reply *string) error {
 	result, err := r.db.GetContractTemplate(*address)
 	if err != nil {
 		return err
@@ -304,7 +304,7 @@ func (r *RPCAPIs) AddABI(req *http.Request, args *AddressWithData, reply *NullAr
 	return r.contractTemplateManager.AddContractABI(*args.Address, args.Data)
 }
 
-func (r *RPCAPIs) GetABI(req *http.Request, address *common.Address, reply *string) error {
+func (r *RPCAPIs) GetABI(req *http.Request, address *types.Address, reply *string) error {
 	result, err := r.db.GetContractABI(*address)
 	if err != nil {
 		return err
@@ -325,7 +325,7 @@ func (r *RPCAPIs) AddStorageABI(req *http.Request, args *AddressWithData, reply 
 	return r.contractTemplateManager.AddStorageLayout(*args.Address, args.Data)
 }
 
-func (r *RPCAPIs) GetStorageABI(req *http.Request, address *common.Address, reply *string) error {
+func (r *RPCAPIs) GetStorageABI(req *http.Request, address *types.Address, reply *string) error {
 	result, err := r.db.GetStorageLayout(*address)
 	if err != nil {
 		return err

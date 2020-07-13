@@ -1,9 +1,5 @@
 package types
 
-import (
-	"github.com/ethereum/go-ethereum/common"
-)
-
 type Template struct {
 	TemplateName  string `json:"templateName"`
 	ABI           string `json:"abi"`
@@ -47,13 +43,13 @@ type Transaction struct {
 	Index             uint64          `json:"index"`
 	Nonce             uint64          `json:"nonce"`
 	From              Address         `json:"from"`
-	To                common.Address  `json:"to"`
+	To                Address         `json:"to"`
 	Value             uint64          `json:"value"`
 	Gas               uint64          `json:"gas"`
 	GasPrice          uint64          `json:"gasPrice"`
 	GasUsed           uint64          `json:"gasUsed"`
 	CumulativeGasUsed uint64          `json:"cumulativeGasUsed"`
-	CreatedContract   common.Address  `json:"createdContract"`
+	CreatedContract   Address         `json:"createdContract"`
 	Data              HexData         `json:"data"`
 	PrivateData       HexData         `json:"privateData"`
 	IsPrivate         bool            `json:"isPrivate"`
@@ -63,14 +59,14 @@ type Transaction struct {
 }
 
 type InternalCall struct {
-	From    Address        `json:"from"`
-	To      common.Address `json:"to"`
-	Gas     uint64         `json:"gas"`
-	GasUsed uint64         `json:"gasUsed"`
-	Value   uint64         `json:"value"`
-	Input   HexData        `json:"input"`
-	Output  HexData        `json:"output"`
-	Type    string         `json:"type"`
+	From    Address `json:"from"`
+	To      Address `json:"to"`
+	Gas     uint64  `json:"gas"`
+	GasUsed uint64  `json:"gasUsed"`
+	Value   uint64  `json:"value"`
+	Input   HexData `json:"input"`
+	Output  HexData `json:"output"`
+	Type    string  `json:"type"`
 }
 
 type Event struct {

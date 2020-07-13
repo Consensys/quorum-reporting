@@ -1,7 +1,6 @@
 package monitor
 
 import (
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 
 	"quorumengineering/quorum-report/client"
@@ -83,13 +82,13 @@ func (tm *DefaultTransactionMonitor) createTransaction(block *types.Block, hash 
 		Index:             txOrigin.Index,
 		Nonce:             nonce,
 		From:              types.NewAddress(txOrigin.From.Address),
-		To:                common.HexToAddress(txOrigin.To.Address),
+		To:                types.NewAddress(txOrigin.To.Address),
 		Value:             value,
 		Gas:               gas,
 		GasUsed:           gasUsed,
 		GasPrice:          gasPrice,
 		CumulativeGasUsed: cumulativeGasUsed,
-		CreatedContract:   common.HexToAddress(txOrigin.CreatedContract.Address),
+		CreatedContract:   types.NewAddress(txOrigin.CreatedContract.Address),
 		Data:              types.NewHexData(txOrigin.InputData),
 		PrivateData:       types.NewHexData(txOrigin.PrivateInputData),
 		IsPrivate:         txOrigin.IsPrivate,
@@ -143,7 +142,7 @@ func (tm *DefaultTransactionMonitor) createTransaction(block *types.Block, hash 
 			}
 			tx.InternalCalls[i] = &types.InternalCall{
 				From:    types.NewAddress(respCallMap["from"].(string)),
-				To:      common.HexToAddress(respCallMap["to"].(string)),
+				To:      types.NewAddress(respCallMap["to"].(string)),
 				Gas:     gas,
 				GasUsed: gasUsed,
 				Value:   value,
