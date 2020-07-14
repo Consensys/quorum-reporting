@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"reflect"
 	"sync"
 	"time"
 
@@ -88,7 +89,11 @@ func (qc *QuorumClient) RPCCall(result interface{}, method string, args ...inter
 		if response.Error != nil {
 			return response.Error
 		}
-		return json.Unmarshal(response.Result, &result)
+		if err := json.Unmarshal(response.Result, &result); err != nil {
+			// if response.Result is not a JSON, assign to result directly
+			reflect.ValueOf(result).Elem().Set(reflect.ValueOf(response.Result))
+		}
+		return nil
 	case <-ticker.C:
 		return errors.New("rpc call timeout")
 	}
