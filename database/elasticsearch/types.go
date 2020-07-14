@@ -26,8 +26,8 @@ type State struct {
 }
 
 type Storage struct {
-	StorageRoot types.Hash            `json:"storageRoot"`
-	StorageMap  map[types.Hash]string `json:"storageMap"`
+	StorageRoot types.Hash        `json:"storageRoot"`
+	StorageMap  map[string]string `json:"storageMap"`
 }
 
 //

@@ -456,9 +456,13 @@ func (es *ElasticsearchDB) IndexStorage(rawStorage map[common.Address]*types.Acc
 			BlockNumber: blockNumber,
 			StorageRoot: dumpAccount.Root,
 		}
+		converted := make(map[string]string)
+		for slot, val := range dumpAccount.Storage {
+			converted[slot.String()] = val
+		}
 		storageMap := Storage{
 			StorageRoot: dumpAccount.Root,
-			StorageMap:  dumpAccount.Storage,
+			StorageMap:  converted,
 		}
 
 		_ = biState.Add(
@@ -666,7 +670,11 @@ func (es *ElasticsearchDB) GetStorage(address common.Address, blockNumber uint64
 	if err = json.Unmarshal(body, &storageResult); err != nil {
 		return nil, err
 	}
-	return storageResult.Source.StorageMap, nil
+	converted := make(map[types.Hash]string)
+	for slot, val := range storageResult.Source.StorageMap {
+		converted[types.NewHash(slot)] = val
+	}
+	return converted, nil
 }
 
 func (es *ElasticsearchDB) GetLastFiltered(address common.Address) (uint64, error) {
