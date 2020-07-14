@@ -48,10 +48,11 @@ func (addr *Address) UnmarshalJSON(input []byte) error {
 	if err := json.Unmarshal(input, &unwrapped); err != nil {
 		return err
 	}
-	if _, err := fromHex(unwrapped); err != nil {
+	bytes, err := fromHex(unwrapped)
+	if err != nil {
 		return err
 	}
-	*addr = NewAddress(unwrapped)
+	*addr = NewAddress(hex.EncodeToString(bytes))
 	return nil
 }
 
@@ -91,10 +92,11 @@ func (hsh *Hash) UnmarshalJSON(input []byte) error {
 	if err := json.Unmarshal(input, &unwrapped); err != nil {
 		return err
 	}
-	if _, err := fromHex(unwrapped); err != nil {
+	bytes, err := fromHex(unwrapped)
+	if err != nil {
 		return err
 	}
-	*hsh = NewHash(unwrapped)
+	*hsh = NewHash(hex.EncodeToString(bytes))
 	return nil
 }
 
