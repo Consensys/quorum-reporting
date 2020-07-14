@@ -6,6 +6,11 @@ type Template struct {
 	StorageLayout string `json:"storageLayout"`
 }
 
+type RawHeader struct {
+	Hash   string `json:"hash"`
+	Number string `json:"number"`
+}
+
 // received from eth_getBlockByNumber
 type RawBlock struct {
 	Hash         string   `json:"hash"`

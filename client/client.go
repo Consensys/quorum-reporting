@@ -4,11 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"quorumengineering/quorum-report/types"
 	"reflect"
 	"sync"
 	"time"
 
-	ethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/machinebox/graphql"
 
 	graphqlQuery "quorumengineering/quorum-report/graphql"
@@ -58,7 +58,7 @@ func NewQuorumClient(rawUrl, qgUrl string) (*QuorumClient, error) {
 }
 
 // Subscribe to chain head event.
-func (qc *QuorumClient) SubscribeChainHead(ch chan<- *ethTypes.Header) error {
+func (qc *QuorumClient) SubscribeChainHead(ch chan<- types.RawHeader) error {
 	return qc.wsClient.subscribeChainHead(ch)
 }
 

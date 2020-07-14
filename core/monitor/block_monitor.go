@@ -6,8 +6,6 @@ import (
 	"sync"
 	"time"
 
-	ethTypes "github.com/ethereum/go-ethereum/core/types"
-
 	"quorumengineering/quorum-report/client"
 	"quorumengineering/quorum-report/graphql"
 	"quorumengineering/quorum-report/log"
@@ -35,7 +33,7 @@ func NewDefaultBlockMonitor(quorumClient client.Client, newBlockChan chan *types
 
 func (bm *DefaultBlockMonitor) ListenToChainHead(cancelChan chan bool, stopChan chan bool) error {
 	// make headers channel buffered so that it doesn't block websocket listener
-	headers := make(chan *ethTypes.Header, 10)
+	headers := make(chan types.RawHeader, 10)
 	err := bm.quorumClient.SubscribeChainHead(headers)
 	if err != nil {
 		return err
@@ -80,14 +78,14 @@ func (bm *DefaultBlockMonitor) SyncHistoricBlocks(lastPersisted uint64, cancelCh
 	return nil
 }
 
-func (bm *DefaultBlockMonitor) processChainHead(header *ethTypes.Header) {
-	log.Info("Processing chain head", "block hash", header.Hash().String(), "block number", header.Number.String())
+func (bm *DefaultBlockMonitor) processChainHead(header types.RawHeader) {
+	log.Info("Processing chain head", "block hash", header.Hash, "block number", header.Number)
 	var blockOrigin types.RawBlock
-	err := bm.quorumClient.RPCCall(&blockOrigin, "eth_getBlockByNumber", uint64ToHex(header.Number.Uint64()), false)
+	err := bm.quorumClient.RPCCall(&blockOrigin, "eth_getBlockByNumber", header.Number, false)
 	for err != nil {
-		log.Warn("Error fetching block from Quorum", "block hash", header.Hash(), "block number", header.Number.String(), "err", err)
+		log.Warn("Error fetching block from Quorum", "block hash", header.Hash, "block number", header.Number, "err", err)
 		time.Sleep(1 * time.Second) //TODO: return err and let caller handle?
-		err = bm.quorumClient.RPCCall(&blockOrigin, "eth_getBlockByNumber", uint64ToHex(header.Number.Uint64()), false)
+		err = bm.quorumClient.RPCCall(&blockOrigin, "eth_getBlockByNumber", header.Number, false)
 	}
 	bm.newBlockChan <- bm.createBlock(&blockOrigin)
 }
