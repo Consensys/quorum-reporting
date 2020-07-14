@@ -1,7 +1,7 @@
 package monitor
 
 import (
-	"github.com/ethereum/go-ethereum/common/hexutil"
+	"strconv"
 
 	"quorumengineering/quorum-report/client"
 	"quorumengineering/quorum-report/graphql"
@@ -49,27 +49,27 @@ func (tm *DefaultTransactionMonitor) createTransaction(block *types.Block, hash 
 	txOrigin := txResult.Transaction
 
 	// Create reporting transaction struct fields.
-	nonce, err := hexutil.DecodeUint64(txOrigin.Nonce)
+	nonce, err := strconv.ParseUint(txOrigin.Nonce, 0, 64)
 	if err != nil {
 		return nil, err
 	}
-	value, err := hexutil.DecodeUint64(txOrigin.Value)
+	value, err := strconv.ParseUint(txOrigin.Value, 0, 64)
 	if err != nil {
 		return nil, err
 	}
-	gas, err := hexutil.DecodeUint64(txOrigin.Gas)
+	gas, err := strconv.ParseUint(txOrigin.Gas, 0, 64)
 	if err != nil {
 		return nil, err
 	}
-	gasUsed, err := hexutil.DecodeUint64(txOrigin.GasUsed)
+	gasUsed, err := strconv.ParseUint(txOrigin.GasUsed, 0, 64)
 	if err != nil {
 		return nil, err
 	}
-	cumulativeGasUsed, err := hexutil.DecodeUint64(txOrigin.CumulativeGasUsed)
+	cumulativeGasUsed, err := strconv.ParseUint(txOrigin.CumulativeGasUsed, 0, 64)
 	if err != nil {
 		return nil, err
 	}
-	gasPrice, err := hexutil.DecodeUint64(txOrigin.GasPrice)
+	gasPrice, err := strconv.ParseUint(txOrigin.GasPrice, 0, 64)
 	if err != nil {
 		return nil, err
 	}
@@ -125,17 +125,17 @@ func (tm *DefaultTransactionMonitor) createTransaction(block *types.Block, hash 
 		tx.InternalCalls = make([]*types.InternalCall, len(respCalls))
 		for i, respCall := range respCalls {
 			respCallMap := respCall.(map[string]interface{})
-			gas, err := hexutil.DecodeUint64(respCallMap["gas"].(string))
+			gas, err := strconv.ParseUint(respCallMap["gas"].(string), 0, 64)
 			if err != nil {
 				return nil, err
 			}
-			gasUsed, err := hexutil.DecodeUint64(respCallMap["gasUsed"].(string))
+			gasUsed, err := strconv.ParseUint(respCallMap["gasUsed"].(string), 0, 64)
 			if err != nil {
 				return nil, err
 			}
 			value = uint64(0)
 			if val, ok := respCallMap["value"].(string); ok {
-				value, err = hexutil.DecodeUint64(val)
+				value, err = strconv.ParseUint(val, 0, 64)
 				if err != nil {
 					return nil, err
 				}

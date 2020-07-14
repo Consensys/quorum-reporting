@@ -103,7 +103,7 @@ provided.
 Sample Response:
 ```$json
 {
-    transactions: [common.Hash...],
+    transactions: [types.Hash...],
     total: uint64,
     options: {
         beginBlockNumber, endBlockNumber,
@@ -121,7 +121,7 @@ options provided.
 Sample Response:
 ```$json
 {
-    transactions: [common.Hash...],
+    transactions: [types.Hash...],
     total: uint64,
     options: {
         beginBlockNumber, endBlockNumber,

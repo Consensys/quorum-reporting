@@ -1,10 +1,11 @@
 package monitor
 
 import (
+	"fmt"
+	"strconv"
 	"sync"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common/hexutil"
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
 
 	"quorumengineering/quorum-report/client"
@@ -82,11 +83,11 @@ func (bm *DefaultBlockMonitor) SyncHistoricBlocks(lastPersisted uint64, cancelCh
 func (bm *DefaultBlockMonitor) processChainHead(header *ethTypes.Header) {
 	log.Info("Processing chain head", "block hash", header.Hash().String(), "block number", header.Number.String())
 	var blockOrigin types.RawBlock
-	err := bm.quorumClient.RPCCall(&blockOrigin, "eth_getBlockByNumber", hexutil.EncodeBig(header.Number), false)
+	err := bm.quorumClient.RPCCall(&blockOrigin, "eth_getBlockByNumber", uint64ToHex(header.Number.Uint64()), false)
 	for err != nil {
 		log.Warn("Error fetching block from Quorum", "block hash", header.Hash(), "block number", header.Number.String(), "err", err)
 		time.Sleep(1 * time.Second) //TODO: return err and let caller handle?
-		err = bm.quorumClient.RPCCall(&blockOrigin, "eth_getBlockByNumber", hexutil.EncodeBig(header.Number), false)
+		err = bm.quorumClient.RPCCall(&blockOrigin, "eth_getBlockByNumber", uint64ToHex(header.Number.Uint64()), false)
 	}
 	bm.newBlockChan <- bm.createBlock(&blockOrigin)
 }
@@ -97,20 +98,23 @@ func (bm *DefaultBlockMonitor) createBlock(block *types.RawBlock) *types.Block {
 		txs = append(txs, types.NewHash(tx))
 	}
 
-	timestamp := hexutil.MustDecodeUint64(block.Timestamp)
+	timestamp, _ := strconv.ParseUint(block.Timestamp, 0, 64) //TODO: handle error
 	if bm.consensus == "raft" {
 		timestamp = timestamp / 1_000_000_000
 	}
 
+	blockNum, _ := strconv.ParseUint(block.Number, 0, 64)   //TODO: handle error
+	gasLimit, _ := strconv.ParseUint(block.GasLimit, 0, 64) //TODO: handle error
+	gasUsed, _ := strconv.ParseUint(block.GasUsed, 0, 64)   //TODO: handle error
 	return &types.Block{
 		Hash:         types.NewHash(block.Hash),
 		ParentHash:   types.NewHash(block.ParentHash),
 		StateRoot:    types.NewHash(block.StateRoot),
 		TxRoot:       types.NewHash(block.TxRoot),
 		ReceiptRoot:  types.NewHash(block.ReceiptRoot),
-		Number:       hexutil.MustDecodeUint64(block.Number),
-		GasLimit:     hexutil.MustDecodeUint64(block.GasLimit),
-		GasUsed:      hexutil.MustDecodeUint64(block.GasUsed),
+		Number:       blockNum,
+		GasLimit:     gasLimit,
+		GasUsed:      gasUsed,
 		Timestamp:    timestamp,
 		ExtraData:    block.ExtraData,
 		Transactions: txs,
@@ -126,7 +130,7 @@ func (bm *DefaultBlockMonitor) currentBlockNumber() (uint64, error) {
 	}
 
 	log.Debug("Current block number found", "number", currentBlockResult.Block.Number)
-	return hexutil.DecodeUint64(currentBlockResult.Block.Number)
+	return strconv.ParseUint(currentBlockResult.Block.Number, 0, 64)
 }
 
 func (bm *DefaultBlockMonitor) syncBlocks(start, end uint64, stopChan chan bool) *SyncError {
@@ -143,7 +147,7 @@ func (bm *DefaultBlockMonitor) syncBlocks(start, end uint64, stopChan chan bool)
 		}
 
 		var blockOrigin types.RawBlock
-		err := bm.quorumClient.RPCCall(&blockOrigin, "eth_getBlockByNumber", hexutil.EncodeUint64(i), false)
+		err := bm.quorumClient.RPCCall(&blockOrigin, "eth_getBlockByNumber", uint64ToHex(i), false)
 		if err != nil {
 			return NewSyncError(err.Error(), i)
 		}
@@ -157,4 +161,8 @@ func (bm *DefaultBlockMonitor) syncBlocks(start, end uint64, stopChan chan bool)
 
 	log.Info("Complete historical sync finished")
 	return nil
+}
+
+func uint64ToHex(num uint64) string {
+	return fmt.Sprintf("0x%x", num) // add 0x prefix
 }

@@ -1,13 +1,17 @@
 package monitor
 
 import (
+	"encoding/hex"
 	"strings"
-
-	"github.com/ethereum/go-ethereum/common"
 
 	"quorumengineering/quorum-report/client"
 	"quorumengineering/quorum-report/log"
 	"quorumengineering/quorum-report/types"
+)
+
+var (
+	eip165Sig, _   = hex.DecodeString("01ffc9a70")
+	eip165Check, _ = hex.DecodeString("ffffffff")
 )
 
 type TokenRule struct {
@@ -107,11 +111,10 @@ func (tm *DefaultTokenMonitor) checkRuleMeta(rule TokenRule, meta AddressWithMet
 	return true
 }
 
-func (tm *DefaultTokenMonitor) checkEIP165(rule TokenRule, addr types.Address, blockNum uint64) (string, error) {
-	address := types.NewAddress(addr.Hex()) //TODO: remove
+func (tm *DefaultTokenMonitor) checkEIP165(rule TokenRule, address types.Address, blockNum uint64) (string, error) {
 	if rule.eip165 != "" {
 		//check if the contract implements EIP165
-		eip165Call, err := client.CallEIP165(tm.quorumClient, address, common.Hex2Bytes("01ffc9a70"), blockNum)
+		eip165Call, err := client.CallEIP165(tm.quorumClient, address, eip165Sig, blockNum)
 		if err != nil {
 			return "", err
 		}
@@ -119,7 +122,7 @@ func (tm *DefaultTokenMonitor) checkEIP165(rule TokenRule, addr types.Address, b
 			return "", nil
 		}
 
-		eip165CallCheck, err := client.CallEIP165(tm.quorumClient, address, common.Hex2Bytes("ffffffff"), blockNum)
+		eip165CallCheck, err := client.CallEIP165(tm.quorumClient, address, eip165Check, blockNum)
 		if err != nil {
 			return "", err
 		}
@@ -128,7 +131,11 @@ func (tm *DefaultTokenMonitor) checkEIP165(rule TokenRule, addr types.Address, b
 		}
 
 		//now we know it implements EIP165, so lets check the interfaces
-		detected, err := client.CallEIP165(tm.quorumClient, address, common.Hex2Bytes(rule.eip165), blockNum)
+		funcSig, err := hex.DecodeString(rule.eip165)
+		if err != nil {
+			return "", err
+		}
+		detected, err := client.CallEIP165(tm.quorumClient, address, funcSig, blockNum)
 		if err != nil {
 			return "", err
 		}

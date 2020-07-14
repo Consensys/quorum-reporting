@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/ethereum/go-ethereum/common"
 	"net/http"
 	"os"
 	"testing"
@@ -248,9 +247,9 @@ func TestNewRPCAPIs_AddAddress(t *testing.T) {
 	}
 	rpcResponseBefore, err := doRequest(msgBefore)
 	assert.Nil(t, err)
-	var resultBefore []common.Address
+	var resultBefore []types.Address
 	_ = json.Unmarshal(rpcResponseBefore.Result, &resultBefore)
-	assert.NotContains(t, resultBefore, common.HexToAddress("0x1349f3e1b8d71effb47b840594ff27da7e603d17"))
+	assert.NotContains(t, resultBefore, types.NewAddress("0x1349f3e1b8d71effb47b840594ff27da7e603d17"))
 
 	//add the address to the DB
 	msg := rpcMessage{
@@ -272,9 +271,9 @@ func TestNewRPCAPIs_AddAddress(t *testing.T) {
 	}
 	rpcResponseAfter, err := doRequest(msgAfter)
 	assert.Nil(t, err)
-	var resultAfter []common.Address
+	var resultAfter []types.Address
 	_ = json.Unmarshal(rpcResponseAfter.Result, &resultAfter)
-	assert.Contains(t, resultAfter, common.HexToAddress("0x1349f3e1b8d71effb47b840594ff27da7e603d17"))
+	assert.Contains(t, resultAfter, types.NewAddress("0x1349f3e1b8d71effb47b840594ff27da7e603d17"))
 
 	//delete the address from the database
 	msgDelete := rpcMessage{
@@ -296,9 +295,9 @@ func TestNewRPCAPIs_AddAddress(t *testing.T) {
 	}
 	rpcResponseAfterDelete, err := doRequest(msgAfterDelete)
 	assert.Nil(t, err)
-	var resultAfterDelete []common.Address
+	var resultAfterDelete []types.Address
 	_ = json.Unmarshal(rpcResponseAfterDelete.Result, &resultAfterDelete)
-	assert.NotContains(t, resultAfterDelete, common.HexToAddress("0x1349f3e1b8d71effb47b840594ff27da7e603d17"))
+	assert.NotContains(t, resultAfterDelete, types.NewAddress("0x1349f3e1b8d71effb47b840594ff27da7e603d17"))
 }
 
 func doRequest(request rpcMessage) (rpcMessage, error) {
