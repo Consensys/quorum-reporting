@@ -36,3 +36,36 @@ func TestEventParsing(t *testing.T) {
 	asJson, _ := json.Marshal(allParsedResults)
 	assert.JSONEq(t, expectedEventResults, string(asJson))
 }
+
+func TestContractABIArgument_IsDynamic(t *testing.T) {
+	testMatrix := []struct {
+		testType        ContractABIArgument
+		expectedDynamic bool
+	}{
+		{ContractABIArgument{Type: "uint256[]"}, true},
+		{ContractABIArgument{Type: "string[]"}, true},
+		{ContractABIArgument{Type: "bytes"}, true},
+		{ContractABIArgument{Type: "string"}, true},
+		{ContractABIArgument{Type: "string[5]"}, true},
+		{ContractABIArgument{Type: "bytes[5]"}, true},
+		{ContractABIArgument{Type: "int256"}, false},
+		{ContractABIArgument{Type: "int256[5]"}, false},
+		{ContractABIArgument{Type: "uint256"}, false},
+		{ContractABIArgument{Type: "uint256[5]"}, false},
+		{ContractABIArgument{Type: "bytes1[5]"}, false},
+		{ContractABIArgument{Type: "bytes32"}, false},
+		{ContractABIArgument{Type: "address"}, false},
+		{ContractABIArgument{Type: "address[32]"}, false},
+		{ContractABIArgument{Type: "bool"}, false},
+		{ContractABIArgument{Type: "bool[5]"}, false},
+		{ContractABIArgument{Type: "tuple", Components: []ContractABIArgument{{Type: "uint256"}}}, false},
+		{ContractABIArgument{Type: "tuple", Components: []ContractABIArgument{{Type: "string"}}}, true},
+		{ContractABIArgument{Type: "tuple", Components: []ContractABIArgument{{Type: "uint256"}, {Type: "string"}}}, true},
+		{ContractABIArgument{Type: "tuple[5]", Components: []ContractABIArgument{{Type: "uint256"}}}, false},
+	}
+
+	for idx, test := range testMatrix {
+		isDynamic := test.testType.IsDynamic()
+		assert.EqualValues(t, test.expectedDynamic, isDynamic, "Test index %d failed", idx)
+	}
+}

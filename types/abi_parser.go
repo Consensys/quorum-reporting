@@ -44,8 +44,6 @@ func ParseUint(bytes []byte) *big.Int {
 func hash(input string) []byte {
 	d := sha3.NewLegacyKeccak256()
 	d.Write([]byte(input))
-	d.Sum(nil)
-
 	return d.Sum(nil)
 }
 

@@ -103,7 +103,7 @@ func (arg ContractABIArgument) IsDynamic() bool {
 		return true
 	}
 	// the case for fixed size array (dynamic array would be handled above)
-	if arg.Type == "bytes[" || arg.Type == "string[" {
+	if strings.HasPrefix(arg.Type, "bytes[") || strings.HasPrefix(arg.Type, "string[") {
 		return true
 	}
 
