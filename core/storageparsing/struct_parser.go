@@ -11,6 +11,6 @@ func (p *Parser) ParseStruct(entry types.SolidityStorageEntry, namedType types.S
 		Types:   p.template.Types,
 	}
 
-	structParser := NewParser(p.storageManager, newTemplate, newOffset)
+	structParser := NewParser(p.storageManager, newTemplate, types.NewHash(newOffset.Hex())) //TODO: remove
 	return structParser.ParseRawStorage()
 }

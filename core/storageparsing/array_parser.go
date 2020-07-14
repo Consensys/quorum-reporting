@@ -23,7 +23,7 @@ func (p *Parser) ParseArray(entry types.SolidityStorageEntry, namedType types.So
 
 	newTemplate := p.createArrayStorageDocument(sizeOfArray, sizeOfElement, namedType.Base)
 
-	arrayParser := NewParser(p.storageManager, newTemplate, storageSlot)
+	arrayParser := NewParser(p.storageManager, newTemplate, types.NewHash(storageSlot.Hex())) //TODO: remove
 	out, err := arrayParser.ParseRawStorage()
 	if err != nil {
 		return nil, err

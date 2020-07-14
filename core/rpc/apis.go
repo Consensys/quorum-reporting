@@ -5,8 +5,6 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/ethereum/go-ethereum/common"
-
 	"quorumengineering/quorum-report/core/storageparsing"
 	"quorumengineering/quorum-report/database"
 	"quorumengineering/quorum-report/types"
@@ -236,13 +234,7 @@ func (r *RPCAPIs) GetStorageHistory(req *http.Request, args *AddressWithBlockRan
 		if rawStorage == nil {
 			continue
 		}
-		//TODO: temporary
-		converted := make(map[common.Hash]string)
-		for k, v := range rawStorage {
-			converted[common.HexToHash(k.String())] = v
-		}
-		//
-		historicStorage, err := storageparsing.ParseRawStorage(converted, parsedAbi)
+		historicStorage, err := storageparsing.ParseRawStorage(rawStorage, parsedAbi)
 		if err != nil {
 			return err
 		}
