@@ -21,8 +21,7 @@ func (abi ABIStructure) ToInternalABI() *ContractABI {
 		//Nothing to do as they have no impact for the ABI
 		//Only here to show the have been intentionally left out
 		case "constructor":
-			function := entry.AsFunction()
-			contractAbi.Constructor = ContractABIFunction{"constructor", "", function.Inputs, nil}
+			contractAbi.Constructor = entry.AsConstructor()
 		case "", "function":
 			contractAbi.Functions = append(contractAbi.Functions, entry.AsFunction())
 		case "event":
@@ -39,6 +38,10 @@ type ABIStructureEntry struct {
 	Inputs    []ABIStructureArgument `json:"inputs"`
 	Outputs   []ABIStructureArgument `json:"outputs"`
 	Anonymous bool                   `json:"anonymous"`
+}
+
+func (entry ABIStructureEntry) AsConstructor() ContractABIFunction {
+	return ContractABIFunction{"constructor", "", entry.AsFunction().Inputs, nil}
 }
 
 func (entry ABIStructureEntry) AsFunction() ContractABIFunction {
