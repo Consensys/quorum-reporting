@@ -3,7 +3,6 @@ package client
 import (
 	"errors"
 	"math/big"
-	"quorumengineering/quorum-report/types"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
