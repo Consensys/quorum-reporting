@@ -3,7 +3,7 @@ package factory
 import (
 	"sync"
 
-	lru "github.com/hashicorp/golang-lru"
+	"github.com/bluele/gcache"
 
 	"quorumengineering/quorum-report/database"
 	"quorumengineering/quorum-report/types"
@@ -12,10 +12,10 @@ import (
 type DatabaseWithCache struct {
 	db                    database.Database
 	addressCache          map[types.Address]bool
-	blockCache            *lru.Cache
-	transactionCache      *lru.Cache
-	storageCache          *lru.Cache
-	contractCreationCache *lru.Cache
+	blockCache            gcache.Cache
+	transactionCache      gcache.Cache
+	storageCache          gcache.Cache
+	contractCreationCache gcache.Cache
 	// mutex lock
 	blockMux   sync.RWMutex
 	addressMux sync.RWMutex
@@ -24,22 +24,6 @@ type DatabaseWithCache struct {
 func NewDatabaseWithCache(db database.Database, cacheSize int) (database.Database, error) {
 	if cacheSize == 0 {
 		return db, nil
-	}
-	blockCache, err := lru.New(cacheSize)
-	if err != nil {
-		return nil, err
-	}
-	transactionCache, err := lru.New(cacheSize)
-	if err != nil {
-		return nil, err
-	}
-	storageCache, err := lru.New(cacheSize)
-	if err != nil {
-		return nil, err
-	}
-	contractCreationCache, err := lru.New(cacheSize)
-	if err != nil {
-		return nil, err
 	}
 
 	existingAddresses, err := db.GetAddresses()
@@ -53,10 +37,10 @@ func NewDatabaseWithCache(db database.Database, cacheSize int) (database.Databas
 	return &DatabaseWithCache{
 		db:                    db,
 		addressCache:          addressCache,
-		blockCache:            blockCache,
-		transactionCache:      transactionCache,
-		storageCache:          storageCache,
-		contractCreationCache: contractCreationCache,
+		blockCache:            gcache.New(cacheSize).LRU().Build(),
+		transactionCache:      gcache.New(cacheSize).LRU().Build(),
+		storageCache:          gcache.New(cacheSize).LRU().Build(),
+		contractCreationCache: gcache.New(cacheSize).LRU().Build(),
 	}, nil
 }
 
@@ -150,20 +134,20 @@ func (cachingDB *DatabaseWithCache) WriteBlocks(blocks []*types.Block) error {
 		return err
 	}
 	for _, block := range blocks {
-		cachingDB.blockCache.Add(block.Number, block)
+		cachingDB.blockCache.Set(block.Number, block)
 	}
 	return nil
 }
 
 func (cachingDB *DatabaseWithCache) ReadBlock(blockNumber uint64) (*types.Block, error) {
-	if cachedBlock, ok := cachingDB.blockCache.Get(blockNumber); ok {
+	if cachedBlock, err := cachingDB.blockCache.Get(blockNumber); err == nil {
 		return cachedBlock.(*types.Block), nil
 	}
 	block, err := cachingDB.db.ReadBlock(blockNumber)
 	if err != nil {
 		return nil, err
 	}
-	cachingDB.blockCache.Add(block.Number, block)
+	cachingDB.blockCache.Set(block.Number, block)
 	return block, nil
 }
 
@@ -179,20 +163,20 @@ func (cachingDB *DatabaseWithCache) WriteTransactions(txns []*types.Transaction)
 		return err
 	}
 	for _, tx := range txns {
-		cachingDB.transactionCache.Add(tx.Hash.String(), tx)
+		cachingDB.transactionCache.Set(tx.Hash.String(), tx)
 	}
 	return nil
 }
 
 func (cachingDB *DatabaseWithCache) ReadTransaction(hash types.Hash) (*types.Transaction, error) {
-	if cachedTx, ok := cachingDB.transactionCache.Get(hash.String()); ok {
+	if cachedTx, err := cachingDB.transactionCache.Get(hash.String()); err == nil {
 		return cachedTx.(*types.Transaction), nil
 	}
 	tx, err := cachingDB.db.ReadTransaction(hash)
 	if err != nil {
 		return nil, err
 	}
-	cachingDB.transactionCache.Add(tx.Hash.String(), tx)
+	cachingDB.transactionCache.Set(tx.Hash.String(), tx)
 	return tx, nil
 }
 
@@ -205,7 +189,7 @@ func (cachingDB *DatabaseWithCache) IndexStorage(rawStorage map[types.Address]*t
 }
 
 func (cachingDB *DatabaseWithCache) GetContractCreationTransaction(address types.Address) (types.Hash, error) {
-	if cachedHash, ok := cachingDB.contractCreationCache.Get(address); ok {
+	if cachedHash, err := cachingDB.contractCreationCache.Get(address); err == nil {
 		return cachedHash.(types.Hash), nil
 	}
 	hash, err := cachingDB.db.GetContractCreationTransaction(address)
@@ -213,7 +197,7 @@ func (cachingDB *DatabaseWithCache) GetContractCreationTransaction(address types
 		return "", err
 	}
 	if hash.IsEmpty() {
-		cachingDB.contractCreationCache.Add(address, hash)
+		cachingDB.contractCreationCache.Set(address, hash)
 	}
 	return hash, nil
 }

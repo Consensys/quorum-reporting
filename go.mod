@@ -3,13 +3,13 @@ module quorumengineering/quorum-report
 go 1.13
 
 require (
+	github.com/bluele/gcache v0.0.0-20190518031135-bc40bd653833
 	github.com/elastic/go-elasticsearch/v7 v7.5.1-0.20200409075911-14061b088525
 	github.com/gin-gonic/contrib v0.0.0-20191209060500-d6e26eeaa607
 	github.com/gin-gonic/gin v1.6.3
 	github.com/golang/mock v1.4.3
 	github.com/gorilla/rpc v1.2.1-0.20190627040322-27d3316e212c
 	github.com/gorilla/websocket v1.4.2
-	github.com/hashicorp/golang-lru v0.5.4
 	github.com/machinebox/graphql v0.2.2
 	github.com/matryer/is v1.3.0 // indirect
 	github.com/naoina/go-stringutil v0.1.0 // indirect
