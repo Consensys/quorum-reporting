@@ -4,9 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
-	"strings"
 
-	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 
 	"quorumengineering/quorum-report/core/storageparsing"
@@ -291,7 +289,7 @@ func (r *RPCAPIs) AddABI(req *http.Request, args *AddressWithData, reply *NullAr
 	}
 
 	// check ABI is valid
-	if _, err := abi.JSON(strings.NewReader(args.Data)); err != nil {
+	if _, err := types.NewABIStructureFromJSON(args.Data); err != nil {
 		return err
 	}
 	return r.contractTemplateManager.AddContractABI(*args.Address, args.Data)
@@ -329,7 +327,7 @@ func (r *RPCAPIs) GetStorageABI(req *http.Request, address *common.Address, repl
 
 func (r *RPCAPIs) AddTemplate(req *http.Request, args *TemplateArgs, reply *NullArgs) error {
 	// check ABI is valid
-	if _, err := abi.JSON(strings.NewReader(args.Abi)); err != nil {
+	if _, err := types.NewABIStructureFromJSON(args.Abi); err != nil {
 		return err
 	}
 	// check storage layout is valid

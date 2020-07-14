@@ -134,7 +134,7 @@ func TestGetCode_WithError(t *testing.T) {
 
 func TestEIP165(t *testing.T) {
 	mockRPC := map[string]interface{}{
-		"eth_call<ethereum.CallMsg Value>0x2": common.LeftPadBytes([]byte{1}, 32),
+		"eth_call<types.CallArgs Value>0x2": common.LeftPadBytes([]byte{1}, 32),
 	}
 
 	stubClient := NewStubQuorumClient(nil, mockRPC)
@@ -168,7 +168,7 @@ func TestEIP165_WithClientError(t *testing.T) {
 
 func TestEIP165_WithWrongSizeResult(t *testing.T) {
 	mockRPC := map[string]interface{}{
-		"eth_call<ethereum.CallMsg Value>0x1": []byte{},
+		"eth_call<types.CallArgs Value>0x1": []byte{},
 	}
 
 	stubClient := NewStubQuorumClient(nil, mockRPC)

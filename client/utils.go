@@ -3,8 +3,8 @@ package client
 import (
 	"errors"
 	"math/big"
+	"quorumengineering/quorum-report/types"
 
-	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/state"
@@ -70,11 +70,11 @@ func CallEIP165(c Client, address common.Address, interfaceId []byte, blockNum *
 		return false, errors.New("interfaceId wrong size")
 	}
 
-	calldata := append(eip165Id, common.RightPadBytes(interfaceId, 32)...)
+	calldata := hexutil.Bytes(append(eip165Id, common.RightPadBytes(interfaceId, 32)...))
 
-	msg := ethereum.CallMsg{
+	msg := types.CallArgs{
 		To:   &address,
-		Data: calldata,
+		Data: &calldata,
 	}
 
 	var res []byte

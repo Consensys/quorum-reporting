@@ -1,10 +1,8 @@
 package memory
 
 import (
-	"strings"
 	"testing"
 
-	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/state"
 	"github.com/stretchr/testify/assert"
@@ -98,7 +96,6 @@ func TestMemoryDB_WriteBlocks(t *testing.T) {
 func TestMemoryDB(t *testing.T) {
 	// test data
 	db := NewMemoryDB()
-	testABI, _ := abi.JSON(strings.NewReader(jsondata))
 	rawStorage := map[common.Address]*state.DumpAccount{
 		address: {
 			Storage: map[common.Hash]string{
@@ -117,7 +114,7 @@ func TestMemoryDB(t *testing.T) {
 	testAssignTemplate(t, db, address, testTemplateName, false)
 	testGetTemplates(t, db, 1)
 	testGetStorageLayout(t, db, address, testTemplateStorage)
-	testGetContractABI(t, db, address, &testABI)
+	testGetContractABI(t, db, address, jsondata)
 	// 3. Write transaction and get it.
 	testWriteTransactions(t, db, tx1, tx2, tx3)
 	testReadTransaction(t, db, tx1.Hash, tx1)
@@ -173,18 +170,10 @@ func testGetAddresses(t *testing.T, db database.Database, expected int) {
 	}
 }
 
-func testGetContractABI(t *testing.T, db database.Database, address common.Address, expected *abi.ABI) {
+func testGetContractABI(t *testing.T, db database.Database, address common.Address, expected string) {
 	retrieved, err := db.GetContractABI(address)
-	parsed, _ := abi.JSON(strings.NewReader(retrieved))
-	if err != nil {
-		t.Fatalf("expected no error, but got %v", err)
-	}
-	if len(parsed.Events) != len(expected.Events) {
-		t.Fatalf("expected %v events, but got %v", len(expected.Events), len(parsed.Events))
-	}
-	if len(parsed.Methods) != len(expected.Methods) {
-		t.Fatalf("expected %v methods, but got %v", len(expected.Methods), len(parsed.Methods))
-	}
+	assert.Nil(t, err)
+	assert.Equal(t, expected, retrieved)
 }
 
 func testGetStorageLayout(t *testing.T, db database.Database, address common.Address, expected string) {

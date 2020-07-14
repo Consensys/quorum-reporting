@@ -103,13 +103,13 @@ func TestAPIParsing(t *testing.T) {
 	parsedTx1 := &types.ParsedTransaction{}
 	err = apis.GetTransaction(dummyReq, &tx1.Hash, parsedTx1)
 	assert.Nil(t, err)
-	assert.Equal(t, "constructor(uint256)", parsedTx1.Sig)
+	assert.Equal(t, "constructor(uint256 _initVal)", parsedTx1.Sig)
 	assert.Equal(t, big.NewInt(42), parsedTx1.ParsedData["_initVal"])
 
 	parsedTx2 := &types.ParsedTransaction{}
 	err = apis.GetTransaction(dummyReq, &tx2.Hash, parsedTx2)
 	assert.Nil(t, err)
-	assert.Equal(t, "set(uint256)", parsedTx2.Sig)
+	assert.Equal(t, "set(uint256 _x)", parsedTx2.Sig)
 	assert.Equal(t, big.NewInt(999), parsedTx2.ParsedData["_x"])
 	assert.Equal(t, "0x60fe47b1", parsedTx2.Func4Bytes.String())
 
