@@ -28,7 +28,7 @@ var (
 		Hash:   types.NewHash("0xc7fd1915b4b8ac6344e750e4eaeacf9114d4e185f9c10b6b3bc7049511a96998"),
 		Number: 1,
 		Transactions: []types.Hash{
-			types.NewHash("0x1a6f4292bac138df9a7854a07c93fd14ca7de53265e8fe01b6c986f97d6c1ee7"), types.NewHash("tx2"), types.NewHash("tx3"),
+			types.NewHash("0x1a6f4292bac138df9a7854a07c93fd14ca7de53265e8fe01b6c986f97d6c1ee7"), types.NewHash("0xbc77a72b3409ba3e098cb45bac1b7727b59dae9a05f37a0dbc61007949c8cede"), types.NewHash("0xb2d58900a820afddd1d926845e7655d445885524b9af1cc946b45949be74cc08"),
 		},
 		ParentHash:  types.NewHash(""),
 		ReceiptRoot: types.NewHash(""),
@@ -44,7 +44,7 @@ var (
 		CreatedContract: addr,
 	}
 	tx2 = &types.Transaction{ // set
-		Hash:            types.NewHash("tx2"),
+		Hash:            types.NewHash("0xbc77a72b3409ba3e098cb45bac1b7727b59dae9a05f37a0dbc61007949c8cede"),
 		BlockNumber:     1,
 		From:            types.NewAddress("0x0000000000000000000000000000000000000009"),
 		To:              addr,
@@ -52,7 +52,7 @@ var (
 		CreatedContract: "",
 	}
 	tx3 = &types.Transaction{ // private
-		Hash:            types.NewHash("tx3"),
+		Hash:            types.NewHash("0xb2d58900a820afddd1d926845e7655d445885524b9af1cc946b45949be74cc08"),
 		BlockNumber:     1,
 		From:            types.NewAddress("0x0000000000000000000000000000000000000009"),
 		To:              addr,

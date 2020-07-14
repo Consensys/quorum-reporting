@@ -28,7 +28,7 @@ var (
 		CreatedContract: addr,
 	}
 	tx2 = &types.Transaction{
-		Hash:        types.NewHash("tx2"),
+		Hash:        types.NewHash("0xbc77a72b3409ba3e098cb45bac1b7727b59dae9a05f37a0dbc61007949c8cede"),
 		BlockNumber: 1,
 		From:        types.NewAddress("0x0000000000000000000000000000000000000009"),
 		To:          uselessAddress,
@@ -40,7 +40,7 @@ var (
 		},
 	}
 	tx3 = &types.Transaction{
-		Hash:        types.NewHash("tx3"),
+		Hash:        types.NewHash("0xb2d58900a820afddd1d926845e7655d445885524b9af1cc946b45949be74cc08"),
 		BlockNumber: 1,
 		From:        types.NewAddress("0x0000000000000000000000000000000000000010"),
 		To:          addr,
@@ -54,7 +54,7 @@ var (
 		Hash:   types.NewHash("dummy"),
 		Number: 1,
 		Transactions: []types.Hash{
-			types.NewHash("0x1a6f4292bac138df9a7854a07c93fd14ca7de53265e8fe01b6c986f97d6c1ee7"), types.NewHash("tx2"), types.NewHash("tx3"),
+			types.NewHash("0x1a6f4292bac138df9a7854a07c93fd14ca7de53265e8fe01b6c986f97d6c1ee7"), types.NewHash("0xbc77a72b3409ba3e098cb45bac1b7727b59dae9a05f37a0dbc61007949c8cede"), types.NewHash("0xb2d58900a820afddd1d926845e7655d445885524b9af1cc946b45949be74cc08"),
 		},
 	}
 )
@@ -127,9 +127,9 @@ func TestMemoryDB(t *testing.T) {
 	testIndexBlock(t, db, addr, block)
 	testGetLastFiltered(t, db, addr, 1)
 	testGetContractCreationTransaction(t, db, addr, types.NewHash("0x1a6f4292bac138df9a7854a07c93fd14ca7de53265e8fe01b6c986f97d6c1ee7"))
-	testGetAllTransactionsToAddress(t, db, addr, types.NewHash("tx3"))
+	testGetAllTransactionsToAddress(t, db, addr, types.NewHash("0xb2d58900a820afddd1d926845e7655d445885524b9af1cc946b45949be74cc08"))
 	testGetTransactionsToAddressTotal(t, db, addr, 1)
-	testGetAllTransactionsInternalToAddress(t, db, addr, types.NewHash("tx2"))
+	testGetAllTransactionsInternalToAddress(t, db, addr, types.NewHash("0xbc77a72b3409ba3e098cb45bac1b7727b59dae9a05f37a0dbc61007949c8cede"))
 	testGetTransactionsInternalToAddressTotal(t, db, addr, 1)
 	testGetAllEventsByAddress(t, db, addr, 1)
 	testGetStorage(t, db, addr, 1, 2)
