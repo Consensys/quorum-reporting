@@ -11,12 +11,17 @@ import (
 
 func DumpAddress(c Client, address types.Address, blockNumber uint64) (*types.AccountState, error) {
 	log.Debug("Fetching account dump", "account", address.String(), "blocknumber", blockNumber)
-	dumpAccount := &types.AccountState{}
+	dumpAccount := &types.RawAccountState{}
 	err := c.RPCCall(&dumpAccount, "debug_dumpAddress", address, fmt.Sprintf("0x%x", blockNumber))
 	if err != nil {
 		return nil, err
 	}
-	return dumpAccount, nil
+
+	converted := make(map[types.Hash]string)
+	for k, v := range dumpAccount.Storage {
+		converted[types.NewHash(k)] = v
+	}
+	return &types.AccountState{Root: dumpAccount.Root, Storage: converted}, nil
 }
 
 func TraceTransaction(c Client, txHash types.Hash) (map[string]interface{}, error) {

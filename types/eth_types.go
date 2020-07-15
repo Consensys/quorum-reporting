@@ -115,6 +115,11 @@ func fromHex(hexString string) ([]byte, error) {
 	return hex.DecodeString(hexString)
 }
 
+type RawAccountState struct {
+	Root    Hash              `json:"root"`
+	Storage map[string]string `json:"storage,omitempty"`
+}
+
 type AccountState struct {
 	Root    Hash            `json:"root"`
 	Storage map[Hash]string `json:"storage,omitempty"`

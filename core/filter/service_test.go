@@ -11,10 +11,10 @@ import (
 func TestIndexBlock(t *testing.T) {
 	// setup
 	mockRPC := map[string]interface{}{
-		"debug_dumpAddress00000000000000000000000000000000000000010x4": &types.AccountState{},
-		"debug_dumpAddress00000000000000000000000000000000000000010x5": &types.AccountState{},
-		"debug_dumpAddress00000000000000000000000000000000000000010x6": &types.AccountState{},
-		"debug_dumpAddress00000000000000000000000000000000000000020x6": &types.AccountState{},
+		"debug_dumpAddress00000000000000000000000000000000000000010x4": &types.RawAccountState{},
+		"debug_dumpAddress00000000000000000000000000000000000000010x5": &types.RawAccountState{},
+		"debug_dumpAddress00000000000000000000000000000000000000010x6": &types.RawAccountState{},
+		"debug_dumpAddress00000000000000000000000000000000000000020x6": &types.RawAccountState{},
 	}
 	db := &FakeDB{
 		[]types.Address{types.NewAddress("1"), types.NewAddress("2")},
