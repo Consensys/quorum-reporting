@@ -82,7 +82,7 @@ func (tm *DefaultTokenMonitor) InspectTransaction(tx *types.Transaction) (map[ty
 			}
 
 			// Check contract bytecode directly for all 4bytes presented in abi
-			contractBytecode, err := client.GetCode(tm.quorumClient, types.NewAddress(addressWithMeta.address.Hex()), tx.BlockHash) //TODO: remove
+			contractBytecode, err := client.GetCode(tm.quorumClient, addressWithMeta.address, tx.BlockHash)
 			if err != nil {
 				return nil, err
 			}
