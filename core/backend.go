@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common"
-
 	"quorumengineering/quorum-report/client"
 	"quorumengineering/quorum-report/core/filter"
 	"quorumengineering/quorum-report/core/monitor"
@@ -67,7 +65,7 @@ func New(config types.ReportingConfig) (*Backend, error) {
 	}
 	// store all addresses
 	log.Info("Adding addresses from configuration file to database")
-	initialAddresses := []common.Address{}
+	initialAddresses := []types.Address{}
 	for _, address := range config.Addresses {
 		if address.From > 0 {
 			// register address from a given block number

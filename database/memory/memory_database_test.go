@@ -3,8 +3,6 @@ package memory
 import (
 	"testing"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/state"
 	"github.com/stretchr/testify/assert"
 
 	"quorumengineering/quorum-report/database"
@@ -18,45 +16,45 @@ const jsondata = `
 ]`
 
 var (
-	address        = common.HexToAddress("0x0000000000000000000000000000000000000001")
-	uselessAddress = common.HexToAddress("0x0000000000000000000000000000000000000002")
+	addr           = types.NewAddress("0x0000000000000000000000000000000000000001")
+	uselessAddress = types.NewAddress("0x0000000000000000000000000000000000000002")
 
 	tx1 = &types.Transaction{
-		Hash:            common.BytesToHash([]byte("tx1")),
+		Hash:            types.NewHash("0x1a6f4292bac138df9a7854a07c93fd14ca7de53265e8fe01b6c986f97d6c1ee7"),
 		BlockNumber:     1,
-		From:            common.HexToAddress("0x0000000000000000000000000000000000000009"),
-		To:              common.Address{0},
+		From:            types.NewAddress("0x0000000000000000000000000000000000000009"),
+		To:              "",
 		Value:           666,
-		CreatedContract: address,
+		CreatedContract: addr,
 	}
 	tx2 = &types.Transaction{
-		Hash:        common.BytesToHash([]byte("tx2")),
+		Hash:        types.NewHash("0xbc77a72b3409ba3e098cb45bac1b7727b59dae9a05f37a0dbc61007949c8cede"),
 		BlockNumber: 1,
-		From:        common.HexToAddress("0x0000000000000000000000000000000000000009"),
+		From:        types.NewAddress("0x0000000000000000000000000000000000000009"),
 		To:          uselessAddress,
 		Value:       666,
 		InternalCalls: []*types.InternalCall{
 			{
-				To: address,
+				To: addr,
 			},
 		},
 	}
 	tx3 = &types.Transaction{
-		Hash:        common.BytesToHash([]byte("tx3")),
+		Hash:        types.NewHash("0xb2d58900a820afddd1d926845e7655d445885524b9af1cc946b45949be74cc08"),
 		BlockNumber: 1,
-		From:        common.HexToAddress("0x0000000000000000000000000000000000000010"),
-		To:          address,
+		From:        types.NewAddress("0x0000000000000000000000000000000000000010"),
+		To:          addr,
 		Value:       666,
 		Events: []*types.Event{
 			{}, // dummy event
-			{Address: address},
+			{Address: addr},
 		},
 	}
 	block = &types.Block{
-		Hash:   common.BytesToHash([]byte("dummy")),
+		Hash:   types.NewHash("dummy"),
 		Number: 1,
-		Transactions: []common.Hash{
-			common.BytesToHash([]byte("tx1")), common.BytesToHash([]byte("tx2")), common.BytesToHash([]byte("tx3")),
+		Transactions: []types.Hash{
+			types.NewHash("0x1a6f4292bac138df9a7854a07c93fd14ca7de53265e8fe01b6c986f97d6c1ee7"), types.NewHash("0xbc77a72b3409ba3e098cb45bac1b7727b59dae9a05f37a0dbc61007949c8cede"), types.NewHash("0xb2d58900a820afddd1d926845e7655d445885524b9af1cc946b45949be74cc08"),
 		},
 	}
 )
@@ -96,25 +94,25 @@ func TestMemoryDB_WriteBlocks(t *testing.T) {
 func TestMemoryDB(t *testing.T) {
 	// test data
 	db := NewMemoryDB()
-	rawStorage := map[common.Address]*state.DumpAccount{
-		address: {
-			Storage: map[common.Hash]string{
-				common.HexToHash("0x0000000000000000000000000000000000000000000000000000000000000000"): "2a",
-				common.HexToHash("0x0000000000000000000000000000000000000000000000000000000000000001"): "2b",
+	rawStorage := map[types.Address]*types.AccountState{
+		addr: {
+			Storage: map[types.Hash]string{
+				types.NewHash("0x0000000000000000000000000000000000000000000000000000000000000000"): "2a",
+				types.NewHash("0x0000000000000000000000000000000000000000000000000000000000000001"): "2b",
 			},
 		},
 	}
 	testTemplateName := "test template name"
 	testTemplateStorage := "test template storage"
 	// 1. Add an address and get it.
-	testAddAddresses(t, db, []common.Address{address}, false)
+	testAddAddresses(t, db, []types.Address{addr}, false)
 	testGetAddresses(t, db, 1)
 	// 2. Add template, assign template, get templates
 	testAddTemplate(t, db, testTemplateName, jsondata, testTemplateStorage, false)
-	testAssignTemplate(t, db, address, testTemplateName, false)
+	testAssignTemplate(t, db, addr, testTemplateName, false)
 	testGetTemplates(t, db, 1)
-	testGetStorageLayout(t, db, address, testTemplateStorage)
-	testGetContractABI(t, db, address, jsondata)
+	testGetStorageLayout(t, db, addr, testTemplateStorage)
+	testGetContractABI(t, db, addr, jsondata)
 	// 3. Write transaction and get it.
 	testWriteTransactions(t, db, tx1, tx2, tx3)
 	testReadTransaction(t, db, tx1.Hash, tx1)
@@ -124,23 +122,23 @@ func TestMemoryDB(t *testing.T) {
 	testReadBlock(t, db, 1, block.Hash)
 	testGetLastPersistedBlockNumeber(t, db, 1)
 	// 5. Index block and check last filtered. Retrieve all transactions/ events.
-	testGetLastFiltered(t, db, address, 0)
+	testGetLastFiltered(t, db, addr, 0)
 	testIndexStorage(t, db, 1, rawStorage)
-	testIndexBlock(t, db, address, block)
-	testGetLastFiltered(t, db, address, 1)
-	testGetContractCreationTransaction(t, db, address, common.BytesToHash([]byte("tx1")))
-	testGetAllTransactionsToAddress(t, db, address, common.BytesToHash([]byte("tx3")))
-	testGetTransactionsToAddressTotal(t, db, address, 1)
-	testGetAllTransactionsInternalToAddress(t, db, address, common.BytesToHash([]byte("tx2")))
-	testGetTransactionsInternalToAddressTotal(t, db, address, 1)
-	testGetAllEventsByAddress(t, db, address, 1)
-	testGetStorage(t, db, address, 1, 2)
+	testIndexBlock(t, db, addr, block)
+	testGetLastFiltered(t, db, addr, 1)
+	testGetContractCreationTransaction(t, db, addr, types.NewHash("0x1a6f4292bac138df9a7854a07c93fd14ca7de53265e8fe01b6c986f97d6c1ee7"))
+	testGetAllTransactionsToAddress(t, db, addr, types.NewHash("0xb2d58900a820afddd1d926845e7655d445885524b9af1cc946b45949be74cc08"))
+	testGetTransactionsToAddressTotal(t, db, addr, 1)
+	testGetAllTransactionsInternalToAddress(t, db, addr, types.NewHash("0xbc77a72b3409ba3e098cb45bac1b7727b59dae9a05f37a0dbc61007949c8cede"))
+	testGetTransactionsInternalToAddressTotal(t, db, addr, 1)
+	testGetAllEventsByAddress(t, db, addr, 1)
+	testGetStorage(t, db, addr, 1, 2)
 	// 6. Delete address and check last filtered
-	testDeleteAddress(t, db, address, false)
-	testGetLastFiltered(t, db, address, 0)
+	testDeleteAddress(t, db, addr, false)
+	testGetLastFiltered(t, db, addr, 0)
 }
 
-func testAddAddresses(t *testing.T, db database.Database, addresses []common.Address, expectedErr bool) {
+func testAddAddresses(t *testing.T, db database.Database, addresses []types.Address, expectedErr bool) {
 	err := db.AddAddresses(addresses)
 	if err != nil && !expectedErr {
 		t.Fatalf("expected no error, but got %v", err)
@@ -150,7 +148,7 @@ func testAddAddresses(t *testing.T, db database.Database, addresses []common.Add
 	}
 }
 
-func testDeleteAddress(t *testing.T, db database.Database, address common.Address, expectedErr bool) {
+func testDeleteAddress(t *testing.T, db database.Database, address types.Address, expectedErr bool) {
 	err := db.DeleteAddress(address)
 	if err != nil && !expectedErr {
 		t.Fatalf("expected no error, but got %v", err)
@@ -170,13 +168,13 @@ func testGetAddresses(t *testing.T, db database.Database, expected int) {
 	}
 }
 
-func testGetContractABI(t *testing.T, db database.Database, address common.Address, expected string) {
+func testGetContractABI(t *testing.T, db database.Database, address types.Address, expected string) {
 	retrieved, err := db.GetContractABI(address)
 	assert.Nil(t, err)
 	assert.Equal(t, expected, retrieved)
 }
 
-func testGetStorageLayout(t *testing.T, db database.Database, address common.Address, expected string) {
+func testGetStorageLayout(t *testing.T, db database.Database, address types.Address, expected string) {
 	retrieved, err := db.GetStorageLayout(address)
 	if err != nil {
 		t.Fatalf("expected no error, but got %v", err)
@@ -196,7 +194,7 @@ func testAddTemplate(t *testing.T, db database.Database, testTemplateName, testA
 	}
 }
 
-func testAssignTemplate(t *testing.T, db database.Database, address common.Address, testTemplateName string, expectedErr bool) {
+func testAssignTemplate(t *testing.T, db database.Database, address types.Address, testTemplateName string, expectedErr bool) {
 	err := db.AssignTemplate(address, testTemplateName)
 	if err != nil && !expectedErr {
 		t.Fatalf("expected no error, but got %v", err)
@@ -226,7 +224,7 @@ func testWriteBlock(t *testing.T, db database.Database, block *types.Block, expe
 	}
 }
 
-func testReadBlock(t *testing.T, db database.Database, blockNumber uint64, expected common.Hash) {
+func testReadBlock(t *testing.T, db database.Database, blockNumber uint64, expected types.Hash) {
 	block, err := db.ReadBlock(blockNumber)
 	if err != nil {
 		t.Fatalf("expected no error, but got %v", err)
@@ -253,7 +251,7 @@ func testWriteTransactions(t *testing.T, db database.Database, txs ...*types.Tra
 	}
 }
 
-func testReadTransaction(t *testing.T, db database.Database, hash common.Hash, expected *types.Transaction) {
+func testReadTransaction(t *testing.T, db database.Database, hash types.Hash, expected *types.Transaction) {
 	tx, err := db.ReadTransaction(hash)
 	if err != nil {
 		t.Fatalf("expected no error, but got %v", err)
@@ -269,21 +267,21 @@ func testReadTransaction(t *testing.T, db database.Database, hash common.Hash, e
 	}
 }
 
-func testIndexBlock(t *testing.T, db database.Database, address common.Address, block *types.Block) {
-	err := db.IndexBlocks([]common.Address{address}, []*types.Block{block})
+func testIndexBlock(t *testing.T, db database.Database, address types.Address, block *types.Block) {
+	err := db.IndexBlocks([]types.Address{address}, []*types.Block{block})
 	if err != nil {
 		t.Fatalf("expected no error, but got %v", err)
 	}
 }
 
-func testIndexStorage(t *testing.T, db database.Database, blockNumber uint64, rawStorage map[common.Address]*state.DumpAccount) {
+func testIndexStorage(t *testing.T, db database.Database, blockNumber uint64, rawStorage map[types.Address]*types.AccountState) {
 	err := db.IndexStorage(rawStorage, blockNumber)
 	if err != nil {
 		t.Fatalf("expected no error, but got %v", err)
 	}
 }
 
-func testGetLastFiltered(t *testing.T, db database.Database, address common.Address, expected uint64) {
+func testGetLastFiltered(t *testing.T, db database.Database, address types.Address, expected uint64) {
 	actual, err := db.GetLastFiltered(address)
 	if err != nil {
 		t.Fatalf("expected no error, but got %v", err)
@@ -293,7 +291,7 @@ func testGetLastFiltered(t *testing.T, db database.Database, address common.Addr
 	}
 }
 
-func testGetContractCreationTransaction(t *testing.T, db database.Database, address common.Address, expected common.Hash) {
+func testGetContractCreationTransaction(t *testing.T, db database.Database, address types.Address, expected types.Hash) {
 	actual, err := db.GetContractCreationTransaction(address)
 	if err != nil {
 		t.Fatalf("expected no error, but got %v", err)
@@ -303,7 +301,7 @@ func testGetContractCreationTransaction(t *testing.T, db database.Database, addr
 	}
 }
 
-func testGetAllTransactionsToAddress(t *testing.T, db database.Database, address common.Address, expected common.Hash) {
+func testGetAllTransactionsToAddress(t *testing.T, db database.Database, address types.Address, expected types.Hash) {
 	txs, err := db.GetAllTransactionsToAddress(address, nil)
 	if err != nil {
 		t.Fatalf("expected no error, but got %v", err)
@@ -313,7 +311,7 @@ func testGetAllTransactionsToAddress(t *testing.T, db database.Database, address
 	}
 }
 
-func testGetTransactionsToAddressTotal(t *testing.T, db database.Database, address common.Address, expected int) {
+func testGetTransactionsToAddressTotal(t *testing.T, db database.Database, address types.Address, expected int) {
 	total, err := db.GetTransactionsToAddressTotal(address, nil)
 	if err != nil {
 		t.Fatalf("expected no error, but got %v", err)
@@ -323,7 +321,7 @@ func testGetTransactionsToAddressTotal(t *testing.T, db database.Database, addre
 	}
 }
 
-func testGetAllTransactionsInternalToAddress(t *testing.T, db database.Database, address common.Address, expected common.Hash) {
+func testGetAllTransactionsInternalToAddress(t *testing.T, db database.Database, address types.Address, expected types.Hash) {
 	txs, err := db.GetAllTransactionsInternalToAddress(address, nil)
 	if err != nil {
 		t.Fatalf("expected no error, but got %v", err)
@@ -333,7 +331,7 @@ func testGetAllTransactionsInternalToAddress(t *testing.T, db database.Database,
 	}
 }
 
-func testGetTransactionsInternalToAddressTotal(t *testing.T, db database.Database, address common.Address, expected int) {
+func testGetTransactionsInternalToAddressTotal(t *testing.T, db database.Database, address types.Address, expected int) {
 	total, err := db.GetTransactionsInternalToAddressTotal(address, nil)
 	if err != nil {
 		t.Fatalf("expected no error, but got %v", err)
@@ -343,7 +341,7 @@ func testGetTransactionsInternalToAddressTotal(t *testing.T, db database.Databas
 	}
 }
 
-func testGetAllEventsByAddress(t *testing.T, db database.Database, address common.Address, expected int) {
+func testGetAllEventsByAddress(t *testing.T, db database.Database, address types.Address, expected int) {
 	events, err := db.GetAllEventsFromAddress(address, nil)
 	if err != nil {
 		t.Fatalf("expected no error, but got %v", err)
@@ -353,7 +351,7 @@ func testGetAllEventsByAddress(t *testing.T, db database.Database, address commo
 	}
 }
 
-func testGetStorage(t *testing.T, db database.Database, address common.Address, blockNumber uint64, expected int) {
+func testGetStorage(t *testing.T, db database.Database, address types.Address, blockNumber uint64, expected int) {
 	storage, err := db.GetStorage(address, blockNumber)
 	if err != nil {
 		t.Fatalf("expected no error, but got %v", err)

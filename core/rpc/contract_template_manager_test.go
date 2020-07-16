@@ -3,14 +3,14 @@ package rpc
 import (
 	"testing"
 
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/assert"
 
 	"quorumengineering/quorum-report/database/memory"
+	"quorumengineering/quorum-report/types"
 )
 
 func TestDefaultContractManager_AddContractABI_ExistingTemplate(t *testing.T) {
-	address := common.HexToAddress("0x1349f3e1b8d71effb47b840594ff27da7e603d17")
+	address := types.NewAddress("0x1349f3e1b8d71effb47b840594ff27da7e603d17")
 
 	db := memory.NewMemoryDB()
 	_ = db.AddTemplate("sample template", "sample abi", "sample layout")
@@ -35,7 +35,7 @@ func TestDefaultContractManager_AddContractABI_ExistingTemplate(t *testing.T) {
 }
 
 func TestDefaultContractManager_AddContractABI_NoExistingTemplate(t *testing.T) {
-	address := common.HexToAddress("0x1349f3e1b8d71effb47b840594ff27da7e603d17")
+	address := types.NewAddress("0x1349f3e1b8d71effb47b840594ff27da7e603d17")
 	db := memory.NewMemoryDB()
 	contractManager := NewDefaultContractManager(db)
 
@@ -56,7 +56,7 @@ func TestDefaultContractManager_AddContractABI_NoExistingTemplate(t *testing.T) 
 }
 
 func TestDefaultContractManager_AddStorageLayout_ExistingTemplate(t *testing.T) {
-	address := common.HexToAddress("0x1349f3e1b8d71effb47b840594ff27da7e603d17")
+	address := types.NewAddress("0x1349f3e1b8d71effb47b840594ff27da7e603d17")
 
 	db := memory.NewMemoryDB()
 	_ = db.AddTemplate("sample template", "sample abi", "sample layout")
@@ -81,7 +81,7 @@ func TestDefaultContractManager_AddStorageLayout_ExistingTemplate(t *testing.T) 
 }
 
 func TestDefaultContractManager_AddStorageLayout_NoExistingTemplate(t *testing.T) {
-	address := common.HexToAddress("0x1349f3e1b8d71effb47b840594ff27da7e603d17")
+	address := types.NewAddress("0x1349f3e1b8d71effb47b840594ff27da7e603d17")
 	db := memory.NewMemoryDB()
 	contractManager := NewDefaultContractManager(db)
 

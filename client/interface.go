@@ -1,12 +1,12 @@
 package client
 
 import (
-	ethTypes "github.com/ethereum/go-ethereum/core/types"
+	"quorumengineering/quorum-report/types"
 )
 
 type Client interface {
 	// SubscribeChainHead subscribes to new chain header
-	SubscribeChainHead(chan<- *ethTypes.Header) error
+	SubscribeChainHead(chan<- types.RawHeader) error
 	// ExecuteGraphQLQuery performs a fully constructed query against the Geth
 	// GraphQL server
 	ExecuteGraphQLQuery(interface{}, string) error

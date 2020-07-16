@@ -5,7 +5,7 @@ import (
 	"errors"
 	"reflect"
 
-	ethTypes "github.com/ethereum/go-ethereum/core/types"
+	"quorumengineering/quorum-report/types"
 )
 
 // StubQuorumClient is used for unit test.
@@ -24,7 +24,7 @@ func NewStubQuorumClient(mockGraphQL map[string]map[string]interface{}, mockRPC 
 	return &StubQuorumClient{mockGraphQL, mockRPC}
 }
 
-func (qc *StubQuorumClient) SubscribeChainHead(chan<- *ethTypes.Header) error {
+func (qc *StubQuorumClient) SubscribeChainHead(chan<- types.RawHeader) error {
 	return errors.New("not implemented")
 }
 

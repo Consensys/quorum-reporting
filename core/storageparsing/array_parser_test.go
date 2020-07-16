@@ -1,7 +1,6 @@
 package storageparsing
 
 import (
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/assert"
 	"quorumengineering/quorum-report/types"
 	"testing"
@@ -16,12 +15,12 @@ func TestParser_determineSize_fixedSize(t *testing.T) {
 		Type:   sampleType,
 	}
 
-	sm := NewDefaultStorageHandler(make(map[common.Hash]string))
+	sm := NewDefaultStorageHandler(make(map[types.Hash]string))
 	doc := types.SolidityStorageDocument{
 		Storage: make([]types.SolidityStorageEntry, 0),
 		Types:   nil,
 	}
-	parser := NewParser(sm, doc, common.Hash{})
+	parser := NewParser(sm, doc, types.NewHash(""))
 
 	size, err := parser.determineSize(storageItem, false)
 
@@ -38,14 +37,14 @@ func TestParser_determineSize_dynamicSize(t *testing.T) {
 		Type:   sampleType,
 	}
 
-	storageMap := make(map[common.Hash]string)
-	storageMap[common.HexToHash("0x0000000000000000000000000000000000000000000000000000000000000000")] = "41a2"
+	storageMap := make(map[types.Hash]string)
+	storageMap[types.NewHash("0x0000000000000000000000000000000000000000000000000000000000000000")] = "41a2"
 	sm := NewDefaultStorageHandler(storageMap)
 	doc := types.SolidityStorageDocument{
 		Storage: make([]types.SolidityStorageEntry, 0),
 		Types:   nil,
 	}
-	parser := NewParser(sm, doc, common.Hash{})
+	parser := NewParser(sm, doc, types.NewHash(""))
 
 	size, err := parser.determineSize(storageItem, true)
 
@@ -54,12 +53,12 @@ func TestParser_determineSize_dynamicSize(t *testing.T) {
 }
 
 func TestParser_createArrayStorageDocument_smallElements(t *testing.T) {
-	sm := NewDefaultStorageHandler(make(map[common.Hash]string))
+	sm := NewDefaultStorageHandler(make(map[types.Hash]string))
 	doc := types.SolidityStorageDocument{
 		Storage: make([]types.SolidityStorageEntry, 0),
 		Types:   make(map[string]types.SolidityTypeEntry),
 	}
-	parser := NewParser(sm, doc, common.Hash{})
+	parser := NewParser(sm, doc, types.NewHash(""))
 
 	out := parser.createArrayStorageDocument(5, 1, "customType")
 
@@ -76,12 +75,12 @@ func TestParser_createArrayStorageDocument_smallElements(t *testing.T) {
 }
 
 func TestParser_createArrayStorageDocument_ElementsOverflowSlot(t *testing.T) {
-	sm := NewDefaultStorageHandler(make(map[common.Hash]string))
+	sm := NewDefaultStorageHandler(make(map[types.Hash]string))
 	doc := types.SolidityStorageDocument{
 		Storage: make([]types.SolidityStorageEntry, 0),
 		Types:   make(map[string]types.SolidityTypeEntry),
 	}
-	parser := NewParser(sm, doc, common.Hash{})
+	parser := NewParser(sm, doc, types.NewHash(""))
 
 	out := parser.createArrayStorageDocument(8, 10, "customType")
 
@@ -101,12 +100,12 @@ func TestParser_createArrayStorageDocument_ElementsOverflowSlot(t *testing.T) {
 }
 
 func TestParser_createArrayStorageDocument_ElementsTakeMultipleSlots(t *testing.T) {
-	sm := NewDefaultStorageHandler(make(map[common.Hash]string))
+	sm := NewDefaultStorageHandler(make(map[types.Hash]string))
 	doc := types.SolidityStorageDocument{
 		Storage: make([]types.SolidityStorageEntry, 0),
 		Types:   make(map[string]types.SolidityTypeEntry),
 	}
-	parser := NewParser(sm, doc, common.Hash{})
+	parser := NewParser(sm, doc, types.NewHash(""))
 
 	out := parser.createArrayStorageDocument(8, 80, "customType")
 

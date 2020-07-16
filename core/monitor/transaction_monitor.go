@@ -1,8 +1,7 @@
 package monitor
 
 import (
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
+	"strconv"
 
 	"quorumengineering/quorum-report/client"
 	"quorumengineering/quorum-report/graphql"
@@ -39,7 +38,7 @@ func (tm *DefaultTransactionMonitor) PullTransactions(block *types.Block) ([]*ty
 	return fetchedTransactions, nil
 }
 
-func (tm *DefaultTransactionMonitor) createTransaction(block *types.Block, hash common.Hash) (*types.Transaction, error) {
+func (tm *DefaultTransactionMonitor) createTransaction(block *types.Block, hash types.Hash) (*types.Transaction, error) {
 	log.Debug("Processing transaction", "hash", hash.String())
 
 	var txResult graphql.TransactionResult
@@ -50,27 +49,27 @@ func (tm *DefaultTransactionMonitor) createTransaction(block *types.Block, hash 
 	txOrigin := txResult.Transaction
 
 	// Create reporting transaction struct fields.
-	nonce, err := hexutil.DecodeUint64(txOrigin.Nonce)
+	nonce, err := strconv.ParseUint(txOrigin.Nonce, 0, 64)
 	if err != nil {
 		return nil, err
 	}
-	value, err := hexutil.DecodeUint64(txOrigin.Value)
+	value, err := strconv.ParseUint(txOrigin.Value, 0, 64)
 	if err != nil {
 		return nil, err
 	}
-	gas, err := hexutil.DecodeUint64(txOrigin.Gas)
+	gas, err := strconv.ParseUint(txOrigin.Gas, 0, 64)
 	if err != nil {
 		return nil, err
 	}
-	gasUsed, err := hexutil.DecodeUint64(txOrigin.GasUsed)
+	gasUsed, err := strconv.ParseUint(txOrigin.GasUsed, 0, 64)
 	if err != nil {
 		return nil, err
 	}
-	cumulativeGasUsed, err := hexutil.DecodeUint64(txOrigin.CumulativeGasUsed)
+	cumulativeGasUsed, err := strconv.ParseUint(txOrigin.CumulativeGasUsed, 0, 64)
 	if err != nil {
 		return nil, err
 	}
-	gasPrice, err := hexutil.DecodeUint64(txOrigin.GasPrice)
+	gasPrice, err := strconv.ParseUint(txOrigin.GasPrice, 0, 64)
 	if err != nil {
 		return nil, err
 	}
@@ -82,30 +81,30 @@ func (tm *DefaultTransactionMonitor) createTransaction(block *types.Block, hash 
 		BlockHash:         block.Hash,
 		Index:             txOrigin.Index,
 		Nonce:             nonce,
-		From:              common.HexToAddress(txOrigin.From.Address),
-		To:                common.HexToAddress(txOrigin.To.Address),
+		From:              types.NewAddress(txOrigin.From.Address),
+		To:                types.NewAddress(txOrigin.To.Address),
 		Value:             value,
 		Gas:               gas,
 		GasUsed:           gasUsed,
 		GasPrice:          gasPrice,
 		CumulativeGasUsed: cumulativeGasUsed,
-		CreatedContract:   common.HexToAddress(txOrigin.CreatedContract.Address),
-		Data:              hexutil.MustDecode(txOrigin.InputData),
-		PrivateData:       hexutil.MustDecode(txOrigin.PrivateInputData),
+		CreatedContract:   types.NewAddress(txOrigin.CreatedContract.Address),
+		Data:              types.NewHexData(txOrigin.InputData),
+		PrivateData:       types.NewHexData(txOrigin.PrivateInputData),
 		IsPrivate:         txOrigin.IsPrivate,
 		Timestamp:         block.Timestamp,
 	}
 	events := []*types.Event{}
 	for _, l := range txOrigin.Logs {
-		topics := []common.Hash{}
+		topics := []types.Hash{}
 		for _, t := range l.Topics {
-			topics = append(topics, common.HexToHash(t))
+			topics = append(topics, types.NewHash(t))
 		}
 		e := &types.Event{
 			Index:            l.Index,
-			Address:          common.HexToAddress(l.Account.Address),
+			Address:          types.NewAddress(l.Account.Address),
 			Topics:           topics,
-			Data:             hexutil.MustDecode(l.Data),
+			Data:             types.NewHexData(l.Data),
 			BlockNumber:      block.Number,
 			BlockHash:        block.Hash,
 			TransactionHash:  tx.Hash,
@@ -117,7 +116,7 @@ func (tm *DefaultTransactionMonitor) createTransaction(block *types.Block, hash 
 	tx.Events = events
 
 	var traceResp map[string]interface{}
-	traceResp, err = client.TraceTransaction(tm.quorumClient, tx.Hash)
+	traceResp, err = client.TraceTransaction(tm.quorumClient, types.NewHash(tx.Hash.Hex()))
 	if err != nil {
 		return nil, err
 	}
@@ -126,29 +125,29 @@ func (tm *DefaultTransactionMonitor) createTransaction(block *types.Block, hash 
 		tx.InternalCalls = make([]*types.InternalCall, len(respCalls))
 		for i, respCall := range respCalls {
 			respCallMap := respCall.(map[string]interface{})
-			gas, err := hexutil.DecodeUint64(respCallMap["gas"].(string))
+			gas, err := strconv.ParseUint(respCallMap["gas"].(string), 0, 64)
 			if err != nil {
 				return nil, err
 			}
-			gasUsed, err := hexutil.DecodeUint64(respCallMap["gasUsed"].(string))
+			gasUsed, err := strconv.ParseUint(respCallMap["gasUsed"].(string), 0, 64)
 			if err != nil {
 				return nil, err
 			}
 			value = uint64(0)
 			if val, ok := respCallMap["value"].(string); ok {
-				value, err = hexutil.DecodeUint64(val)
+				value, err = strconv.ParseUint(val, 0, 64)
 				if err != nil {
 					return nil, err
 				}
 			}
 			tx.InternalCalls[i] = &types.InternalCall{
-				From:    common.HexToAddress(respCallMap["from"].(string)),
-				To:      common.HexToAddress(respCallMap["to"].(string)),
+				From:    types.NewAddress(respCallMap["from"].(string)),
+				To:      types.NewAddress(respCallMap["to"].(string)),
 				Gas:     gas,
 				GasUsed: gasUsed,
 				Value:   value,
-				Input:   hexutil.MustDecode(respCallMap["input"].(string)),
-				Output:  hexutil.MustDecode(respCallMap["output"].(string)),
+				Input:   types.NewHexData(respCallMap["input"].(string)),
+				Output:  types.NewHexData(respCallMap["output"].(string)),
 				Type:    respCallMap["type"].(string),
 			}
 		}

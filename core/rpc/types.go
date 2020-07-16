@@ -2,7 +2,6 @@ package rpc
 
 import (
 	"errors"
-	"github.com/ethereum/go-ethereum/common"
 
 	"quorumengineering/quorum-report/types"
 )
@@ -14,12 +13,12 @@ var ErrNoAddress = errors.New("address not provided")
 type NullArgs struct{}
 
 type AddressWithOptions struct {
-	Address *common.Address
+	Address *types.Address
 	Options *types.QueryOptions
 }
 
 type AddressWithData struct {
-	Address *common.Address
+	Address *types.Address
 	Data    string
 }
 
@@ -30,12 +29,12 @@ type TemplateArgs struct {
 }
 
 type AddressWithOptionalBlock struct {
-	Address     *common.Address
+	Address     *types.Address
 	BlockNumber *uint64
 }
 
 type AddressWithBlockRange struct {
-	Address          *common.Address
+	Address          *types.Address
 	StartBlockNumber uint64
 	EndBlockNumber   uint64
 }
@@ -43,7 +42,7 @@ type AddressWithBlockRange struct {
 //Outputs
 
 type TransactionsResp struct {
-	Transactions []common.Hash       `json:"transactions"`
+	Transactions []types.Hash        `json:"transactions"`
 	Total        uint64              `json:"total"`
 	Options      *types.QueryOptions `json:"options"`
 }

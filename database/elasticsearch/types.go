@@ -1,16 +1,14 @@
 package elasticsearch
 
 import (
-	"github.com/ethereum/go-ethereum/common"
-
 	"quorumengineering/quorum-report/types"
 )
 
 type Contract struct {
-	Address             common.Address `json:"address"`
-	TemplateName        string         `json:"templateName"`
-	CreationTransaction common.Hash    `json:"creationTx"`
-	LastFiltered        uint64         `json:"lastFiltered"`
+	Address             types.Address `json:"address"`
+	TemplateName        string        `json:"templateName"`
+	CreationTransaction types.Hash    `json:"creationTx"`
+	LastFiltered        uint64        `json:"lastFiltered"`
 }
 
 type Template struct {
@@ -20,14 +18,14 @@ type Template struct {
 }
 
 type State struct {
-	Address     common.Address `json:"address"`
-	BlockNumber uint64         `json:"blockNumber"`
-	StorageRoot common.Hash    `json:"storageRoot"`
+	Address     types.Address `json:"address"`
+	BlockNumber uint64        `json:"blockNumber"`
+	StorageRoot types.Hash    `json:"storageRoot"`
 }
 
 type Storage struct {
-	StorageRoot common.Hash            `json:"storageRoot"`
-	StorageMap  map[common.Hash]string `json:"storageMap"`
+	StorageRoot types.Hash        `json:"storageRoot"`
+	StorageMap  map[string]string `json:"storageMap"`
 }
 
 //

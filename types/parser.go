@@ -3,8 +3,6 @@ package types
 import (
 	"encoding/hex"
 	"errors"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
 	"strings"
 
 	"quorumengineering/quorum-report/log"
@@ -12,7 +10,7 @@ import (
 
 type ParsedTransaction struct {
 	Sig            string                 `json:"txSig"`
-	Func4Bytes     hexutil.Bytes          `json:"func4Bytes"`
+	Func4Bytes     HexData                `json:"func4Bytes"`
 	ParsedData     map[string]interface{} `json:"parsedData"`
 	ParsedEvents   []*ParsedEvent         `json:"parsedEvents"`
 	RawTransaction *Transaction           `json:"rawTransaction"`
@@ -35,17 +33,17 @@ func (ptx *ParsedTransaction) ParseTransaction(rawABI string) error {
 	// set defaults
 	var data []byte
 	if len(ptx.RawTransaction.PrivateData) > 0 {
-		data = ptx.RawTransaction.PrivateData
+		data = ptx.RawTransaction.PrivateData.AsBytes()
 	} else {
-		data = ptx.RawTransaction.Data
+		data = ptx.RawTransaction.Data.AsBytes()
 	}
 	ptx.ParsedData = map[string]interface{}{}
 	// parse transaction data
-	if ptx.RawTransaction.To != (common.Address{}) {
-		ptx.Func4Bytes = data[:4]
+	if !ptx.RawTransaction.To.IsEmpty() {
+		ptx.Func4Bytes = HexData(hex.EncodeToString(data[:4]))
 		// check against all abi methods
 		for _, method := range internalAbi.Functions {
-			if method.Signature() == hex.EncodeToString(ptx.Func4Bytes) {
+			if method.Signature() == string(ptx.Func4Bytes) {
 				ptx.Sig = method.String()
 				result, err := method.Parse(data[4:])
 				if err != nil {
@@ -57,11 +55,11 @@ func (ptx *ParsedTransaction) ParseTransaction(rawABI string) error {
 	} else {
 		// contract deployment transaction
 		ptx.Sig = "constructor" + internalAbi.Constructor.String()
-		dataHex := hexutil.Encode(data)
+		dataHex := hex.EncodeToString(data)
 		if index := strings.Index(dataHex, "a165627a7a72305820"); index > 0 {
 			// search for pattern a165627a7a72305820 for solidity < 0.5.10
 			// <bytecode> + "a165627a7a72305820" + <256 bits whisperHash> + "0029"
-			index = (index - 2 + 18 + 64 + 4) / 2 // remove 0x, find hex position 18+64+4 after
+			index = (index + 18 + 64 + 4) / 2 // find hex position 18+64+4 after
 			result, err := internalAbi.Constructor.Parse(data[index:])
 			if err != nil {
 				return err
@@ -70,7 +68,7 @@ func (ptx *ParsedTransaction) ParseTransaction(rawABI string) error {
 		} else if index := strings.LastIndex(dataHex, "64736f6c6343"); index > 0 {
 			// search for pattern 64736f6c6343 for solidity >= 0.5.10,
 			// <bytecode> + "a265627a7a72305820" + <256 bits whisperHash> + "64736f6c6343" + compiler_version(e.g. 000608) + "0033"
-			index = (index - 2 + 12 + 6 + 4) / 2 // remove 0x, find hex position 12+6+4 after
+			index = (index + 12 + 6 + 4) / 2 // find hex position 12+6+4 after
 			result, err := internalAbi.Constructor.Parse(data[index:])
 			if err != nil {
 				return err
@@ -105,7 +103,7 @@ func (pe *ParsedEvent) ParseEvent(rawABI string) error {
 	for _, ev := range internalAbi.Events {
 		if "0x"+ev.Signature() == pe.RawEvent.Topics[0].String() {
 			pe.Sig = "event " + ev.String()
-			result, err := ev.Parse(pe.RawEvent.Data)
+			result, err := ev.Parse(pe.RawEvent.Data.AsBytes())
 			if err != nil {
 				return err
 			}

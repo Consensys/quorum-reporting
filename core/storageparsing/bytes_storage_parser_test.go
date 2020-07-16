@@ -1,23 +1,26 @@
 package storageparsing
 
 import (
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/stretchr/testify/assert"
-	"quorumengineering/quorum-report/types"
+	"encoding/hex"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+
+	"quorumengineering/quorum-report/types"
 )
 
 func TestParser_ParseBytesStorage_ShortByteArray(t *testing.T) {
 	sampleStorageItem := []byte("sample")
-	paddedItem := common.RightPadBytes(sampleStorageItem, 32)
+	paddedItem := make([]byte, 32)
+	copy(paddedItem, sampleStorageItem)
 	paddedItem[31] = 2 * 6
 
-	sm := NewDefaultStorageHandler(make(map[common.Hash]string))
+	sm := NewDefaultStorageHandler(make(map[types.Hash]string))
 	doc := types.SolidityStorageDocument{
 		Storage: make([]types.SolidityStorageEntry, 0),
 		Types:   nil,
 	}
-	parser := NewParser(sm, doc, common.Hash{})
+	parser := NewParser(sm, doc, types.NewHash(""))
 
 	out := parser.ParseBytesStorage(paddedItem, types.SolidityStorageEntry{})
 
@@ -26,19 +29,20 @@ func TestParser_ParseBytesStorage_ShortByteArray(t *testing.T) {
 }
 
 func TestParser_ParseBytesStorage_LargeByteArrayDoubleSlot(t *testing.T) {
-	sampleStorageItem := common.RightPadBytes([]byte("large sample that exceeds the 32 bytes of a single slot"), 64)
+	sampleItem := make([]byte, 64)
+	copy(sampleItem, "large sample that exceeds the 32 bytes of a single slot")
 	paddedItem := make([]byte, 32)
 	paddedItem[31] = 111
 
-	storageMap := make(map[common.Hash]string)
-	storageMap[common.HexToHash("0x290decd9548b62a8d60345a988386fc84ba6bc95484008f6362f93160ef3e563")] = common.Bytes2Hex(sampleStorageItem[:32])
-	storageMap[common.HexToHash("0x290decd9548b62a8d60345a988386fc84ba6bc95484008f6362f93160ef3e564")] = common.Bytes2Hex(sampleStorageItem[32:])
+	storageMap := make(map[types.Hash]string)
+	storageMap[types.NewHash("0x290decd9548b62a8d60345a988386fc84ba6bc95484008f6362f93160ef3e563")] = hex.EncodeToString(sampleItem[:32])
+	storageMap[types.NewHash("0x290decd9548b62a8d60345a988386fc84ba6bc95484008f6362f93160ef3e564")] = hex.EncodeToString(sampleItem[32:])
 	sm := NewDefaultStorageHandler(storageMap)
 	doc := types.SolidityStorageDocument{
 		Storage: make([]types.SolidityStorageEntry, 0),
 		Types:   nil,
 	}
-	parser := NewParser(sm, doc, common.Hash{})
+	parser := NewParser(sm, doc, types.NewHash(""))
 
 	//empty storage entry same as first storage entry with no offset
 	out := parser.ParseBytesStorage(paddedItem, types.SolidityStorageEntry{})
@@ -52,15 +56,16 @@ func TestParser_ParseBytesStorage_LargeByteArrayDoubleSlot(t *testing.T) {
 
 func TestParser_ParseStringStorage_ShortByteArray(t *testing.T) {
 	sampleStorageItem := []byte("sample")
-	paddedItem := common.RightPadBytes(sampleStorageItem, 32)
+	paddedItem := make([]byte, 32)
+	copy(paddedItem, sampleStorageItem)
 	paddedItem[31] = 2 * 6
 
-	sm := NewDefaultStorageHandler(make(map[common.Hash]string))
+	sm := NewDefaultStorageHandler(make(map[types.Hash]string))
 	doc := types.SolidityStorageDocument{
 		Storage: make([]types.SolidityStorageEntry, 0),
 		Types:   nil,
 	}
-	parser := NewParser(sm, doc, common.Hash{})
+	parser := NewParser(sm, doc, types.NewHash(""))
 
 	out := parser.ParseStringStorage(paddedItem, types.SolidityStorageEntry{})
 
@@ -69,19 +74,20 @@ func TestParser_ParseStringStorage_ShortByteArray(t *testing.T) {
 
 func TestParser_ParseStringStorage_LargeByteArrayDoubleSlot(t *testing.T) {
 	message := "large sample that exceeds the 32 bytes of a single slot"
-	sampleStorageItem := common.RightPadBytes([]byte(message), 64)
+	sampleItem := make([]byte, 64)
+	copy(sampleItem, message)
 	paddedItem := make([]byte, 32)
 	paddedItem[31] = 111
 
-	storageMap := make(map[common.Hash]string)
-	storageMap[common.HexToHash("0x290decd9548b62a8d60345a988386fc84ba6bc95484008f6362f93160ef3e563")] = common.Bytes2Hex(sampleStorageItem[:32])
-	storageMap[common.HexToHash("0x290decd9548b62a8d60345a988386fc84ba6bc95484008f6362f93160ef3e564")] = common.Bytes2Hex(sampleStorageItem[32:])
+	storageMap := make(map[types.Hash]string)
+	storageMap[types.NewHash("0x290decd9548b62a8d60345a988386fc84ba6bc95484008f6362f93160ef3e563")] = hex.EncodeToString(sampleItem[:32])
+	storageMap[types.NewHash("0x290decd9548b62a8d60345a988386fc84ba6bc95484008f6362f93160ef3e564")] = hex.EncodeToString(sampleItem[32:])
 	sm := NewDefaultStorageHandler(storageMap)
 	doc := types.SolidityStorageDocument{
 		Storage: make([]types.SolidityStorageEntry, 0),
 		Types:   nil,
 	}
-	parser := NewParser(sm, doc, common.Hash{})
+	parser := NewParser(sm, doc, types.NewHash(""))
 
 	//empty storage entry same as first storage entry with no offset
 	out := parser.ParseStringStorage(paddedItem, types.SolidityStorageEntry{})

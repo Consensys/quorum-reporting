@@ -1,10 +1,9 @@
 package storageparsing
 
 import (
+	"encoding/hex"
 	"math/big"
 	"strconv"
-
-	"github.com/ethereum/go-ethereum/common"
 
 	"quorumengineering/quorum-report/types"
 )
@@ -68,9 +67,10 @@ func (p *Parser) handleLargeByteArray(storageEntry []byte, entry types.SolidityS
 
 			allResults = append(allResults, currentResults...)
 
-			asBig := currentStorageSlot.Big()
+			asBytes, _ := hex.DecodeString(string(currentStorageSlot))
+			asBig := new(big.Int).SetBytes(asBytes)
 			asBig.Add(asBig, BigOne)
-			currentStorageSlot = common.BigToHash(asBig)
+			currentStorageSlot = types.NewHash(hex.EncodeToString(asBig.Bytes()))
 		} else {
 			currentResults := p.handleShortByteArray(p.storageManager.Get(currentStorageSlot), byte(resultsLeft.Uint64()))
 			allResults = append(allResults, currentResults...)

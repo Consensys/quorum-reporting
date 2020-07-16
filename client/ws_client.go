@@ -4,13 +4,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"quorumengineering/quorum-report/types"
 	"strconv"
 	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
 
-	ethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/gorilla/websocket"
 
 	"quorumengineering/quorum-report/log"
@@ -51,7 +51,7 @@ type webSocketClient struct {
 	idCounter                   uint32
 	chainHeadSubscriptionId     string
 	chainHeadSubscriptionCallId string
-	chainHeadChan               chan<- *ethTypes.Header
+	chainHeadChan               chan<- types.RawHeader
 	rpcPendingResp              map[string]chan<- *message
 	rpcMux                      sync.RWMutex
 }
@@ -84,7 +84,7 @@ func (c *webSocketClient) dial(rawUrl string) error {
 }
 
 // subscribe header
-func (c *webSocketClient) subscribeChainHead(ch chan<- *ethTypes.Header) error {
+func (c *webSocketClient) subscribeChainHead(ch chan<- types.RawHeader) error {
 	c.connMux.Lock()
 	defer c.connMux.Unlock()
 	if c.conn == nil {
@@ -214,7 +214,7 @@ func (c *webSocketClient) listen(shutdownChan <-chan struct{}) {
 				continue
 			}
 			if c.chainHeadSubscriptionId != "" && subMsg.ID == c.chainHeadSubscriptionId {
-				var chainHead *ethTypes.Header
+				var chainHead types.RawHeader
 				if err = json.Unmarshal(subMsg.Result, &chainHead); err != nil {
 					log.Error("Decode chain head error", "error", err)
 					continue

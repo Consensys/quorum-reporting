@@ -1,19 +1,20 @@
 package storageparsing
 
 import (
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/stretchr/testify/assert"
-	"quorumengineering/quorum-report/types"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+
+	"quorumengineering/quorum-report/types"
 )
 
 func TestParser_ParseUint_0(t *testing.T) {
-	sm := NewDefaultStorageHandler(make(map[common.Hash]string))
+	sm := NewDefaultStorageHandler(make(map[types.Hash]string))
 	doc := types.SolidityStorageDocument{
 		Storage: make([]types.SolidityStorageEntry, 0),
 		Types:   nil,
 	}
-	parser := NewParser(sm, doc, common.Hash{})
+	parser := NewParser(sm, doc, types.NewHash(""))
 
 	i := make([]byte, 32)
 
@@ -23,12 +24,12 @@ func TestParser_ParseUint_0(t *testing.T) {
 }
 
 func TestParser_ParseUint_1(t *testing.T) {
-	sm := NewDefaultStorageHandler(make(map[common.Hash]string))
+	sm := NewDefaultStorageHandler(make(map[types.Hash]string))
 	doc := types.SolidityStorageDocument{
 		Storage: make([]types.SolidityStorageEntry, 0),
 		Types:   nil,
 	}
-	parser := NewParser(sm, doc, common.Hash{})
+	parser := NewParser(sm, doc, types.NewHash(""))
 
 	i := make([]byte, 32)
 	i[31] = byte(1)
@@ -39,14 +40,16 @@ func TestParser_ParseUint_1(t *testing.T) {
 }
 
 func TestParser_ParseUint_Large(t *testing.T) {
-	sm := NewDefaultStorageHandler(make(map[common.Hash]string))
+	sm := NewDefaultStorageHandler(make(map[types.Hash]string))
 	doc := types.SolidityStorageDocument{
 		Storage: make([]types.SolidityStorageEntry, 0),
 		Types:   nil,
 	}
-	parser := NewParser(sm, doc, common.Hash{})
+	parser := NewParser(sm, doc, types.NewHash(""))
 
-	i := common.LeftPadBytes(bigN(234567).Bytes(), 32)
+	unpaddedBytes := bigN(234567).Bytes()
+	i := make([]byte, 32)
+	copy(i[32-len(unpaddedBytes):32], unpaddedBytes) //left-pad to 32 bytes
 
 	res := parser.ParseUint(i)
 
@@ -54,12 +57,12 @@ func TestParser_ParseUint_Large(t *testing.T) {
 }
 
 func TestParser_ParseInt_0(t *testing.T) {
-	sm := NewDefaultStorageHandler(make(map[common.Hash]string))
+	sm := NewDefaultStorageHandler(make(map[types.Hash]string))
 	doc := types.SolidityStorageDocument{
 		Storage: make([]types.SolidityStorageEntry, 0),
 		Types:   nil,
 	}
-	parser := NewParser(sm, doc, common.Hash{})
+	parser := NewParser(sm, doc, types.NewHash(""))
 
 	i := make([]byte, 32)
 
@@ -69,12 +72,12 @@ func TestParser_ParseInt_0(t *testing.T) {
 }
 
 func TestParser_ParseInt_1(t *testing.T) {
-	sm := NewDefaultStorageHandler(make(map[common.Hash]string))
+	sm := NewDefaultStorageHandler(make(map[types.Hash]string))
 	doc := types.SolidityStorageDocument{
 		Storage: make([]types.SolidityStorageEntry, 0),
 		Types:   nil,
 	}
-	parser := NewParser(sm, doc, common.Hash{})
+	parser := NewParser(sm, doc, types.NewHash(""))
 
 	i := make([]byte, 32)
 	i[31] = byte(1)
@@ -85,14 +88,16 @@ func TestParser_ParseInt_1(t *testing.T) {
 }
 
 func TestParser_ParseInt_LargePositive(t *testing.T) {
-	sm := NewDefaultStorageHandler(make(map[common.Hash]string))
+	sm := NewDefaultStorageHandler(make(map[types.Hash]string))
 	doc := types.SolidityStorageDocument{
 		Storage: make([]types.SolidityStorageEntry, 0),
 		Types:   nil,
 	}
-	parser := NewParser(sm, doc, common.Hash{})
+	parser := NewParser(sm, doc, types.NewHash(""))
 
-	i := common.LeftPadBytes(bigN(234567).Bytes(), 32)
+	unpaddedBytes := bigN(234567).Bytes()
+	i := make([]byte, 32)
+	copy(i[32-len(unpaddedBytes):32], unpaddedBytes) //left-pad to 32 bytes
 
 	res := parser.ParseInt(i)
 
@@ -100,12 +105,12 @@ func TestParser_ParseInt_LargePositive(t *testing.T) {
 }
 
 func TestParser_ParseInt_Minus1(t *testing.T) {
-	sm := NewDefaultStorageHandler(make(map[common.Hash]string))
+	sm := NewDefaultStorageHandler(make(map[types.Hash]string))
 	doc := types.SolidityStorageDocument{
 		Storage: make([]types.SolidityStorageEntry, 0),
 		Types:   nil,
 	}
-	parser := NewParser(sm, doc, common.Hash{})
+	parser := NewParser(sm, doc, types.NewHash(""))
 
 	i := []byte{255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
 		255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255}
@@ -116,12 +121,12 @@ func TestParser_ParseInt_Minus1(t *testing.T) {
 }
 
 func TestParser_ParseInt_LargeNegative(t *testing.T) {
-	sm := NewDefaultStorageHandler(make(map[common.Hash]string))
+	sm := NewDefaultStorageHandler(make(map[types.Hash]string))
 	doc := types.SolidityStorageDocument{
 		Storage: make([]types.SolidityStorageEntry, 0),
 		Types:   nil,
 	}
-	parser := NewParser(sm, doc, common.Hash{})
+	parser := NewParser(sm, doc, types.NewHash(""))
 
 	i := []byte{255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
 		255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0}

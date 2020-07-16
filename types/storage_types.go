@@ -3,8 +3,6 @@ package types
 import (
 	"encoding/json"
 	"strconv"
-
-	"github.com/ethereum/go-ethereum/common"
 )
 
 type SolidityStorageEntries []SolidityStorageEntry
@@ -28,8 +26,7 @@ func (sse *SolidityStorageEntry) UnmarshalJSON(b []byte) error {
 		Slot   string `json:"slot"`
 		Type   string `json:"type"`
 	}
-	err := json.Unmarshal(b, &simple)
-	if err != nil {
+	if err := json.Unmarshal(b, &simple); err != nil {
 		return err
 	}
 	sse.Label = simple.Label
@@ -85,8 +82,7 @@ func (sse *SolidityTypeEntry) UnmarshalJSON(b []byte) error {
 		Base          string                 `json:"base"`
 		Members       SolidityStorageEntries `json:"members"`
 	}
-	err := json.Unmarshal(b, &simple)
-	if err != nil {
+	if err := json.Unmarshal(b, &simple); err != nil {
 		return err
 	}
 	sse.Encoding = simple.Encoding
@@ -115,7 +111,7 @@ type StorageItem struct {
 }
 
 type ReportingResponseTemplate struct {
-	Address       common.Address `json:"address"`
+	Address       Address        `json:"address"`
 	HistoricState []*ParsedState `json:"historicState"`
 }
 

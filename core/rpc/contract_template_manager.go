@@ -1,14 +1,14 @@
 package rpc
 
 import (
-	"github.com/ethereum/go-ethereum/common"
+	"quorumengineering/quorum-report/types"
 
 	"quorumengineering/quorum-report/database"
 )
 
 type ContractTemplateManager interface {
-	AddStorageLayout(address common.Address, layout string) error
-	AddContractABI(address common.Address, abi string) error
+	AddStorageLayout(address types.Address, layout string) error
+	AddContractABI(address types.Address, abi string) error
 }
 
 type DefaultContractTemplateManager struct {
@@ -21,7 +21,7 @@ func NewDefaultContractManager(db database.Database) *DefaultContractTemplateMan
 	}
 }
 
-func (cm *DefaultContractTemplateManager) AddStorageLayout(address common.Address, layout string) error {
+func (cm *DefaultContractTemplateManager) AddStorageLayout(address types.Address, layout string) error {
 	// check contract & template existence before updating
 	templateName, err := cm.db.GetContractTemplate(address)
 	if err != nil {
@@ -47,7 +47,7 @@ func (cm *DefaultContractTemplateManager) AddStorageLayout(address common.Addres
 	return cm.db.AssignTemplate(address, address.String())
 }
 
-func (cm *DefaultContractTemplateManager) AddContractABI(address common.Address, abi string) error {
+func (cm *DefaultContractTemplateManager) AddContractABI(address types.Address, abi string) error {
 	// check contract & template existence before updating
 	templateName, err := cm.db.GetContractTemplate(address)
 	if err != nil {

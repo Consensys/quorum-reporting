@@ -1,11 +1,10 @@
 package storageparsing
 
 import (
+	"encoding/hex"
 	"math/big"
 	"sort"
 	"strings"
-
-	"github.com/ethereum/go-ethereum/common"
 
 	"quorumengineering/quorum-report/types"
 )
@@ -30,10 +29,10 @@ type Parser struct {
 	storageManager StorageManager
 	template       types.SolidityStorageDocument
 
-	slotOffset common.Hash
+	slotOffset types.Hash
 }
 
-func NewParser(sm StorageManager, template types.SolidityStorageDocument, slotOffset common.Hash) *Parser {
+func NewParser(sm StorageManager, template types.SolidityStorageDocument, slotOffset types.Hash) *Parser {
 	sort.Sort(template.Storage)
 
 	parser := &Parser{
@@ -93,15 +92,15 @@ func (p *Parser) parseSingle(storageItem types.SolidityStorageEntry) (interface{
 
 	case strings.HasPrefix(storageItem.Type, addressPrefix):
 		bytes := ExtractFromSingleStorage(storageItem.Offset, namedType.NumberOfBytes, directStorageSlot)
-		result = common.BytesToAddress(bytes).String()
+		result = types.NewAddress(hex.EncodeToString(bytes))
 
 	case strings.HasPrefix(storageItem.Type, contractPrefix): //TODO: recurse down contracts?
 		bytes := ExtractFromSingleStorage(storageItem.Offset, namedType.NumberOfBytes, directStorageSlot)
-		result = common.BytesToAddress(bytes).String()
+		result = types.NewAddress(hex.EncodeToString(bytes))
 
 	case strings.HasPrefix(storageItem.Type, bytesPrefix) && !strings.HasPrefix(storageItem.Type, bytesStoragePrefix):
 		bytes := ExtractFromSingleStorage(storageItem.Offset, namedType.NumberOfBytes, directStorageSlot)
-		result = "0x" + common.Bytes2Hex(bytes)
+		result = "0x" + hex.EncodeToString(bytes)
 
 	case strings.HasPrefix(storageItem.Type, enumPrefix):
 		bytes := ExtractFromSingleStorage(storageItem.Offset, namedType.NumberOfBytes, directStorageSlot)
@@ -133,7 +132,8 @@ func (p *Parser) parseSingle(storageItem types.SolidityStorageEntry) (interface{
 	return result, nil
 }
 
-func (p *Parser) ResolveSlot(givenSlot *big.Int) common.Hash {
-	combined := bigN(0).Add(p.slotOffset.Big(), givenSlot)
-	return common.BigToHash(combined)
+func (p *Parser) ResolveSlot(givenSlot *big.Int) types.Hash {
+	offsetBytes, _ := hex.DecodeString(string(p.slotOffset))
+	combined := bigN(0).Add(new(big.Int).SetBytes(offsetBytes), givenSlot)
+	return types.NewHash(hex.EncodeToString(combined.Bytes()))
 }

@@ -1,33 +1,35 @@
 package monitor
 
 import (
-	"math/big"
+	"encoding/hex"
 	"strings"
-
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
 
 	"quorumengineering/quorum-report/client"
 	"quorumengineering/quorum-report/log"
 	"quorumengineering/quorum-report/types"
 )
 
+var (
+	eip165Sig, _   = hex.DecodeString("01ffc9a70")
+	eip165Check, _ = hex.DecodeString("ffffffff")
+)
+
 type TokenRule struct {
 	scope        string
-	deployer     common.Address
+	deployer     types.Address
 	templateName string
 	eip165       string
 	abi          *types.ContractABI
 }
 
 type AddressWithMeta struct {
-	address  common.Address
+	address  types.Address
 	scope    string
-	deployer common.Address
+	deployer types.Address
 }
 
 type TokenMonitor interface {
-	InspectTransaction(tx *types.Transaction) (map[common.Address]string, error)
+	InspectTransaction(tx *types.Transaction) (map[types.Address]string, error)
 }
 
 type DefaultTokenMonitor struct {
@@ -42,9 +44,9 @@ func NewDefaultTokenMonitor(quorumClient client.Client, rules []TokenRule) *Defa
 	}
 }
 
-func (tm *DefaultTokenMonitor) InspectTransaction(tx *types.Transaction) (map[common.Address]string, error) {
+func (tm *DefaultTokenMonitor) InspectTransaction(tx *types.Transaction) (map[types.Address]string, error) {
 	var addresses []AddressWithMeta
-	if (tx.CreatedContract != common.Address{}) {
+	if !tx.CreatedContract.IsEmpty() {
 		addresses = append(addresses, AddressWithMeta{
 			address:  tx.CreatedContract,
 			scope:    types.ExternalScope,
@@ -61,7 +63,7 @@ func (tm *DefaultTokenMonitor) InspectTransaction(tx *types.Transaction) (map[co
 		}
 	}
 
-	tokenContracts := make(map[common.Address]string)
+	tokenContracts := make(map[types.Address]string)
 
 	for _, addressWithMeta := range addresses {
 		for _, rule := range tm.rules {
@@ -102,17 +104,17 @@ func (tm *DefaultTokenMonitor) checkRuleMeta(rule TokenRule, meta AddressWithMet
 		if rule.scope != meta.scope {
 			return false
 		}
-		if rule.deployer != (common.Address{0}) && rule.deployer != meta.deployer {
+		if !rule.deployer.IsEmpty() && rule.deployer != meta.deployer {
 			return false
 		}
 	}
 	return true
 }
 
-func (tm *DefaultTokenMonitor) checkEIP165(rule TokenRule, address common.Address, blockNum uint64) (string, error) {
+func (tm *DefaultTokenMonitor) checkEIP165(rule TokenRule, address types.Address, blockNum uint64) (string, error) {
 	if rule.eip165 != "" {
 		//check if the contract implements EIP165
-		eip165Call, err := client.CallEIP165(tm.quorumClient, address, common.Hex2Bytes("01ffc9a70"), new(big.Int).SetUint64(blockNum))
+		eip165Call, err := client.CallEIP165(tm.quorumClient, address, eip165Sig, blockNum)
 		if err != nil {
 			return "", err
 		}
@@ -120,7 +122,7 @@ func (tm *DefaultTokenMonitor) checkEIP165(rule TokenRule, address common.Addres
 			return "", nil
 		}
 
-		eip165CallCheck, err := client.CallEIP165(tm.quorumClient, address, common.Hex2Bytes("ffffffff"), new(big.Int).SetUint64(blockNum))
+		eip165CallCheck, err := client.CallEIP165(tm.quorumClient, address, eip165Check, blockNum)
 		if err != nil {
 			return "", err
 		}
@@ -129,7 +131,11 @@ func (tm *DefaultTokenMonitor) checkEIP165(rule TokenRule, address common.Addres
 		}
 
 		//now we know it implements EIP165, so lets check the interfaces
-		detected, err := client.CallEIP165(tm.quorumClient, address, common.Hex2Bytes(rule.eip165), new(big.Int).SetUint64(blockNum))
+		funcSig, err := hex.DecodeString(rule.eip165)
+		if err != nil {
+			return "", err
+		}
+		detected, err := client.CallEIP165(tm.quorumClient, address, funcSig, blockNum)
 		if err != nil {
 			return "", err
 		}
@@ -140,14 +146,14 @@ func (tm *DefaultTokenMonitor) checkEIP165(rule TokenRule, address common.Addres
 	return "", nil
 }
 
-func (tm *DefaultTokenMonitor) checkBytecodeForTokens(rule TokenRule, data hexutil.Bytes) string {
+func (tm *DefaultTokenMonitor) checkBytecodeForTokens(rule TokenRule, data types.HexData) string {
 	if tm.checkAbiMatch(rule.abi, data) {
 		return rule.templateName
 	}
 	return ""
 }
 
-func (tm *DefaultTokenMonitor) checkAbiMatch(abiToCheck *types.ContractABI, data hexutil.Bytes) bool {
+func (tm *DefaultTokenMonitor) checkAbiMatch(abiToCheck *types.ContractABI, data types.HexData) bool {
 	for _, b := range abiToCheck.Functions {
 		if !strings.Contains(data.String(), b.Signature()) {
 			return false

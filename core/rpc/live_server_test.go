@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/ethereum/go-ethereum/common"
 	"net/http"
 	"os"
 	"testing"
@@ -32,10 +31,10 @@ var (
 )
 
 func TestMain(m *testing.M) {
-	_ = apiDatabase.AddAddresses([]common.Address{address, common.HexToAddress("0x0000000000000000000000000000000000000009")})
+	_ = apiDatabase.AddAddresses([]types.Address{addr, types.NewAddress("0x0000000000000000000000000000000000000009")})
 	_ = apiDatabase.WriteBlocks([]*types.Block{block})
 	_ = apiDatabase.WriteTransactions([]*types.Transaction{tx1, tx2, tx3})
-	_ = apiDatabase.IndexBlocks([]common.Address{address}, []*types.Block{block})
+	_ = apiDatabase.IndexBlocks([]types.Address{addr}, []*types.Block{block})
 
 	rpcServer := SetupRpcServer(apiDatabase)
 	if err := rpcServer.Start(); err != nil {
@@ -124,7 +123,7 @@ func TestRPCAPIs_GetContractCreationTransaction(t *testing.T) {
 		Version: "2.0",
 		ID:      "67",
 		Method:  "reporting.GetContractCreationTransaction",
-		Params:  json.RawMessage(fmt.Sprintf(`["%s"]`, address.Hex())),
+		Params:  json.RawMessage(fmt.Sprintf(`["%s"]`, addr.Hex())),
 	}
 
 	rpcResponse, err := doRequest(msg)
@@ -134,7 +133,7 @@ func TestRPCAPIs_GetContractCreationTransaction(t *testing.T) {
 	_ = json.Unmarshal(rpcResponse.Result, &txHash)
 
 	assert.Equal(t, "null", string(rpcResponse.Error))
-	assert.Equal(t, "0x0000000000000000000000000000000000000000000000000000000000747831", txHash)
+	assert.Equal(t, "0x1a6f4292bac138df9a7854a07c93fd14ca7de53265e8fe01b6c986f97d6c1ee7", txHash)
 }
 
 func TestRPCAPIs_GetContractCreationTransaction_CreationTxNotFound(t *testing.T) {
@@ -248,9 +247,9 @@ func TestNewRPCAPIs_AddAddress(t *testing.T) {
 	}
 	rpcResponseBefore, err := doRequest(msgBefore)
 	assert.Nil(t, err)
-	var resultBefore []common.Address
+	var resultBefore []types.Address
 	_ = json.Unmarshal(rpcResponseBefore.Result, &resultBefore)
-	assert.NotContains(t, resultBefore, common.HexToAddress("0x1349f3e1b8d71effb47b840594ff27da7e603d17"))
+	assert.NotContains(t, resultBefore, types.NewAddress("0x1349f3e1b8d71effb47b840594ff27da7e603d17"))
 
 	//add the address to the DB
 	msg := rpcMessage{
@@ -272,9 +271,9 @@ func TestNewRPCAPIs_AddAddress(t *testing.T) {
 	}
 	rpcResponseAfter, err := doRequest(msgAfter)
 	assert.Nil(t, err)
-	var resultAfter []common.Address
+	var resultAfter []types.Address
 	_ = json.Unmarshal(rpcResponseAfter.Result, &resultAfter)
-	assert.Contains(t, resultAfter, common.HexToAddress("0x1349f3e1b8d71effb47b840594ff27da7e603d17"))
+	assert.Contains(t, resultAfter, types.NewAddress("0x1349f3e1b8d71effb47b840594ff27da7e603d17"))
 
 	//delete the address from the database
 	msgDelete := rpcMessage{
@@ -296,9 +295,9 @@ func TestNewRPCAPIs_AddAddress(t *testing.T) {
 	}
 	rpcResponseAfterDelete, err := doRequest(msgAfterDelete)
 	assert.Nil(t, err)
-	var resultAfterDelete []common.Address
+	var resultAfterDelete []types.Address
 	_ = json.Unmarshal(rpcResponseAfterDelete.Result, &resultAfterDelete)
-	assert.NotContains(t, resultAfterDelete, common.HexToAddress("0x1349f3e1b8d71effb47b840594ff27da7e603d17"))
+	assert.NotContains(t, resultAfterDelete, types.NewAddress("0x1349f3e1b8d71effb47b840594ff27da7e603d17"))
 }
 
 func doRequest(request rpcMessage) (rpcMessage, error) {

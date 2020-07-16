@@ -1,11 +1,12 @@
 package storageparsing
 
 import (
+	"encoding/hex"
 	"math/big"
 
 	"golang.org/x/crypto/sha3"
 
-	"github.com/ethereum/go-ethereum/common"
+	"quorumengineering/quorum-report/types"
 )
 
 var (
@@ -14,10 +15,11 @@ var (
 	BigThirtyTwo = new(big.Int).SetUint64(32)
 )
 
-func hash(slot common.Hash) common.Hash {
+func hash(slot types.Hash) types.Hash {
+	asBytes, _ := hex.DecodeString(string(slot))
 	hasher := sha3.NewLegacyKeccak256()
-	hasher.Write(slot.Bytes())
-	return common.BytesToHash(hasher.Sum(nil))
+	hasher.Write(asBytes)
+	return types.NewHash(hex.EncodeToString(hasher.Sum(nil)))
 }
 
 func ExtractFromSingleStorage(offset uint64, numberOfBytes uint64, storageEntry []byte) []byte {

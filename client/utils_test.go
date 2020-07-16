@@ -1,14 +1,11 @@
 package client
 
 import (
-	"math/big"
 	"testing"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/ethereum/go-ethereum/core/state"
-	"github.com/ethereum/go-ethereum/p2p"
 	"github.com/stretchr/testify/assert"
+
+	"quorumengineering/quorum-report/types"
 )
 
 func TestConsensus_BadResponse(t *testing.T) {
@@ -23,8 +20,8 @@ func TestConsensus_BadResponse(t *testing.T) {
 }
 
 func TestConsensus_IstanbulExists(t *testing.T) {
-	nodeInfo := p2p.NodeInfo{
-		Protocols: map[string]interface{}{
+	nodeInfo := map[string]interface{}{
+		"protocols": map[string]interface{}{
 			"istanbul": "some value",
 		},
 	}
@@ -39,8 +36,8 @@ func TestConsensus_IstanbulExists(t *testing.T) {
 }
 
 func TestConsensus_RaftExists(t *testing.T) {
-	nodeInfo := p2p.NodeInfo{
-		Protocols: map[string]interface{}{
+	nodeInfo := map[string]interface{}{
+		"protocols": map[string]interface{}{
 			"eth": map[string]interface{}{
 				"consensus": "raft",
 			},
@@ -60,7 +57,7 @@ func TestTraceTransaction_WithError(t *testing.T) {
 	mockRPC := map[string]interface{}{}
 	stubClient := NewStubQuorumClient(nil, mockRPC)
 
-	trace, err := TraceTransaction(stubClient, common.HexToHash("0x0000000000000000000000000000000000000000000000000000000000000000"))
+	trace, err := TraceTransaction(stubClient, types.NewHash("0x0000000000000000000000000000000000000000000000000000000000000000"))
 	assert.EqualError(t, err, "not found")
 	assert.Nil(t, trace)
 }
@@ -70,11 +67,11 @@ func TestTraceTransaction(t *testing.T) {
 		"customField": "value",
 	}
 	mockRPC := map[string]interface{}{
-		"debug_traceTransaction<common.Hash Value><*client.TraceConfig Value>": res,
+		"debug_traceTransaction0x0000000000000000000000000000000000000000000000000000000000000000<*client.TraceConfig Value>": res,
 	}
 	stubClient := NewStubQuorumClient(nil, mockRPC)
 
-	trace, err := TraceTransaction(stubClient, common.HexToHash("0x0000000000000000000000000000000000000000000000000000000000000000"))
+	trace, err := TraceTransaction(stubClient, types.NewHash("0x0000000000000000000000000000000000000000000000000000000000000000"))
 	assert.Nil(t, err)
 	assert.Equal(t, res, trace)
 }
@@ -83,38 +80,36 @@ func TestDumpAddress_WithError(t *testing.T) {
 	mockRPC := map[string]interface{}{}
 	stubClient := NewStubQuorumClient(nil, mockRPC)
 
-	dump, err := DumpAddress(stubClient, common.HexToAddress("0x1349f3e1b8d71effb47b840594ff27da7e603d17"), 1)
+	dump, err := DumpAddress(stubClient, types.NewAddress("0x1349f3e1b8d71effb47b840594ff27da7e603d17"), 1)
 	assert.EqualError(t, err, "not found")
 	assert.Nil(t, dump)
 }
 
 func TestDumpAddress(t *testing.T) {
-	res := &state.DumpAccount{
-		Balance:  "10",
-		Nonce:    5,
-		Root:     "some root",
-		CodeHash: "some code hash",
-		Code:     "some code",
+	res := &types.RawAccountState{
+		Root: types.NewHash("0xefe5cb8d23d632b5d2cdd9f0a151c4b1a84ccb7afa1c57331009aa922d5e4f36"),
 	}
 	mockRPC := map[string]interface{}{
-		"debug_dumpAddress<common.Address Value>0x1": res,
+		"debug_dumpAddress0x1349f3e1b8d71effb47b840594ff27da7e603d170x1": res,
 	}
 	stubClient := NewStubQuorumClient(nil, mockRPC)
 
-	dump, err := DumpAddress(stubClient, common.HexToAddress("0x1349f3e1b8d71effb47b840594ff27da7e603d17"), 1)
+	dump, err := DumpAddress(stubClient, types.NewAddress("0x1349f3e1b8d71effb47b840594ff27da7e603d17"), 1)
 	assert.Nil(t, err)
-	assert.Equal(t, res, dump)
+	assert.EqualValues(t, &types.AccountState{
+		Root:    types.NewHash("0xefe5cb8d23d632b5d2cdd9f0a151c4b1a84ccb7afa1c57331009aa922d5e4f36"),
+		Storage: make(map[types.Hash]string),
+	}, dump)
 }
 
 func TestGetCode(t *testing.T) {
-	sampleCode, _ := hexutil.Decode("0xefe5cb8d23d632b5d2cdd9f0a151c4b1a84ccb7afa1c57331009aa922d5e4f36")
 	mockRPC := map[string]interface{}{
-		"eth_getCode<common.Address Value>0xe625ba9f14eed0671508966080fb01374d0a3a16b9cee545a324179b75f30aa8": sampleCode,
+		"eth_getCode0x1349f3e1b8d71effb47b840594ff27da7e603d170xe625ba9f14eed0671508966080fb01374d0a3a16b9cee545a324179b75f30aa8": types.HexData("efe5cb8d23d632b5d2cdd9f0a151c4b1a84ccb7afa1c57331009aa922d5e4f36"),
 	}
 	stubClient := NewStubQuorumClient(nil, mockRPC)
 
-	blockHash := common.HexToHash("0xe625ba9f14eed0671508966080fb01374d0a3a16b9cee545a324179b75f30aa8")
-	address := common.HexToAddress("0x1349f3e1b8d71effb47b840594ff27da7e603d17")
+	blockHash := types.NewHash("0xe625ba9f14eed0671508966080fb01374d0a3a16b9cee545a324179b75f30aa8")
+	address := types.NewAddress("0x1349f3e1b8d71effb47b840594ff27da7e603d17")
 
 	code, err := GetCode(stubClient, address, blockHash)
 	assert.Nil(t, err)
@@ -124,24 +119,24 @@ func TestGetCode(t *testing.T) {
 func TestGetCode_WithError(t *testing.T) {
 	stubClient := NewStubQuorumClient(nil, nil)
 
-	blockHash := common.HexToHash("0xe625ba9f14eed0671508966080fb01374d0a3a16b9cee545a324179b75f30aa8")
-	address := common.HexToAddress("0x1349f3e1b8d71effb47b840594ff27da7e603d17")
+	blockHash := types.NewHash("0xe625ba9f14eed0671508966080fb01374d0a3a16b9cee545a324179b75f30aa8")
+	address := types.NewAddress("0x1349f3e1b8d71effb47b840594ff27da7e603d17")
 
 	code, err := GetCode(stubClient, address, blockHash)
 	assert.EqualError(t, err, "not found")
-	assert.Nil(t, code)
+	assert.Equal(t, types.HexData(""), code)
 }
 
 func TestEIP165(t *testing.T) {
 	mockRPC := map[string]interface{}{
-		"eth_call<types.CallArgs Value>0x2": common.LeftPadBytes([]byte{1}, 32),
+		"eth_call<types.EIP165Call Value>0x2": types.HexData("0000000000000000000000000000000000000000000000000000000000000001"),
 	}
 
 	stubClient := NewStubQuorumClient(nil, mockRPC)
 
-	address := common.HexToAddress("0x1349f3e1b8d71effb47b840594ff27da7e603d17")
+	address := types.NewAddress("0x1349f3e1b8d71effb47b840594ff27da7e603d17")
 
-	exists, err := CallEIP165(stubClient, address, []byte("1234"), big.NewInt(2))
+	exists, err := CallEIP165(stubClient, address, []byte("1234"), 2)
 	assert.Nil(t, err)
 	assert.True(t, exists)
 }
@@ -149,9 +144,9 @@ func TestEIP165(t *testing.T) {
 func TestEIP165_WithWrongInterfaceLengthError(t *testing.T) {
 	stubClient := NewStubQuorumClient(nil, nil)
 
-	address := common.HexToAddress("0x1349f3e1b8d71effb47b840594ff27da7e603d17")
+	address := types.NewAddress("0x1349f3e1b8d71effb47b840594ff27da7e603d17")
 
-	exists, err := CallEIP165(stubClient, address, []byte("1234567890"), new(big.Int))
+	exists, err := CallEIP165(stubClient, address, []byte("1234567890"), 0)
 	assert.EqualError(t, err, "interfaceId wrong size")
 	assert.False(t, exists)
 }
@@ -159,23 +154,23 @@ func TestEIP165_WithWrongInterfaceLengthError(t *testing.T) {
 func TestEIP165_WithClientError(t *testing.T) {
 	stubClient := NewStubQuorumClient(nil, nil)
 
-	address := common.HexToAddress("0x1349f3e1b8d71effb47b840594ff27da7e603d17")
+	address := types.NewAddress("0x1349f3e1b8d71effb47b840594ff27da7e603d17")
 
-	exists, err := CallEIP165(stubClient, address, []byte("1234"), new(big.Int))
+	exists, err := CallEIP165(stubClient, address, []byte("1234"), 0)
 	assert.EqualError(t, err, "not found")
 	assert.False(t, exists)
 }
 
 func TestEIP165_WithWrongSizeResult(t *testing.T) {
 	mockRPC := map[string]interface{}{
-		"eth_call<types.CallArgs Value>0x1": []byte{},
+		"eth_call<types.EIP165Call Value>0x1": types.HexData(""),
 	}
 
 	stubClient := NewStubQuorumClient(nil, mockRPC)
 
-	address := common.HexToAddress("0x1349f3e1b8d71effb47b840594ff27da7e603d17")
+	address := types.NewAddress("0x1349f3e1b8d71effb47b840594ff27da7e603d17")
 
-	exists, err := CallEIP165(stubClient, address, []byte("1234"), big.NewInt(1))
+	exists, err := CallEIP165(stubClient, address, []byte("1234"), 1)
 	assert.Nil(t, err)
 	assert.False(t, exists)
 }

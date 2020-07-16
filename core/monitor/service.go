@@ -6,8 +6,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common"
-
 	"quorumengineering/quorum-report/client"
 	"quorumengineering/quorum-report/database"
 	"quorumengineering/quorum-report/log"
@@ -208,7 +206,7 @@ func (m *MonitorService) processBlock(block *types.Block) error {
 		}
 		for addr, contractType := range tokenContracts {
 			// TODO: error handling?
-			m.db.AddAddresses([]common.Address{addr})
+			m.db.AddAddresses([]types.Address{addr})
 			m.db.AssignTemplate(addr, contractType)
 		}
 	}

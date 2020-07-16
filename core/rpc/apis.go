@@ -5,8 +5,6 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/ethereum/go-ethereum/common"
-
 	"quorumengineering/quorum-report/core/storageparsing"
 	"quorumengineering/quorum-report/database"
 	"quorumengineering/quorum-report/types"
@@ -39,13 +37,16 @@ func (r *RPCAPIs) GetBlock(req *http.Request, blockNumber *uint64, reply *types.
 	return nil
 }
 
-func (r *RPCAPIs) GetTransaction(req *http.Request, hash *common.Hash, reply *types.ParsedTransaction) error {
+func (r *RPCAPIs) GetTransaction(req *http.Request, hash *types.Hash, reply *types.ParsedTransaction) error {
+	if hash.IsEmpty() {
+		return errors.New("no transaction hash given")
+	}
 	tx, err := r.db.ReadTransaction(*hash)
 	if err != nil {
 		return err
 	}
 	address := tx.To
-	if address == (common.Address{}) {
+	if address.IsEmpty() {
 		address = tx.CreatedContract
 	}
 	contractABI, err := r.db.GetContractABI(address)
@@ -79,12 +80,12 @@ func (r *RPCAPIs) GetTransaction(req *http.Request, hash *common.Hash, reply *ty
 	return nil
 }
 
-func (r *RPCAPIs) GetContractCreationTransaction(req *http.Request, address *common.Address, reply *common.Hash) error {
+func (r *RPCAPIs) GetContractCreationTransaction(req *http.Request, address *types.Address, reply *types.Hash) error {
 	txHash, err := r.db.GetContractCreationTransaction(*address)
 	if err != nil {
 		return err
 	}
-	if txHash == (common.Hash{}) {
+	if txHash.IsEmpty() {
 		return errors.New("contract creation tx not found")
 	}
 	*reply = txHash
@@ -184,7 +185,7 @@ func (r *RPCAPIs) GetAllEventsFromAddress(req *http.Request, args *AddressWithOp
 	return nil
 }
 
-func (r *RPCAPIs) GetStorage(req *http.Request, args *AddressWithOptionalBlock, reply *map[common.Hash]string) error {
+func (r *RPCAPIs) GetStorage(req *http.Request, args *AddressWithOptionalBlock, reply *map[types.Hash]string) error {
 	if args.Address == nil {
 		return ErrNoAddress
 	}
@@ -258,14 +259,14 @@ func (r *RPCAPIs) AddAddress(req *http.Request, args *AddressWithOptionalBlock, 
 		// add address from
 		return r.db.AddAddressFrom(*args.Address, *args.BlockNumber)
 	}
-	return r.db.AddAddresses([]common.Address{*args.Address})
+	return r.db.AddAddresses([]types.Address{*args.Address})
 }
 
-func (r *RPCAPIs) DeleteAddress(req *http.Request, address *common.Address, reply *NullArgs) error {
+func (r *RPCAPIs) DeleteAddress(req *http.Request, address *types.Address, reply *NullArgs) error {
 	return r.db.DeleteAddress(*address)
 }
 
-func (r *RPCAPIs) GetAddresses(req *http.Request, args *NullArgs, reply *[]common.Address) error {
+func (r *RPCAPIs) GetAddresses(req *http.Request, args *NullArgs, reply *[]types.Address) error {
 	result, err := r.db.GetAddresses()
 	if err != nil {
 		return err
@@ -274,7 +275,7 @@ func (r *RPCAPIs) GetAddresses(req *http.Request, args *NullArgs, reply *[]commo
 	return nil
 }
 
-func (r *RPCAPIs) GetContractTemplate(req *http.Request, address *common.Address, reply *string) error {
+func (r *RPCAPIs) GetContractTemplate(req *http.Request, address *types.Address, reply *string) error {
 	result, err := r.db.GetContractTemplate(*address)
 	if err != nil {
 		return err
@@ -295,7 +296,7 @@ func (r *RPCAPIs) AddABI(req *http.Request, args *AddressWithData, reply *NullAr
 	return r.contractTemplateManager.AddContractABI(*args.Address, args.Data)
 }
 
-func (r *RPCAPIs) GetABI(req *http.Request, address *common.Address, reply *string) error {
+func (r *RPCAPIs) GetABI(req *http.Request, address *types.Address, reply *string) error {
 	result, err := r.db.GetContractABI(*address)
 	if err != nil {
 		return err
@@ -316,7 +317,7 @@ func (r *RPCAPIs) AddStorageABI(req *http.Request, args *AddressWithData, reply 
 	return r.contractTemplateManager.AddStorageLayout(*args.Address, args.Data)
 }
 
-func (r *RPCAPIs) GetStorageABI(req *http.Request, address *common.Address, reply *string) error {
+func (r *RPCAPIs) GetStorageABI(req *http.Request, address *types.Address, reply *string) error {
 	result, err := r.db.GetStorageLayout(*address)
 	if err != nil {
 		return err

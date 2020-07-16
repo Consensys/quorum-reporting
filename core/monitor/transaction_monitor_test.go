@@ -3,7 +3,6 @@ package monitor
 import (
 	"testing"
 
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/assert"
 
 	"quorumengineering/quorum-report/client"
@@ -46,12 +45,12 @@ func TestCreateTransaction(t *testing.T) {
 		Timestamp: uint64(0x1000),
 	}
 	mockGraphQL := map[string]map[string]interface{}{
-		graphql.TransactionDetailQuery(common.HexToHash("0xe625ba9f14eed0671508966080fb01374d0a3a16b9cee545a324179b75f30aa8")): {
+		graphql.TransactionDetailQuery(types.NewHash("0xe625ba9f14eed0671508966080fb01374d0a3a16b9cee545a324179b75f30aa8")): {
 			"transaction": interface{}(graphqlResp),
 		},
 	}
 	mockRPC := map[string]interface{}{
-		"debug_traceTransaction<common.Hash Value><*client.TraceConfig Value>": map[string]interface{}{
+		"debug_traceTransaction0xe625ba9f14eed0671508966080fb01374d0a3a16b9cee545a324179b75f30aa8<*client.TraceConfig Value>": map[string]interface{}{
 			"calls": []interface{}{
 				map[string]interface{}{
 					"from":    "0x9d13c6d3afe1721beef56b55d303b09e021e27ab",
@@ -67,11 +66,11 @@ func TestCreateTransaction(t *testing.T) {
 		},
 	}
 	tm := NewDefaultTransactionMonitor(client.NewStubQuorumClient(mockGraphQL, mockRPC))
-	tx, err := tm.createTransaction(testBlock, common.HexToHash("0xe625ba9f14eed0671508966080fb01374d0a3a16b9cee545a324179b75f30aa8"))
+	tx, err := tm.createTransaction(testBlock, types.NewHash("0xe625ba9f14eed0671508966080fb01374d0a3a16b9cee545a324179b75f30aa8"))
 	if err != nil {
 		t.Fatalf("expected no error, but got %v", err)
 	}
-	if tx.Hash != common.HexToHash("0xe625ba9f14eed0671508966080fb01374d0a3a16b9cee545a324179b75f30aa8") {
+	if tx.Hash != types.NewHash("0xe625ba9f14eed0671508966080fb01374d0a3a16b9cee545a324179b75f30aa8") {
 		t.Fatalf("expected hash %v, but got %v", "0xe625ba9f14eed0671508966080fb01374d0a3a16b9cee545a324179b75f30aa8", tx.Hash.Hex())
 	}
 	if !tx.Status {
@@ -83,17 +82,17 @@ func TestCreateTransaction(t *testing.T) {
 	if tx.Index != 0 {
 		t.Fatalf("expected index %v, but got %v", 0, tx.Index)
 	}
-	if tx.From != common.HexToAddress("0xed9d02e382b34818e88b88a309c7fe71e65f419d") {
+	if tx.From != types.NewAddress("0xed9d02e382b34818e88b88a309c7fe71e65f419d") {
 		t.Fatalf("expected from %v, but got %v", "0xed9d02e382b34818e88b88a309c7fe71e65f419d", tx.From.Hex())
 	}
 	if tx.Gas != 4700000 {
 		t.Fatalf("expected gas %v, but got %v", 4700000, tx.Gas)
 	}
-	if len(tx.Data) != 449 {
-		t.Fatalf("expected data length %v, but got %v", 449, len(tx.Data))
+	if len(tx.Data.AsBytes()) != 449 {
+		t.Fatalf("expected data length %v, but got %v", 449, len(tx.Data.AsBytes()))
 	}
-	if len(tx.PrivateData) != 0 {
-		t.Fatalf("expected private data length %v, but got %v", 0, len(tx.PrivateData))
+	if len(tx.PrivateData.AsBytes()) != 0 {
+		t.Fatalf("expected private data length %v, but got %v", 0, len(tx.PrivateData.AsBytes()))
 	}
 	if tx.IsPrivate {
 		t.Fatalf("expected isPrivate to be false, but got true")
@@ -101,7 +100,7 @@ func TestCreateTransaction(t *testing.T) {
 	if len(tx.Events) != 1 {
 		t.Fatalf("expected %v events, but got %v", 1, len(tx.Events))
 	}
-	if tx.Events[0].Topics[0] != common.HexToHash("0xefe5cb8d23d632b5d2cdd9f0a151c4b1a84ccb7afa1c57331009aa922d5e4f36") {
+	if tx.Events[0].Topics[0] != types.NewHash("0xefe5cb8d23d632b5d2cdd9f0a151c4b1a84ccb7afa1c57331009aa922d5e4f36") {
 		t.Fatalf("expected event topic %v, but got %v", "0xefe5cb8d23d632b5d2cdd9f0a151c4b1a84ccb7afa1c57331009aa922d5e4f36", tx.Events[0].Topics[0].Hex())
 	}
 	if len(tx.InternalCalls) != 1 {
@@ -111,12 +110,12 @@ func TestCreateTransaction(t *testing.T) {
 
 func TestTransactionMonitor_PullTransactions(t *testing.T) {
 	mockGraphQL := map[string]map[string]interface{}{
-		graphql.TransactionDetailQuery(common.HexToHash("0xe625ba9f14eed0671508966080fb01374d0a3a16b9cee545a324179b75f30aa8")): {
+		graphql.TransactionDetailQuery(types.NewHash("0xe625ba9f14eed0671508966080fb01374d0a3a16b9cee545a324179b75f30aa8")): {
 			"transaction": interface{}(graphqlResp),
 		},
 	}
 	mockRPC := map[string]interface{}{
-		"debug_traceTransaction<common.Hash Value><*client.TraceConfig Value>": map[string]interface{}{
+		"debug_traceTransaction0xe625ba9f14eed0671508966080fb01374d0a3a16b9cee545a324179b75f30aa8<*client.TraceConfig Value>": map[string]interface{}{
 			"calls": []interface{}{
 				map[string]interface{}{
 					"from":    "0x9d13c6d3afe1721beef56b55d303b09e021e27ab",
@@ -132,10 +131,10 @@ func TestTransactionMonitor_PullTransactions(t *testing.T) {
 		},
 	}
 	block := &types.Block{
-		Hash:   common.BytesToHash([]byte("dummy")),
+		Hash:   types.NewHash("0xd3b57e8a791a134ddf47772f12fdddbf67480377e633bf55f411166d3be7d66f"),
 		Number: 2,
-		Transactions: []common.Hash{
-			common.HexToHash("0xe625ba9f14eed0671508966080fb01374d0a3a16b9cee545a324179b75f30aa8"),
+		Transactions: []types.Hash{
+			types.NewHash("0xe625ba9f14eed0671508966080fb01374d0a3a16b9cee545a324179b75f30aa8"),
 		},
 	}
 
@@ -147,7 +146,7 @@ func TestTransactionMonitor_PullTransactions(t *testing.T) {
 
 	tx := txs[0]
 
-	if tx.Hash != common.HexToHash("0xe625ba9f14eed0671508966080fb01374d0a3a16b9cee545a324179b75f30aa8") {
+	if tx.Hash != types.NewHash("0xe625ba9f14eed0671508966080fb01374d0a3a16b9cee545a324179b75f30aa8") {
 		t.Fatalf("expected hash %v, but got %v", "0xe625ba9f14eed0671508966080fb01374d0a3a16b9cee545a324179b75f30aa8", tx.Hash.Hex())
 	}
 	if !tx.Status {
@@ -159,17 +158,17 @@ func TestTransactionMonitor_PullTransactions(t *testing.T) {
 	if tx.Index != 0 {
 		t.Fatalf("expected index %v, but got %v", 0, tx.Index)
 	}
-	if tx.From != common.HexToAddress("0xed9d02e382b34818e88b88a309c7fe71e65f419d") {
+	if tx.From != types.NewAddress("0xed9d02e382b34818e88b88a309c7fe71e65f419d") {
 		t.Fatalf("expected from %v, but got %v", "0xed9d02e382b34818e88b88a309c7fe71e65f419d", tx.From.Hex())
 	}
 	if tx.Gas != 4700000 {
 		t.Fatalf("expected gas %v, but got %v", 4700000, tx.Gas)
 	}
-	if len(tx.Data) != 449 {
-		t.Fatalf("expected data length %v, but got %v", 449, len(tx.Data))
+	if len(tx.Data.AsBytes()) != 449 {
+		t.Fatalf("expected data length %v, but got %v", 449, len(tx.Data.AsBytes()))
 	}
-	if len(tx.PrivateData) != 0 {
-		t.Fatalf("expected private data length %v, but got %v", 0, len(tx.PrivateData))
+	if len(tx.PrivateData.AsBytes()) != 0 {
+		t.Fatalf("expected private data length %v, but got %v", 0, len(tx.PrivateData.AsBytes()))
 	}
 	if tx.IsPrivate {
 		t.Fatalf("expected isPrivate to be false, but got true")
@@ -177,7 +176,7 @@ func TestTransactionMonitor_PullTransactions(t *testing.T) {
 	if len(tx.Events) != 1 {
 		t.Fatalf("expected %v events, but got %v", 1, len(tx.Events))
 	}
-	if tx.Events[0].Topics[0] != common.HexToHash("0xefe5cb8d23d632b5d2cdd9f0a151c4b1a84ccb7afa1c57331009aa922d5e4f36") {
+	if tx.Events[0].Topics[0] != types.NewHash("0xefe5cb8d23d632b5d2cdd9f0a151c4b1a84ccb7afa1c57331009aa922d5e4f36") {
 		t.Fatalf("expected event topic %v, but got %v", "0xefe5cb8d23d632b5d2cdd9f0a151c4b1a84ccb7afa1c57331009aa922d5e4f36", tx.Events[0].Topics[0].Hex())
 	}
 	if len(tx.InternalCalls) != 1 {

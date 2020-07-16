@@ -26,7 +26,7 @@ func TestEventParsing(t *testing.T) {
 	for _, c := range tx.Events {
 		for _, ev := range abi.Events {
 			if "0x"+ev.Signature() == c.Topics[0].String() {
-				result, err := ev.Parse(c.Data)
+				result, err := ev.Parse(c.Data.AsBytes())
 				assert.Nil(t, err)
 				allParsedResults[ev.Name] = result
 			}

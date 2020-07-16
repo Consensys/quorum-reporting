@@ -8,11 +8,11 @@ import (
 	"sync"
 	"time"
 
-	ethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/machinebox/graphql"
 
 	graphqlQuery "quorumengineering/quorum-report/graphql"
 	"quorumengineering/quorum-report/log"
+	"quorumengineering/quorum-report/types"
 )
 
 // QuorumClient provides access to quorum blockchain node.
@@ -58,7 +58,7 @@ func NewQuorumClient(rawUrl, qgUrl string) (*QuorumClient, error) {
 }
 
 // Subscribe to chain head event.
-func (qc *QuorumClient) SubscribeChainHead(ch chan<- *ethTypes.Header) error {
+func (qc *QuorumClient) SubscribeChainHead(ch chan<- types.RawHeader) error {
 	return qc.wsClient.subscribeChainHead(ch)
 }
 
