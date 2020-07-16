@@ -50,7 +50,7 @@ func TestCreateTransaction(t *testing.T) {
 		},
 	}
 	mockRPC := map[string]interface{}{
-		"debug_traceTransactione625ba9f14eed0671508966080fb01374d0a3a16b9cee545a324179b75f30aa8<*client.TraceConfig Value>": map[string]interface{}{
+		"debug_traceTransaction0xe625ba9f14eed0671508966080fb01374d0a3a16b9cee545a324179b75f30aa8<*client.TraceConfig Value>": map[string]interface{}{
 			"calls": []interface{}{
 				map[string]interface{}{
 					"from":    "0x9d13c6d3afe1721beef56b55d303b09e021e27ab",
@@ -115,7 +115,7 @@ func TestTransactionMonitor_PullTransactions(t *testing.T) {
 		},
 	}
 	mockRPC := map[string]interface{}{
-		"debug_traceTransactione625ba9f14eed0671508966080fb01374d0a3a16b9cee545a324179b75f30aa8<*client.TraceConfig Value>": map[string]interface{}{
+		"debug_traceTransaction0xe625ba9f14eed0671508966080fb01374d0a3a16b9cee545a324179b75f30aa8<*client.TraceConfig Value>": map[string]interface{}{
 			"calls": []interface{}{
 				map[string]interface{}{
 					"from":    "0x9d13c6d3afe1721beef56b55d303b09e021e27ab",

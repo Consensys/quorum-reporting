@@ -67,7 +67,7 @@ func TestTraceTransaction(t *testing.T) {
 		"customField": "value",
 	}
 	mockRPC := map[string]interface{}{
-		"debug_traceTransaction0000000000000000000000000000000000000000000000000000000000000000<*client.TraceConfig Value>": res,
+		"debug_traceTransaction0x0000000000000000000000000000000000000000000000000000000000000000<*client.TraceConfig Value>": res,
 	}
 	stubClient := NewStubQuorumClient(nil, mockRPC)
 
@@ -90,7 +90,7 @@ func TestDumpAddress(t *testing.T) {
 		Root: types.NewHash("0xefe5cb8d23d632b5d2cdd9f0a151c4b1a84ccb7afa1c57331009aa922d5e4f36"),
 	}
 	mockRPC := map[string]interface{}{
-		"debug_dumpAddress1349f3e1b8d71effb47b840594ff27da7e603d170x1": res,
+		"debug_dumpAddress0x1349f3e1b8d71effb47b840594ff27da7e603d170x1": res,
 	}
 	stubClient := NewStubQuorumClient(nil, mockRPC)
 
@@ -104,7 +104,7 @@ func TestDumpAddress(t *testing.T) {
 
 func TestGetCode(t *testing.T) {
 	mockRPC := map[string]interface{}{
-		"eth_getCode1349f3e1b8d71effb47b840594ff27da7e603d170xe625ba9f14eed0671508966080fb01374d0a3a16b9cee545a324179b75f30aa8": types.HexData("efe5cb8d23d632b5d2cdd9f0a151c4b1a84ccb7afa1c57331009aa922d5e4f36"),
+		"eth_getCode0x1349f3e1b8d71effb47b840594ff27da7e603d170xe625ba9f14eed0671508966080fb01374d0a3a16b9cee545a324179b75f30aa8": types.HexData("efe5cb8d23d632b5d2cdd9f0a151c4b1a84ccb7afa1c57331009aa922d5e4f36"),
 	}
 	stubClient := NewStubQuorumClient(nil, mockRPC)
 

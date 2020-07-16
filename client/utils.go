@@ -12,7 +12,7 @@ import (
 func DumpAddress(c Client, address types.Address, blockNumber uint64) (*types.AccountState, error) {
 	log.Debug("Fetching account dump", "account", address.String(), "blocknumber", blockNumber)
 	dumpAccount := &types.RawAccountState{}
-	err := c.RPCCall(&dumpAccount, "debug_dumpAddress", address, fmt.Sprintf("0x%x", blockNumber))
+	err := c.RPCCall(&dumpAccount, "debug_dumpAddress", address.String(), fmt.Sprintf("0x%x", blockNumber))
 	if err != nil {
 		return nil, err
 	}
@@ -33,7 +33,7 @@ func TraceTransaction(c Client, txHash types.Hash) (map[string]interface{}, erro
 	type TraceConfig struct {
 		Tracer string
 	}
-	err := c.RPCCall(&resp, "debug_traceTransaction", txHash, &TraceConfig{Tracer: "callTracer"})
+	err := c.RPCCall(&resp, "debug_traceTransaction", txHash.String(), &TraceConfig{Tracer: "callTracer"})
 	if err != nil {
 		return nil, err
 	}
@@ -42,7 +42,7 @@ func TraceTransaction(c Client, txHash types.Hash) (map[string]interface{}, erro
 
 func GetCode(c Client, address types.Address, blockHash types.Hash) (types.HexData, error) {
 	var res types.HexData
-	if err := c.RPCCall(&res, "eth_getCode", address, blockHash.String()); err != nil {
+	if err := c.RPCCall(&res, "eth_getCode", address.String(), blockHash.String()); err != nil {
 		return "", err
 	}
 	return res, nil

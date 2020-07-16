@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"quorumengineering/quorum-report/types"
 	"reflect"
 	"sync"
 	"time"
@@ -13,6 +12,7 @@ import (
 
 	graphqlQuery "quorumengineering/quorum-report/graphql"
 	"quorumengineering/quorum-report/log"
+	"quorumengineering/quorum-report/types"
 )
 
 // QuorumClient provides access to quorum blockchain node.
