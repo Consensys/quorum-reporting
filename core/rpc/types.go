@@ -39,6 +39,12 @@ type AddressWithBlockRange struct {
 	EndBlockNumber   uint64
 }
 
+type TokenQuery struct {
+	Contract    *types.Address
+	Holder      *types.Address
+	BlockNumber uint64
+}
+
 //Outputs
 
 type TransactionsResp struct {

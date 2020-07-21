@@ -363,3 +363,12 @@ func (r *RPCAPIs) GetTemplateDetails(req *http.Request, templateName *string, re
 	*reply = *template
 	return nil
 }
+
+func (r *RPCAPIs) GetTokenBalance(req *http.Request, query *TokenQuery, reply *string) error {
+	bal, err := r.db.GetBalance(*query.Contract, *query.Holder, query.BlockNumber)
+	if err != nil {
+		return err
+	}
+	*reply = bal.String()
+	return nil
+}

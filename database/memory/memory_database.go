@@ -2,6 +2,7 @@ package memory
 
 import (
 	"errors"
+	"math/big"
 	"sync"
 
 	"quorumengineering/quorum-report/database"
@@ -449,4 +450,12 @@ func (db *MemoryDB) removeAllIndices(address types.Address) error {
 	delete(db.storageIndexDB, address)
 	db.lastFiltered[address] = 0
 	return nil
+}
+
+func (db *MemoryDB) RecordNewBalance(contract types.Address, holder types.Address, block uint64, amount *big.Int) error {
+	return nil
+}
+
+func (db *MemoryDB) GetBalance(contract types.Address, holder types.Address, block uint64) (*big.Int, error) {
+	return nil, nil
 }

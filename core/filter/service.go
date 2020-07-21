@@ -1,6 +1,7 @@
 package filter
 
 import (
+	"quorumengineering/quorum-report/core/filter/token"
 	"sync"
 	"time"
 
@@ -8,6 +9,11 @@ import (
 	"quorumengineering/quorum-report/log"
 	"quorumengineering/quorum-report/types"
 )
+
+type IndexBatch struct {
+	addresses []types.Address
+	blocks    []*types.Block
+}
 
 type FilterServiceDB interface {
 	ReadBlock(uint64) (*types.Block, error)
@@ -20,8 +26,9 @@ type FilterServiceDB interface {
 
 // FilterService filters transactions and storage based on registered address list.
 type FilterService struct {
-	db            FilterServiceDB
-	storageFilter *StorageFilter
+	db             FilterServiceDB
+	storageFilter  *StorageFilter
+	erc20processor *token.ERC20Processor
 
 	// To check we have actually shut down before returning
 	shutdownChan chan struct{}
@@ -30,9 +37,10 @@ type FilterService struct {
 
 func NewFilterService(db FilterServiceDB, client client.Client) *FilterService {
 	return &FilterService{
-		db:            db,
-		storageFilter: NewStorageFilter(db, client),
-		shutdownChan:  make(chan struct{}),
+		db:             db,
+		storageFilter:  NewStorageFilter(db, client),
+		shutdownChan:   make(chan struct{}),
+		erc20processor: token.NewERC20Processor(db, client),
 	}
 }
 
@@ -117,11 +125,6 @@ func (fs *FilterService) getLastFiltered(current uint64) (map[types.Address]uint
 	return lastFiltered, current, nil
 }
 
-type IndexBatch struct {
-	addresses []types.Address
-	blocks    []*types.Block
-}
-
 func (fs *FilterService) index(lastFiltered map[types.Address]uint64, blockNumber uint64, endBlockNumber uint64) error {
 	log.Info("Index registered address", "start-block", blockNumber, "end-block", endBlockNumber)
 	indexBatches := make([]IndexBatch, 0)
@@ -165,13 +168,26 @@ func (fs *FilterService) index(lastFiltered map[types.Address]uint64, blockNumbe
 
 	// index storage and blocks for all batches
 	for _, batch := range indexBatches {
-		if err := fs.storageFilter.IndexStorage(batch.addresses, batch.blocks[0].Number, batch.blocks[len(batch.blocks)-1].Number); err != nil {
-			return err
-		}
-		// if IndexStorage has an error, IndexBlocks is never called, last filtered will not be updated
-		if err := fs.db.IndexBlocks(batch.addresses, batch.blocks); err != nil {
+		if err := fs.processBatch(batch); err != nil {
 			return err
 		}
 	}
+	return nil
+}
+
+func (fs *FilterService) processBatch(batch IndexBatch) error {
+	if err := fs.storageFilter.IndexStorage(batch.addresses, batch.blocks[0].Number, batch.blocks[len(batch.blocks)-1].Number); err != nil {
+		return err
+	}
+
+	// if IndexStorage has an error, IndexBlocks is never called, last filtered will not be updated
+	if err := fs.db.IndexBlocks(batch.addresses, batch.blocks); err != nil {
+		return err
+	}
+
+	for _, b := range batch.blocks {
+		fs.erc20processor.ProcessBlock(batch.addresses, b)
+	}
+
 	return nil
 }

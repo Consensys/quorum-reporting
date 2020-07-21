@@ -1,6 +1,8 @@
 package database
 
 import (
+	"math/big"
+
 	"quorumengineering/quorum-report/types"
 )
 
@@ -10,6 +12,7 @@ type Database interface {
 	BlockDB
 	TransactionDB
 	IndexDB
+	TokenDB
 	Stop()
 }
 
@@ -58,4 +61,9 @@ type IndexDB interface {
 	GetEventsFromAddressTotal(types.Address, *types.QueryOptions) (uint64, error)
 	GetStorage(types.Address, uint64) (map[types.Hash]string, error)
 	GetLastFiltered(types.Address) (uint64, error)
+}
+
+type TokenDB interface {
+	RecordNewBalance(contract types.Address, holder types.Address, block uint64, amount *big.Int) error
+	GetBalance(contract types.Address, holder types.Address, block uint64) (*big.Int, error)
 }

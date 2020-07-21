@@ -1,6 +1,7 @@
 package factory
 
 import (
+	"math/big"
 	"sync"
 
 	"github.com/bluele/gcache"
@@ -232,6 +233,14 @@ func (cachingDB *DatabaseWithCache) GetStorage(address types.Address, blockNumbe
 
 func (cachingDB *DatabaseWithCache) GetLastFiltered(address types.Address) (uint64, error) {
 	return cachingDB.db.GetLastFiltered(address)
+}
+
+func (cachingDB *DatabaseWithCache) RecordNewBalance(contract types.Address, holder types.Address, block uint64, amount *big.Int) error {
+	return cachingDB.db.RecordNewBalance(contract, holder, block, amount)
+}
+
+func (cachingDB *DatabaseWithCache) GetBalance(contract types.Address, holder types.Address, block uint64) (*big.Int, error) {
+	return cachingDB.db.GetBalance(contract, holder, block)
 }
 
 func (cachingDB *DatabaseWithCache) Stop() {

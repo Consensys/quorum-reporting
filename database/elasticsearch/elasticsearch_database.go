@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math/big"
 	"strconv"
 	"strings"
 	"sync"
@@ -54,6 +55,7 @@ func (es *ElasticsearchDB) init() error {
 	es.apiClient.DoRequest(esapi.IndicesCreateRequest{Index: StorageIndex})
 	es.apiClient.DoRequest(esapi.IndicesCreateRequest{Index: EventIndex})
 	es.apiClient.DoRequest(esapi.IndicesCreateRequest{Index: MetaIndex})
+	es.apiClient.DoRequest(esapi.IndicesCreateRequest{Index: TokenIndex})
 
 	req := esapi.IndexRequest{
 		Index:      MetaIndex,
@@ -681,6 +683,50 @@ func (es *ElasticsearchDB) GetLastFiltered(address types.Address) (uint64, error
 		return 0, err
 	}
 	return contract.LastFiltered, nil
+}
+
+// Token DB
+func (es *ElasticsearchDB) RecordNewBalance(contract types.Address, holder types.Address, block uint64, amount *big.Int) error {
+	tokenInfo := TokenHolder{
+		Contract:    contract,
+		Holder:      holder,
+		BlockNumber: block,
+		Amount:      amount.String(),
+	}
+
+	req := esapi.IndexRequest{
+		Index:      TokenIndex,
+		DocumentID: fmt.Sprintf("%s-%s-%d", contract.String(), holder.String(), block),
+		Body:       esutil.NewJSONReader(tokenInfo),
+		Refresh:    "true",
+		OpType:     "create", //This will only create if the contract does not exist
+	}
+
+	_, err := es.apiClient.DoRequest(req)
+	return err
+}
+
+func (es *ElasticsearchDB) GetBalance(contract types.Address, holder types.Address, block uint64) (*big.Int, error) {
+	fetchReq := esapi.GetRequest{
+		Index:      TokenIndex,
+		DocumentID: fmt.Sprintf("%s-%s-%d", contract.String(), holder.String(), block),
+	}
+
+	body, err := es.apiClient.DoRequest(fetchReq)
+	if err != nil {
+		return nil, err
+	}
+
+	var tokenHolder TokenHolderQueryResult
+	if err = json.Unmarshal(body, &tokenHolder); err != nil {
+		return nil, err
+	}
+
+	tokenAmount, success := new(big.Int).SetString(tokenHolder.Source.Amount, 10)
+	if success {
+		return tokenAmount, nil
+	}
+	return nil, errors.New("")
 }
 
 // Internal functions

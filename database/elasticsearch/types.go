@@ -33,6 +33,13 @@ type StorageEntry struct {
 	Value string
 }
 
+type TokenHolder struct {
+	Contract    types.Address `json:"contract"`
+	Holder      types.Address `json:"holder"`
+	BlockNumber uint64        `json:"blockNumber"`
+	Amount      string        `json:"amount"`
+}
+
 //
 
 type ContractQueryResult struct {
@@ -49,6 +56,10 @@ type TransactionQueryResult struct {
 
 type BlockQueryResult struct {
 	Source *types.Block `json:"_source"`
+}
+
+type TokenHolderQueryResult struct {
+	Source TokenHolder `json:"_source"`
 }
 
 type StateQueryResult struct {

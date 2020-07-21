@@ -126,3 +126,17 @@ func TransactionWithReceipt(c Client, transactionHash types.Hash) (Transaction, 
 	}
 	return txResult.Transaction, nil
 }
+
+func CallBalanceOfERC20(c Client, contract types.Address, holder types.Address, blockNum uint64) (types.HexData, error) {
+	// 70a08231 is the 4byte function sig
+	// "000000000000000000000000" + string(holder) is the token holders address, padded to 32 bytes
+
+	msg := types.EIP165Call{
+		To:   contract,
+		Data: types.NewHexData("0x70a08231" + "000000000000000000000000" + string(holder)),
+	}
+
+	var res types.HexData
+	err := c.RPCCall(&res, "eth_call", msg, fmt.Sprintf("0x%x", blockNum))
+	return res, err
+}
