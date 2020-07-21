@@ -2,6 +2,7 @@ package filter
 
 import (
 	"quorumengineering/quorum-report/core/filter/token"
+	"quorumengineering/quorum-report/database"
 	"sync"
 	"time"
 
@@ -16,12 +17,13 @@ type IndexBatch struct {
 }
 
 type FilterServiceDB interface {
-	ReadBlock(uint64) (*types.Block, error)
-	GetLastPersistedBlockNumber() (uint64, error)
-	GetLastFiltered(types.Address) (uint64, error)
-	GetAddresses() ([]types.Address, error)
-	IndexBlocks([]types.Address, []*types.Block) error
-	IndexStorage(map[types.Address]*types.AccountState, uint64) error
+	database.Database
+	//ReadBlock(uint64) (*types.Block, error)
+	//GetLastPersistedBlockNumber() (uint64, error)
+	//GetLastFiltered(types.Address) (uint64, error)
+	//GetAddresses() ([]types.Address, error)
+	//IndexBlocks([]types.Address, []*types.Block) error
+	//IndexStorage(map[types.Address]*types.AccountState, uint64) error
 }
 
 // FilterService filters transactions and storage based on registered address list.
