@@ -4,7 +4,6 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"strconv"
 
 	"quorumengineering/quorum-report/log"
 	"quorumengineering/quorum-report/types"
@@ -117,7 +116,7 @@ func CurrentBlock(c Client) (uint64, error) {
 	}
 
 	log.Debug("Current block number found", "number", currentBlockResult.Block.Number)
-	return strconv.ParseUint(currentBlockResult.Block.Number, 0, 64)
+	return currentBlockResult.Block.Number.ToUint64(), nil
 }
 
 func TransactionWithReceipt(c Client, transactionHash types.Hash) (Transaction, error) {
