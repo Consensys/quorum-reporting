@@ -4,6 +4,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"strconv"
 
 	"quorumengineering/quorum-report/log"
 	"quorumengineering/quorum-report/types"
@@ -98,4 +99,31 @@ func CallEIP165(c Client, address types.Address, interfaceId []byte, blockNum ui
 		return false, nil
 	}
 	return asBytes[len(asBytes)-1] == 0x1, nil
+}
+
+func BlockByNumber(c Client, hexPrefixedBlockNumber string) (types.RawBlock, error) {
+	var blockOrigin types.RawBlock
+	err := c.RPCCall(&blockOrigin, "eth_getBlockByNumber", hexPrefixedBlockNumber, false)
+
+	return blockOrigin, err
+}
+
+func CurrentBlock(c Client) (uint64, error) {
+	log.Debug("Fetching current block number")
+
+	var currentBlockResult CurrentBlockResult
+	if err := c.ExecuteGraphQLQuery(&currentBlockResult, CurrentBlockQuery()); err != nil {
+		return 0, err
+	}
+
+	log.Debug("Current block number found", "number", currentBlockResult.Block.Number)
+	return strconv.ParseUint(currentBlockResult.Block.Number, 0, 64)
+}
+
+func TransactionWithReceipt(c Client, transactionHash types.Hash) (Transaction, error) {
+	var txResult TransactionResult
+	if err := c.ExecuteGraphQLQuery(&txResult, TransactionDetailQuery(transactionHash)); err != nil {
+		return Transaction{}, err
+	}
+	return txResult.Transaction, nil
 }

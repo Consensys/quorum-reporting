@@ -10,7 +10,6 @@ import (
 
 	"github.com/machinebox/graphql"
 
-	graphqlQuery "quorumengineering/quorum-report/graphql"
 	"quorumengineering/quorum-report/log"
 	"quorumengineering/quorum-report/types"
 )
@@ -42,7 +41,7 @@ func NewQuorumClient(rawUrl, qgUrl string) (*QuorumClient, error) {
 	// Test graphql endpoint connection.
 	log.Debug("Connecting to GraphQL endpoint", "url", qgUrl)
 	var resp map[string]interface{}
-	if err := quorumClient.ExecuteGraphQLQuery(&resp, graphqlQuery.CurrentBlockQuery()); err != nil || len(resp) == 0 {
+	if err := quorumClient.ExecuteGraphQLQuery(&resp, CurrentBlockQuery()); err != nil || len(resp) == 0 {
 		return nil, errors.New("call graphql endpoint failed")
 	}
 	log.Debug("Connected to GraphQL endpoint")

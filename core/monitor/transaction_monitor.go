@@ -4,7 +4,6 @@ import (
 	"strconv"
 
 	"quorumengineering/quorum-report/client"
-	"quorumengineering/quorum-report/graphql"
 	"quorumengineering/quorum-report/log"
 	"quorumengineering/quorum-report/types"
 )
@@ -41,12 +40,10 @@ func (tm *DefaultTransactionMonitor) PullTransactions(block *types.Block) ([]*ty
 func (tm *DefaultTransactionMonitor) createTransaction(block *types.Block, hash types.Hash) (*types.Transaction, error) {
 	log.Debug("Processing transaction", "hash", hash.String())
 
-	var txResult graphql.TransactionResult
-	if err := tm.quorumClient.ExecuteGraphQLQuery(&txResult, graphql.TransactionDetailQuery(hash)); err != nil {
+	txOrigin, err := client.TransactionWithReceipt(tm.quorumClient, hash)
+	if err != nil {
 		return nil, err
 	}
-
-	txOrigin := txResult.Transaction
 
 	// Create reporting transaction struct fields.
 	nonce, err := strconv.ParseUint(txOrigin.Nonce, 0, 64)

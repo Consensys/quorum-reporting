@@ -1,4 +1,4 @@
-package graphql
+package client
 
 type CurrentBlockResult struct {
 	Block Block

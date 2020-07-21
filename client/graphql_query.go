@@ -1,4 +1,4 @@
-package graphql
+package client
 
 import "quorumengineering/quorum-report/types"
 
