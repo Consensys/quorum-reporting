@@ -65,5 +65,5 @@ type IndexDB interface {
 
 type TokenDB interface {
 	RecordNewBalance(contract types.Address, holder types.Address, block uint64, amount *big.Int) error
-	GetBalance(contract types.Address, holder types.Address, block uint64) (*big.Int, error)
+	GetBalance(contract types.Address, holder types.Address, options *types.QueryOptions) (map[uint64]*big.Int, error)
 }

@@ -1,6 +1,7 @@
 package elasticsearch
 
 import (
+	"fmt"
 	"math/big"
 
 	"quorumengineering/quorum-report/types"
@@ -83,9 +84,25 @@ func QueryInternalTransactionsWithOptionsTemplate(options *types.QueryOptions) s
 `
 }
 
+func QueryTokenBalanceAtBlockRange(options *types.QueryOptions) string {
+	return `
+{
+	"query": {
+		"bool": {
+			"must": [
+				{ "match": { "contract": "%s"} },
+				{ "match": { "holder": "%s" } },
+` + createRangeQuery("blockNumber", options.BeginBlockNumber, options.EndBlockNumber) + `
+			]
+		}
+	}
+}
+`
+}
+
 func createRangeQuery(name string, start *big.Int, end *big.Int) string {
 	if end.Cmp(big.NewInt(-1)) == 0 {
-		return "{ \"range\": { \"" + name + "\": { \"gte\": " + start.String() + "} } }"
+		return fmt.Sprintf(`{ "range": { "%s": { "gte": %s } } }`, name, start.String())
 	}
-	return "{ \"range\": { \"" + name + "\": { \"gte\": " + start.String() + ", \"lte\": " + end.String() + "} } }"
+	return fmt.Sprintf(`{ "range": { "%s": { "gte": %s, "lte": %s } } }`, name, start.String(), end.String())
 }

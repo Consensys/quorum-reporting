@@ -3,6 +3,7 @@ package rpc
 import (
 	"encoding/json"
 	"errors"
+	"math/big"
 	"net/http"
 
 	"quorumengineering/quorum-report/core/storageparsing"
@@ -364,11 +365,12 @@ func (r *RPCAPIs) GetTemplateDetails(req *http.Request, templateName *string, re
 	return nil
 }
 
-func (r *RPCAPIs) GetTokenBalance(req *http.Request, query *TokenQuery, reply *string) error {
-	bal, err := r.db.GetBalance(*query.Contract, *query.Holder, query.BlockNumber)
+func (r *RPCAPIs) GetTokenBalance(req *http.Request, query *TokenQuery, reply *map[uint64]*big.Int) error {
+	query.Options.SetDefaults()
+	bal, err := r.db.GetBalance(*query.Contract, *query.Holder, query.Options)
 	if err != nil {
 		return err
 	}
-	*reply = bal.String()
+	*reply = bal
 	return nil
 }

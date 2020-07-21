@@ -40,9 +40,9 @@ type AddressWithBlockRange struct {
 }
 
 type TokenQuery struct {
-	Contract    *types.Address
-	Holder      *types.Address
-	BlockNumber uint64
+	Contract *types.Address
+	Holder   *types.Address
+	Options  *types.QueryOptions
 }
 
 //Outputs

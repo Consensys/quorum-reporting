@@ -456,6 +456,6 @@ func (db *MemoryDB) RecordNewBalance(contract types.Address, holder types.Addres
 	return nil
 }
 
-func (db *MemoryDB) GetBalance(contract types.Address, holder types.Address, block uint64) (*big.Int, error) {
+func (db *MemoryDB) GetBalance(contract types.Address, holder types.Address, options *types.QueryOptions) (map[uint64]*big.Int, error) {
 	return nil, nil
 }

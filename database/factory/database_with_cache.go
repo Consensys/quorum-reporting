@@ -239,8 +239,8 @@ func (cachingDB *DatabaseWithCache) RecordNewBalance(contract types.Address, hol
 	return cachingDB.db.RecordNewBalance(contract, holder, block, amount)
 }
 
-func (cachingDB *DatabaseWithCache) GetBalance(contract types.Address, holder types.Address, block uint64) (*big.Int, error) {
-	return cachingDB.db.GetBalance(contract, holder, block)
+func (cachingDB *DatabaseWithCache) GetBalance(contract types.Address, holder types.Address, options *types.QueryOptions) (map[uint64]*big.Int, error) {
+	return cachingDB.db.GetBalance(contract, holder, options)
 }
 
 func (cachingDB *DatabaseWithCache) Stop() {

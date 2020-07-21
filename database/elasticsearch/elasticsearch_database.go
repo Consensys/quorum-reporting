@@ -511,6 +511,8 @@ func (es *ElasticsearchDB) GetContractCreationTransaction(address types.Address)
 func (es *ElasticsearchDB) GetAllTransactionsToAddress(address types.Address, options *types.QueryOptions) ([]types.Hash, error) {
 	queryString := fmt.Sprintf(QueryByToAddressWithOptionsTemplate(options), address.String())
 
+	fmt.Println(queryString)
+
 	from := options.PageSize * options.PageNumber
 	if from+options.PageSize > 1000 {
 		return nil, ErrPaginationLimitExceeded
@@ -706,27 +708,61 @@ func (es *ElasticsearchDB) RecordNewBalance(contract types.Address, holder types
 	return err
 }
 
-func (es *ElasticsearchDB) GetBalance(contract types.Address, holder types.Address, block uint64) (*big.Int, error) {
-	fetchReq := esapi.GetRequest{
-		Index:      TokenIndex,
-		DocumentID: fmt.Sprintf("%s-%s-%d", contract.String(), holder.String(), block),
-	}
+//func (es *ElasticsearchDB) GetBalance(contract types.Address, holder types.Address, block uint64) (*big.Int, error) {
+//	fetchReq := esapi.GetRequest{
+//		Index:      TokenIndex,
+//		DocumentID: fmt.Sprintf("%s-%s-%d", contract.String(), holder.String(), block),
+//	}
+//
+//	body, err := es.apiClient.DoRequest(fetchReq)
+//	if err != nil {
+//		return nil, err
+//	}
+//
+//	var tokenHolder TokenHolderQueryResult
+//	if err = json.Unmarshal(body, &tokenHolder); err != nil {
+//		return nil, err
+//	}
+//
+//	tokenAmount, success := new(big.Int).SetString(tokenHolder.Source.Amount, 10)
+//	if success {
+//		return tokenAmount, nil
+//	}
+//	return nil, errors.New("")
+//}
 
-	body, err := es.apiClient.DoRequest(fetchReq)
+func (es *ElasticsearchDB) GetBalance(contract types.Address, holder types.Address, options *types.QueryOptions) (map[uint64]*big.Int, error) {
+	queryString := fmt.Sprintf(QueryTokenBalanceAtBlockRange(options), contract.String(), holder.String())
+	fmt.Println(queryString)
+
+	from := options.PageSize * options.PageNumber
+	if from+options.PageSize > 1000 {
+		return nil, ErrPaginationLimitExceeded
+	}
+	req := esapi.SearchRequest{
+		Index: []string{TokenIndex},
+		Body:  strings.NewReader(queryString),
+		From:  &from,
+		Size:  &options.PageSize,
+		Sort:  []string{"blockNumber:desc"},
+	}
+	results, err := es.doSearchRequest(req)
 	if err != nil {
 		return nil, err
 	}
 
-	var tokenHolder TokenHolderQueryResult
-	if err = json.Unmarshal(body, &tokenHolder); err != nil {
-		return nil, err
+	balanceMap := make(map[uint64]*big.Int)
+	for _, result := range results.Hits.Hits {
+		blockNumber := uint64(result.Source["blockNumber"].(float64))
+		tokenAmount, success := new(big.Int).SetString(result.Source["amount"].(string), 10)
+		if !success {
+			return nil, errors.New("some error")
+		}
+		//block, _ := strconv.ParseUint(blockNumber, 10, 64)
+		balanceMap[blockNumber] = tokenAmount
 	}
 
-	tokenAmount, success := new(big.Int).SetString(tokenHolder.Source.Amount, 10)
-	if success {
-		return tokenAmount, nil
-	}
-	return nil, errors.New("")
+	return balanceMap, nil
 }
 
 // Internal functions
