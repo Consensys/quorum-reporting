@@ -102,3 +102,22 @@ func TestNewHashFromHex_WithPrefix(t *testing.T) {
 
 	assert.EqualValues(t, "0xe625ba9f14eed0671508966080fb01374d0a3a16b9cee545a324179b75f30aa8", hash.String())
 }
+
+func TestHexNumber_MarshalJSON(t *testing.T) {
+	hexNum := HexNumber(16)
+
+	result, err := json.Marshal(hexNum)
+
+	assert.Nil(t, err)
+	assert.Equal(t, `"0x10"`, string(result))
+}
+
+func TestHexNumber_UnmarshalJSON(t *testing.T) {
+	hexNumber := `"0x10"`
+
+	var num HexNumber
+	err := json.Unmarshal([]byte(hexNumber), &num)
+
+	assert.Nil(t, err)
+	assert.EqualValues(t, 16, num)
+}

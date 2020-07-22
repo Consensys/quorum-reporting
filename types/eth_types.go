@@ -4,6 +4,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"strings"
 )
 
@@ -159,4 +160,27 @@ func (data *HexData) AsBytes() []byte {
 type EIP165Call struct {
 	To   Address `json:"to"`
 	Data HexData `json:"data"`
+}
+
+type HexNumber uint64
+
+func (num HexNumber) MarshalJSON() ([]byte, error) {
+	return json.Marshal(fmt.Sprintf("0x%x", uint64(num)))
+}
+
+func (num *HexNumber) UnmarshalJSON(input []byte) error {
+	var unwrapped string
+	if err := json.Unmarshal(input, &unwrapped); err != nil {
+		return err
+	}
+	out, err := strconv.ParseUint(unwrapped, 0, 64)
+	if err != nil {
+		return err
+	}
+	*num = HexNumber(out)
+	return nil
+}
+
+func (num *HexNumber) ToUint64() uint64 {
+	return uint64(*num)
 }
