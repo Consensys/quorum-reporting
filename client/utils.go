@@ -100,9 +100,9 @@ func CallEIP165(c Client, address types.Address, interfaceId []byte, blockNum ui
 	return asBytes[len(asBytes)-1] == 0x1, nil
 }
 
-func BlockByNumber(c Client, hexPrefixedBlockNumber string) (types.RawBlock, error) {
+func BlockByNumber(c Client, blockNum uint64) (types.RawBlock, error) {
 	var blockOrigin types.RawBlock
-	err := c.RPCCall(&blockOrigin, "eth_getBlockByNumber", hexPrefixedBlockNumber, false)
+	err := c.RPCCall(&blockOrigin, "eth_getBlockByNumber", fmt.Sprintf("0x%x", blockNum), false)
 
 	return blockOrigin, err
 }

@@ -7,23 +7,23 @@ type Template struct {
 }
 
 type RawHeader struct {
-	Hash   string `json:"hash"`
-	Number string `json:"number"`
+	Hash   Hash      `json:"hash"`
+	Number HexNumber `json:"number"`
 }
 
 // received from eth_getBlockByNumber
 type RawBlock struct {
-	Hash         string   `json:"hash"`
-	ParentHash   string   `json:"parentHash"`
-	StateRoot    string   `json:"stateRoot"`
-	TxRoot       string   `json:"transactionsRoot"`
-	ReceiptRoot  string   `json:"receiptsRoot"`
-	Number       string   `json:"number"`
-	GasLimit     string   `json:"gasLimit"`
-	GasUsed      string   `json:"gasUsed"`
-	Timestamp    string   `json:"timestamp"`
-	ExtraData    string   `json:"extraData"`
-	Transactions []string `json:"transactions"`
+	Hash         Hash      `json:"hash"`
+	ParentHash   Hash      `json:"parentHash"`
+	StateRoot    Hash      `json:"stateRoot"`
+	TxRoot       Hash      `json:"transactionsRoot"`
+	ReceiptRoot  Hash      `json:"receiptsRoot"`
+	Number       HexNumber `json:"number"`
+	GasLimit     HexNumber `json:"gasLimit"`
+	GasUsed      HexNumber `json:"gasUsed"`
+	Timestamp    HexNumber `json:"timestamp"`
+	ExtraData    string    `json:"extraData"`
+	Transactions []Hash    `json:"transactions"`
 }
 
 type Block struct {
