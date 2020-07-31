@@ -4,7 +4,6 @@ import (
 	"strconv"
 
 	"quorumengineering/quorum-report/client"
-	"quorumengineering/quorum-report/graphql"
 	"quorumengineering/quorum-report/log"
 	"quorumengineering/quorum-report/types"
 )
@@ -41,35 +40,7 @@ func (tm *DefaultTransactionMonitor) PullTransactions(block *types.Block) ([]*ty
 func (tm *DefaultTransactionMonitor) createTransaction(block *types.Block, hash types.Hash) (*types.Transaction, error) {
 	log.Debug("Processing transaction", "hash", hash.String())
 
-	var txResult graphql.TransactionResult
-	if err := tm.quorumClient.ExecuteGraphQLQuery(&txResult, graphql.TransactionDetailQuery(hash)); err != nil {
-		return nil, err
-	}
-
-	txOrigin := txResult.Transaction
-
-	// Create reporting transaction struct fields.
-	nonce, err := strconv.ParseUint(txOrigin.Nonce, 0, 64)
-	if err != nil {
-		return nil, err
-	}
-	value, err := strconv.ParseUint(txOrigin.Value, 0, 64)
-	if err != nil {
-		return nil, err
-	}
-	gas, err := strconv.ParseUint(txOrigin.Gas, 0, 64)
-	if err != nil {
-		return nil, err
-	}
-	gasUsed, err := strconv.ParseUint(txOrigin.GasUsed, 0, 64)
-	if err != nil {
-		return nil, err
-	}
-	cumulativeGasUsed, err := strconv.ParseUint(txOrigin.CumulativeGasUsed, 0, 64)
-	if err != nil {
-		return nil, err
-	}
-	gasPrice, err := strconv.ParseUint(txOrigin.GasPrice, 0, 64)
+	txOrigin, err := client.TransactionWithReceipt(tm.quorumClient, hash)
 	if err != nil {
 		return nil, err
 	}
@@ -80,31 +51,27 @@ func (tm *DefaultTransactionMonitor) createTransaction(block *types.Block, hash 
 		BlockNumber:       block.Number,
 		BlockHash:         block.Hash,
 		Index:             txOrigin.Index,
-		Nonce:             nonce,
-		From:              types.NewAddress(txOrigin.From.Address),
-		To:                types.NewAddress(txOrigin.To.Address),
-		Value:             value,
-		Gas:               gas,
-		GasUsed:           gasUsed,
-		GasPrice:          gasPrice,
-		CumulativeGasUsed: cumulativeGasUsed,
-		CreatedContract:   types.NewAddress(txOrigin.CreatedContract.Address),
-		Data:              types.NewHexData(txOrigin.InputData),
-		PrivateData:       types.NewHexData(txOrigin.PrivateInputData),
+		Nonce:             txOrigin.Nonce.ToUint64(),
+		From:              txOrigin.From.Address,
+		To:                txOrigin.To.Address,
+		Value:             txOrigin.Value.ToUint64(),
+		Gas:               txOrigin.Gas.ToUint64(),
+		GasUsed:           txOrigin.GasUsed.ToUint64(),
+		GasPrice:          txOrigin.GasPrice.ToUint64(),
+		CumulativeGasUsed: txOrigin.CumulativeGasUsed.ToUint64(),
+		CreatedContract:   txOrigin.CreatedContract.Address,
+		Data:              txOrigin.InputData,
+		PrivateData:       txOrigin.PrivateInputData,
 		IsPrivate:         txOrigin.IsPrivate,
 		Timestamp:         block.Timestamp,
 	}
 	events := []*types.Event{}
 	for _, l := range txOrigin.Logs {
-		topics := []types.Hash{}
-		for _, t := range l.Topics {
-			topics = append(topics, types.NewHash(t))
-		}
 		e := &types.Event{
 			Index:            l.Index,
-			Address:          types.NewAddress(l.Account.Address),
-			Topics:           topics,
-			Data:             types.NewHexData(l.Data),
+			Address:          l.Account.Address,
+			Topics:           l.Topics,
+			Data:             l.Data,
 			BlockNumber:      block.Number,
 			BlockHash:        block.Hash,
 			TransactionHash:  tx.Hash,
@@ -133,7 +100,7 @@ func (tm *DefaultTransactionMonitor) createTransaction(block *types.Block, hash 
 			if err != nil {
 				return nil, err
 			}
-			value = uint64(0)
+			value := uint64(0)
 			if val, ok := respCallMap["value"].(string); ok {
 				value, err = strconv.ParseUint(val, 0, 64)
 				if err != nil {

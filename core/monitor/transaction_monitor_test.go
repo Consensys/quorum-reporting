@@ -6,7 +6,6 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"quorumengineering/quorum-report/client"
-	"quorumengineering/quorum-report/graphql"
 	"quorumengineering/quorum-report/types"
 )
 
@@ -45,7 +44,7 @@ func TestCreateTransaction(t *testing.T) {
 		Timestamp: uint64(0x1000),
 	}
 	mockGraphQL := map[string]map[string]interface{}{
-		graphql.TransactionDetailQuery(types.NewHash("0xe625ba9f14eed0671508966080fb01374d0a3a16b9cee545a324179b75f30aa8")): {
+		client.TransactionDetailQuery(types.NewHash("0xe625ba9f14eed0671508966080fb01374d0a3a16b9cee545a324179b75f30aa8")): {
 			"transaction": interface{}(graphqlResp),
 		},
 	}
@@ -110,7 +109,7 @@ func TestCreateTransaction(t *testing.T) {
 
 func TestTransactionMonitor_PullTransactions(t *testing.T) {
 	mockGraphQL := map[string]map[string]interface{}{
-		graphql.TransactionDetailQuery(types.NewHash("0xe625ba9f14eed0671508966080fb01374d0a3a16b9cee545a324179b75f30aa8")): {
+		client.TransactionDetailQuery(types.NewHash("0xe625ba9f14eed0671508966080fb01374d0a3a16b9cee545a324179b75f30aa8")): {
 			"transaction": interface{}(graphqlResp),
 		},
 	}

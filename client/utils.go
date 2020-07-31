@@ -99,3 +99,30 @@ func CallEIP165(c Client, address types.Address, interfaceId []byte, blockNum ui
 	}
 	return asBytes[len(asBytes)-1] == 0x1, nil
 }
+
+func BlockByNumber(c Client, blockNum uint64) (types.RawBlock, error) {
+	var blockOrigin types.RawBlock
+	err := c.RPCCall(&blockOrigin, "eth_getBlockByNumber", fmt.Sprintf("0x%x", blockNum), false)
+
+	return blockOrigin, err
+}
+
+func CurrentBlock(c Client) (uint64, error) {
+	log.Debug("Fetching current block number")
+
+	var currentBlockResult CurrentBlockResult
+	if err := c.ExecuteGraphQLQuery(&currentBlockResult, CurrentBlockQuery()); err != nil {
+		return 0, err
+	}
+
+	log.Debug("Current block number found", "number", currentBlockResult.Block.Number)
+	return currentBlockResult.Block.Number.ToUint64(), nil
+}
+
+func TransactionWithReceipt(c Client, transactionHash types.Hash) (Transaction, error) {
+	var txResult TransactionResult
+	if err := c.ExecuteGraphQLQuery(&txResult, TransactionDetailQuery(transactionHash)); err != nil {
+		return Transaction{}, err
+	}
+	return txResult.Transaction, nil
+}
