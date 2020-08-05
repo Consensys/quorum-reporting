@@ -21,15 +21,21 @@ func NewERC20Processor(database TokenFilterDatabase, client client.Client) *ERC2
 	return &ERC20Processor{db: database, client: client}
 }
 
-func (p *ERC20Processor) ProcessBlock(lastFiltered []types.Address, block *types.Block) {
+func (p *ERC20Processor) ProcessBlock(lastFiltered []types.Address, block *types.Block) error {
 	for _, tx := range block.Transactions {
-		transaction, _ := p.db.ReadTransaction(tx)
-		p.ProcessTransaction(lastFiltered, transaction)
+		transaction, err := p.db.ReadTransaction(tx)
+		if err != nil {
+			return err
+		}
+
+		if err := p.ProcessTransaction(lastFiltered, transaction); err != nil {
+			return err
+		}
 	}
+	return nil
 }
 
-func (p *ERC20Processor) ProcessTransaction(lastFiltered []types.Address, tx *types.Transaction) {
-
+func (p *ERC20Processor) ProcessTransaction(lastFiltered []types.Address, tx *types.Transaction) error {
 	//find all ERC20 transfer events
 	addrs := make(map[types.Address]bool)
 	for _, addr := range lastFiltered {
@@ -42,19 +48,24 @@ func (p *ERC20Processor) ProcessTransaction(lastFiltered []types.Address, tx *ty
 
 	for contract, tokenHolders := range addressesWithChangedBalances {
 		for tokenHolder := range tokenHolders {
-			bal, _ := client.CallBalanceOfERC20(p.client, contract, tokenHolder, tx.BlockNumber)
+			bal, err := client.CallBalanceOfERC20(p.client, contract, tokenHolder, tx.BlockNumber)
+			if err != nil {
+				return err
+			}
 
-			p.db.RecordNewBalance(contract, tokenHolder, tx.BlockNumber, new(big.Int).SetBytes(bal.AsBytes()))
+			balance := new(big.Int).SetBytes(bal.AsBytes())
+			if err := p.db.RecordNewBalance(contract, tokenHolder, tx.BlockNumber, balance); err != nil {
+				return err
+			}
 		}
 	}
-
+	return nil
 }
 
 func (p *ERC20Processor) filterErc20EventsForAddresses(erc20TransferEvents []*types.Event) map[types.Address]map[types.Address]bool {
 	//find all senders and recipients for each token
 	addressesWithChangedBalances := make(map[types.Address]map[types.Address]bool)
 
-	//TODO: assuming that it follows the ERC20 spec with indexed args in the event - is this always true?
 	for _, event := range erc20TransferEvents {
 		firstAddressHex := string(event.Topics[1])[24:64]  //only take the last 40 chars (20 bytes)
 		secondAddressHex := string(event.Topics[2])[24:64] //only take the last 40 chars (20 bytes)
@@ -74,7 +85,7 @@ func (p *ERC20Processor) filterForErc20Events(lastFiltered map[types.Address]boo
 	// only keep erc20 events
 	erc20TransferEvents := make([]*types.Event, 0, len(events))
 	for _, event := range events {
-		if len(event.Topics) == 3 && event.Topics[0] == erc20TransferTopicHash {
+		if lastFiltered[event.Address] && len(event.Topics) == 3 && event.Topics[0] == erc20TransferTopicHash {
 			erc20TransferEvents = append(erc20TransferEvents, event)
 		}
 	}

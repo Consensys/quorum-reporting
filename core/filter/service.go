@@ -2,11 +2,11 @@ package filter
 
 import (
 	"math/big"
-	"quorumengineering/quorum-report/core/filter/token"
 	"sync"
 	"time"
 
 	"quorumengineering/quorum-report/client"
+	"quorumengineering/quorum-report/core/filter/token"
 	"quorumengineering/quorum-report/log"
 	"quorumengineering/quorum-report/types"
 )
@@ -193,8 +193,12 @@ func (fs *FilterService) processBatch(batch IndexBatch) error {
 	}
 
 	for _, b := range batch.blocks {
-		fs.erc20processor.ProcessBlock(batch.addresses, b)
-		fs.erc721processor.ProcessBlock(batch.addresses, b)
+		if err := fs.erc20processor.ProcessBlock(batch.addresses, b); err != nil {
+			return err
+		}
+		if err := fs.erc721processor.ProcessBlock(batch.addresses, b); err != nil {
+			return err
+		}
 	}
 
 	return nil

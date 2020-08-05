@@ -22,15 +22,20 @@ func NewERC721Processor(database TokenFilterDatabase, client client.Client) *ERC
 	return &ERC721Processor{db: database, client: client}
 }
 
-func (p *ERC721Processor) ProcessBlock(lastFiltered []types.Address, block *types.Block) {
+func (p *ERC721Processor) ProcessBlock(lastFiltered []types.Address, block *types.Block) error {
 	for _, tx := range block.Transactions {
-		transaction, _ := p.db.ReadTransaction(tx)
-		p.ProcessTransaction(lastFiltered, transaction)
+		transaction, err := p.db.ReadTransaction(tx)
+		if err != nil {
+			return err
+		}
+		if err := p.ProcessTransaction(lastFiltered, transaction); err != nil {
+			return err
+		}
 	}
+	return nil
 }
 
-func (p *ERC721Processor) ProcessTransaction(lastFiltered []types.Address, tx *types.Transaction) {
-
+func (p *ERC721Processor) ProcessTransaction(lastFiltered []types.Address, tx *types.Transaction) error {
 	//find all ERC721 transfer events
 	addrs := make(map[types.Address]bool)
 	for _, addr := range lastFiltered {
@@ -39,33 +44,15 @@ func (p *ERC721Processor) ProcessTransaction(lastFiltered []types.Address, tx *t
 	erc721TransferEvents := p.filterForErc721Events(addrs, tx.Events)
 
 	for _, erc721Event := range erc721TransferEvents {
-		//firstAddressHex := string(erc721Event.Topics[1])[24:64]  //only take the last 40 chars (20 bytes)
-		secondAddressHex := string(erc721Event.Topics[2])[24:64] //only take the last 40 chars (20 bytes)
+		recipientAddressHex := string(erc721Event.Topics[2])[24:64] //only take the last 40 chars (20 bytes)
+		recipientAddress := types.NewAddress(recipientAddressHex)
 
 		tokenIdAsBytes, _ := hex.DecodeString(string(erc721Event.Topics[3]))
 		tokenId := new(big.Int).SetBytes(tokenIdAsBytes)
-		p.db.RecordERC721Token(erc721Event.Address, types.NewAddress(secondAddressHex), tx.BlockNumber, tokenId)
-	}
-}
-
-func (p *ERC721Processor) filterErc721EventsForAddresses(erc721TransferEvents []*types.Event) map[types.Address]map[types.Address]bool {
-	//find all senders and recipients for each token
-	addressesWithChangedBalances := make(map[types.Address]map[types.Address]bool)
-
-	//TODO: assuming that it follows the ERC721 spec with indexed args in the event - is this always true?
-	for _, event := range erc721TransferEvents {
-		firstAddressHex := string(event.Topics[1])[24:64]  //only take the last 40 chars (721 bytes)
-		secondAddressHex := string(event.Topics[2])[24:64] //only take the last 40 chars (721 bytes)
-
-		if addressesWithChangedBalances[event.Address] == nil {
-			addressesWithChangedBalances[event.Address] = make(map[types.Address]bool)
+		if err := p.db.RecordERC721Token(erc721Event.Address, recipientAddress, tx.BlockNumber, tokenId); err != nil {
+			return err
 		}
-
-		addressesWithChangedBalances[event.Address][types.NewAddress(firstAddressHex)] = true
-		addressesWithChangedBalances[event.Address][types.NewAddress(secondAddressHex)] = true
 	}
-
-	return addressesWithChangedBalances
 }
 
 func (p *ERC721Processor) filterForErc721Events(lastFiltered map[types.Address]bool, events []*types.Event) []*types.Event {
