@@ -12,7 +12,7 @@ require (
 	github.com/gorilla/websocket v1.4.2
 	github.com/machinebox/graphql v0.2.2
 	github.com/matryer/is v1.3.0 // indirect
-	github.com/mitchellh/mapstructure v1.2.0
+	github.com/mitchellh/mapstructure v1.3.3
 	github.com/naoina/go-stringutil v0.1.0 // indirect
 	github.com/naoina/toml v0.1.2-0.20170918210437-9fafd6967416
 	github.com/pkg/errors v0.9.1 // indirect
