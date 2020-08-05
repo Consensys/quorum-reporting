@@ -25,6 +25,7 @@ func (sf *StorageFilter) IndexStorage(addresses []types.Address, startBlockNumbe
 	for i := startBlockNumber; i <= endBlockNumber; i++ {
 		wg.Add(1)
 		go func(blockNumber uint64) {
+			defer wg.Done()
 			rawStorage := make(map[types.Address]*types.AccountState)
 			for _, address := range addresses {
 				log.Info("Pulling (indexing) contract storage", "address", address.String(), "block number", blockNumber)
@@ -32,14 +33,12 @@ func (sf *StorageFilter) IndexStorage(addresses []types.Address, startBlockNumbe
 				rawStorage[address] = dumpAccount
 				if err != nil {
 					returnErr = err
-					wg.Done()
 					return
 				}
 			}
 			if err := sf.db.IndexStorage(rawStorage, blockNumber); err != nil {
 				returnErr = err
 			}
-			wg.Done()
 		}(i)
 	}
 	wg.Wait()
