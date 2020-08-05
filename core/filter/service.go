@@ -11,11 +11,6 @@ import (
 	"quorumengineering/quorum-report/types"
 )
 
-type IndexBatch struct {
-	addresses []types.Address
-	blocks    []*types.Block
-}
-
 //TODO: clean this type up, find a better way to pass specific methods to needed pieces
 type FilterServiceDB interface {
 	RecordNewBalance(contract types.Address, holder types.Address, block uint64, amount *big.Int) error
@@ -130,6 +125,11 @@ func (fs *FilterService) getLastFiltered(current uint64) (map[types.Address]uint
 	}
 
 	return lastFiltered, current, nil
+}
+
+type IndexBatch struct {
+	addresses []types.Address
+	blocks    []*types.Block
 }
 
 func (fs *FilterService) index(lastFiltered map[types.Address]uint64, blockNumber uint64, endBlockNumber uint64) error {
