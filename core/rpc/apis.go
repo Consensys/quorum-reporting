@@ -374,3 +374,42 @@ func (r *RPCAPIs) GetTokenBalance(req *http.Request, query *TokenQuery, reply *m
 	*reply = bal
 	return nil
 }
+
+func (r *RPCAPIs) ERC721TokensForAccountAtBlock(req *http.Request, query *ERC721TokenQuery, reply *[]types.ERC721Token) error {
+	if query.Options == nil {
+		query.Options = &types.TokenQueryOptions{}
+	}
+	query.Options.SetDefaults()
+
+	results, _ := r.db.ERC721TokensForAccountAtBlock(*query.Contract, *query.Holder, query.Block, query.Options)
+
+	*reply = results
+
+	return nil
+}
+
+func (r *RPCAPIs) AllERC721TokensAtBlock(req *http.Request, query *ERC721TokenQuery, reply *[]types.ERC721Token) error {
+	if query.Options == nil {
+		query.Options = &types.TokenQueryOptions{}
+	}
+	query.Options.SetDefaults()
+
+	results, _ := r.db.AllERC721TokensAtBlock(*query.Contract, query.Block, query.Options)
+
+	*reply = results
+
+	return nil
+}
+
+func (r *RPCAPIs) AllHoldersAtBlock(req *http.Request, query *ERC721TokenQuery, reply *[]types.Address) error {
+	if query.Options == nil {
+		query.Options = &types.TokenQueryOptions{}
+	}
+	query.Options.SetDefaults()
+
+	results, _ := r.db.AllHoldersAtBlock(*query.Contract, query.Block, query.Options)
+
+	*reply = results
+
+	return nil
+}

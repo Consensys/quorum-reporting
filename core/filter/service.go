@@ -28,9 +28,10 @@ type FilterServiceDB interface {
 
 // FilterService filters transactions and storage based on registered address list.
 type FilterService struct {
-	db             FilterServiceDB
-	storageFilter  *StorageFilter
-	erc20processor *token.ERC20Processor
+	db              FilterServiceDB
+	storageFilter   *StorageFilter
+	erc20processor  *token.ERC20Processor
+	erc721processor *token.ERC721Processor
 
 	// To check we have actually shut down before returning
 	shutdownChan chan struct{}
@@ -39,10 +40,11 @@ type FilterService struct {
 
 func NewFilterService(db FilterServiceDB, client client.Client) *FilterService {
 	return &FilterService{
-		db:             db,
-		storageFilter:  NewStorageFilter(db, client),
-		shutdownChan:   make(chan struct{}),
-		erc20processor: token.NewERC20Processor(db, client),
+		db:              db,
+		storageFilter:   NewStorageFilter(db, client),
+		shutdownChan:    make(chan struct{}),
+		erc20processor:  token.NewERC20Processor(db, client),
+		erc721processor: token.NewERC721Processor(db, client),
 	}
 }
 
@@ -189,6 +191,7 @@ func (fs *FilterService) processBatch(batch IndexBatch) error {
 
 	for _, b := range batch.blocks {
 		fs.erc20processor.ProcessBlock(batch.addresses, b)
+		fs.erc721processor.ProcessBlock(batch.addresses, b)
 	}
 
 	return nil

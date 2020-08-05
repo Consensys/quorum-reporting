@@ -40,6 +40,17 @@ type TokenHolder struct {
 	Amount      string        `json:"amount"`
 }
 
+type SortableERC721Token struct {
+	types.ERC721Token
+
+	//Allows the token to be sortable by splitting it into component parts
+	First  uint64 `json:"first"`
+	Second uint64 `json:"second"`
+	Third  uint64 `json:"third"`
+	Fourth uint64 `json:"fourth"`
+	Fifth  uint64 `json:"fifth"`
+}
+
 //
 
 type ContractQueryResult struct {
@@ -80,6 +91,9 @@ type SearchQueryResult struct {
 	Hits struct {
 		Hits []IndividualResult `json:"hits"`
 	} `json:"hits"`
+	Aggregations struct {
+		Results map[string]interface{} `json:"result_buckets"`
+	} `json:"aggregations"`
 }
 
 type CountQueryResult struct {
@@ -89,4 +103,15 @@ type CountQueryResult struct {
 type IndividualResult struct {
 	Id     string                 `json:"_id"`
 	Source map[string]interface{} `json:"_source"`
+}
+
+type ERC721HolderAggregateResult struct {
+	AfterKey struct {
+		Holder string
+	} `mapstructure:"after_key"`
+	Buckets []struct {
+		Key struct {
+			Holder string
+		}
+	}
 }

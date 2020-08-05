@@ -45,6 +45,13 @@ type TokenQuery struct {
 	Options  *types.QueryOptions
 }
 
+type ERC721TokenQuery struct {
+	Contract *types.Address
+	Holder   *types.Address
+	Block    uint64
+	Options  *types.TokenQueryOptions
+}
+
 //Outputs
 
 type TransactionsResp struct {
