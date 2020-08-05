@@ -3,8 +3,8 @@ package token
 import (
 	"encoding/hex"
 	"math/big"
+
 	"quorumengineering/quorum-report/client"
-	"quorumengineering/quorum-report/database"
 	"quorumengineering/quorum-report/types"
 )
 
@@ -14,11 +14,11 @@ var (
 )
 
 type ERC721Processor struct {
-	db     database.Database
+	db     TokenFilterDatabase
 	client client.Client
 }
 
-func NewERC721Processor(database database.Database, client client.Client) *ERC721Processor {
+func NewERC721Processor(database TokenFilterDatabase, client client.Client) *ERC721Processor {
 	return &ERC721Processor{db: database, client: client}
 }
 

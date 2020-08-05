@@ -2,6 +2,7 @@ package filter
 
 import (
 	"errors"
+	"math/big"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -83,4 +84,16 @@ func (f *FakeDB) IndexBlocks(addresses []types.Address, blocks []*types.Block) e
 
 func (f *FakeDB) GetLastFiltered(address types.Address) (uint64, error) {
 	return f.lastFiltered[address], nil
+}
+
+func (f *FakeDB) ReadTransaction(txHash types.Hash) (*types.Transaction, error) {
+	return nil, errors.New("not implemented")
+}
+
+func (f *FakeDB) RecordNewBalance(contract types.Address, holder types.Address, block uint64, amount *big.Int) error {
+	return errors.New("not implemented")
+}
+
+func (f *FakeDB) RecordERC721Token(contract types.Address, holder types.Address, block uint64, tokenId *big.Int) error {
+	return errors.New("not implemented")
 }

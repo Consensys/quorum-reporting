@@ -2,8 +2,8 @@ package token
 
 import (
 	"math/big"
+
 	"quorumengineering/quorum-report/client"
-	"quorumengineering/quorum-report/database"
 	"quorumengineering/quorum-report/types"
 )
 
@@ -13,11 +13,11 @@ var (
 )
 
 type ERC20Processor struct {
-	db     database.Database
+	db     TokenFilterDatabase
 	client client.Client
 }
 
-func NewERC20Processor(database database.Database, client client.Client) *ERC20Processor {
+func NewERC20Processor(database TokenFilterDatabase, client client.Client) *ERC20Processor {
 	return &ERC20Processor{db: database, client: client}
 }
 
