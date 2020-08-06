@@ -708,7 +708,6 @@ func (es *ElasticsearchDB) RecordNewBalance(contract types.Address, holder types
 
 func (es *ElasticsearchDB) GetBalance(contract types.Address, holder types.Address, options *types.QueryOptions) (map[uint64]*big.Int, error) {
 	queryString := fmt.Sprintf(QueryTokenBalanceAtBlockRange(options), contract.String(), holder.String())
-	fmt.Println(queryString)
 
 	from := options.PageSize * options.PageNumber
 	if from+options.PageSize > 1000 {

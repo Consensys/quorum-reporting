@@ -2,6 +2,7 @@ package rpc
 
 import (
 	"errors"
+	"math/big"
 
 	"quorumengineering/quorum-report/types"
 )
@@ -48,6 +49,7 @@ type TokenQuery struct {
 type ERC721TokenQuery struct {
 	Contract *types.Address
 	Holder   *types.Address
+	TokenId  *big.Int
 	Block    uint64
 	Options  *types.TokenQueryOptions
 }

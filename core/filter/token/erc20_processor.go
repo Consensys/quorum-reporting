@@ -81,22 +81,15 @@ func (p *ERC20Processor) filterErc20EventsForAddresses(erc20TransferEvents []*ty
 	return addressesWithChangedBalances
 }
 
+// filterForErc20Events filters out all non-ERC20 transfer events, returning
+// on the events we are interested in processing further
 func (p *ERC20Processor) filterForErc20Events(lastFiltered map[types.Address]bool, events []*types.Event) []*types.Event {
-	// only keep erc20 events
 	erc20TransferEvents := make([]*types.Event, 0, len(events))
 	for _, event := range events {
-		if lastFiltered[event.Address] && len(event.Topics) == 3 && event.Topics[0] == erc20TransferTopicHash {
+		isErc20Transfer := (len(event.Topics) == 3) && (event.Topics[0] == erc20TransferTopicHash)
+		if lastFiltered[event.Address] && isErc20Transfer {
 			erc20TransferEvents = append(erc20TransferEvents, event)
 		}
 	}
-
-	// only keep events from addresses we are filtering on
-	filteredAddressTransferEvents := make([]*types.Event, 0, len(erc20TransferEvents))
-	for _, event := range erc20TransferEvents {
-		if lastFiltered[event.Address] {
-			filteredAddressTransferEvents = append(filteredAddressTransferEvents, event)
-		}
-	}
-
-	return filteredAddressTransferEvents
+	return erc20TransferEvents
 }

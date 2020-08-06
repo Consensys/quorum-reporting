@@ -42,7 +42,7 @@ func NewFilterService(db FilterServiceDB, client client.Client) *FilterService {
 		storageFilter:   NewStorageFilter(db, client),
 		shutdownChan:    make(chan struct{}),
 		erc20processor:  token.NewERC20Processor(db, client),
-		erc721processor: token.NewERC721Processor(db, client),
+		erc721processor: token.NewERC721Processor(db),
 	}
 }
 

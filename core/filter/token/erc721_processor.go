@@ -4,7 +4,6 @@ import (
 	"encoding/hex"
 	"math/big"
 
-	"quorumengineering/quorum-report/client"
 	"quorumengineering/quorum-report/types"
 )
 
@@ -14,12 +13,11 @@ var (
 )
 
 type ERC721Processor struct {
-	db     TokenFilterDatabase
-	client client.Client
+	db TokenFilterDatabase
 }
 
-func NewERC721Processor(database TokenFilterDatabase, client client.Client) *ERC721Processor {
-	return &ERC721Processor{db: database, client: client}
+func NewERC721Processor(database TokenFilterDatabase) *ERC721Processor {
+	return &ERC721Processor{db: database}
 }
 
 func (p *ERC721Processor) ProcessBlock(lastFiltered []types.Address, block *types.Block) error {
@@ -53,24 +51,18 @@ func (p *ERC721Processor) ProcessTransaction(lastFiltered []types.Address, tx *t
 			return err
 		}
 	}
+	return nil
 }
 
+// filterForErc721Events filters out all non-ERC721 transfer events, returning
+// on the events we are interested in processing further
 func (p *ERC721Processor) filterForErc721Events(lastFiltered map[types.Address]bool, events []*types.Event) []*types.Event {
-	// only keep erc721 events
 	erc721TransferEvents := make([]*types.Event, 0, len(events))
 	for _, event := range events {
-		if len(event.Topics) == 4 && event.Topics[0] == erc721TransferTopicHash {
+		isErc721Transfer := (len(event.Topics) == 4) && (event.Topics[0] == erc721TransferTopicHash)
+		if lastFiltered[event.Address] && isErc721Transfer {
 			erc721TransferEvents = append(erc721TransferEvents, event)
 		}
 	}
-
-	// only keep events from addresses we are filtering on
-	filteredAddressTransferEvents := make([]*types.Event, 0, len(erc721TransferEvents))
-	for _, event := range erc721TransferEvents {
-		if lastFiltered[event.Address] {
-			filteredAddressTransferEvents = append(filteredAddressTransferEvents, event)
-		}
-	}
-
-	return filteredAddressTransferEvents
+	return erc721TransferEvents
 }
