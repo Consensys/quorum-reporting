@@ -5,16 +5,18 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/elastic/go-elasticsearch/v7/esapi"
-	"github.com/elastic/go-elasticsearch/v7/esutil"
-	"github.com/mitchellh/mapstructure"
 	"math/big"
-	"quorumengineering/quorum-report/database"
-	"quorumengineering/quorum-report/log"
-	"quorumengineering/quorum-report/types"
 	"strconv"
 	"strings"
 	"sync"
+
+	"github.com/elastic/go-elasticsearch/v7/esapi"
+	"github.com/elastic/go-elasticsearch/v7/esutil"
+	"github.com/mitchellh/mapstructure"
+
+	"quorumengineering/quorum-report/database"
+	"quorumengineering/quorum-report/log"
+	"quorumengineering/quorum-report/types"
 )
 
 type ElasticsearchDB struct {
@@ -55,7 +57,8 @@ func (es *ElasticsearchDB) init() error {
 	es.apiClient.DoRequest(esapi.IndicesCreateRequest{Index: StorageIndex})
 	es.apiClient.DoRequest(esapi.IndicesCreateRequest{Index: EventIndex})
 	es.apiClient.DoRequest(esapi.IndicesCreateRequest{Index: MetaIndex})
-	es.apiClient.DoRequest(esapi.IndicesCreateRequest{Index: TokenIndex})
+	es.apiClient.DoRequest(esapi.IndicesCreateRequest{Index: ERC20TokenIndex})
+	es.apiClient.DoRequest(esapi.IndicesCreateRequest{Index: ERC721TokenIndex})
 
 	req := esapi.IndexRequest{
 		Index:      MetaIndex,
@@ -695,7 +698,7 @@ func (es *ElasticsearchDB) RecordNewERC20Balance(contract types.Address, holder 
 	}
 
 	req := esapi.IndexRequest{
-		Index:      TokenIndex,
+		Index:      ERC20TokenIndex,
 		DocumentID: fmt.Sprintf("%s-%s-%d", contract.String(), holder.String(), block),
 		Body:       esutil.NewJSONReader(tokenInfo),
 		Refresh:    "true",
@@ -714,7 +717,7 @@ func (es *ElasticsearchDB) GetERC20Balance(contract types.Address, holder types.
 		return nil, ErrPaginationLimitExceeded
 	}
 	req := esapi.SearchRequest{
-		Index: []string{TokenIndex},
+		Index: []string{ERC20TokenIndex},
 		Body:  strings.NewReader(queryString),
 		From:  &from,
 		Size:  &options.PageSize,
@@ -766,7 +769,7 @@ func (es *ElasticsearchDB) RecordERC721Token(contract types.Address, holder type
 	}
 
 	req := esapi.IndexRequest{
-		Index:      TokenIndex,
+		Index:      ERC721TokenIndex,
 		DocumentID: fmt.Sprintf("%s-%s-%d", contract.String(), tokenId.String(), block),
 		Body:       esutil.NewJSONReader(tokenHolderInfo),
 		Refresh:    "true",
@@ -791,7 +794,7 @@ func (es *ElasticsearchDB) RecordERC721Token(contract types.Address, holder type
 	}
 
 	updateRequest := esapi.UpdateRequest{
-		Index:      TokenIndex,
+		Index:      ERC721TokenIndex,
 		DocumentID: fmt.Sprintf("%s-%s-%d", contract.String(), tokenId.String(), existingTokenEntry.HeldFrom),
 		Body:       esutil.NewJSONReader(query),
 		Refresh:    "true",
@@ -806,7 +809,7 @@ func (es *ElasticsearchDB) ERC721TokenByTokenID(contract types.Address, block ui
 
 	pageSize := 1
 	searchReq := esapi.SearchRequest{
-		Index: []string{TokenIndex},
+		Index: []string{ERC721TokenIndex},
 		Body:  strings.NewReader(formattedQuery),
 		Size:  &pageSize,
 	}
@@ -834,7 +837,7 @@ func (es *ElasticsearchDB) ERC721TokensForAccountAtBlock(contract types.Address,
 	}
 
 	searchReq := esapi.SearchRequest{
-		Index: []string{TokenIndex},
+		Index: []string{ERC721TokenIndex},
 		Body:  strings.NewReader(formattedQuery),
 		From:  &from,
 		Size:  &options.PageSize,
@@ -866,7 +869,7 @@ func (es *ElasticsearchDB) AllERC721TokensAtBlock(contract types.Address, block 
 	}
 
 	searchReq := esapi.SearchRequest{
-		Index: []string{TokenIndex},
+		Index: []string{ERC721TokenIndex},
 		Body:  strings.NewReader(formattedQuery),
 		From:  &from,
 		Size:  &options.PageSize,
@@ -902,7 +905,7 @@ func (es *ElasticsearchDB) AllHoldersAtBlock(contract types.Address, block uint6
 	formattedQuery := fmt.Sprintf(QueryERC721AllHoldersAtBlock(), contract.String(), block, block, options.PageSize, afterQuery)
 
 	searchReq := esapi.SearchRequest{
-		Index: []string{TokenIndex},
+		Index: []string{ERC721TokenIndex},
 		Body:  strings.NewReader(formattedQuery),
 	}
 
@@ -929,7 +932,7 @@ func (es *ElasticsearchDB) AllHoldersAtBlock(contract types.Address, block uint6
 
 func (es *ElasticsearchDB) checkIsInitialized() (bool, error) {
 	fetchReq := esapi.CatIndicesRequest{
-		Index: []string{MetaIndex, ContractIndex, BlockIndex, StorageIndex, TransactionIndex, EventIndex, TokenIndex},
+		Index: []string{MetaIndex, ContractIndex, BlockIndex, StorageIndex, TransactionIndex, EventIndex, ERC20TokenIndex, ERC721TokenIndex},
 	}
 
 	if _, err := es.apiClient.DoRequest(fetchReq); err != nil {

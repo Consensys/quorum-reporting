@@ -12,11 +12,12 @@ const (
 	StateIndex       = "state"
 	TransactionIndex = "transaction"
 	EventIndex       = "event"
-	TokenIndex       = "token"
+	ERC20TokenIndex  = "erc20token"
+	ERC721TokenIndex = "erc721token"
 )
 
 var (
-	AllIndexes = []string{MetaIndex, ContractIndex, TemplateIndex, BlockIndex, StorageIndex, StateIndex, TransactionIndex, EventIndex, TokenIndex}
+	AllIndexes = []string{MetaIndex, ContractIndex, TemplateIndex, BlockIndex, StorageIndex, StateIndex, TransactionIndex, EventIndex, ERC20TokenIndex, ERC721TokenIndex}
 	// errors
 	ErrCouldNotResolveResp     = errors.New("could not resolve response body")
 	ErrIndexNotFound           = errors.New("index not found")
