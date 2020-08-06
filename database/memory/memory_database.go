@@ -452,11 +452,11 @@ func (db *MemoryDB) removeAllIndices(address types.Address) error {
 	return nil
 }
 
-func (db *MemoryDB) RecordNewBalance(contract types.Address, holder types.Address, block uint64, amount *big.Int) error {
+func (db *MemoryDB) RecordNewERC20Balance(contract types.Address, holder types.Address, block uint64, amount *big.Int) error {
 	return nil
 }
 
-func (db *MemoryDB) GetBalance(contract types.Address, holder types.Address, options *types.QueryOptions) (map[uint64]*big.Int, error) {
+func (db *MemoryDB) GetERC20Balance(contract types.Address, holder types.Address, options *types.QueryOptions) (map[uint64]*big.Int, error) {
 	return nil, nil
 }
 

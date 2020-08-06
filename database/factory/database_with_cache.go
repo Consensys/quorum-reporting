@@ -235,12 +235,12 @@ func (cachingDB *DatabaseWithCache) GetLastFiltered(address types.Address) (uint
 	return cachingDB.db.GetLastFiltered(address)
 }
 
-func (cachingDB *DatabaseWithCache) RecordNewBalance(contract types.Address, holder types.Address, block uint64, amount *big.Int) error {
-	return cachingDB.db.RecordNewBalance(contract, holder, block, amount)
+func (cachingDB *DatabaseWithCache) RecordNewERC20Balance(contract types.Address, holder types.Address, block uint64, amount *big.Int) error {
+	return cachingDB.db.RecordNewERC20Balance(contract, holder, block, amount)
 }
 
-func (cachingDB *DatabaseWithCache) GetBalance(contract types.Address, holder types.Address, options *types.QueryOptions) (map[uint64]*big.Int, error) {
-	return cachingDB.db.GetBalance(contract, holder, options)
+func (cachingDB *DatabaseWithCache) GetERC20Balance(contract types.Address, holder types.Address, options *types.QueryOptions) (map[uint64]*big.Int, error) {
+	return cachingDB.db.GetERC20Balance(contract, holder, options)
 }
 
 func (cachingDB *DatabaseWithCache) RecordERC721Token(contract types.Address, holder types.Address, block uint64, tokenId *big.Int) error {

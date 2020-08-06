@@ -54,7 +54,7 @@ func (p *ERC20Processor) ProcessTransaction(lastFiltered []types.Address, tx *ty
 			}
 
 			balance := new(big.Int).SetBytes(bal.AsBytes())
-			if err := p.db.RecordNewBalance(contract, tokenHolder, tx.BlockNumber, balance); err != nil {
+			if err := p.db.RecordNewERC20Balance(contract, tokenHolder, tx.BlockNumber, balance); err != nil {
 				return err
 			}
 		}

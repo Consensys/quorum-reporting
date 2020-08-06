@@ -13,7 +13,7 @@ import (
 
 //TODO: clean this type up, find a better way to pass specific methods to needed pieces
 type FilterServiceDB interface {
-	RecordNewBalance(contract types.Address, holder types.Address, block uint64, amount *big.Int) error
+	RecordNewERC20Balance(contract types.Address, holder types.Address, block uint64, amount *big.Int) error
 	RecordERC721Token(contract types.Address, holder types.Address, block uint64, tokenId *big.Int) error
 	ReadTransaction(types.Hash) (*types.Transaction, error)
 	ReadBlock(uint64) (*types.Block, error)

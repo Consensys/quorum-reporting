@@ -40,7 +40,7 @@ type AddressWithBlockRange struct {
 	EndBlockNumber   uint64
 }
 
-type TokenQuery struct {
+type ERC20TokenQuery struct {
 	Contract *types.Address
 	Holder   *types.Address
 	Options  *types.QueryOptions

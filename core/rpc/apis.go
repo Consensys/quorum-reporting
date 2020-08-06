@@ -365,7 +365,7 @@ func (r *RPCAPIs) GetTemplateDetails(req *http.Request, templateName *string, re
 	return nil
 }
 
-func (r *RPCAPIs) GetTokenBalance(req *http.Request, query *TokenQuery, reply *map[uint64]*big.Int) error {
+func (r *RPCAPIs) GetTokenBalance(req *http.Request, query *ERC20TokenQuery, reply *map[uint64]*big.Int) error {
 	if query.Contract == nil {
 		return errors.New("no token contract provided")
 	}
@@ -377,7 +377,7 @@ func (r *RPCAPIs) GetTokenBalance(req *http.Request, query *TokenQuery, reply *m
 	}
 	query.Options.SetDefaults()
 
-	bal, err := r.db.GetBalance(*query.Contract, *query.Holder, query.Options)
+	bal, err := r.db.GetERC20Balance(*query.Contract, *query.Holder, query.Options)
 	if err != nil {
 		return err
 	}

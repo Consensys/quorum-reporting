@@ -28,7 +28,7 @@ type FakeTestTokenDatabase struct {
 	RecordedToken    []*big.Int
 }
 
-func (db *FakeTestTokenDatabase) RecordNewBalance(contract types.Address, holder types.Address, block uint64, amount *big.Int) error {
+func (db *FakeTestTokenDatabase) RecordNewERC20Balance(contract types.Address, holder types.Address, block uint64, amount *big.Int) error {
 	if db.testErr != nil {
 		return db.testErr
 	}

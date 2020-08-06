@@ -686,7 +686,7 @@ func (es *ElasticsearchDB) GetLastFiltered(address types.Address) (uint64, error
 }
 
 // Token DB
-func (es *ElasticsearchDB) RecordNewBalance(contract types.Address, holder types.Address, block uint64, amount *big.Int) error {
+func (es *ElasticsearchDB) RecordNewERC20Balance(contract types.Address, holder types.Address, block uint64, amount *big.Int) error {
 	tokenInfo := TokenHolder{
 		Contract:    contract,
 		Holder:      holder,
@@ -706,7 +706,7 @@ func (es *ElasticsearchDB) RecordNewBalance(contract types.Address, holder types
 	return err
 }
 
-func (es *ElasticsearchDB) GetBalance(contract types.Address, holder types.Address, options *types.QueryOptions) (map[uint64]*big.Int, error) {
+func (es *ElasticsearchDB) GetERC20Balance(contract types.Address, holder types.Address, options *types.QueryOptions) (map[uint64]*big.Int, error) {
 	queryString := fmt.Sprintf(QueryTokenBalanceAtBlockRange(options), contract.String(), holder.String())
 
 	from := options.PageSize * options.PageNumber
