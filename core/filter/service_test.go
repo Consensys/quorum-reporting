@@ -4,6 +4,8 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"quorumengineering/quorum-report/client"
 	"quorumengineering/quorum-report/types"
 )
@@ -21,39 +23,25 @@ func TestIndexBlock(t *testing.T) {
 		map[types.Address]uint64{types.NewAddress("1"): 3, types.NewAddress("2"): 5},
 	}
 	fs := NewFilterService(db, client.NewStubQuorumClient(nil, mockRPC))
+
 	// test fs.getLastFiltered
 	lastFilteredAll, lastFiltered, err := fs.getLastFiltered(6)
-	if err != nil {
-		t.Fatalf("expected no error, but got %v", err)
-	}
-	if lastFilteredAll[types.NewAddress("1")] != 3 {
-		t.Fatalf("expected last filtered of %v is %v, but got %v", types.NewAddress("1"), 3, lastFiltered)
-	}
-	if lastFilteredAll[types.NewAddress("2")] != 5 {
-		t.Fatalf("expected last filtered of %v is %v, but got %v", types.NewAddress("2"), 5, lastFiltered)
-	}
-	if lastFiltered != 3 {
-		t.Fatalf("expected last filtered %v, but got %v", 3, lastFiltered)
-	}
+	assert.Nil(t, err)
+	assert.EqualValues(t, 3, lastFiltered)
+	assert.EqualValues(t, 3, lastFilteredAll[types.NewAddress("1")])
+	assert.EqualValues(t, 5, lastFilteredAll[types.NewAddress("2")])
+
 	// test fs.index
 	err = fs.index(lastFilteredAll, 4, 4)
-	if err != nil {
-		t.Fatalf("expected no error, but got %v", err)
-	}
-	if db.lastFiltered[types.NewAddress("1")] != 4 {
-		t.Fatalf(`expected types.NewAddress("1") last filtered %v, but got %v`, 4, db.lastFiltered[types.NewAddress("1")])
-	}
-	if db.lastFiltered[types.NewAddress("2")] != 5 {
-		t.Fatalf(`expected types.NewAddress("2") last filtered %v, but got %v`, 5, db.lastFiltered[types.NewAddress("2")])
-	}
+	assert.Nil(t, err)
+	assert.EqualValues(t, 4, db.lastFiltered[types.NewAddress("1")])
+	assert.EqualValues(t, 5, db.lastFiltered[types.NewAddress("2")])
+
 	// index multiple blocks
 	err = fs.index(lastFilteredAll, 5, 6)
-	if db.lastFiltered[types.NewAddress("1")] != 6 {
-		t.Fatalf(`expected types.NewAddress("1") last filtered %v, but got %v`, 6, db.lastFiltered[types.NewAddress("1")])
-	}
-	if db.lastFiltered[types.NewAddress("2")] != 6 {
-		t.Fatalf(`expected types.NewAddress("2") last filtered %v, but got %v`, 6, db.lastFiltered[types.NewAddress("2")])
-	}
+	assert.Nil(t, err)
+	assert.EqualValues(t, 6, db.lastFiltered[types.NewAddress("1")])
+	assert.EqualValues(t, 6, db.lastFiltered[types.NewAddress("2")])
 }
 
 type FakeDB struct {

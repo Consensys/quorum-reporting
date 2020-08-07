@@ -66,45 +66,20 @@ func TestCreateTransaction(t *testing.T) {
 	}
 	tm := NewDefaultTransactionMonitor(client.NewStubQuorumClient(mockGraphQL, mockRPC))
 	tx, err := tm.createTransaction(testBlock, types.NewHash("0xe625ba9f14eed0671508966080fb01374d0a3a16b9cee545a324179b75f30aa8"))
-	if err != nil {
-		t.Fatalf("expected no error, but got %v", err)
-	}
-	if tx.Hash != types.NewHash("0xe625ba9f14eed0671508966080fb01374d0a3a16b9cee545a324179b75f30aa8") {
-		t.Fatalf("expected hash %v, but got %v", "0xe625ba9f14eed0671508966080fb01374d0a3a16b9cee545a324179b75f30aa8", tx.Hash.Hex())
-	}
-	if !tx.Status {
-		t.Fatalf("expected status to be true, but got false")
-	}
-	if tx.BlockNumber != 2 {
-		t.Fatalf("expected block number %v, but got %v", 2, tx.BlockNumber)
-	}
-	if tx.Index != 0 {
-		t.Fatalf("expected index %v, but got %v", 0, tx.Index)
-	}
-	if tx.From != types.NewAddress("0xed9d02e382b34818e88b88a309c7fe71e65f419d") {
-		t.Fatalf("expected from %v, but got %v", "0xed9d02e382b34818e88b88a309c7fe71e65f419d", tx.From.Hex())
-	}
-	if tx.Gas != 4700000 {
-		t.Fatalf("expected gas %v, but got %v", 4700000, tx.Gas)
-	}
-	if len(tx.Data.AsBytes()) != 449 {
-		t.Fatalf("expected data length %v, but got %v", 449, len(tx.Data.AsBytes()))
-	}
-	if len(tx.PrivateData.AsBytes()) != 0 {
-		t.Fatalf("expected private data length %v, but got %v", 0, len(tx.PrivateData.AsBytes()))
-	}
-	if tx.IsPrivate {
-		t.Fatalf("expected isPrivate to be false, but got true")
-	}
-	if len(tx.Events) != 1 {
-		t.Fatalf("expected %v events, but got %v", 1, len(tx.Events))
-	}
-	if tx.Events[0].Topics[0] != types.NewHash("0xefe5cb8d23d632b5d2cdd9f0a151c4b1a84ccb7afa1c57331009aa922d5e4f36") {
-		t.Fatalf("expected event topic %v, but got %v", "0xefe5cb8d23d632b5d2cdd9f0a151c4b1a84ccb7afa1c57331009aa922d5e4f36", tx.Events[0].Topics[0].Hex())
-	}
-	if len(tx.InternalCalls) != 1 {
-		t.Fatalf("expected %v internal calls, but got %v", 1, len(tx.InternalCalls))
-	}
+	assert.Nil(t, err)
+	assert.EqualValues(t, types.NewHash("0xe625ba9f14eed0671508966080fb01374d0a3a16b9cee545a324179b75f30aa8"), tx.Hash)
+	assert.True(t, tx.Status)
+	assert.EqualValues(t, 2, tx.BlockNumber)
+	assert.EqualValues(t, 0, tx.Index)
+	assert.EqualValues(t, types.NewAddress("0xed9d02e382b34818e88b88a309c7fe71e65f419d"), tx.From)
+	assert.EqualValues(t, 4700000, tx.Gas)
+	assert.EqualValues(t, "0x608060405234801561001057600080fd5b506040516020806101a18339810180604052602081101561003057600080fd5b81019080805190602001909291905050508060008190555050610149806100586000396000f3fe608060405234801561001057600080fd5b506004361061005e576000357c0100000000000000000000000000000000000000000000000000000000900480632a1afcd91461006357806360fe47b1146100815780636d4ce63c146100af575b600080fd5b61006b6100cd565b6040518082815260200191505060405180910390f35b6100ad6004803603602081101561009757600080fd5b81019080803590602001909291905050506100d3565b005b6100b7610114565b6040518082815260200191505060405180910390f35b60005481565b806000819055507fefe5cb8d23d632b5d2cdd9f0a151c4b1a84ccb7afa1c57331009aa922d5e4f36816040518082815260200191505060405180910390a150565b6000805490509056fea165627a7a7230582061f6956b053dbf99873b363ab3ba7bca70853ba5efbaff898cd840d71c54fc1d0029000000000000000000000000000000000000000000000000000000000000002a", tx.Data.String())
+	assert.EqualValues(t, "0x", tx.PrivateData.String())
+	assert.False(t, tx.IsPrivate)
+
+	assert.Len(t, tx.Events, 1)
+	assert.EqualValues(t, types.NewHash("0xefe5cb8d23d632b5d2cdd9f0a151c4b1a84ccb7afa1c57331009aa922d5e4f36"), tx.Events[0].Topics[0])
+	assert.Len(t, tx.InternalCalls, 1)
 }
 
 func TestTransactionMonitor_PullTransactions(t *testing.T) {
@@ -141,44 +116,20 @@ func TestTransactionMonitor_PullTransactions(t *testing.T) {
 
 	txs, err := tm.PullTransactions(block)
 	assert.Nil(t, err, "unexpected error")
-	assert.Equal(t, 1, len(txs), "unexpected number of transactions")
+	assert.Len(t, txs, 1)
 
 	tx := txs[0]
+	assert.EqualValues(t, types.NewHash("0xe625ba9f14eed0671508966080fb01374d0a3a16b9cee545a324179b75f30aa8"), tx.Hash)
+	assert.True(t, tx.Status)
+	assert.EqualValues(t, 2, tx.BlockNumber)
+	assert.EqualValues(t, 0, tx.Index)
+	assert.EqualValues(t, types.NewAddress("0xed9d02e382b34818e88b88a309c7fe71e65f419d"), tx.From)
+	assert.EqualValues(t, 4700000, tx.Gas)
+	assert.EqualValues(t, "0x608060405234801561001057600080fd5b506040516020806101a18339810180604052602081101561003057600080fd5b81019080805190602001909291905050508060008190555050610149806100586000396000f3fe608060405234801561001057600080fd5b506004361061005e576000357c0100000000000000000000000000000000000000000000000000000000900480632a1afcd91461006357806360fe47b1146100815780636d4ce63c146100af575b600080fd5b61006b6100cd565b6040518082815260200191505060405180910390f35b6100ad6004803603602081101561009757600080fd5b81019080803590602001909291905050506100d3565b005b6100b7610114565b6040518082815260200191505060405180910390f35b60005481565b806000819055507fefe5cb8d23d632b5d2cdd9f0a151c4b1a84ccb7afa1c57331009aa922d5e4f36816040518082815260200191505060405180910390a150565b6000805490509056fea165627a7a7230582061f6956b053dbf99873b363ab3ba7bca70853ba5efbaff898cd840d71c54fc1d0029000000000000000000000000000000000000000000000000000000000000002a", tx.Data.String())
+	assert.EqualValues(t, "0x", tx.PrivateData.String())
+	assert.False(t, tx.IsPrivate)
 
-	if tx.Hash != types.NewHash("0xe625ba9f14eed0671508966080fb01374d0a3a16b9cee545a324179b75f30aa8") {
-		t.Fatalf("expected hash %v, but got %v", "0xe625ba9f14eed0671508966080fb01374d0a3a16b9cee545a324179b75f30aa8", tx.Hash.Hex())
-	}
-	if !tx.Status {
-		t.Fatalf("expected status to be true, but got false")
-	}
-	if tx.BlockNumber != 2 {
-		t.Fatalf("expected block number %v, but got %v", 2, tx.BlockNumber)
-	}
-	if tx.Index != 0 {
-		t.Fatalf("expected index %v, but got %v", 0, tx.Index)
-	}
-	if tx.From != types.NewAddress("0xed9d02e382b34818e88b88a309c7fe71e65f419d") {
-		t.Fatalf("expected from %v, but got %v", "0xed9d02e382b34818e88b88a309c7fe71e65f419d", tx.From.Hex())
-	}
-	if tx.Gas != 4700000 {
-		t.Fatalf("expected gas %v, but got %v", 4700000, tx.Gas)
-	}
-	if len(tx.Data.AsBytes()) != 449 {
-		t.Fatalf("expected data length %v, but got %v", 449, len(tx.Data.AsBytes()))
-	}
-	if len(tx.PrivateData.AsBytes()) != 0 {
-		t.Fatalf("expected private data length %v, but got %v", 0, len(tx.PrivateData.AsBytes()))
-	}
-	if tx.IsPrivate {
-		t.Fatalf("expected isPrivate to be false, but got true")
-	}
-	if len(tx.Events) != 1 {
-		t.Fatalf("expected %v events, but got %v", 1, len(tx.Events))
-	}
-	if tx.Events[0].Topics[0] != types.NewHash("0xefe5cb8d23d632b5d2cdd9f0a151c4b1a84ccb7afa1c57331009aa922d5e4f36") {
-		t.Fatalf("expected event topic %v, but got %v", "0xefe5cb8d23d632b5d2cdd9f0a151c4b1a84ccb7afa1c57331009aa922d5e4f36", tx.Events[0].Topics[0].Hex())
-	}
-	if len(tx.InternalCalls) != 1 {
-		t.Fatalf("expected %v internal calls, but got %v", 1, len(tx.InternalCalls))
-	}
+	assert.Len(t, tx.Events, 1)
+	assert.EqualValues(t, types.NewHash("0xefe5cb8d23d632b5d2cdd9f0a151c4b1a84ccb7afa1c57331009aa922d5e4f36"), tx.Events[0].Topics[0])
+	assert.Len(t, tx.InternalCalls, 1)
 }
