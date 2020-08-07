@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/elastic/go-elasticsearch/v7/esapi"
 	"github.com/elastic/go-elasticsearch/v7/esutil"
+	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 )
 
@@ -46,8 +47,8 @@ func (rm *SearchRequestMatcher) Matches(x interface{}) bool {
 		actualBody, _ := ioutil.ReadAll(val.Body)
 		//only ever expect one item here, and to always be populated
 		return val.Index[0] == rm.req.Index[0] &&
-			*val.From == *rm.req.From &&
-			*val.Size == *rm.req.Size &&
+			assert.ObjectsAreEqualValues(val.From, rm.req.From) &&
+			assert.ObjectsAreEqualValues(val.Size, rm.req.Size) &&
 			// check contents of "sort" field
 			string(actualBody) == rm.body
 	}

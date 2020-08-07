@@ -33,7 +33,7 @@ type StorageEntry struct {
 	Value string
 }
 
-type TokenHolder struct {
+type ERC20TokenHolder struct {
 	Contract    types.Address `json:"contract"`
 	Holder      types.Address `json:"holder"`
 	BlockNumber uint64        `json:"blockNumber"`
@@ -70,7 +70,7 @@ type BlockQueryResult struct {
 }
 
 type TokenHolderQueryResult struct {
-	Source TokenHolder `json:"_source"`
+	Source ERC20TokenHolder `json:"_source"`
 }
 
 type StateQueryResult struct {
