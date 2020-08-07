@@ -90,7 +90,7 @@ func (f *FakeDB) ReadTransaction(txHash types.Hash) (*types.Transaction, error) 
 	return nil, errors.New("not implemented")
 }
 
-func (f *FakeDB) RecordNewBalance(contract types.Address, holder types.Address, block uint64, amount *big.Int) error {
+func (f *FakeDB) RecordNewERC20Balance(contract types.Address, holder types.Address, block uint64, amount *big.Int) error {
 	return errors.New("not implemented")
 }
 
