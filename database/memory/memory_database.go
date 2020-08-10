@@ -456,7 +456,11 @@ func (db *MemoryDB) RecordNewERC20Balance(contract types.Address, holder types.A
 	return nil
 }
 
-func (db *MemoryDB) GetERC20Balance(contract types.Address, holder types.Address, options *types.QueryOptions) (map[uint64]*big.Int, error) {
+func (db *MemoryDB) GetERC20Balance(contract types.Address, holder types.Address, options *types.TokenQueryOptions) (map[uint64]*big.Int, error) {
+	return nil, nil
+}
+
+func (db *MemoryDB) GetAllTokenHolders(contract types.Address, block uint64, options *types.TokenQueryOptions) ([]types.Address, error) {
 	return nil, nil
 }
 

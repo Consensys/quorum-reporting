@@ -239,8 +239,12 @@ func (cachingDB *DatabaseWithCache) RecordNewERC20Balance(contract types.Address
 	return cachingDB.db.RecordNewERC20Balance(contract, holder, block, amount)
 }
 
-func (cachingDB *DatabaseWithCache) GetERC20Balance(contract types.Address, holder types.Address, options *types.QueryOptions) (map[uint64]*big.Int, error) {
+func (cachingDB *DatabaseWithCache) GetERC20Balance(contract types.Address, holder types.Address, options *types.TokenQueryOptions) (map[uint64]*big.Int, error) {
 	return cachingDB.db.GetERC20Balance(contract, holder, options)
+}
+
+func (cachingDB *DatabaseWithCache) GetAllTokenHolders(contract types.Address, block uint64, options *types.TokenQueryOptions) ([]types.Address, error) {
+	return cachingDB.db.GetAllTokenHolders(contract, block, options)
 }
 
 func (cachingDB *DatabaseWithCache) RecordERC721Token(contract types.Address, holder types.Address, block uint64, tokenId *big.Int) error {

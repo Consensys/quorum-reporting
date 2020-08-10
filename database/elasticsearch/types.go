@@ -38,6 +38,7 @@ type ERC20TokenHolder struct {
 	Holder      types.Address `json:"holder"`
 	BlockNumber uint64        `json:"blockNumber"`
 	Amount      string        `json:"amount"`
+	HeldUntil   *uint64       `json:"heldUntil"`
 }
 
 type SortableERC721Token struct {

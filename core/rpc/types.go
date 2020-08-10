@@ -43,7 +43,8 @@ type AddressWithBlockRange struct {
 type ERC20TokenQuery struct {
 	Contract *types.Address
 	Holder   *types.Address
-	Options  *types.QueryOptions
+	Block    uint64
+	Options  *types.TokenQueryOptions
 }
 
 type ERC721TokenQuery struct {

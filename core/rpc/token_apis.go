@@ -25,11 +25,32 @@ func (r *TokenRPCAPIs) GetTokenBalance(req *http.Request, query *ERC20TokenQuery
 		return errors.New("no token holder provided")
 	}
 	if query.Options == nil {
-		query.Options = &types.QueryOptions{}
+		query.Options = &types.TokenQueryOptions{}
 	}
 	query.Options.SetDefaults()
 
 	bal, err := r.db.GetERC20Balance(*query.Contract, *query.Holder, query.Options)
+	if err != nil {
+		return err
+	}
+
+	*reply = bal
+	return nil
+}
+
+func (r *TokenRPCAPIs) GetERC20TokenHoldersAtBlock(req *http.Request, query *ERC20TokenQuery, reply *[]types.Address) error {
+	if query.Contract == nil {
+		return errors.New("no token contract provided")
+	}
+	if query.Block == 0 {
+		return errors.New("block must be provided and not 0")
+	}
+	if query.Options == nil {
+		query.Options = &types.TokenQueryOptions{}
+	}
+	query.Options.SetDefaults()
+
+	bal, err := r.db.GetAllTokenHolders(*query.Contract, query.Block, query.Options)
 	if err != nil {
 		return err
 	}

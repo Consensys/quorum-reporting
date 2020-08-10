@@ -17,6 +17,13 @@ import (
 
 // Token DB
 func (es *ElasticsearchDB) RecordNewERC20Balance(contract types.Address, holder types.Address, block uint64, amount *big.Int) error {
+	//find old entry
+	existingTokenEntry, errExisting := es.GetERC20EntryAtBlock(contract, holder, block-1)
+	if errExisting != nil && errExisting != database.ErrNotFound {
+		return errExisting
+	}
+
+	//add new entry
 	tokenInfo := ERC20TokenHolder{
 		Contract:    contract,
 		Holder:      holder,
@@ -32,11 +39,58 @@ func (es *ElasticsearchDB) RecordNewERC20Balance(contract types.Address, holder 
 		OpType:     "create",
 	}
 
-	_, err := es.apiClient.DoRequest(req)
+	if _, err := es.apiClient.DoRequest(req); err != nil {
+		return err
+	}
+
+	/////
+
+	if errExisting == database.ErrNotFound {
+		return nil
+	}
+
+	//update the older entry
+	query := map[string]interface{}{
+		"doc": map[string]interface{}{
+			"heldUntil": block - 1,
+		},
+	}
+
+	updateRequest := esapi.UpdateRequest{
+		Index:      ERC20TokenIndex,
+		DocumentID: fmt.Sprintf("%s-%s-%d", contract.String(), holder.String(), existingTokenEntry.BlockNumber),
+		Body:       esutil.NewJSONReader(query),
+		Refresh:    "true",
+	}
+
+	_, err := es.apiClient.DoRequest(updateRequest)
 	return err
 }
 
-func (es *ElasticsearchDB) GetERC20Balance(contract types.Address, holder types.Address, options *types.QueryOptions) (map[uint64]*big.Int, error) {
+func (es *ElasticsearchDB) GetERC20EntryAtBlock(contract types.Address, holder types.Address, block uint64) (ERC20TokenHolder, error) {
+	queryString := fmt.Sprintf(QueryERC20TokenBalanceAtBlock(), contract.String(), holder.String(), block)
+
+	size := 1
+	req := esapi.SearchRequest{
+		Index: []string{ERC20TokenIndex},
+		Body:  strings.NewReader(queryString),
+		Size:  &size,
+	}
+	results, err := es.doSearchRequest(req)
+	if err != nil {
+		return ERC20TokenHolder{}, err
+	}
+
+	if len(results.Hits.Hits) == 0 {
+		return ERC20TokenHolder{}, database.ErrNotFound
+	}
+
+	var tokenResult ERC20TokenHolder
+	err = mapstructure.Decode(results.Hits.Hits[0].Source, &tokenResult)
+	return tokenResult, err
+}
+
+func (es *ElasticsearchDB) GetERC20Balance(contract types.Address, holder types.Address, options *types.TokenQueryOptions) (map[uint64]*big.Int, error) {
 	queryString := fmt.Sprintf(QueryTokenBalanceAtBlockRange(options), contract.String(), holder.String())
 
 	from := options.PageSize * options.PageNumber
@@ -66,6 +120,41 @@ func (es *ElasticsearchDB) GetERC20Balance(contract types.Address, holder types.
 	}
 
 	return balanceMap, nil
+}
+
+func (es *ElasticsearchDB) GetAllTokenHolders(contract types.Address, block uint64, options *types.TokenQueryOptions) ([]types.Address, error) {
+	if options.PageSize > 1000 {
+		return nil, ErrPaginationLimitExceeded
+	}
+
+	afterQuery := ""
+	if options.After != "" {
+		afterQuery = fmt.Sprintf(`"after": { "holder": "%s"},`, options.After)
+	}
+
+	formattedQuery := fmt.Sprintf(QueryERC20TokenHoldersAtBlock(), contract.String(), block, block, options.PageSize, afterQuery)
+
+	searchReq := esapi.SearchRequest{
+		Index: []string{ERC20TokenIndex},
+		Body:  strings.NewReader(formattedQuery),
+	}
+
+	results, err := es.doSearchRequest(searchReq)
+	if err != nil {
+		return nil, err
+	}
+
+	var aggResult ERC721HolderAggregateResult
+	rawAggResult := results.Aggregations.Results
+	if err := mapstructure.Decode(rawAggResult, &aggResult); err != nil {
+		return nil, err
+	}
+
+	convertedResults := make([]types.Address, 0, len(aggResult.Buckets))
+	for _, result := range aggResult.Buckets {
+		convertedResults = append(convertedResults, types.NewAddress(result.Key.Holder))
+	}
+	return convertedResults, nil
 }
 
 func (es *ElasticsearchDB) RecordERC721Token(contract types.Address, holder types.Address, block uint64, tokenId *big.Int) error {

@@ -85,7 +85,7 @@ func QueryInternalTransactionsWithOptionsTemplate(options *types.QueryOptions) s
 `
 }
 
-func QueryTokenBalanceAtBlockRange(options *types.QueryOptions) string {
+func QueryTokenBalanceAtBlockRange(options *types.TokenQueryOptions) string {
 	return `
 {
 	"query": {
@@ -95,6 +95,65 @@ func QueryTokenBalanceAtBlockRange(options *types.QueryOptions) string {
 				{ "match": { "holder": "%s" } },
 ` + createRangeQuery("blockNumber", options.BeginBlockNumber, options.EndBlockNumber) + `
 			]
+		}
+	}
+}
+`
+}
+
+func QueryERC20TokenBalanceAtBlock() string {
+	return `
+{
+	"query": {
+		"bool": {
+			"must": [
+				{ "match": { "contract": "%s"} },
+				{ "match": { "holder": "%s" } },
+				{ "range": { "blockNumber": { "lte": %d } } }
+			]
+		}
+	},
+	"sort": [
+			{
+				"blockNumber": {
+					"order": "desc",
+					"unmapped_type": "long"
+				}
+			}
+	]
+}
+`
+}
+
+func QueryERC20TokenHoldersAtBlock() string {
+	return `
+{
+	"query": {
+		"bool": {
+			"must": [
+				{ "match": { "contract": "%s"} },
+				{ "range": { "blockNumber": { "lte": %d } } }
+			],
+			"filter": [{
+                "bool": {
+                    "should": [
+						{ "range": { "heldUntil": { "gte": %d } } }, 
+						{ "bool": { "must_not": { "exists": { "field": "heldUntil" } } } }
+					]
+                }
+            }]
+		}
+	},
+	"size": 0,
+	"aggs" : {
+		"result_buckets": {
+			"composite" : {
+				"size": %d,
+				%s
+				"sources" : [
+					{ "holder": { "terms" : { "field": "holder.keyword" } } }
+				]
+		  	}
 		}
 	}
 }
