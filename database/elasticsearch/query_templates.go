@@ -85,18 +85,48 @@ func QueryInternalTransactionsWithOptionsTemplate(options *types.QueryOptions) s
 `
 }
 
+// This query will get all the balances between a certain block range, as well as the
+// last balance before the starting block IF there was no balance update ON the starting block
 func QueryTokenBalanceAtBlockRange(options *types.TokenQueryOptions) string {
+	rangeQuery := `
+      "filter": [
+        {
+          "bool": {
+            "should": [
+              ` + createRangeQuery("blockNumber", options.BeginBlockNumber, options.EndBlockNumber) + `,
+              {
+                "bool": {
+                  "must": [{"range": {"blockNumber": {"lt": %d}}}],
+                  "filter": [
+                    {
+                      "bool": {
+                        "should": [
+                          {"range": {"heldUntil": {"gte": %d}}},
+                          {"bool": {"must_not": {"exists": {"field": "heldUntil"}}}}
+                        ]
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      ],
+`
+	rangeQuery = fmt.Sprintf(rangeQuery, options.BeginBlockNumber.Uint64(), options.BeginBlockNumber.Uint64())
+
 	return `
 {
-	"query": {
-		"bool": {
-			"must": [
-				{ "match": { "contract": "%s"} },
-				{ "match": { "holder": "%s" } },
-` + createRangeQuery("blockNumber", options.BeginBlockNumber, options.EndBlockNumber) + `
-			]
-		}
-	}
+  "query": {
+    "bool": {
+` + rangeQuery + `
+      "must": [
+        {"match": {"contract": "%s"}},
+        {"match": {"holder": "%s"}}
+      ]
+    }
+  }
 }
 `
 }

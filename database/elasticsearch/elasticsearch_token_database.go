@@ -117,6 +117,9 @@ func (es *ElasticsearchDB) GetERC20Balance(contract types.Address, holder types.
 			return nil, errors.New("could not parse token value")
 		}
 		balanceMap[blockNumber] = tokenAmount
+		if blockNumber < options.BeginBlockNumber.Uint64() {
+			balanceMap[options.BeginBlockNumber.Uint64()] = tokenAmount
+		}
 	}
 
 	return balanceMap, nil
