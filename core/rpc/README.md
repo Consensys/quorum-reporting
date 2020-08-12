@@ -162,3 +162,183 @@ Sample Response:
     pageNumber: 0,
 }
 ```
+
+## Token APIs
+
+#### token.getERC20TokenBalance
+
+Fetches the balances for a particular ERC20 holder for the given block range.
+It will only list blocks where a balance change has taken place, so keys may not be consecutive.
+It will also list a balance prior to the starting block, if the balance did not change at the starting block;
+this value is replicated for the starting block as well.
+
+Input:
+```$json
+{
+	"contract": "0x<address>"
+	"holder": "0x<address>"
+	"options": {
+        "beginBlockNumber": <integer>,
+        "endBlockNumber": <integer>,
+
+        "pageSize": <integer>,
+        "pageNumber": <integer>
+    }
+```
+
+Output:
+```$json
+{
+	"5": 100,
+    "6": 200,
+    "10": 1000,
+    ...
+}
+```
+
+#### token.getERC20TokenHoldersAtBlock
+
+Returns all the holders of a token at a particular block.
+The maximum amount of results that can be returned is 1000 per request.
+To continue retrieving accounts, specify the last account retrieved as 
+the `after` parameter in the `options` object; continue until all accounts have been retrieved.
+
+Input:
+```$json
+{
+	"contract": "0x<address>"
+	"block": <integer>,
+	"options": {
+        "after": "0x<address>"
+        "pageSize": <integer>
+    }
+```
+
+Output:
+```$json
+[
+    "0x<address>",
+    "0x<address>",
+    "0x<address>"
+]
+```
+
+#### token.getHolderForERC721TokenAtBlock
+
+Fetches the address of the given token holder at a given block height.
+
+Input:
+```$json
+{
+	"contract": "0x<address>"
+	"tokenId": <integer>,
+    "block": <integer>
+```
+
+Output:
+```$json
+"0x<address>"
+```
+
+#### token.eRC721TokensForAccountAtBlock
+
+Fetches all ERC721 tokens for an account at a given block. Since the total number of held tokens may exceed 
+the maximum request size (using `pageNumber` and `pageSize`), a start token ID and end token ID may be specified using
+`beginTokenId` and `endTokenId`.
+
+A list of all tokens are returned, detailing their ID number, when they were first held from and
+(optionally) when they were held until.
+
+Input:
+```$json
+{
+	"contract": "0x<address>"
+	"holder": "0x<address>"
+	"block": <integer>,
+	"options": {
+        "beginTokenId": "<integer>",
+        "endTokenId": "<integer>",
+        "pageNumber": <integer>,
+        "pageSize": <integer>
+    }
+```
+
+Output:
+```$json
+[
+    {
+        	"contract": "0x<address>",
+        	"holder": "0x<address>",
+        	"token": "<integer>"
+        	"heldFrom": <integer>,
+        	"heldUntil": <integer>
+    },
+    ...
+]
+```
+
+#### token.allERC721TokensAtBlock
+
+Fetches all ERC721 tokens at a given block. Since the total number of held tokens may exceed 
+the maximum request size (using `pageNumber` and `pageSize`), a start token ID and end token ID may be specified using
+`beginTokenId` and `endTokenId`.
+
+A list of all tokens are returned, detailing their ID number, who holds the token, when they were first held from and
+(optionally) when they were held until.
+
+Input:
+```$json
+{
+	"contract": "0x<address>"
+	"holder": "0x<address>"
+	"block": <integer>,
+	"options": {
+        "beginTokenId": "<integer>",
+        "endTokenId": "<integer>",
+        "pageNumber": <integer>,
+        "pageSize": <integer>
+    }
+```
+
+Output:
+```$json
+[
+    {
+        	"contract": "0x<address>",
+        	"holder": "0x<address>",
+        	"token": "<integer>"
+        	"heldFrom": <integer>,
+        	"heldUntil": <integer>
+    },
+    ...
+]
+```
+
+
+
+#### token.allERC721HoldersAtBlock
+
+Returns all the holders of a token at a particular block.
+The maximum amount of results that can be returned is 1000 per request.
+To continue retrieving accounts, specify the last account retrieved as 
+the `after` parameter in the `options` object; continue until all accounts have been retrieved.
+
+Input:
+```$json
+{
+	"contract": "0x<address>"
+	"block": <integer>,
+	"options": {
+        "after": "0x<address>"
+        "pageSize": <integer>
+    }
+```
+
+Output:
+```$json
+[
+    "0x<address>",
+    "0x<address>",
+    "0x<address>"
+]
+```

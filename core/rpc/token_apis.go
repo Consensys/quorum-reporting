@@ -17,7 +17,7 @@ func NewTokenRPCAPIs(db database.TokenDB) *TokenRPCAPIs {
 	return &TokenRPCAPIs{db}
 }
 
-func (r *TokenRPCAPIs) GetTokenBalance(req *http.Request, query *ERC20TokenQuery, reply *map[uint64]*big.Int) error {
+func (r *TokenRPCAPIs) GetERC20TokenBalance(req *http.Request, query *ERC20TokenQuery, reply *map[uint64]*big.Int) error {
 	if query.Contract == nil {
 		return errors.New("no token contract provided")
 	}
@@ -59,7 +59,7 @@ func (r *TokenRPCAPIs) GetERC20TokenHoldersAtBlock(req *http.Request, query *ERC
 	return nil
 }
 
-func (r *TokenRPCAPIs) GetHolderForTokenAtBlock(req *http.Request, query *ERC721TokenQuery, reply *types.Address) error {
+func (r *TokenRPCAPIs) GetHolderForERC721TokenAtBlock(req *http.Request, query *ERC721TokenQuery, reply *types.Address) error {
 	if query.Contract == nil {
 		return errors.New("no token contract provided")
 	}
@@ -69,10 +69,6 @@ func (r *TokenRPCAPIs) GetHolderForTokenAtBlock(req *http.Request, query *ERC721
 	if query.Block == 0 {
 		return errors.New("no block given")
 	}
-	if query.Options == nil {
-		query.Options = &types.TokenQueryOptions{}
-	}
-	query.Options.SetDefaults()
 
 	result, err := r.db.ERC721TokenByTokenID(*query.Contract, query.Block, query.TokenId)
 	if err != nil {
@@ -131,12 +127,9 @@ func (r *TokenRPCAPIs) AllERC721TokensAtBlock(req *http.Request, query *ERC721To
 	return nil
 }
 
-func (r *TokenRPCAPIs) AllHoldersAtBlock(req *http.Request, query *ERC721TokenQuery, reply *[]types.Address) error {
+func (r *TokenRPCAPIs) AllERC721HoldersAtBlock(req *http.Request, query *ERC721TokenQuery, reply *[]types.Address) error {
 	if query.Contract == nil {
 		return errors.New("no token contract provided")
-	}
-	if query.Holder == nil {
-		return errors.New("no token holder provided")
 	}
 	if query.Block == 0 {
 		return errors.New("no block given")
