@@ -454,9 +454,9 @@ func (es *ElasticsearchDB) IndexStorage(rawStorage map[types.Address]*types.Acco
 			BlockNumber: blockNumber,
 			StorageRoot: dumpAccount.Root,
 		}
-		converted := make(map[string]string)
+		converted := make([]StorageEntry, 0, len(dumpAccount.Storage))
 		for slot, val := range dumpAccount.Storage {
-			converted[slot.String()] = val
+			converted = append(converted, StorageEntry{slot, val})
 		}
 		storageMap := Storage{
 			StorageRoot: dumpAccount.Root,
@@ -669,8 +669,8 @@ func (es *ElasticsearchDB) GetStorage(address types.Address, blockNumber uint64)
 		return nil, err
 	}
 	converted := make(map[types.Hash]string)
-	for slot, val := range storageResult.Source.StorageMap {
-		converted[types.NewHash(slot)] = val
+	for _, storageEntry := range storageResult.Source.StorageMap {
+		converted[storageEntry.Key] = storageEntry.Value
 	}
 	return converted, nil
 }
