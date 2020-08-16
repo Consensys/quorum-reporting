@@ -45,6 +45,7 @@ func (fs *FilterService) Start() error {
 		// Filter tick every 2 seconds to index transactions/ storage
 		ticker := time.NewTicker(time.Second * 2)
 		defer ticker.Stop()
+		defer fs.shutdownWg.Done()
 		for {
 			select {
 			case <-ticker.C:
@@ -60,6 +61,12 @@ func (fs *FilterService) Start() error {
 					continue
 				}
 				for current > lastFiltered {
+					//check if we are shutting down before next round
+					select {
+					case <-fs.shutdownChan:
+						return
+					default:
+					}
 					//index 1000 blocks at a time
 					//TODO: make configurable
 					endBlock := lastFiltered + 1000
@@ -74,7 +81,6 @@ func (fs *FilterService) Start() error {
 					lastFiltered = endBlock
 				}
 			case <-fs.shutdownChan:
-				fs.shutdownWg.Done()
 				return
 			}
 		}
@@ -85,6 +91,7 @@ func (fs *FilterService) Start() error {
 func (fs *FilterService) Stop() {
 	close(fs.shutdownChan)
 	fs.shutdownWg.Wait()
+	fs.storageFilter.Stop()
 	log.Info("Filter service stopped")
 }
 
