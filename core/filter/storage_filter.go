@@ -83,7 +83,7 @@ func (sf *StorageFilter) StateFetchWorker() {
 				log.Debug("Shutdown request received", "loc", "storage filter - state fetch worker")
 				return
 			case blockToPull := <-sf.incomingBlockChan:
-				log.Info("Fetching contract storage", "block number", blockToPull.BlockNumber)
+				log.Debug("Fetching contract storage", "block number", blockToPull.BlockNumber)
 				for _, address := range blockToPull.Addresses {
 					log.Debug("Fetching contract storage", "address", address.String(), "block number", blockToPull.BlockNumber)
 					dumpAccount, err := client.DumpAddress(sf.quorumClient, address, blockToPull.BlockNumber)
@@ -145,7 +145,7 @@ func (sf *StorageFilter) SaveStorage(storage []AccountStateWithBlock) {
 	saveSingle := func(storageData AccountStateWithBlock) {
 		defer thisRunWg.Done()
 
-		log.Info("Persisting storage", "blockNum", storageData.BlockNumber)
+		log.Debug("Persisting storage", "blockNum", storageData.BlockNumber)
 		err := sf.db.IndexStorage(storageData.AccountState, storageData.BlockNumber)
 		//TODO: use error channel for returning error instead of looping
 		for err != nil {

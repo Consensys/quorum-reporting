@@ -133,7 +133,7 @@ type IndexBatch struct {
 }
 
 func (fs *FilterService) index(lastFiltered map[types.Address]uint64, blockNumber uint64, endBlockNumber uint64) error {
-	log.Info("Index registered address", "start-block", blockNumber, "end-block", endBlockNumber)
+	log.Debug("Index registered address", "start-block", blockNumber, "end-block", endBlockNumber)
 	indexBatches := make([]IndexBatch, 0)
 	curBatch := IndexBatch{
 		addresses: make([]types.Address, 0),
