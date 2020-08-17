@@ -224,7 +224,6 @@ func QueryERC721TokenAtBlock() string {
 func QueryERC721HolderAtBlock(start *big.Int, end *big.Int) string {
 	return `
 {
-	"_source": ["token"],
 	"query": {
 		"bool": {
 			"must": [
@@ -250,7 +249,6 @@ func QueryERC721HolderAtBlock(start *big.Int, end *big.Int) string {
 func QueryERC721AllTokensAtBlock(start *big.Int, end *big.Int) string {
 	return `
 {
-	"_source": ["token", "holder"],
 	"query": {
 		"bool": {
 			"must": [

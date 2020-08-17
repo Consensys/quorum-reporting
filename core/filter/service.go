@@ -183,6 +183,7 @@ func (fs *FilterService) index(lastFiltered map[types.Address]uint64, blockNumbe
 }
 
 func (fs *FilterService) processBatch(batch IndexBatch) error {
+	log.Info("Processing batch", "start", batch.blocks[0].Number, "end", batch.blocks[len(batch.blocks)-1].Number)
 	if err := fs.storageFilter.IndexStorage(batch.addresses, batch.blocks[0].Number, batch.blocks[len(batch.blocks)-1].Number); err != nil {
 		return err
 	}
@@ -201,5 +202,6 @@ func (fs *FilterService) processBatch(batch IndexBatch) error {
 		}
 	}
 
+	log.Info("Processed batch", "start", batch.blocks[0].Number, "end", batch.blocks[len(batch.blocks)-1].Number)
 	return nil
 }

@@ -107,9 +107,6 @@ func (r *TokenRPCAPIs) AllERC721TokensAtBlock(req *http.Request, query *ERC721To
 	if query.Contract == nil {
 		return errors.New("no token contract provided")
 	}
-	if query.Holder == nil {
-		return errors.New("no token holder provided")
-	}
 	if query.Block == 0 {
 		return errors.New("no block given")
 	}

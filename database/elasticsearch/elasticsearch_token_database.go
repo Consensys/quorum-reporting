@@ -259,7 +259,7 @@ func (es *ElasticsearchDB) ERC721TokensForAccountAtBlock(contract types.Address,
 		Body:  strings.NewReader(formattedQuery),
 		From:  &from,
 		Size:  &options.PageSize,
-		Sort:  []string{"first:desc", "second:desc", "third:desc", "fourth:desc", "fifth:desc"},
+		Sort:  []string{"first:asc", "second:asc", "third:asc", "fourth:asc", "fifth:asc"},
 	}
 
 	results, err := es.doSearchRequest(searchReq)
@@ -269,11 +269,13 @@ func (es *ElasticsearchDB) ERC721TokensForAccountAtBlock(contract types.Address,
 
 	convertedResults := make([]types.ERC721Token, 0, len(results.Hits.Hits))
 	for _, result := range results.Hits.Hits {
-		var tokenResult types.ERC721Token
-		if err := mapstructure.Decode(result.Source, &tokenResult); err != nil {
+		tokenResult := new(types.ERC721Token)
+		if err := mapstructure.Decode(result.Source, tokenResult); err != nil {
 			return nil, err
 		}
-		convertedResults = append(convertedResults, tokenResult)
+		tokenResult.Holder = types.NewAddress(string(tokenResult.Holder))
+		tokenResult.Contract = types.NewAddress(string(tokenResult.Contract))
+		convertedResults = append(convertedResults, *tokenResult)
 	}
 	return convertedResults, nil
 }
@@ -291,7 +293,7 @@ func (es *ElasticsearchDB) AllERC721TokensAtBlock(contract types.Address, block 
 		Body:  strings.NewReader(formattedQuery),
 		From:  &from,
 		Size:  &options.PageSize,
-		Sort:  []string{"first:desc", "second:desc", "third:desc", "fourth:desc", "fifth:desc"},
+		Sort:  []string{"first:asc", "second:asc", "third:asc", "fourth:asc", "fifth:asc"},
 	}
 
 	results, err := es.doSearchRequest(searchReq)
@@ -301,11 +303,13 @@ func (es *ElasticsearchDB) AllERC721TokensAtBlock(contract types.Address, block 
 
 	convertedResults := make([]types.ERC721Token, 0, len(results.Hits.Hits))
 	for _, result := range results.Hits.Hits {
-		var tokenResult types.ERC721Token
-		if err := mapstructure.Decode(result.Source, &tokenResult); err != nil {
+		tokenResult := new(types.ERC721Token)
+		if err := mapstructure.Decode(result.Source, tokenResult); err != nil {
 			return nil, err
 		}
-		convertedResults = append(convertedResults, tokenResult)
+		tokenResult.Holder = types.NewAddress(string(tokenResult.Holder))
+		tokenResult.Contract = types.NewAddress(string(tokenResult.Contract))
+		convertedResults = append(convertedResults, *tokenResult)
 	}
 	return convertedResults, nil
 }
