@@ -247,7 +247,16 @@ func (es *ElasticsearchDB) ERC721TokenByTokenID(contract types.Address, block ui
 }
 
 func (es *ElasticsearchDB) ERC721TokensForAccountAtBlock(contract types.Address, holder types.Address, block uint64, options *types.TokenQueryOptions) ([]types.ERC721Token, error) {
-	formattedQuery := fmt.Sprintf(QueryERC721HolderAtBlock(options.BeginTokenId, options.EndTokenId), contract.String(), holder.String(), block, block)
+	startTokenId := big.NewInt(-1)
+	if options.After != "" {
+		parsed, success := new(big.Int).SetString(options.After, 10)
+		if !success {
+			return nil, errors.New(`could not parse "after" token ID`)
+		}
+		startTokenId = parsed
+	}
+
+	formattedQuery := fmt.Sprintf(QueryERC721HolderAtBlock(startTokenId), contract.String(), holder.String(), block, block)
 
 	from := options.PageSize * options.PageNumber
 	if from+options.PageSize > 1000 {
@@ -281,7 +290,15 @@ func (es *ElasticsearchDB) ERC721TokensForAccountAtBlock(contract types.Address,
 }
 
 func (es *ElasticsearchDB) AllERC721TokensAtBlock(contract types.Address, block uint64, options *types.TokenQueryOptions) ([]types.ERC721Token, error) {
-	formattedQuery := fmt.Sprintf(QueryERC721AllTokensAtBlock(options.BeginTokenId, options.EndTokenId), contract.String(), block, block)
+	startTokenId := big.NewInt(-1)
+	if options.After != "" {
+		parsed, success := new(big.Int).SetString(options.After, 10)
+		if !success {
+			return nil, errors.New(`could not parse "after" token ID`)
+		}
+		startTokenId = parsed
+	}
+	formattedQuery := fmt.Sprintf(QueryERC721AllTokensAtBlock(startTokenId), contract.String(), block, block)
 
 	from := options.PageSize * options.PageNumber
 	if from+options.PageSize > 1000 {

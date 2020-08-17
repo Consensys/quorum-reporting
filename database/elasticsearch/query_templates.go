@@ -221,7 +221,7 @@ func QueryERC721TokenAtBlock() string {
 `
 }
 
-func QueryERC721HolderAtBlock(start *big.Int, end *big.Int) string {
+func QueryERC721HolderAtBlock(start *big.Int) string {
 	return `
 {
 	"query": {
@@ -230,7 +230,7 @@ func QueryERC721HolderAtBlock(start *big.Int, end *big.Int) string {
 				{ "match": { "contract": "%s"} },
 				{ "match": { "holder": "%s"} },
 				{ "range": { "heldFrom": { "lte": %d } } },
-` + createTokenRangeQuery(start, end) + `
+` + createTokenRangeQuery(start) + `
 			],
 			"filter": [{
                 "bool": {
@@ -246,7 +246,7 @@ func QueryERC721HolderAtBlock(start *big.Int, end *big.Int) string {
 `
 }
 
-func QueryERC721AllTokensAtBlock(start *big.Int, end *big.Int) string {
+func QueryERC721AllTokensAtBlock(start *big.Int) string {
 	return `
 {
 	"query": {
@@ -254,7 +254,7 @@ func QueryERC721AllTokensAtBlock(start *big.Int, end *big.Int) string {
 			"must": [
 				{ "match": { "contract": "%s"} },
 				{ "range": { "heldFrom": { "lte": %d } } },
-` + createTokenRangeQuery(start, end) + `
+` + createTokenRangeQuery(start) + `
 			],
 			"filter": [{
                 "bool": {
@@ -306,7 +306,7 @@ func QueryERC721AllHoldersAtBlock() string {
 `
 }
 
-func createTokenRangeQuery(start *big.Int, end *big.Int) string {
+func createTokenRangeQuery(start *big.Int) string {
 	paddedStartTokenId := fmt.Sprintf("%085d", start)
 	startFirst, _ := strconv.ParseUint(paddedStartTokenId[0:17], 10, 64)
 	startSecond, _ := strconv.ParseUint(paddedStartTokenId[17:34], 10, 64)
@@ -314,30 +314,12 @@ func createTokenRangeQuery(start *big.Int, end *big.Int) string {
 	startFourth, _ := strconv.ParseUint(paddedStartTokenId[51:68], 10, 64)
 	startFifth, _ := strconv.ParseUint(paddedStartTokenId[68:85], 10, 64)
 
-	if end.Cmp(big.NewInt(-1)) == 0 {
-		return fmt.Sprintf(
-			"%s, %s, %s, %s, %s",
-			fmt.Sprintf(`{ "range": { "%s": { "gte": %d } } }`, "first", startFirst),
-			fmt.Sprintf(`{ "range": { "%s": { "gte": %d } } }`, "second", startSecond),
-			fmt.Sprintf(`{ "range": { "%s": { "gte": %d } } }`, "third", startThird),
-			fmt.Sprintf(`{ "range": { "%s": { "gte": %d } } }`, "fourth", startFourth),
-			fmt.Sprintf(`{ "range": { "%s": { "gte": %d } } }`, "fifth", startFifth),
-		)
-	}
-
-	paddedEndTokenId := fmt.Sprintf("%085d", end)
-	endFirst, _ := strconv.ParseUint(paddedEndTokenId[0:17], 10, 64)
-	endSecond, _ := strconv.ParseUint(paddedEndTokenId[17:34], 10, 64)
-	endThird, _ := strconv.ParseUint(paddedEndTokenId[34:51], 10, 64)
-	endFourth, _ := strconv.ParseUint(paddedEndTokenId[51:68], 10, 64)
-	endFifth, _ := strconv.ParseUint(paddedEndTokenId[68:85], 10, 64)
-
 	return fmt.Sprintf(
 		"%s, %s, %s, %s, %s",
-		fmt.Sprintf(`{ "range": { "%s": { "gte": %d, "lte": %d } } }`, "first", startFirst, endFirst),
-		fmt.Sprintf(`{ "range": { "%s": { "gte": %d, "lte": %d } } }`, "second", startSecond, endSecond),
-		fmt.Sprintf(`{ "range": { "%s": { "gte": %d, "lte": %d } } }`, "third", startThird, endThird),
-		fmt.Sprintf(`{ "range": { "%s": { "gte": %d, "lte": %d } } }`, "fourth", startFourth, endFourth),
-		fmt.Sprintf(`{ "range": { "%s": { "gte": %d, "lte": %d } } }`, "fifth", startFifth, endFifth),
+		fmt.Sprintf(`{ "range": { "%s": { "gt": %d } } }`, "first", startFirst),
+		fmt.Sprintf(`{ "range": { "%s": { "gt": %d } } }`, "second", startSecond),
+		fmt.Sprintf(`{ "range": { "%s": { "gt": %d } } }`, "third", startThird),
+		fmt.Sprintf(`{ "range": { "%s": { "gt": %d } } }`, "fourth", startFourth),
+		fmt.Sprintf(`{ "range": { "%s": { "gt": %d } } }`, "fifth", startFifth),
 	)
 }

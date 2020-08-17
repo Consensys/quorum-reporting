@@ -243,8 +243,8 @@ Output:
 #### token.eRC721TokensForAccountAtBlock
 
 Fetches all ERC721 tokens for an account at a given block. Since the total number of held tokens may exceed 
-the maximum request size (using `pageNumber` and `pageSize`), a start token ID and end token ID may be specified using
-`beginTokenId` and `endTokenId`.
+the maximum request size (using `pageNumber` and `pageSize`), a start token ID may be specified using `after` 
+(exclusive).
 
 A list of all tokens are returned, detailing their ID number, when they were first held from and
 (optionally) when they were held until.
@@ -256,8 +256,7 @@ Input:
 	"holder": "0x<address>"
 	"block": <integer>,
 	"options": {
-        "beginTokenId": "<integer>",
-        "endTokenId": "<integer>",
+        "after": "<integer>",
         "pageNumber": <integer>,
         "pageSize": <integer>
     }
@@ -280,8 +279,8 @@ Output:
 #### token.allERC721TokensAtBlock
 
 Fetches all ERC721 tokens at a given block. Since the total number of held tokens may exceed 
-the maximum request size (using `pageNumber` and `pageSize`), a start token ID and end token ID may be specified using
-`beginTokenId` and `endTokenId`.
+the maximum request size (using `pageNumber` and `pageSize`), a start token ID may be specified using
+`after` (exclusive).
 
 A list of all tokens are returned, detailing their ID number, who holds the token, when they were first held from and
 (optionally) when they were held until.
@@ -293,8 +292,7 @@ Input:
 	"holder": "0x<address>"
 	"block": <integer>,
 	"options": {
-        "beginTokenId": "<integer>",
-        "endTokenId": "<integer>",
+        "after": "<integer>",
         "pageNumber": <integer>,
         "pageSize": <integer>
     }
