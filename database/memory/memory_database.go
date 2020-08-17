@@ -457,29 +457,29 @@ func (db *MemoryDB) RecordNewERC20Balance(contract types.Address, holder types.A
 }
 
 func (db *MemoryDB) GetERC20Balance(contract types.Address, holder types.Address, options *types.TokenQueryOptions) (map[uint64]*big.Int, error) {
-	return nil, nil
+	return nil, database.ErrNotImplemented
 }
 
 func (db *MemoryDB) GetAllTokenHolders(contract types.Address, block uint64, options *types.TokenQueryOptions) ([]types.Address, error) {
-	return nil, nil
+	return nil, database.ErrNotImplemented
 }
 
 func (db *MemoryDB) RecordERC721Token(contract types.Address, holder types.Address, block uint64, tokenId *big.Int) error {
-	return errors.New("")
+	return nil
 }
 
 func (db *MemoryDB) ERC721TokenByTokenID(contract types.Address, block uint64, tokenId *big.Int) (types.ERC721Token, error) {
-	return types.ERC721Token{}, errors.New("")
+	return types.ERC721Token{}, database.ErrNotImplemented
 }
 
 func (db *MemoryDB) ERC721TokensForAccountAtBlock(contract types.Address, holder types.Address, block uint64, options *types.TokenQueryOptions) ([]types.ERC721Token, error) {
-	return nil, errors.New("")
+	return nil, database.ErrNotImplemented
 }
 
 func (db *MemoryDB) AllERC721TokensAtBlock(contract types.Address, block uint64, options *types.TokenQueryOptions) ([]types.ERC721Token, error) {
-	return nil, errors.New("")
+	return nil, database.ErrNotImplemented
 }
 
 func (db *MemoryDB) AllHoldersAtBlock(contract types.Address, block uint64, options *types.TokenQueryOptions) ([]types.Address, error) {
-	return nil, errors.New("")
+	return nil, database.ErrNotImplemented
 }
