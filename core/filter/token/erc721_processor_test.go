@@ -30,11 +30,15 @@ func TestERC721Processor_ProcessTransaction_NoEventsDoesNothing(t *testing.T) {
 		Hash:   types.NewHash("0xf4f803b8d6c6b38e0b15d6cfe80fd1dcea4270ad24e93385fca36512bb9c2c59"),
 		Events: []*types.Event{},
 	}
+	blk := &types.Block{
+		Number:       1,
+		Transactions: []types.Hash{"f4f803b8d6c6b38e0b15d6cfe80fd1dcea4270ad24e93385fca36512bb9c2c59"},
+	}
 
 	db := NewFakeTestTokenDatabase(nil, []*types.Transaction{tx})
 	processor := NewERC721Processor(db)
 
-	err := processor.ProcessTransaction([]types.Address{tokenAddress}, tx)
+	err := processor.ProcessBlock([]types.Address{tokenAddress}, blk)
 
 	assert.Nil(t, err)
 	assert.Len(t, db.RecordedContract, 0)
@@ -52,11 +56,15 @@ func TestERC721Processor_ProcessTransaction_NoErc721Events(t *testing.T) {
 			},
 		},
 	}
+	blk := &types.Block{
+		Number:       1,
+		Transactions: []types.Hash{"f4f803b8d6c6b38e0b15d6cfe80fd1dcea4270ad24e93385fca36512bb9c2c59"},
+	}
 
 	db := NewFakeTestTokenDatabase(nil, []*types.Transaction{tx})
 	processor := NewERC721Processor(db)
 
-	err := processor.ProcessTransaction([]types.Address{tokenAddress}, tx)
+	err := processor.ProcessBlock([]types.Address{tokenAddress}, blk)
 
 	assert.Nil(t, err)
 	assert.Len(t, db.RecordedContract, 0)
@@ -79,11 +87,15 @@ func TestERC721Processor_ProcessTransaction_Erc721EventForNonTrackedAddress(t *t
 			},
 		},
 	}
+	blk := &types.Block{
+		Number:       1,
+		Transactions: []types.Hash{"f4f803b8d6c6b38e0b15d6cfe80fd1dcea4270ad24e93385fca36512bb9c2c59"},
+	}
 
 	db := NewFakeTestTokenDatabase(nil, []*types.Transaction{tx})
 	processor := NewERC721Processor(db)
 
-	err := processor.ProcessTransaction([]types.Address{tokenAddress}, tx)
+	err := processor.ProcessBlock([]types.Address{tokenAddress}, blk)
 
 	assert.Nil(t, err)
 	assert.Len(t, db.RecordedContract, 0)
@@ -107,11 +119,15 @@ func TestERC721Processor_ProcessTransaction_SingleErc721Event(t *testing.T) {
 			},
 		},
 	}
+	blk := &types.Block{
+		Number:       1,
+		Transactions: []types.Hash{"f4f803b8d6c6b38e0b15d6cfe80fd1dcea4270ad24e93385fca36512bb9c2c59"},
+	}
 
 	db := NewFakeTestTokenDatabase(nil, []*types.Transaction{tx})
 	processor := NewERC721Processor(db)
 
-	err := processor.ProcessTransaction([]types.Address{tokenAddress}, tx)
+	err := processor.ProcessBlock([]types.Address{tokenAddress}, blk)
 
 	assert.Nil(t, err)
 	assert.Contains(t, db.RecordedContract, types.NewAddress("1932c48b2bf8102ba33b4a6b545c32236e342f34"))
@@ -140,11 +156,15 @@ func TestERC721Processor_ProcessTransaction_SingleErc721Event_WithDatabaseError(
 			},
 		},
 	}
+	blk := &types.Block{
+		Number:       1,
+		Transactions: []types.Hash{"f4f803b8d6c6b38e0b15d6cfe80fd1dcea4270ad24e93385fca36512bb9c2c59"},
+	}
 
 	db := NewFakeTestTokenDatabase(errors.New("test error - database"), []*types.Transaction{tx})
 	processor := NewERC721Processor(db)
 
-	err := processor.ProcessTransaction([]types.Address{tokenAddress}, tx)
+	err := processor.ProcessBlock([]types.Address{tokenAddress}, blk)
 
 	assert.EqualError(t, err, "test error - database")
 	assert.Len(t, db.RecordedContract, 0)
@@ -152,8 +172,7 @@ func TestERC721Processor_ProcessTransaction_SingleErc721Event_WithDatabaseError(
 
 func TestERC721Processor_ProcessTransaction_MultipleErc721Events(t *testing.T) {
 	tx := &types.Transaction{
-		Hash:        types.NewHash("0xf4f803b8d6c6b38e0b15d6cfe80fd1dcea4270ad24e93385fca36512bb9c2c59"),
-		BlockNumber: 1,
+		Hash: types.NewHash("0xf4f803b8d6c6b38e0b15d6cfe80fd1dcea4270ad24e93385fca36512bb9c2c59"),
 		Events: []*types.Event{
 			{
 				Data:    types.NewHexData("0x00000000000000000000000000000000000000000000000000000000000003e8"),
@@ -177,14 +196,18 @@ func TestERC721Processor_ProcessTransaction_MultipleErc721Events(t *testing.T) {
 			},
 		},
 	}
+	blk := &types.Block{
+		Number:       1,
+		Transactions: []types.Hash{"f4f803b8d6c6b38e0b15d6cfe80fd1dcea4270ad24e93385fca36512bb9c2c59"},
+	}
 
 	db := NewFakeTestTokenDatabase(nil, []*types.Transaction{tx})
 	processor := NewERC721Processor(db)
 
-	err := processor.ProcessTransaction([]types.Address{
+	err := processor.ProcessBlock([]types.Address{
 		types.NewAddress("0x1932c48b2bf8102ba33b4a6b545c32236e342f34"),
 		types.NewAddress("0x02826f2bce5596f49ef29f11de3dce29d6653f8c"),
-	}, tx)
+	}, blk)
 
 	assert.Nil(t, err)
 	assert.Contains(t, db.RecordedContract, types.NewAddress("1932c48b2bf8102ba33b4a6b545c32236e342f34"))
@@ -194,6 +217,6 @@ func TestERC721Processor_ProcessTransaction_MultipleErc721Events(t *testing.T) {
 	assert.Contains(t, db.RecordedHolder, types.NewAddress("e625ba9f14eed0671508966080fb01374d0a3a18"))
 	assert.EqualValues(t, 1, db.RecordedBlock)
 	assert.Len(t, db.RecordedToken, 2)
-	assert.EqualValues(t, db.RecordedToken[0], big.NewInt(1))
-	assert.EqualValues(t, db.RecordedToken[1], big.NewInt(2))
+	assert.EqualValues(t, big.NewInt(1), db.RecordedToken[0])
+	assert.EqualValues(t, big.NewInt(2), db.RecordedToken[1])
 }
