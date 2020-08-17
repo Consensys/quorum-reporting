@@ -307,7 +307,9 @@ func QueryERC721AllHoldersAtBlock() string {
 }
 
 func createTokenRangeQuery(start *big.Int) string {
-	paddedStartTokenId := fmt.Sprintf("%085d", start)
+	next := new(big.Int).Add(start, big.NewInt(1))
+
+	paddedStartTokenId := fmt.Sprintf("%085d", next)
 	startFirst, _ := strconv.ParseUint(paddedStartTokenId[0:17], 10, 64)
 	startSecond, _ := strconv.ParseUint(paddedStartTokenId[17:34], 10, 64)
 	startThird, _ := strconv.ParseUint(paddedStartTokenId[34:51], 10, 64)
@@ -316,10 +318,10 @@ func createTokenRangeQuery(start *big.Int) string {
 
 	return fmt.Sprintf(
 		"%s, %s, %s, %s, %s",
-		fmt.Sprintf(`{ "range": { "%s": { "gt": %d } } }`, "first", startFirst),
-		fmt.Sprintf(`{ "range": { "%s": { "gt": %d } } }`, "second", startSecond),
-		fmt.Sprintf(`{ "range": { "%s": { "gt": %d } } }`, "third", startThird),
-		fmt.Sprintf(`{ "range": { "%s": { "gt": %d } } }`, "fourth", startFourth),
-		fmt.Sprintf(`{ "range": { "%s": { "gt": %d } } }`, "fifth", startFifth),
+		fmt.Sprintf(`{ "range": { "%s": { "gte": %d } } }`, "first", startFirst),
+		fmt.Sprintf(`{ "range": { "%s": { "gte": %d } } }`, "second", startSecond),
+		fmt.Sprintf(`{ "range": { "%s": { "gte": %d } } }`, "third", startThird),
+		fmt.Sprintf(`{ "range": { "%s": { "gte": %d } } }`, "fourth", startFourth),
+		fmt.Sprintf(`{ "range": { "%s": { "gte": %d } } }`, "fifth", startFifth),
 	)
 }
