@@ -54,6 +54,8 @@ func (es *ElasticsearchDB) init() error {
 	es.apiClient.DoRequest(esapi.IndicesCreateRequest{Index: StorageIndex})
 	es.apiClient.DoRequest(esapi.IndicesCreateRequest{Index: EventIndex})
 	es.apiClient.DoRequest(esapi.IndicesCreateRequest{Index: MetaIndex})
+	es.apiClient.DoRequest(esapi.IndicesCreateRequest{Index: ERC20TokenIndex})
+	es.apiClient.DoRequest(esapi.IndicesCreateRequest{Index: ERC721TokenIndex})
 
 	req := esapi.IndexRequest{
 		Index:      MetaIndex,
@@ -687,7 +689,7 @@ func (es *ElasticsearchDB) GetLastFiltered(address types.Address) (uint64, error
 
 func (es *ElasticsearchDB) checkIsInitialized() (bool, error) {
 	fetchReq := esapi.CatIndicesRequest{
-		Index: []string{MetaIndex, ContractIndex, BlockIndex, StorageIndex, TransactionIndex, EventIndex},
+		Index: []string{MetaIndex, ContractIndex, BlockIndex, StorageIndex, TransactionIndex, EventIndex, ERC20TokenIndex, ERC721TokenIndex},
 	}
 
 	if _, err := es.apiClient.DoRequest(fetchReq); err != nil {

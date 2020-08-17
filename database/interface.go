@@ -1,6 +1,8 @@
 package database
 
 import (
+	"math/big"
+
 	"quorumengineering/quorum-report/types"
 )
 
@@ -10,6 +12,7 @@ type Database interface {
 	BlockDB
 	TransactionDB
 	IndexDB
+	TokenDB
 	Stop()
 }
 
@@ -58,4 +61,16 @@ type IndexDB interface {
 	GetEventsFromAddressTotal(types.Address, *types.QueryOptions) (uint64, error)
 	GetStorage(types.Address, uint64) (map[types.Hash]string, error)
 	GetLastFiltered(types.Address) (uint64, error)
+}
+
+type TokenDB interface {
+	RecordNewERC20Balance(contract types.Address, holder types.Address, block uint64, amount *big.Int) error
+	GetERC20Balance(contract types.Address, holder types.Address, options *types.TokenQueryOptions) (map[uint64]*big.Int, error)
+	GetAllTokenHolders(contract types.Address, block uint64, options *types.TokenQueryOptions) ([]types.Address, error)
+
+	RecordERC721Token(contract types.Address, holder types.Address, block uint64, tokenId *big.Int) error
+	ERC721TokenByTokenID(contract types.Address, block uint64, tokenId *big.Int) (types.ERC721Token, error)
+	ERC721TokensForAccountAtBlock(contract types.Address, holder types.Address, block uint64, options *types.TokenQueryOptions) ([]types.ERC721Token, error)
+	AllERC721TokensAtBlock(contract types.Address, block uint64, options *types.TokenQueryOptions) ([]types.ERC721Token, error)
+	AllHoldersAtBlock(contract types.Address, block uint64, options *types.TokenQueryOptions) ([]types.Address, error)
 }

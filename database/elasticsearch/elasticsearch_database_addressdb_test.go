@@ -45,10 +45,8 @@ func TestAddSingleAddress(t *testing.T) {
 		assert.Equal(t, "create", input.OpType)
 	})
 
-	db, err := New(mockedClient)
-
-	err = db.AddAddresses([]types.Address{addr})
-
+	db, _ := New(mockedClient)
+	err := db.AddAddresses([]types.Address{addr})
 	assert.Nil(t, err, "expected error to be nil")
 }
 

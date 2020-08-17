@@ -1,6 +1,7 @@
 package factory
 
 import (
+	"math/big"
 	"sync"
 
 	"github.com/bluele/gcache"
@@ -232,6 +233,38 @@ func (cachingDB *DatabaseWithCache) GetStorage(address types.Address, blockNumbe
 
 func (cachingDB *DatabaseWithCache) GetLastFiltered(address types.Address) (uint64, error) {
 	return cachingDB.db.GetLastFiltered(address)
+}
+
+func (cachingDB *DatabaseWithCache) RecordNewERC20Balance(contract types.Address, holder types.Address, block uint64, amount *big.Int) error {
+	return cachingDB.db.RecordNewERC20Balance(contract, holder, block, amount)
+}
+
+func (cachingDB *DatabaseWithCache) GetERC20Balance(contract types.Address, holder types.Address, options *types.TokenQueryOptions) (map[uint64]*big.Int, error) {
+	return cachingDB.db.GetERC20Balance(contract, holder, options)
+}
+
+func (cachingDB *DatabaseWithCache) GetAllTokenHolders(contract types.Address, block uint64, options *types.TokenQueryOptions) ([]types.Address, error) {
+	return cachingDB.db.GetAllTokenHolders(contract, block, options)
+}
+
+func (cachingDB *DatabaseWithCache) RecordERC721Token(contract types.Address, holder types.Address, block uint64, tokenId *big.Int) error {
+	return cachingDB.db.RecordERC721Token(contract, holder, block, tokenId)
+}
+
+func (cachingDB *DatabaseWithCache) ERC721TokenByTokenID(contract types.Address, block uint64, tokenId *big.Int) (types.ERC721Token, error) {
+	return cachingDB.db.ERC721TokenByTokenID(contract, block, tokenId)
+}
+
+func (cachingDB *DatabaseWithCache) ERC721TokensForAccountAtBlock(contract types.Address, holder types.Address, block uint64, options *types.TokenQueryOptions) ([]types.ERC721Token, error) {
+	return cachingDB.db.ERC721TokensForAccountAtBlock(contract, holder, block, options)
+}
+
+func (cachingDB *DatabaseWithCache) AllERC721TokensAtBlock(contract types.Address, block uint64, options *types.TokenQueryOptions) ([]types.ERC721Token, error) {
+	return cachingDB.db.AllERC721TokensAtBlock(contract, block, options)
+}
+
+func (cachingDB *DatabaseWithCache) AllHoldersAtBlock(contract types.Address, block uint64, options *types.TokenQueryOptions) ([]types.Address, error) {
+	return cachingDB.db.AllHoldersAtBlock(contract, block, options)
 }
 
 func (cachingDB *DatabaseWithCache) Stop() {

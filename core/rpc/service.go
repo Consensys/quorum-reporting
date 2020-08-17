@@ -51,6 +51,9 @@ func (r *RPCService) Start() error {
 	if err := jsonrpcServer.RegisterService(NewRPCAPIs(r.db, NewDefaultContractManager(r.db)), "reporting"); err != nil {
 		return err
 	}
+	if err := jsonrpcServer.RegisterService(NewTokenRPCAPIs(r.db), "token"); err != nil {
+		return err
+	}
 
 	serverWithCors := cors.New(cors.Options{AllowedOrigins: r.cors}).Handler(jsonrpcServer)
 	r.httpServer = &http.Server{
@@ -85,8 +88,9 @@ func (r *RPCService) Stop() {
 			log.Error("JSON-RPC server shutdown failed", "err", err)
 		}
 		r.shutdownWg.Wait()
+
+		log.Info("RPC HTTP endpoint closed", "url", fmt.Sprintf("http://%s", r.httpServer.Addr))
 	}
 
-	log.Info("RPC HTTP endpoint closed", "url", fmt.Sprintf("http://%s", r.httpServer.Addr))
 	log.Info("RPC service stopped")
 }

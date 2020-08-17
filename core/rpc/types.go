@@ -2,6 +2,7 @@ package rpc
 
 import (
 	"errors"
+	"math/big"
 
 	"quorumengineering/quorum-report/types"
 )
@@ -37,6 +38,21 @@ type AddressWithBlockRange struct {
 	Address          *types.Address
 	StartBlockNumber uint64
 	EndBlockNumber   uint64
+}
+
+type ERC20TokenQuery struct {
+	Contract *types.Address
+	Holder   *types.Address
+	Block    uint64
+	Options  *types.TokenQueryOptions
+}
+
+type ERC721TokenQuery struct {
+	Contract *types.Address
+	Holder   *types.Address
+	TokenId  *big.Int
+	Block    uint64
+	Options  *types.TokenQueryOptions
 }
 
 //Outputs

@@ -291,3 +291,30 @@ func TestTransactionWithReceipt_WithError(t *testing.T) {
 	assert.EqualError(t, err, "not found")
 	assert.Equal(t, Transaction{}, result)
 }
+
+func TestCallBalanceOfERC20_WithError(t *testing.T) {
+	stubClient := NewStubQuorumClient(nil, nil)
+
+	tokenContract := types.NewAddress("0x1349f3e1b8d71effb47b840594ff27da7e603d17")
+	holder := types.NewAddress("0x1932c48b2bf8102ba33b4a6b545c32236e342f34")
+
+	contractCallResult, err := CallBalanceOfERC20(stubClient, tokenContract, holder, 1)
+	assert.EqualError(t, err, "not found")
+	assert.Equal(t, types.HexData(""), contractCallResult)
+}
+
+func TestCallBalanceOfERC20(t *testing.T) {
+	//TODO: check that the values inside the call data are correct
+	mockRPC := map[string]interface{}{
+		"eth_call<types.EIP165Call Value>0x1": types.NewHexData("0x12345"),
+	}
+
+	stubClient := NewStubQuorumClient(nil, mockRPC)
+
+	tokenContract := types.NewAddress("0x1349f3e1b8d71effb47b840594ff27da7e603d17")
+	holder := types.NewAddress("0x1932c48b2bf8102ba33b4a6b545c32236e342f34")
+
+	contractCallResult, err := CallBalanceOfERC20(stubClient, tokenContract, holder, 1)
+	assert.Nil(t, err)
+	assert.Equal(t, types.HexData("12345"), contractCallResult)
+}
