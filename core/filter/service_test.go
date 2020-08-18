@@ -97,3 +97,7 @@ func (f *FakeDB) RecordNewERC20Balance(contract types.Address, holder types.Addr
 func (f *FakeDB) RecordERC721Token(contract types.Address, holder types.Address, block uint64, tokenId *big.Int) error {
 	return errors.New("not implemented")
 }
+
+func (f *FakeDB) SetContractCreationTransaction(creationTxns map[types.Hash][]types.Address) error {
+	return nil
+}

@@ -294,6 +294,24 @@ func (db *MemoryDB) IndexBlocks(addresses []types.Address, blocks []*types.Block
 	return nil
 }
 
+func (db *MemoryDB) SetContractCreationTransaction(creationTxns map[types.Hash][]types.Address) error {
+	db.mux.Lock()
+	defer db.mux.Unlock()
+
+	for txHash, addresses := range creationTxns {
+		for _, createdAddress := range addresses {
+			if _, ok := db.txIndexDB[createdAddress]; !ok {
+				//tried to index a deleted address, do nothing
+				log.Debug("Ignored deleted address contract creation", "tx", txHash.Hex(), "contract", createdAddress)
+				return nil
+			}
+			db.txIndexDB[createdAddress].contractCreationTx = txHash
+			log.Debug("Indexed address of contract creation", "tx", txHash.Hex(), "contract", createdAddress)
+		}
+	}
+	return nil
+}
+
 func (db *MemoryDB) GetContractCreationTransaction(address types.Address) (types.Hash, error) {
 	db.mux.RLock()
 	defer db.mux.RUnlock()
@@ -419,11 +437,7 @@ func (db *MemoryDB) indexBlock(addresses []types.Address, block *types.Block) er
 }
 
 func (db *MemoryDB) indexTransaction(filteredAddresses map[types.Address]bool, tx *types.Transaction) {
-	// Compare the address with tx.To and tx.CreatedContract to check if the transaction is related.
-	if filteredAddresses[tx.CreatedContract] {
-		db.txIndexDB[tx.CreatedContract].contractCreationTx = tx.Hash
-		log.Debug("Indexed address of contract creation", "tx", tx.Hash.Hex(), "contract", tx.CreatedContract.Hex())
-	} else if filteredAddresses[tx.To] {
+	if filteredAddresses[tx.To] {
 		db.txIndexDB[tx.To].txsTo = append(db.txIndexDB[tx.To].txsTo, tx.Hash)
 		log.Debug("Indexed tx recipient", "tx", tx.Hash.Hex(), "recipient", tx.To.Hex())
 	}

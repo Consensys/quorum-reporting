@@ -22,14 +22,17 @@ type FilterServiceDB interface {
 	GetAddresses() ([]types.Address, error)
 	IndexBlocks([]types.Address, []*types.Block) error
 	IndexStorage(map[types.Address]*types.AccountState, uint64) error
+	SetContractCreationTransaction(map[types.Hash][]types.Address) error
 }
 
 // FilterService filters transactions and storage based on registered address list.
 type FilterService struct {
-	db              FilterServiceDB
-	storageFilter   *StorageFilter
-	erc20processor  *token.ERC20Processor
-	erc721processor *token.ERC721Processor
+	db FilterServiceDB
+
+	storageFilter          *StorageFilter
+	contractCreationFilter *ContractCreationFilter
+	erc20processor         *token.ERC20Processor
+	erc721processor        *token.ERC721Processor
 
 	// To check we have actually shut down before returning
 	shutdownChan chan struct{}
@@ -38,11 +41,12 @@ type FilterService struct {
 
 func NewFilterService(db FilterServiceDB, client client.Client) *FilterService {
 	return &FilterService{
-		db:              db,
-		storageFilter:   NewStorageFilter(db, client),
-		shutdownChan:    make(chan struct{}),
-		erc20processor:  token.NewERC20Processor(db, client),
-		erc721processor: token.NewERC721Processor(db),
+		db:                     db,
+		storageFilter:          NewStorageFilter(db, client),
+		contractCreationFilter: NewContractCreationFilter(db, client),
+		shutdownChan:           make(chan struct{}),
+		erc20processor:         token.NewERC20Processor(db, client),
+		erc721processor:        token.NewERC721Processor(db),
 	}
 }
 
@@ -190,6 +194,10 @@ func (fs *FilterService) processBatch(batch IndexBatch) error {
 
 	// if IndexStorage has an error, IndexBlocks is never called, last filtered will not be updated
 	if err := fs.db.IndexBlocks(batch.addresses, batch.blocks); err != nil {
+		return err
+	}
+
+	if err := fs.contractCreationFilter.ProcessBlocks(batch.addresses, batch.blocks); err != nil {
 		return err
 	}
 

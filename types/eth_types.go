@@ -156,6 +156,10 @@ func (data *HexData) AsBytes() []byte {
 	return converted
 }
 
+func (data *HexData) IsEmpty() bool {
+	return len(data.AsBytes()) == 0
+}
+
 // Call args for checking a contract for EIP165 interfaces
 type EIP165Call struct {
 	To   Address `json:"to"`

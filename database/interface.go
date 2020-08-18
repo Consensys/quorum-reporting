@@ -52,7 +52,14 @@ type TransactionDB interface {
 type IndexDB interface {
 	IndexBlocks([]types.Address, []*types.Block) error
 	IndexStorage(map[types.Address]*types.AccountState, uint64) error
+
+	// SetContractCreationTransaction sets the transaction hash that a contract was created at
+	// It accepts multiple entries at once to bulk set the contract creation txs
+	SetContractCreationTransaction(creationTxns map[types.Hash][]types.Address) error
+	// GetContractCreationTransaction fetches the transaction hash of the transaction that
+	// the given contract address was created at
 	GetContractCreationTransaction(types.Address) (types.Hash, error)
+
 	GetAllTransactionsToAddress(types.Address, *types.QueryOptions) ([]types.Hash, error)
 	GetTransactionsToAddressTotal(types.Address, *types.QueryOptions) (uint64, error)
 	GetAllTransactionsInternalToAddress(types.Address, *types.QueryOptions) ([]types.Hash, error)
