@@ -28,6 +28,15 @@ func (r *RPCAPIs) GetLastPersistedBlockNumber(req *http.Request, args *NullArgs,
 	return nil
 }
 
+func (r *RPCAPIs) GetLastFiltered(req *http.Request, args *types.Address, reply *uint64) error {
+	val, err := r.db.GetLastFiltered(*args)
+	if err != nil {
+		return err
+	}
+	*reply = val
+	return nil
+}
+
 func (r *RPCAPIs) GetBlock(req *http.Request, blockNumber *uint64, reply *types.Block) error {
 	block, err := r.db.ReadBlock(*blockNumber)
 	if err != nil {
