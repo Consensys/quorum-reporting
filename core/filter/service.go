@@ -15,11 +15,15 @@ import (
 type FilterServiceDB interface {
 	RecordNewERC20Balance(contract types.Address, holder types.Address, block uint64, amount *big.Int) error
 	RecordERC721Token(contract types.Address, holder types.Address, block uint64, tokenId *big.Int) error
+
 	ReadTransaction(types.Hash) (*types.Transaction, error)
 	ReadBlock(uint64) (*types.Block, error)
 	GetLastPersistedBlockNumber() (uint64, error)
 	GetLastFiltered(types.Address) (uint64, error)
+
 	GetAddresses() ([]types.Address, error)
+	GetContractABI(types.Address) (string, error)
+
 	IndexBlocks([]types.Address, []*types.Block) error
 	IndexStorage(map[types.Address]*types.AccountState, uint64) error
 	SetContractCreationTransaction(map[types.Hash][]types.Address) error
@@ -201,11 +205,19 @@ func (fs *FilterService) processBatch(batch IndexBatch) error {
 		return err
 	}
 
-	for _, b := range batch.blocks {
-		if err := fs.erc20processor.ProcessBlock(batch.addresses, b); err != nil {
+	addressesWithAbi := make(map[types.Address]string)
+	for _, address := range batch.addresses {
+		abi, err := fs.db.GetContractABI(address)
+		if err != nil {
 			return err
 		}
-		if err := fs.erc721processor.ProcessBlock(batch.addresses, b); err != nil {
+		addressesWithAbi[address] = abi
+	}
+	for _, b := range batch.blocks {
+		if err := fs.erc20processor.ProcessBlock(addressesWithAbi, b); err != nil {
+			return err
+		}
+		if err := fs.erc721processor.ProcessBlock(addressesWithAbi, b); err != nil {
 			return err
 		}
 	}
