@@ -6,51 +6,183 @@ Contract APIs register/ deregister contracts to be reported. Complex queries can
 
 #### reporting_addAddress
 
-(Implemented)
+Adds a new address to start indexing and can be querying for various reports. Optionally takes a block number from 
+which to start indexing.
+
+Input:
+```json
+{
+	"address": "<address>",
+	"blockNumber": <integer>
+}
+```
+
+Output:
+None
 
 #### reporting_deleteAddress
 
-(Implemented)
+Deletes an address from being indexed or queried.
+
+Input:
+```json
+"<address>"
+```
+
+Output:
+None
 
 #### reporting_getAddresses
 
-(Implemented)
+Returns a list of all the addresses the reporting engine is indexing.
+
+Input:
+None
+
+Output:
+```json
+["<address>", ...]
+```
 
 #### reporting_getContractTemplate
 
-(Implemented)
+Returns the name of the template that is currently assigned to the given contract
+
+Input:
+```json
+"<address>"
+```
+
+Output:
+```json
+"<template name>"
+```
 
 #### reporting_addABI
 
-(Deprecated. Use `reporting_addTemplate` and `reporting_assignTemplate`)
+(Deprecated, use `reporting_addTemplate` and `reporting_assignTemplate`)
+
+Assigns a contract ABI to a contract, allowing parsing of function call and event parameters.
+
+Input:
+```json
+{
+    "address": "<address>",
+    "data": "<escaped contract ABI json>"
+}
+```
+
+Output:
+None
 
 #### reporting_getABI
 
-(Implemented)
+Returns the attached contract ABI for the given contract
+
+Input:
+```json
+"<address>"
+```
+
+Output:
+```json
+"<Contract ABI as escaped JSON>"
+```
 
 #### reporting_addStorageABI
 
 (Deprecated. Use `reporting_addTemplate` and `reporting_assignTemplate`)
 
+Assigns a Storage Layout to a contract, allowing parsing of contract storage into variables.
+
+Input:
+```json
+{
+    "address": "<address>",
+    "data": "<escaped storage layout json>"
+}
+```
+
+Output:
+None
+
 #### reporting_getStorageABI
 
-(Implemented)
+Returns the attached Storage Layout for the given contract
+
+Input:
+```json
+"<address>"
+```
+
+Output:
+```json
+"<Storage Layout as escaped JSON>"
+```
 
 #### reporting_addTemplate
 
-(Implemented)
+Adds a new template that can be assigned to contracts
+
+Input:
+```json
+{
+    "name": "<template identifier>",
+    "abi": "<escaped contract ABI JSON>",
+    "storageLayout": "<escaped Storage Layout JSON>"
+}
+```
+
+Output:
+None
 
 #### reporting_assignTemplate
 
-(Implemented)
+Assigns a previously added template to the given contract, replacing any existing assignment that contract had.
+
+Input:
+```json
+{
+    "address": "<address>",
+    "data": "<template name>"
+}
+```
+
+Output:
+None
 
 #### reporting_getTemplates
 
-(Implemented)
+Returns a list of all template names that have been added to the reporting engine
+
+Input:
+None
+
+Output:
+```json
+[
+    "<template name>",
+    ...
+]
+```
 
 #### reporting_getTemplateDetails
 
-(Implemented)
+Returns the details of a given template, which includes the template Contract ABI and the Storage Layout.
+
+Input:
+```json
+"<template name>"
+```
+
+Output:
+```json
+{
+    "name": "<template identifier>",
+    "abi": "<escaped contract ABI JSON>",
+    "storageLayout": "<escaped Storage Layout JSON>"
+}
+```
 
 #### reporting_getLastFiltered
 
@@ -63,12 +195,41 @@ Block APIs returns basic block information.
 
 #### reporting_getBlock
 
-(Implemented)
+Fetches the full block data
+
+Input:
+```json
+100
+```
+
+Output:
+```json
+{
+	"hash": "<0x-prefixed hash>",
+	"parentHash": "<0x-prefixed hash>",
+	"stateRoot": "<0x-prefixed hash>",
+	"txRoot": "<0x-prefixed hash>",
+	"receiptRoot": "<0x-prefixed hash>",
+	"number": <integer>,
+	"gasLimit": <integer>,
+	"gasUsed": <integer>,
+	"timestamp": <integer>,
+	"extraData": "<0x-prefixed string",
+	"transactions": ["<0x-prefixed hash>"]
+}
+```
 
 #### reporting_getLastPersistedBlockNumber
 
-(Implemented) `reporting_getLastPersistedBlockNumber` gets the last block number before which all blocks are available 
-and properly indexed.
+Fetches the last block number before which all blocks/transactions are available.
+
+Input:
+None
+
+Output:
+```json
+100
+```
 
 ## Storage
 
@@ -76,12 +237,70 @@ Storage APIs can query account storage for a given contract at any block
 
 #### reporting_getStorage
 
-(Implemented)
+Retrieves the full *raw* storage for a contract at a particular block height. This means there is no parsing of the 
+data. If no block is given, then the latest block the contract has been indexed at is used. The values of each storage 
+slot are truncated to remove any leading 0's, providing there remain an even number of characters (making it valid hex).
+
+Input:
+```json
+{
+    "address": "<address>",
+    "block": <integer>
+}
+```
+
+Output:
+```json
+{
+  "<storage slot 0 hash>": "<storage slot 0 value>",
+  "<storage slot 1 hash>": "<storage slot 1 value>",
+  ...
+}
+```
+
+e.g.
+```json
+{
+    "0x00000000000000000000000000000000": "10",
+    "0x00000000000000000000000000000001": "12345678901234567890123456789012"
+}
+```
 
 #### reporting_getStorageHistory
 
-(Todo) `reporting_getStorageHistory` provides extended feature on top of simply getting raw storage. It can search by 
-block range, and provides a list of historical state formatted by the given template.
+Parses the storage of a contract according to its attached storage layout. It will return a map of variables and their 
+values that exist in the contract, except for mappings. This is intended to see how the storage changes over time, 
+and so takes a start and end block range. These can be kept the same if a single block is required.
+
+Input:
+```json
+{
+	"address": "<address>",
+	"startBlockNumber": <integer>,
+	"endBlockNumber": <integer>
+}
+```
+
+Output:
+```json
+{
+	"address": "<address>",
+	"historicState": [
+        {
+            "blockNumber": <integer>,
+            "historicStorage": [
+                {
+                    "name": "<string>",
+                    "type": "<string, solidity variable type>",
+                    "value": <variable based on variable type>
+                },
+                ...
+            ]
+        },
+        ...
+    ]
+}
+```
 
 ## Transaction
 
@@ -89,44 +308,174 @@ Transaction APIs query
 
 #### reporting_getTransaction
 
-(Implemented)
+Fetches transaction data, including events and internal calls & parsed event/function call data
+
+Input:
+```json
+"<0x-prefixed hash>"
+```
+
+Output:
+```json
+{
+	"txSig": "<parsed function name and parameters>",
+	"func4Bytes": "<0x-prefixed string", //function 4bytes signature
+	"parsedData": {
+	  "function parameter 1 name": "function parameter 1 value",
+	  "function parameter 2 name": "function parameter 2 value",
+      ...
+	},
+	"parsedEvents": {
+	  	"eventSig": "<0x-prefixed hash",
+      	"parsedData": {
+          "event parameter 1 name": "function parameter 1 value",
+          "event parameter 2 name": "function parameter 2 value",
+          ...
+        }
+      	"rawEvent": {
+      	    "index": <integer>,
+        	"address": "<0x-prefixed address>",
+        	"topics": ["<0x-prefixed hash>", ...],
+        	"data": "<0x-prefixed string>",
+        	"blockNumber": <integer>,
+        	"blockHash": "<0x-prefixed hash>",
+        	"transactionHash": "<0x-prefixed hash>",
+        	"transactionIndex": <integer>,
+        	"timestamp": <integer>
+      	}
+	},
+	"rawTransaction": {
+	    "hash": "<0x-prefixed hash>",
+      	"status": <bool>,
+      	"blockNumber": <integer>,
+      	"blockHash": "<0x-prefixed hash>",
+      	"index": <integer>,
+      	"nonce": <integer>,
+      	"from": "<0x-prefixed address>",
+      	"to": "<0x-prefixed address>",
+      	"value": <integer>,
+      	"gas": <integer>
+      	"gasPrice": <integer>,
+      	"gasUsed": <integer>,
+      	"cumulativeGasUsed": <integer>,
+      	"createdContract": "<0x-prefixed address>",
+      	"data": "<0x-prefixed string>",
+      	"privateData": "<0x-prefixed string>",
+      	"isPrivate": <bool>,
+      	"timestamp": <integer>,
+      	"events": [
+            {
+                "index": <integer>,
+                "address": "<0x-prefixed address>",
+                "topics": ["<0x-prefixed hash>", ...],
+                "data": "<0x-prefixed string>",
+                "blockNumber": <integer>,
+                "blockHash": "<0x-prefixed hash>",
+                "transactionHash": "<0x-prefixed hash>",
+                "transactionIndex": <integer>,
+                "timestamp": <integer>
+            },
+            ...
+        ],
+      	"internalCalls": [
+            {
+                "from": "<0x-prefixed address>",
+                "to": "<0x-prefixed address>",
+                "value": <integer>,
+                "gas": <integer>
+                "gasUsed": <integer>,
+              	"input": "<0x-prefixed string>",
+              	"output": "<0x-prefixed string>",
+              	"type": "<opcode name>"
+            }, 
+            ...
+        ]
+	}
+```
 
 #### reporting_getContractCreationTransaction
 
-(Implemented)
+Fetches the hash of the transaction that this requested transaction was deployed at.
+This can include external deployment, internal deployments from other contracts, or 
+via contract extension.
+
+Input:
+```json
+"<0x-prefixed address>"
+```
+
+Output:
+```json
+"<0x-prefixed hash>"
+```
 
 #### reporting_getAllTransactionsToAddress
 
-(Implemented) `reporting_getAllTransactionsToAddress` returns a list of tx hash and total number matching the search options 
-provided.
+Returns a list of transaction hashes and total number matching the search options provided.
 
-Sample Response:
+Input:
+```json
+{
+    "address": "<address>",
+    "options": {
+        "beginBlockNumber": <integer>,
+        "endBlockNumber": <integer>,
+        "beginTimestamp": <integer>,
+        "endTimestamp": <integer>,
+        "pageSize": <integer>,
+        "pageNumber": <integer>
+    }
+}
+```
+
+Output:
 ```$json
 {
-    transactions: [types.Hash...],
-    total: uint64,
-    options: {
-        beginBlockNumber, endBlockNumber,
-        beginTimestamp, endTimestamp,
-        pageSize, pageNumber,
+    "transactions": ["<hash>", ...],
+    "total": <integer>,
+    "options": {
+        "beginBlockNumber": <integer>,
+        "endBlockNumber": <integer>,
+        "beginTimestamp": <integer>,
+        "endTimestamp": <integer>,
+        "pageSize": <integer>,
+        "pageNumber": <integer>
     }
 }
 ```
 
 #### reporting_getAllTransactionsInternalToAddress
 
-(Implemented) `reporting_getAllTransactionsInternalToAddress` returns a list of tx hash and total number matching the search 
-options provided.
+Returns a list of transaction hashes where the contract was called by another contract, 
+along with the total number matching records with the search options provided.
 
-Sample Response:
+Input:
+```json
+{
+    "address": "<address>",
+    "options": {
+        "beginBlockNumber": <integer>,
+        "endBlockNumber": <integer>,
+        "beginTimestamp": <integer>,
+        "endTimestamp": <integer>,
+        "pageSize": <integer>,
+        "pageNumber": <integer>
+    }
+}
+```
+
+Output:
 ```$json
 {
-    transactions: [types.Hash...],
-    total: uint64,
-    options: {
-        beginBlockNumber, endBlockNumber,
-        beginTimestamp, endTimestamp,
-        pageSize, pageNumber,
+    "transactions": ["<hash>", ...],
+    "total": <integer>,
+    "options": {
+        "beginBlockNumber": <integer>,
+        "endBlockNumber": <integer>,
+        "beginTimestamp": <integer>,
+        "endTimestamp": <integer>,
+        "pageSize": <integer>,
+        "pageNumber": <integer>
     }
 }
 ```
@@ -135,18 +484,57 @@ Sample Response:
 
 #### reporting_getAllEventsFromAddress
 
-(Implemented) `reporting_getAllEventsFromAddress` returns a list of event objs and total number of events matching the search 
-options provided.
+Returns a list of events for a given contract, along with the total number of events matching the search options 
+provided. The events are also parsed for their parameter values if an appropriate ABI is attached to the contract.
 
-Sample Response:
+Input:
+```json
+{
+    "address": "<address>",
+    "options": {
+        "beginBlockNumber": <integer>,
+        "endBlockNumber": <integer>,
+        "beginTimestamp": <integer>,
+        "endTimestamp": <integer>,
+        "pageSize": <integer>,
+        "pageNumber": <integer>
+    }
+}
+```
+
+Output:
 ```$json
 {
-    events: [eventObj...],
-    total: uint64,
-    options: {
-        beginBlockNumber, endBlockNumber,
-        beginTimestamp, endTimestamp,
-        pageSize, pageNumber,
+    "events": [
+        {
+            "eventSig": "<0x-prefixed hash",
+            "parsedData": {
+              "event parameter 1 name": "function parameter 1 value",
+              "event parameter 2 name": "function parameter 2 value",
+              ...
+            }
+            "rawEvent": {
+                "index": <integer>,
+                "address": "<0x-prefixed address>",
+                "topics": ["<0x-prefixed hash>", ...],
+                "data": "<0x-prefixed string>",
+                "blockNumber": <integer>,
+                "blockHash": "<0x-prefixed hash>",
+                "transactionHash": "<0x-prefixed hash>",
+                "transactionIndex": <integer>,
+                "timestamp": <integer>
+            }
+        },
+        ...
+    ],
+    "total": <integer>,
+    "options": {
+        "beginBlockNumber": <integer>,
+        "endBlockNumber": <integer>,
+        "beginTimestamp": <integer>,
+        "endTimestamp": <integer>,
+        "pageSize": <integer>,
+        "pageNumber": <integer>
     }
 }
 ```
