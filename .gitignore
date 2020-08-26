@@ -1,3 +1,4 @@
 .idea
 .examples
 config.toml
+/ui/node_modules/
