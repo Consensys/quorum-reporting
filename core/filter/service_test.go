@@ -98,6 +98,10 @@ func (f *FakeDB) RecordERC721Token(contract types.Address, holder types.Address,
 	return errors.New("not implemented")
 }
 
+func (f *FakeDB) GetContractABI(types.Address) (string, error) {
+	return "{}", nil
+}
+
 func (f *FakeDB) SetContractCreationTransaction(creationTxns map[types.Hash][]types.Address) error {
 	return nil
 }
