@@ -126,7 +126,6 @@ func TestMemoryDB(t *testing.T) {
 	testIndexStorage(t, db, 1, rawStorage)
 	testIndexBlock(t, db, addr, block)
 	testGetLastFiltered(t, db, addr, 1)
-	testGetContractCreationTransaction(t, db, addr, types.NewHash("0x1a6f4292bac138df9a7854a07c93fd14ca7de53265e8fe01b6c986f97d6c1ee7"))
 	testGetAllTransactionsToAddress(t, db, addr, types.NewHash("0xb2d58900a820afddd1d926845e7655d445885524b9af1cc946b45949be74cc08"))
 	testGetTransactionsToAddressTotal(t, db, addr, 1)
 	testGetAllTransactionsInternalToAddress(t, db, addr, types.NewHash("0xbc77a72b3409ba3e098cb45bac1b7727b59dae9a05f37a0dbc61007949c8cede"))
@@ -291,16 +290,6 @@ func testGetLastFiltered(t *testing.T, db database.Database, address types.Addre
 	}
 }
 
-func testGetContractCreationTransaction(t *testing.T, db database.Database, address types.Address, expected types.Hash) {
-	actual, err := db.GetContractCreationTransaction(address)
-	if err != nil {
-		t.Fatalf("expected no error, but got %v", err)
-	}
-	if actual != expected {
-		t.Fatalf("expected %v, but got %v", expected, actual)
-	}
-}
-
 func testGetAllTransactionsToAddress(t *testing.T, db database.Database, address types.Address, expected types.Hash) {
 	txs, err := db.GetAllTransactionsToAddress(address, nil)
 	if err != nil {
@@ -359,4 +348,64 @@ func testGetStorage(t *testing.T, db database.Database, address types.Address, b
 	if len(storage) != expected {
 		t.Fatalf("expected %v, but got %v", expected, len(storage))
 	}
+}
+
+func TestMemoryDB_ContractCreationTransactions(t *testing.T) {
+	db := NewMemoryDB()
+	_ = db.AddAddresses([]types.Address{
+		"1932c48b2bf8102ba33b4a6b545c32236e342f34",
+		"ed9d02e382b34818e88b88a309c7fe71e65f419d",
+		"8a5e2a6343108babed07899510fb42297938d41f",
+	})
+	creationTxns := map[types.Hash][]types.Address{
+		"1a6f4292bac138df9a7854a07c93fd14ca7de53265e8fe01b6c986f97d6c1ee7": {
+			"1932c48b2bf8102ba33b4a6b545c32236e342f34",
+			"ed9d02e382b34818e88b88a309c7fe71e65f419d",
+		},
+		"86835cbb6c0502b5e67a30b20c4ad79a169d13782f74557775557f52307f0bdb": {
+			"8a5e2a6343108babed07899510fb42297938d41f",
+		},
+	}
+
+	err := db.SetContractCreationTransaction(creationTxns)
+	assert.Nil(t, err)
+
+	testCases := []struct {
+		contractAddress types.Address
+		txHash          types.Hash
+	}{
+		{
+			"1932c48b2bf8102ba33b4a6b545c32236e342f34",
+			"1a6f4292bac138df9a7854a07c93fd14ca7de53265e8fe01b6c986f97d6c1ee7",
+		}, {
+			"ed9d02e382b34818e88b88a309c7fe71e65f419d",
+			"1a6f4292bac138df9a7854a07c93fd14ca7de53265e8fe01b6c986f97d6c1ee7",
+		}, {
+			"8a5e2a6343108babed07899510fb42297938d41f",
+			"86835cbb6c0502b5e67a30b20c4ad79a169d13782f74557775557f52307f0bdb",
+		},
+	}
+
+	for _, testCase := range testCases {
+		actualTxHash, err := db.GetContractCreationTransaction(testCase.contractAddress)
+		assert.Nil(t, err)
+		assert.EqualValues(t, testCase.txHash, actualTxHash)
+	}
+}
+
+func TestMemoryDB_ContractCreationTransactions_DeletedAddress(t *testing.T) {
+	db := NewMemoryDB()
+	sampleAddress := types.NewAddress("8a5e2a6343108babed07899510fb42297938d41f")
+	creationTxns := map[types.Hash][]types.Address{
+		"86835cbb6c0502b5e67a30b20c4ad79a169d13782f74557775557f52307f0bdb": {
+			sampleAddress,
+		},
+	}
+
+	err := db.SetContractCreationTransaction(creationTxns)
+	assert.Nil(t, err)
+
+	actualTxHash, err := db.GetContractCreationTransaction(sampleAddress)
+	assert.EqualError(t, err, "address is not registered")
+	assert.EqualValues(t, "", actualTxHash)
 }

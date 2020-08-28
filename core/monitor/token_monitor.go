@@ -10,8 +10,9 @@ import (
 )
 
 var (
-	eip165Sig, _   = hex.DecodeString("01ffc9a70")
-	eip165Check, _ = hex.DecodeString("ffffffff")
+	eip165Sig, _           = hex.DecodeString("01ffc9a70")
+	eip165Check, _         = hex.DecodeString("ffffffff")
+	ContractExtensionTopic = types.NewHash("0x67a92539f3cbd7c5a9b36c23c0e2beceb27d2e1b3cd8eda02c623689267ae71e")
 )
 
 type TokenRule struct {
@@ -53,6 +54,28 @@ func (tm *DefaultTokenMonitor) InspectTransaction(tx *types.Transaction) (map[ty
 			deployer: tx.From,
 		})
 	}
+	for _, event := range tx.Events {
+		if len(event.Topics) == 1 && event.Topics[0] == ContractExtensionTopic {
+			//this is an extension tx
+			//first 64 chars (32 bytes) of data are the address
+			addressBytes := event.Data.AsBytes()[12:32]
+			address := types.NewAddress(hex.EncodeToString(addressBytes))
+
+			code, err := client.GetCode(tm.quorumClient, address, tx.BlockNumber-1)
+			if err != nil {
+				return nil, err
+			}
+			if code == types.NewHexData("") {
+				//not been extended before since the code doesn't exist prior
+				addresses = append(addresses, AddressWithMeta{
+					address:  address,
+					scope:    types.ExternalScope,
+					deployer: tx.From,
+				})
+			}
+			break
+		}
+	}
 	for _, ic := range tx.InternalCalls {
 		if ic.Type == "CREATE" || ic.Type == "CREATE2" {
 			addresses = append(addresses, AddressWithMeta{
@@ -82,7 +105,7 @@ func (tm *DefaultTokenMonitor) InspectTransaction(tx *types.Transaction) (map[ty
 			}
 
 			// Check contract bytecode directly for all 4bytes presented in abi
-			contractBytecode, err := client.GetCode(tm.quorumClient, addressWithMeta.address, tx.BlockHash)
+			contractBytecode, err := client.GetCode(tm.quorumClient, addressWithMeta.address, tx.BlockNumber)
 			if err != nil {
 				return nil, err
 			}

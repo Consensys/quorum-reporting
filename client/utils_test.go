@@ -104,14 +104,14 @@ func TestDumpAddress(t *testing.T) {
 
 func TestGetCode(t *testing.T) {
 	mockRPC := map[string]interface{}{
-		"eth_getCode0x1349f3e1b8d71effb47b840594ff27da7e603d170xe625ba9f14eed0671508966080fb01374d0a3a16b9cee545a324179b75f30aa8": types.HexData("efe5cb8d23d632b5d2cdd9f0a151c4b1a84ccb7afa1c57331009aa922d5e4f36"),
+		"eth_getCode0x1349f3e1b8d71effb47b840594ff27da7e603d170x5": types.HexData("efe5cb8d23d632b5d2cdd9f0a151c4b1a84ccb7afa1c57331009aa922d5e4f36"),
 	}
 	stubClient := NewStubQuorumClient(nil, mockRPC)
 
-	blockHash := types.NewHash("0xe625ba9f14eed0671508966080fb01374d0a3a16b9cee545a324179b75f30aa8")
+	blockNum := uint64(5)
 	address := types.NewAddress("0x1349f3e1b8d71effb47b840594ff27da7e603d17")
 
-	code, err := GetCode(stubClient, address, blockHash)
+	code, err := GetCode(stubClient, address, blockNum)
 	assert.Nil(t, err)
 	assert.Equal(t, "0xefe5cb8d23d632b5d2cdd9f0a151c4b1a84ccb7afa1c57331009aa922d5e4f36", code.String())
 }
@@ -119,10 +119,10 @@ func TestGetCode(t *testing.T) {
 func TestGetCode_WithError(t *testing.T) {
 	stubClient := NewStubQuorumClient(nil, nil)
 
-	blockHash := types.NewHash("0xe625ba9f14eed0671508966080fb01374d0a3a16b9cee545a324179b75f30aa8")
+	blockNum := uint64(5)
 	address := types.NewAddress("0x1349f3e1b8d71effb47b840594ff27da7e603d17")
 
-	code, err := GetCode(stubClient, address, blockHash)
+	code, err := GetCode(stubClient, address, blockNum)
 	assert.EqualError(t, err, "not found")
 	assert.Equal(t, types.HexData(""), code)
 }

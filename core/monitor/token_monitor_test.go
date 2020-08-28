@@ -59,7 +59,7 @@ func TestDefaultTokenMonitor_InspectTransaction_EIP165WithERC20_External(t *test
 	assert.Equal(t, res[types.NewAddress("987")], "ERC20")
 }
 
-func TestDefaultTokenMonitor_InspectTransaction_EIP165WithERC20(t *testing.T) {
+func TestDefaultTokenMonitor_InspectTransaction_EIP165WithERC20_Internal(t *testing.T) {
 	stubClient := &CustomEIP165StubClient{
 		client.NewStubQuorumClient(nil, nil),
 		"36372b07",
@@ -96,6 +96,67 @@ func TestDefaultTokenMonitor_InspectTransaction_EIP165WithERC20(t *testing.T) {
 		},
 		{
 			TokenRule{scope: types.AllScope, templateName: "ERC20", eip165: "36372b07", deployer: types.NewAddress("0x586e8164bc8863013fe8f1b82092b028a5f8afad")},
+			map[types.Address]string{types.NewAddress("0xcc11df45aba0a4ff198b18300d0b148ad2468834"): "ERC20"},
+		},
+		{
+			TokenRule{scope: types.InternalScope, templateName: "ERC20", eip165: "36372b07", deployer: types.NewAddress("0xcc11df45aba0a4ff198b18300d0b148ad2468834")}, //TODO: can this be AllScoped?
+			map[types.Address]string{},
+		},
+	}
+
+	for _, tst := range testMatrix {
+		tokenMonitor := NewDefaultTokenMonitor(stubClient, []TokenRule{tst.rule})
+		res, err := tokenMonitor.InspectTransaction(tx)
+
+		assert.Nil(t, err)
+		assert.Equal(t, len(res), len(tst.result))
+		assert.EqualValues(t, tst.result, res)
+	}
+}
+
+func TestDefaultTokenMonitor_InspectTransaction_EIP165WithERC20_ContractExtension(t *testing.T) {
+	stubClient := &CustomEIP165StubClient{
+		client.NewStubQuorumClient(nil, map[string]interface{}{
+			"eth_getCode<[]interface {} Value>": types.NewHexData(""),
+		}),
+		"36372b07",
+	}
+
+	tx := &types.Transaction{
+		Hash:        types.NewHash("0xf4f803b8d6c6b38e0b15d6cfe80fd1dcea4270ad24e93385fca36512bb9c2c59"),
+		BlockHash:   types.NewHash("0xefe5cb8d23d632b5d2cdd9f0a151c4b1a84ccb7afa1c57331009aa922d5e4f36"),
+		BlockNumber: 1,
+		From:        types.NewAddress("0x586e8164bc8863013fe8f1b82092b028a5f8afad"),
+		Events: []*types.Event{
+			{
+				Topics: []types.Hash{"67a92539f3cbd7c5a9b36c23c0e2beceb27d2e1b3cd8eda02c623689267ae71e"},
+				Data:   types.NewHexData("0x000000000000000000000000cc11df45aba0a4ff198b18300d0b148ad2468834"),
+			},
+		},
+	}
+
+	testMatrix := []struct {
+		rule   TokenRule
+		result map[types.Address]string
+	}{
+		{
+			TokenRule{scope: types.ExternalScope, templateName: "ERC20", eip165: "36372b07"},
+			map[types.Address]string{types.NewAddress("0xcc11df45aba0a4ff198b18300d0b148ad2468834"): "ERC20"},
+		},
+		{
+			TokenRule{scope: types.AllScope, templateName: "ERC20", eip165: "36372b07"},
+			map[types.Address]string{types.NewAddress("0xcc11df45aba0a4ff198b18300d0b148ad2468834"): "ERC20"},
+		},
+		{
+			TokenRule{scope: types.InternalScope, templateName: "ERC20", eip165: "36372b07"},
+			map[types.Address]string{},
+		},
+		{
+			TokenRule{scope: types.AllScope, templateName: "ERC20", eip165: "36372b07", deployer: types.NewAddress("0x586e8164bc8863013fe8f1b82092b028a5f8afad")},
+			map[types.Address]string{types.NewAddress("0xcc11df45aba0a4ff198b18300d0b148ad2468834"): "ERC20"},
+		},
+		{
+			TokenRule{scope: types.ExternalScope, templateName: "ERC20", eip165: "36372b07", deployer: types.NewAddress("0x586e8164bc8863013fe8f1b82092b028a5f8afad")},
 			map[types.Address]string{types.NewAddress("0xcc11df45aba0a4ff198b18300d0b148ad2468834"): "ERC20"},
 		},
 		{
@@ -197,7 +258,7 @@ func TestDefaultTokenMonitor_InspectTransaction_BytecodeInspection(t *testing.T)
 	json.Unmarshal([]byte(`[{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"_owner","type":"address"},{"indexed":true,"internalType":"address","name":"_approved","type":"address"},{"indexed":true,"internalType":"uint256","name":"_tokenId","type":"uint256"}],"name":"Approval","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"_owner","type":"address"},{"indexed":true,"internalType":"address","name":"_operator","type":"address"},{"indexed":false,"internalType":"bool","name":"_approved","type":"bool"}],"name":"ApprovalForAll","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"_from","type":"address"},{"indexed":true,"internalType":"address","name":"_to","type":"address"},{"indexed":true,"internalType":"uint256","name":"_tokenId","type":"uint256"}],"name":"Transfer","type":"event"},{"inputs":[{"internalType":"address","name":"_approved","type":"address"},{"internalType":"uint256","name":"_tokenId","type":"uint256"}],"name":"approve","outputs":[],"stateMutability":"payable","type":"function"},{"inputs":[{"internalType":"address","name":"_owner","type":"address"}],"name":"balanceOf","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"_tokenId","type":"uint256"}],"name":"getApproved","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"_owner","type":"address"},{"internalType":"address","name":"_operator","type":"address"}],"name":"isApprovedForAll","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"_tokenId","type":"uint256"}],"name":"ownerOf","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"_from","type":"address"},{"internalType":"address","name":"_to","type":"address"},{"internalType":"uint256","name":"_tokenId","type":"uint256"}],"name":"safeTransferFrom","outputs":[],"stateMutability":"payable","type":"function"},{"inputs":[{"internalType":"address","name":"_from","type":"address"},{"internalType":"address","name":"_to","type":"address"},{"internalType":"uint256","name":"_tokenId","type":"uint256"},{"internalType":"bytes","name":"data","type":"bytes"}],"name":"safeTransferFrom","outputs":[],"stateMutability":"payable","type":"function"},{"inputs":[{"internalType":"address","name":"_operator","type":"address"},{"internalType":"bool","name":"_approved","type":"bool"}],"name":"setApprovalForAll","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"_from","type":"address"},{"internalType":"address","name":"_to","type":"address"},{"internalType":"uint256","name":"_tokenId","type":"uint256"}],"name":"transferFrom","outputs":[],"stateMutability":"payable","type":"function"}]`), &erc721Abi)
 
 	mockRPC := map[string]interface{}{
-		"eth_getCode0xcc11df45aba0a4ff198b18300d0b148ad24688340xefe5cb8d23d632b5d2cdd9f0a151c4b1a84ccb7afa1c57331009aa922d5e4f36": types.HexData(erc20ContractCode),
+		"eth_getCode0xcc11df45aba0a4ff198b18300d0b148ad24688340x1": types.HexData(erc20ContractCode),
 	}
 	stubClient := client.NewStubQuorumClient(nil, mockRPC)
 

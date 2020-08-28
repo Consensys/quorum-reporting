@@ -500,6 +500,19 @@ func (es *ElasticsearchDB) IndexStorage(rawStorage map[types.Address]*types.Acco
 	return returnErr
 }
 
+func (es *ElasticsearchDB) SetContractCreationTransaction(creationTxns map[types.Hash][]types.Address) error {
+	for txHash, addresses := range creationTxns {
+		for _, createdAddress := range addresses {
+			if err := es.updateContract(createdAddress, "creationTx", txHash.String()); err != nil {
+				log.Error("Failed to index contract creation tx", "tx", txHash, "contract", createdAddress, "err", err)
+				return err
+			}
+			log.Info("Indexed contract creation tx for address", "tx", txHash, "contract", createdAddress)
+		}
+	}
+	return nil
+}
+
 func (es *ElasticsearchDB) GetContractCreationTransaction(address types.Address) (types.Hash, error) {
 	contract, err := es.getContractByAddress(address)
 	if err != nil {

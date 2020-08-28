@@ -189,6 +189,10 @@ func (cachingDB *DatabaseWithCache) IndexStorage(rawStorage map[types.Address]*t
 	return cachingDB.db.IndexStorage(rawStorage, blockNumber)
 }
 
+func (cachingDB *DatabaseWithCache) SetContractCreationTransaction(creationTxns map[types.Hash][]types.Address) error {
+	return cachingDB.db.SetContractCreationTransaction(creationTxns)
+}
+
 func (cachingDB *DatabaseWithCache) GetContractCreationTransaction(address types.Address) (types.Hash, error) {
 	if cachedHash, err := cachingDB.contractCreationCache.Get(address); err == nil {
 		return cachedHash.(types.Hash), nil
