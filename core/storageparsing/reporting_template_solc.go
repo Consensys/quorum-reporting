@@ -1,7 +1,7 @@
 package storageparsing
 
 import (
-	"quorumengineering/quorum-report/types"
+	"github.com/consensys/quorum-go-utils/types"
 )
 
 func ParseRawStorage(rawStorage map[types.Hash]string, template types.SolidityStorageDocument) ([]*types.StorageItem, error) {

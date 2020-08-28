@@ -1,9 +1,10 @@
 package storageparsing
 
 import (
-	"github.com/stretchr/testify/assert"
-	"quorumengineering/quorum-report/types"
 	"testing"
+
+	"github.com/consensys/quorum-go-utils/types"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestParser_determineSize_fixedSize(t *testing.T) {

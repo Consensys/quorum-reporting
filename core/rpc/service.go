@@ -4,16 +4,15 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"quorumengineering/quorum-report/config"
+	"quorumengineering/quorum-report/database"
 	"sync"
 	"time"
 
+	"github.com/consensys/quorum-go-utils/log"
 	"github.com/gorilla/rpc/v2"
 	"github.com/gorilla/rpc/v2/json"
 	"github.com/rs/cors"
-
-	"quorumengineering/quorum-report/database"
-	"quorumengineering/quorum-report/log"
-	"quorumengineering/quorum-report/types"
 )
 
 const (
@@ -33,7 +32,7 @@ type RPCService struct {
 	shutdownWg             sync.WaitGroup
 }
 
-func NewRPCService(db database.Database, config types.ReportingConfig, backendErrorChan chan error) *RPCService {
+func NewRPCService(db database.Database, config config.ReportingConfig, backendErrorChan chan error) *RPCService {
 	return &RPCService{
 		cors:        config.Server.RPCCorsList,
 		httpAddress: config.Server.RPCAddr,

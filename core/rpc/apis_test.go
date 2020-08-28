@@ -3,12 +3,11 @@ package rpc
 import (
 	"math/big"
 	"net/http"
+	"quorumengineering/quorum-report/database/memory"
 	"testing"
 
+	"github.com/consensys/quorum-go-utils/types"
 	"github.com/stretchr/testify/assert"
-
-	"quorumengineering/quorum-report/database/memory"
-	"quorumengineering/quorum-report/types"
 )
 
 const validABI = `

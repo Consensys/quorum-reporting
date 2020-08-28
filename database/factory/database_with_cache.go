@@ -2,12 +2,11 @@ package factory
 
 import (
 	"math/big"
+	"quorumengineering/quorum-report/database"
 	"sync"
 
 	"github.com/bluele/gcache"
-
-	"quorumengineering/quorum-report/database"
-	"quorumengineering/quorum-report/types"
+	"github.com/consensys/quorum-go-utils/types"
 )
 
 type DatabaseWithCache struct {

@@ -1,9 +1,9 @@
 package rpc
 
 import (
-	"quorumengineering/quorum-report/types"
-
 	"quorumengineering/quorum-report/database"
+
+	"github.com/consensys/quorum-go-utils/types"
 )
 
 type ContractTemplateManager interface {

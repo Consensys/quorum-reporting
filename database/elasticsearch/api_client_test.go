@@ -4,16 +4,15 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"quorumengineering/quorum-report/config"
 	"testing"
 
 	elasticsearch7 "github.com/elastic/go-elasticsearch/v7"
 	"github.com/stretchr/testify/assert"
-
-	"quorumengineering/quorum-report/types"
 )
 
 func Test_NewConfigNoCert(t *testing.T) {
-	inputConfig := &types.ElasticsearchConfig{
+	inputConfig := &config.ElasticsearchConfig{
 		Addresses: []string{"url1", "url2"},
 		CloudID:   "my-cloud-id",
 		Username:  "custom-username",
@@ -45,7 +44,7 @@ func Test_NewConfigWithCert(t *testing.T) {
 	err = tmpfile.Close()
 	assert.Nil(t, err)
 
-	inputConfig := &types.ElasticsearchConfig{
+	inputConfig := &config.ElasticsearchConfig{
 		Addresses: []string{"url1", "url2"},
 		CloudID:   "my-cloud-id",
 		Username:  "custom-username",
@@ -77,7 +76,7 @@ func Test_NewConfigWithCertReadError(t *testing.T) {
 	err = os.Remove(tmpfile.Name())
 	assert.Nil(t, err)
 
-	inputConfig := &types.ElasticsearchConfig{
+	inputConfig := &config.ElasticsearchConfig{
 		Addresses: []string{"url1", "url2"},
 		CloudID:   "my-cloud-id",
 		Username:  "custom-username",

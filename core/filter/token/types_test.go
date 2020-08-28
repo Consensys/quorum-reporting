@@ -3,7 +3,8 @@ package token
 import (
 	"errors"
 	"math/big"
-	"quorumengineering/quorum-report/types"
+
+	"github.com/consensys/quorum-go-utils/types"
 )
 
 func NewFakeTestTokenDatabase(testErr error, txns []*types.Transaction) *FakeTestTokenDatabase {

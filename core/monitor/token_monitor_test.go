@@ -2,13 +2,13 @@ package monitor
 
 import (
 	"encoding/json"
+	"quorumengineering/quorum-report/config"
 	"reflect"
 	"testing"
 
+	"github.com/consensys/quorum-go-utils/client"
+	"github.com/consensys/quorum-go-utils/types"
 	"github.com/stretchr/testify/assert"
-
-	"quorumengineering/quorum-report/client"
-	"quorumengineering/quorum-report/types"
 )
 
 type CustomEIP165StubClient struct {
@@ -51,7 +51,7 @@ func TestDefaultTokenMonitor_InspectTransaction_EIP165WithERC20_External(t *test
 		CreatedContract: types.NewAddress("987"),
 	}
 
-	tokenMonitor := NewDefaultTokenMonitor(stubClient, []TokenRule{{scope: types.AllScope, templateName: "ERC20", eip165: "36372b07"}})
+	tokenMonitor := NewDefaultTokenMonitor(stubClient, []TokenRule{{scope: config.AllScope, templateName: "ERC20", eip165: "36372b07"}})
 	res, err := tokenMonitor.InspectTransaction(tx)
 
 	assert.Nil(t, err)
@@ -83,23 +83,23 @@ func TestDefaultTokenMonitor_InspectTransaction_EIP165WithERC20(t *testing.T) {
 		result map[types.Address]string
 	}{
 		{
-			TokenRule{scope: types.InternalScope, templateName: "ERC20", eip165: "36372b07"},
+			TokenRule{scope: config.InternalScope, templateName: "ERC20", eip165: "36372b07"},
 			map[types.Address]string{types.NewAddress("0xcc11df45aba0a4ff198b18300d0b148ad2468834"): "ERC20"},
 		},
 		{
-			TokenRule{scope: types.AllScope, templateName: "ERC20", eip165: "36372b07"},
+			TokenRule{scope: config.AllScope, templateName: "ERC20", eip165: "36372b07"},
 			map[types.Address]string{types.NewAddress("0xcc11df45aba0a4ff198b18300d0b148ad2468834"): "ERC20"},
 		},
 		{
-			TokenRule{scope: types.ExternalScope, templateName: "ERC20", eip165: "36372b07"},
+			TokenRule{scope: config.ExternalScope, templateName: "ERC20", eip165: "36372b07"},
 			map[types.Address]string{},
 		},
 		{
-			TokenRule{scope: types.AllScope, templateName: "ERC20", eip165: "36372b07", deployer: types.NewAddress("0x586e8164bc8863013fe8f1b82092b028a5f8afad")},
+			TokenRule{scope: config.AllScope, templateName: "ERC20", eip165: "36372b07", deployer: types.NewAddress("0x586e8164bc8863013fe8f1b82092b028a5f8afad")},
 			map[types.Address]string{types.NewAddress("0xcc11df45aba0a4ff198b18300d0b148ad2468834"): "ERC20"},
 		},
 		{
-			TokenRule{scope: types.InternalScope, templateName: "ERC20", eip165: "36372b07", deployer: types.NewAddress("0xcc11df45aba0a4ff198b18300d0b148ad2468834")}, //TODO: can this be AllScoped?
+			TokenRule{scope: config.InternalScope, templateName: "ERC20", eip165: "36372b07", deployer: types.NewAddress("0xcc11df45aba0a4ff198b18300d0b148ad2468834")}, //TODO: can this be AllScoped?
 			map[types.Address]string{},
 		},
 	}
@@ -127,7 +127,7 @@ func TestDefaultTokenMonitor_InspectTransaction_EIP165WithERC721_External(t *tes
 		CreatedContract: types.NewAddress("987"),
 	}
 
-	tokenMonitor := NewDefaultTokenMonitor(stubClient, []TokenRule{{scope: types.AllScope, templateName: "ERC721", eip165: "80ac58cd"}})
+	tokenMonitor := NewDefaultTokenMonitor(stubClient, []TokenRule{{scope: config.AllScope, templateName: "ERC721", eip165: "80ac58cd"}})
 	res, err := tokenMonitor.InspectTransaction(tx)
 
 	assert.Nil(t, err)
@@ -159,23 +159,23 @@ func TestDefaultTokenMonitor_InspectTransaction_EIP165WithERC721(t *testing.T) {
 		result map[types.Address]string
 	}{
 		{
-			TokenRule{scope: types.InternalScope, templateName: "ERC721", eip165: "80ac58cd"},
+			TokenRule{scope: config.InternalScope, templateName: "ERC721", eip165: "80ac58cd"},
 			map[types.Address]string{types.NewAddress("0xcc11df45aba0a4ff198b18300d0b148ad2468834"): "ERC721"},
 		},
 		{
-			TokenRule{scope: types.AllScope, templateName: "ERC721", eip165: "80ac58cd"},
+			TokenRule{scope: config.AllScope, templateName: "ERC721", eip165: "80ac58cd"},
 			map[types.Address]string{types.NewAddress("0xcc11df45aba0a4ff198b18300d0b148ad2468834"): "ERC721"},
 		},
 		{
-			TokenRule{scope: types.ExternalScope, templateName: "ERC721", eip165: "80ac58cd"},
+			TokenRule{scope: config.ExternalScope, templateName: "ERC721", eip165: "80ac58cd"},
 			map[types.Address]string{},
 		},
 		{
-			TokenRule{scope: types.AllScope, templateName: "ERC721", eip165: "80ac58cd", deployer: types.NewAddress("0x586e8164bc8863013fe8f1b82092b028a5f8afad")},
+			TokenRule{scope: config.AllScope, templateName: "ERC721", eip165: "80ac58cd", deployer: types.NewAddress("0x586e8164bc8863013fe8f1b82092b028a5f8afad")},
 			map[types.Address]string{types.NewAddress("0xcc11df45aba0a4ff198b18300d0b148ad2468834"): "ERC721"},
 		},
 		{
-			TokenRule{scope: types.InternalScope, templateName: "ERC721", eip165: "80ac58cd", deployer: types.NewAddress("0xcc11df45aba0a4ff198b18300d0b148ad2468834")}, //TODO: can this be AllScoped?
+			TokenRule{scope: config.InternalScope, templateName: "ERC721", eip165: "80ac58cd", deployer: types.NewAddress("0xcc11df45aba0a4ff198b18300d0b148ad2468834")}, //TODO: can this be AllScoped?
 			map[types.Address]string{},
 		},
 	}
@@ -219,7 +219,7 @@ func TestDefaultTokenMonitor_InspectTransaction_BytecodeInspection(t *testing.T)
 		result map[types.Address]string
 	}{
 		{
-			TokenRule{scope: types.InternalScope, templateName: "ERC721", abi: erc721Abi.ToInternalABI()},
+			TokenRule{scope: config.InternalScope, templateName: "ERC721", abi: erc721Abi.ToInternalABI()},
 			map[types.Address]string{}, //No result as contract is ERC20, not ERC721
 		},
 		//{

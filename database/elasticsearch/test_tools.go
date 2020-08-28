@@ -3,10 +3,11 @@ package elasticsearch
 import (
 	"bytes"
 	"fmt"
+	"io/ioutil"
+
 	"github.com/elastic/go-elasticsearch/v7/esapi"
 	"github.com/elastic/go-elasticsearch/v7/esutil"
 	"github.com/stretchr/testify/assert"
-	"io/ioutil"
 )
 
 type IndexRequestMatcher struct {

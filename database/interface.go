@@ -3,7 +3,7 @@ package database
 import (
 	"math/big"
 
-	"quorumengineering/quorum-report/types"
+	"github.com/consensys/quorum-go-utils/types"
 )
 
 type Database interface {

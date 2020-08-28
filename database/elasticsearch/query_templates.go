@@ -5,7 +5,7 @@ import (
 	"math/big"
 	"strconv"
 
-	"quorumengineering/quorum-report/types"
+	"github.com/consensys/quorum-go-utils/types"
 )
 
 // constant query template strings for ES

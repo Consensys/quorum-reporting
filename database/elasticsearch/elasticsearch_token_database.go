@@ -7,12 +7,12 @@ import (
 	"strconv"
 	"strings"
 
+	"quorumengineering/quorum-report/database"
+
+	"github.com/consensys/quorum-go-utils/types"
 	"github.com/elastic/go-elasticsearch/v7/esapi"
 	"github.com/elastic/go-elasticsearch/v7/esutil"
 	"github.com/mitchellh/mapstructure"
-
-	"quorumengineering/quorum-report/database"
-	"quorumengineering/quorum-report/types"
 )
 
 // Token DB

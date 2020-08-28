@@ -4,7 +4,7 @@ import (
 	"encoding/hex"
 	"fmt"
 
-	"quorumengineering/quorum-report/types"
+	"github.com/consensys/quorum-go-utils/types"
 )
 
 type StorageManager interface {

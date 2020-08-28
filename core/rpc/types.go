@@ -4,7 +4,7 @@ import (
 	"errors"
 	"math/big"
 
-	"quorumengineering/quorum-report/types"
+	"github.com/consensys/quorum-go-utils/types"
 )
 
 var ErrNoAddress = errors.New("address not provided")

@@ -3,10 +3,9 @@ package monitor
 import (
 	"testing"
 
+	"github.com/consensys/quorum-go-utils/client"
+	"github.com/consensys/quorum-go-utils/types"
 	"github.com/stretchr/testify/assert"
-
-	"quorumengineering/quorum-report/client"
-	"quorumengineering/quorum-report/types"
 )
 
 var (

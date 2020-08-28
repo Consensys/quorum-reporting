@@ -1,11 +1,11 @@
 package monitor
 
 import (
+	"quorumengineering/quorum-report/database"
 	"time"
 
-	"quorumengineering/quorum-report/database"
-	"quorumengineering/quorum-report/log"
-	"quorumengineering/quorum-report/types"
+	"github.com/consensys/quorum-go-utils/log"
+	"github.com/consensys/quorum-go-utils/types"
 )
 
 //TODO: Arbitrary for now, allow for updating based on seen blocks?

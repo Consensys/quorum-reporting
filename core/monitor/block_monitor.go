@@ -4,9 +4,9 @@ import (
 	"sync"
 	"time"
 
-	"quorumengineering/quorum-report/client"
-	"quorumengineering/quorum-report/log"
-	"quorumengineering/quorum-report/types"
+	"github.com/consensys/quorum-go-utils/client"
+	"github.com/consensys/quorum-go-utils/log"
+	"github.com/consensys/quorum-go-utils/types"
 )
 
 type BlockMonitor interface {

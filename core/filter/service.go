@@ -2,13 +2,13 @@ package filter
 
 import (
 	"math/big"
+	"quorumengineering/quorum-report/core/filter/token"
 	"sync"
 	"time"
 
-	"quorumengineering/quorum-report/client"
-	"quorumengineering/quorum-report/core/filter/token"
-	"quorumengineering/quorum-report/log"
-	"quorumengineering/quorum-report/types"
+	"github.com/consensys/quorum-go-utils/client"
+	"github.com/consensys/quorum-go-utils/log"
+	"github.com/consensys/quorum-go-utils/types"
 )
 
 //TODO: clean this type up, find a better way to pass specific methods to needed pieces

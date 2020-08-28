@@ -7,7 +7,8 @@ import (
 
 	"quorumengineering/quorum-report/core/storageparsing"
 	"quorumengineering/quorum-report/database"
-	"quorumengineering/quorum-report/types"
+
+	"github.com/consensys/quorum-go-utils/types"
 )
 
 type RPCAPIs struct {
