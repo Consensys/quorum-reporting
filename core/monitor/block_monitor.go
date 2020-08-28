@@ -1,12 +1,12 @@
 package monitor
 
 import (
+	"quorumengineering/quorum-report/client"
+	"quorumengineering/quorum-report/types"
 	"sync"
 	"time"
 
-	"quorumengineering/quorum-report/client"
-	"quorumengineering/quorum-report/log"
-	"quorumengineering/quorum-report/types"
+	"github.com/consensys/quorum-go-utils/log"
 )
 
 type BlockMonitor interface {

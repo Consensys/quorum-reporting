@@ -6,14 +6,13 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
-	"syscall"
-
-	"github.com/sirupsen/logrus"
-
 	"quorumengineering/quorum-report/core"
-	"quorumengineering/quorum-report/log"
 	"quorumengineering/quorum-report/types"
 	"quorumengineering/quorum-report/ui"
+	"syscall"
+
+	"github.com/consensys/quorum-go-utils/log"
+	"github.com/sirupsen/logrus"
 )
 
 func main() {

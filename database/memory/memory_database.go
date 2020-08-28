@@ -3,11 +3,11 @@ package memory
 import (
 	"errors"
 	"math/big"
+	"quorumengineering/quorum-report/database"
+	"quorumengineering/quorum-report/types"
 	"sync"
 
-	"quorumengineering/quorum-report/database"
-	"quorumengineering/quorum-report/log"
-	"quorumengineering/quorum-report/types"
+	"github.com/consensys/quorum-go-utils/log"
 )
 
 // MemoryDB is a sample memory database for dev only.

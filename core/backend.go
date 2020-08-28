@@ -2,16 +2,16 @@ package core
 
 import (
 	"fmt"
-	"time"
-
 	"quorumengineering/quorum-report/client"
 	"quorumengineering/quorum-report/core/filter"
 	"quorumengineering/quorum-report/core/monitor"
 	"quorumengineering/quorum-report/core/rpc"
 	"quorumengineering/quorum-report/database"
 	"quorumengineering/quorum-report/database/factory"
-	"quorumengineering/quorum-report/log"
 	"quorumengineering/quorum-report/types"
+	"time"
+
+	"github.com/consensys/quorum-go-utils/log"
 )
 
 // Backend wraps MonitorService and QuorumClient, controls the start/stop of the reporting tool.

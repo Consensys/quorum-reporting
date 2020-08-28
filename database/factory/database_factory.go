@@ -4,8 +4,9 @@ import (
 	"quorumengineering/quorum-report/database"
 	"quorumengineering/quorum-report/database/elasticsearch"
 	"quorumengineering/quorum-report/database/memory"
-	"quorumengineering/quorum-report/log"
 	"quorumengineering/quorum-report/types"
+
+	"github.com/consensys/quorum-go-utils/log"
 )
 
 type Factory struct{}

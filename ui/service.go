@@ -7,10 +7,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/consensys/quorum-go-utils/log"
 	"github.com/gin-gonic/contrib/static"
 	"github.com/gin-gonic/gin"
-
-	"quorumengineering/quorum-report/log"
 )
 
 type UIHandler struct {

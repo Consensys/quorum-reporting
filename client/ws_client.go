@@ -11,9 +11,8 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/consensys/quorum-go-utils/log"
 	"github.com/gorilla/websocket"
-
-	"quorumengineering/quorum-report/log"
 )
 
 type message struct {

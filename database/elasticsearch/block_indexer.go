@@ -1,8 +1,9 @@
 package elasticsearch
 
 import (
-	"quorumengineering/quorum-report/log"
 	"quorumengineering/quorum-report/types"
+
+	"github.com/consensys/quorum-go-utils/log"
 )
 
 type DefaultBlockIndexer struct {

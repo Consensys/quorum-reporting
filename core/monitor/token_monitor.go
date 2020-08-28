@@ -2,11 +2,11 @@ package monitor
 
 import (
 	"encoding/hex"
+	"quorumengineering/quorum-report/client"
+	"quorumengineering/quorum-report/types"
 	"strings"
 
-	"quorumengineering/quorum-report/client"
-	"quorumengineering/quorum-report/log"
-	"quorumengineering/quorum-report/types"
+	"github.com/consensys/quorum-go-utils/log"
 )
 
 var (

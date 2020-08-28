@@ -4,16 +4,15 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"quorumengineering/quorum-report/database"
+	"quorumengineering/quorum-report/types"
 	"sync"
 	"time"
 
+	"github.com/consensys/quorum-go-utils/log"
 	"github.com/gorilla/rpc/v2"
 	"github.com/gorilla/rpc/v2/json"
 	"github.com/rs/cors"
-
-	"quorumengineering/quorum-report/database"
-	"quorumengineering/quorum-report/log"
-	"quorumengineering/quorum-report/types"
 )
 
 const (

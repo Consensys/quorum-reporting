@@ -5,15 +5,15 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"quorumengineering/quorum-report/database"
+	"quorumengineering/quorum-report/types"
 	"strconv"
 	"strings"
 	"sync"
 
+	"github.com/consensys/quorum-go-utils/log"
 	"github.com/elastic/go-elasticsearch/v7/esapi"
 	"github.com/elastic/go-elasticsearch/v7/esutil"
-	"quorumengineering/quorum-report/database"
-	"quorumengineering/quorum-report/log"
-	"quorumengineering/quorum-report/types"
 )
 
 type ElasticsearchDB struct {

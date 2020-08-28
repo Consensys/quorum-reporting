@@ -4,14 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"quorumengineering/quorum-report/types"
 	"reflect"
 	"sync"
 	"time"
 
+	"github.com/consensys/quorum-go-utils/log"
 	"github.com/machinebox/graphql"
-
-	"quorumengineering/quorum-report/log"
-	"quorumengineering/quorum-report/types"
 )
 
 // QuorumClient provides access to quorum blockchain node.

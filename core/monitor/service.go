@@ -2,14 +2,14 @@ package monitor
 
 import (
 	"fmt"
+	"quorumengineering/quorum-report/client"
+	"quorumengineering/quorum-report/database"
+	"quorumengineering/quorum-report/types"
 	"runtime"
 	"sync"
 	"time"
 
-	"quorumengineering/quorum-report/client"
-	"quorumengineering/quorum-report/database"
-	"quorumengineering/quorum-report/log"
-	"quorumengineering/quorum-report/types"
+	"github.com/consensys/quorum-go-utils/log"
 )
 
 // MonitorService starts all monitors. It pulls data from Quorum node and update the database.

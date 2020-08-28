@@ -5,9 +5,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/consensys/quorum-go-utils/log"
 	"github.com/naoina/toml"
-
-	"quorumengineering/quorum-report/log"
 )
 
 type ElasticsearchConfig struct {
