@@ -40,11 +40,14 @@ func TraceTransaction(c Client, txHash types.Hash) (map[string]interface{}, erro
 	return resp, nil
 }
 
-func GetCode(c Client, address types.Address, blockHash types.Hash) (types.HexData, error) {
+func GetCode(c Client, address types.Address, blockNumber uint64) (types.HexData, error) {
+	log.Debug("Querying account code", "account", address.String(), "block number", blockNumber)
 	var res types.HexData
-	if err := c.RPCCall(&res, "eth_getCode", address.String(), blockHash.String()); err != nil {
+	if err := c.RPCCall(&res, "eth_getCode", address.String(), fmt.Sprintf("0x%x", blockNumber)); err != nil {
+		log.Debug("Error querying account code", "account", address.String(), "block number", blockNumber, "err", err)
 		return "", err
 	}
+	log.Debug("Queried account code", "account", address.String(), "block number", blockNumber, "code", res.String())
 	return res, nil
 }
 

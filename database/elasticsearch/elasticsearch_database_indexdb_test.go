@@ -14,6 +14,54 @@ import (
 	"quorumengineering/quorum-report/types"
 )
 
+func TestElasticsearchDB_SetContractCreationTransaction(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockedClient := elasticsearchmocks.NewMockAPIClient(ctrl)
+
+	creationTxns := map[types.Hash][]types.Address{
+		"86835cbb6c0502b5e67a30b20c4ad79a169d13782f74557775557f52307f0bdb": {"1349f3e1b8d71effb47b840594ff27da7e603d17"},
+		"f4f803b8d6c6b38e0b15d6cfe80fd1dcea4270ad24e93385fca36512bb9c2c59": {"1932c48b2bf8102ba33b4a6b545c32236e342f34"},
+		"693f3f411b7811eabc76d3fffa2c3760d9b8a3534fba8de5832a5dc06bcbc43a": {
+			"9d13c6d3afe1721beef56b55d303b09e021e27ab", "123456789fe1721beef56b55d303b09e021e27ab",
+		},
+	}
+
+	mockedClient.EXPECT().DoRequest(gomock.Any()) //for setup, not relevant to test
+	testCases := []struct {
+		addr types.Address
+		hash types.Hash
+	}{
+		{"1349f3e1b8d71effb47b840594ff27da7e603d17", "86835cbb6c0502b5e67a30b20c4ad79a169d13782f74557775557f52307f0bdb"},
+		{"1932c48b2bf8102ba33b4a6b545c32236e342f34", "f4f803b8d6c6b38e0b15d6cfe80fd1dcea4270ad24e93385fca36512bb9c2c59"},
+		{"9d13c6d3afe1721beef56b55d303b09e021e27ab", "693f3f411b7811eabc76d3fffa2c3760d9b8a3534fba8de5832a5dc06bcbc43a"},
+		{"123456789fe1721beef56b55d303b09e021e27ab", "693f3f411b7811eabc76d3fffa2c3760d9b8a3534fba8de5832a5dc06bcbc43a"},
+	}
+	for range testCases {
+		//TODO: should use the commented code for exact matches
+		//TODO: but gomock seems to enforce ordering which map iteration won't respect
+		//TODO: even though gomock shouldn't enforce ordering by default
+		mockedClient.EXPECT().DoRequest(gomock.Any()).Return([]byte(`{}`), nil)
+		mockedClient.EXPECT().DoRequest(gomock.Any()).Return(nil, nil)
+
+		//		getReq := esapi.GetRequest{Index: ContractIndex, DocumentID: testCase.addr.String()}
+		//		updateReq := esapi.UpdateRequest{
+		//			Index:      ContractIndex,
+		//			DocumentID: testCase.addr.String(),
+		//			Body: strings.NewReader(fmt.Sprintf(`{"doc":{"creationTx":"%s"}}
+		//`, testCase.hash.String())),
+		//		}
+		//mockedClient.EXPECT().DoRequest(NewGetRequestMatcher(getReq)).Return([]byte(`{}`), nil)
+		//mockedClient.EXPECT().DoRequest(NewUpdateRequestMatcher(updateReq)).Return(nil, nil)
+	}
+
+	db, _ := New(mockedClient)
+
+	err := db.SetContractCreationTransaction(creationTxns)
+	assert.Nil(t, err)
+}
+
 func TestElasticsearchDB_GetContractCreationTransaction(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()

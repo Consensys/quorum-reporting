@@ -34,6 +34,9 @@ func TestMain(m *testing.M) {
 	_ = apiDatabase.AddAddresses([]types.Address{addr, types.NewAddress("0x0000000000000000000000000000000000000009")})
 	_ = apiDatabase.WriteBlocks([]*types.Block{block})
 	_ = apiDatabase.WriteTransactions([]*types.Transaction{tx1, tx2, tx3})
+	_ = apiDatabase.SetContractCreationTransaction(map[types.Hash][]types.Address{
+		"1a6f4292bac138df9a7854a07c93fd14ca7de53265e8fe01b6c986f97d6c1ee7": {"0000000000000000000000000000000000000001"},
+	})
 	_ = apiDatabase.IndexBlocks([]types.Address{addr}, []*types.Block{block})
 
 	rpcServer := SetupRpcServer(apiDatabase)
