@@ -6,14 +6,14 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"quorumengineering/quorum-report/config"
+	"quorumengineering/quorum-report/database"
+	"quorumengineering/quorum-report/database/memory"
 	"testing"
 	"time"
 
+	"github.com/consensys/quorum-go-utils/types"
 	"github.com/stretchr/testify/assert"
-
-	"quorumengineering/quorum-report/database"
-	"quorumengineering/quorum-report/database/memory"
-	"quorumengineering/quorum-report/types"
 )
 
 type rpcMessage struct {
@@ -62,9 +62,9 @@ func SetupRpcServer(db database.Database) *RPCService {
 		RPCVHosts:   nil,
 		UIPort:      0,
 	}
-	config := types.ReportingConfig{Server: serverConfig}
+	conf := config.ReportingConfig{Server: serverConfig}
 
-	return NewRPCService(db, config, errorChan)
+	return NewRPCService(db, conf, errorChan)
 }
 
 //TODO: error case

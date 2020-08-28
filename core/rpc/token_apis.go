@@ -4,9 +4,9 @@ import (
 	"errors"
 	"math/big"
 	"net/http"
-
 	"quorumengineering/quorum-report/database"
-	"quorumengineering/quorum-report/types"
+
+	"github.com/consensys/quorum-go-utils/types"
 )
 
 type TokenRPCAPIs struct {

@@ -1,7 +1,7 @@
 package storageparsing
 
 import (
-	"quorumengineering/quorum-report/types"
+	"github.com/consensys/quorum-go-utils/types"
 )
 
 func (p *Parser) ParseStruct(entry types.SolidityStorageEntry, namedType types.SolidityTypeEntry) ([]*types.StorageItem, error) {

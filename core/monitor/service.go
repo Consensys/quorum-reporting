@@ -2,14 +2,15 @@ package monitor
 
 import (
 	"fmt"
-	"quorumengineering/quorum-report/client"
+	"quorumengineering/quorum-report/config"
 	"quorumengineering/quorum-report/database"
-	"quorumengineering/quorum-report/types"
 	"runtime"
 	"sync"
 	"time"
 
+	"github.com/consensys/quorum-go-utils/client"
 	"github.com/consensys/quorum-go-utils/log"
+	"github.com/consensys/quorum-go-utils/types"
 )
 
 // MonitorService starts all monitors. It pulls data from Quorum node and update the database.
@@ -32,7 +33,7 @@ type MonitorService struct {
 	shutdownWg   sync.WaitGroup
 }
 
-func NewMonitorService(db database.Database, quorumClient client.Client, consensus string, config types.ReportingConfig) (*MonitorService, error) {
+func NewMonitorService(db database.Database, quorumClient client.Client, consensus string, config config.ReportingConfig) (*MonitorService, error) {
 	// rules are only parsed once during monitor service initialization
 	var rules []TokenRule
 	for _, rule := range config.Rules {

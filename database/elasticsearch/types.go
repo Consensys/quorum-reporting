@@ -1,7 +1,7 @@
 package elasticsearch
 
 import (
-	"quorumengineering/quorum-report/types"
+	"github.com/consensys/quorum-go-utils/types"
 )
 
 type Contract struct {

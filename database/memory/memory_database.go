@@ -4,10 +4,10 @@ import (
 	"errors"
 	"math/big"
 	"quorumengineering/quorum-report/database"
-	"quorumengineering/quorum-report/types"
 	"sync"
 
 	"github.com/consensys/quorum-go-utils/log"
+	"github.com/consensys/quorum-go-utils/types"
 )
 
 // MemoryDB is a sample memory database for dev only.

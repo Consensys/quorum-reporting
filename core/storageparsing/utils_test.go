@@ -6,7 +6,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"quorumengineering/quorum-report/types"
+	"github.com/consensys/quorum-go-utils/types"
 )
 
 func Test_RoundUp32_0(t *testing.T) {

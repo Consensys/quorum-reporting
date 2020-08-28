@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"quorumengineering/quorum-report/config"
 	"quorumengineering/quorum-report/core"
-	"quorumengineering/quorum-report/types"
 	"quorumengineering/quorum-report/ui"
 	"syscall"
 
@@ -70,14 +70,14 @@ func run() error {
 	log.Info("Config file found", "filename", configFile)
 
 	// read the given config file
-	config, err := types.ReadConfig(configFile)
+	conf, err := config.ReadConfig(configFile)
 	if err != nil {
 		log.Error("Unable to read configuration", "err", err)
 		return errors.New("unable to read configuration")
 	}
 
 	// start the back end with given config
-	backend, err := core.New(config)
+	backend, err := core.New(conf)
 	if err != nil {
 		return fmt.Errorf("initialize backend error: %v", err)
 	}
@@ -88,10 +88,10 @@ func run() error {
 		return err
 	}
 
-	log.Debug("UI Port", "port number", config.Server.UIPort)
-	if config.Server.UIPort > 0 {
+	log.Debug("UI Port", "port number", conf.Server.UIPort)
+	if conf.Server.UIPort > 0 {
 		// start a light weighted sample sample ui
-		uiHandler := ui.NewUIHandler(config.Server.UIPort)
+		uiHandler := ui.NewUIHandler(conf.Server.UIPort)
 		uiHandler.Start()
 		defer uiHandler.Stop()
 	}

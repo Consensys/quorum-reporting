@@ -1,11 +1,11 @@
 package monitor
 
 import (
-	"quorumengineering/quorum-report/client"
-	"quorumengineering/quorum-report/types"
 	"strconv"
 
+	"github.com/consensys/quorum-go-utils/client"
 	"github.com/consensys/quorum-go-utils/log"
+	"github.com/consensys/quorum-go-utils/types"
 )
 
 type TransactionMonitor interface {

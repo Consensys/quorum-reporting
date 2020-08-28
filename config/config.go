@@ -1,9 +1,11 @@
-package types
+package config
 
 import (
 	"errors"
 	"fmt"
 	"os"
+
+	"github.com/consensys/quorum-go-utils/types"
 
 	"github.com/consensys/quorum-go-utils/log"
 	"github.com/naoina/toml"
@@ -32,9 +34,9 @@ type TuningConfig struct {
 }
 
 type AddressConfig struct {
-	Address      Address `toml:"address,omitempty"`
-	TemplateName string  `toml:"templateName,omitempty"`
-	From         uint64  `toml:"from,omitempty"`
+	Address      types.Address `toml:"address,omitempty"`
+	TemplateName string        `toml:"templateName,omitempty"`
+	From         uint64        `toml:"from,omitempty"`
 }
 
 type TemplateConfig struct {
@@ -44,10 +46,10 @@ type TemplateConfig struct {
 }
 
 type RuleConfig struct {
-	Scope        string  `toml:"scope,omitempty"`
-	Deployer     Address `toml:"deployer,omitempty"`
-	TemplateName string  `toml:"templateName,omitempty"`
-	EIP165       string  `toml:"eip165,omitempty"`
+	Scope        string        `toml:"scope,omitempty"`
+	Deployer     types.Address `toml:"deployer,omitempty"`
+	TemplateName string        `toml:"templateName,omitempty"`
+	EIP165       string        `toml:"eip165,omitempty"`
 }
 
 type ReportingConfig struct {

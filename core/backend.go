@@ -2,16 +2,17 @@ package core
 
 import (
 	"fmt"
-	"quorumengineering/quorum-report/client"
+	"quorumengineering/quorum-report/config"
 	"quorumengineering/quorum-report/core/filter"
 	"quorumengineering/quorum-report/core/monitor"
 	"quorumengineering/quorum-report/core/rpc"
 	"quorumengineering/quorum-report/database"
 	"quorumengineering/quorum-report/database/factory"
-	"quorumengineering/quorum-report/types"
 	"time"
 
+	"github.com/consensys/quorum-go-utils/client"
 	"github.com/consensys/quorum-go-utils/log"
+	"github.com/consensys/quorum-go-utils/types"
 )
 
 // Backend wraps MonitorService and QuorumClient, controls the start/stop of the reporting tool.
@@ -25,7 +26,7 @@ type Backend struct {
 	backendErrorChan chan error
 }
 
-func New(config types.ReportingConfig) (*Backend, error) {
+func New(config config.ReportingConfig) (*Backend, error) {
 	quorumClient, err := client.NewQuorumClient(config.Connection.WSUrl, config.Connection.GraphQLUrl)
 	if err != nil {
 		log.Error("Failed to initialize Quorum Client", "err", err)

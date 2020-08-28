@@ -6,7 +6,7 @@ import (
 
 	"golang.org/x/crypto/sha3"
 
-	"quorumengineering/quorum-report/types"
+	"github.com/consensys/quorum-go-utils/types"
 )
 
 var (

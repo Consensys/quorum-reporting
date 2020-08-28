@@ -2,11 +2,12 @@ package monitor
 
 import (
 	"encoding/hex"
-	"quorumengineering/quorum-report/client"
-	"quorumengineering/quorum-report/types"
+	"quorumengineering/quorum-report/config"
 	"strings"
 
+	"github.com/consensys/quorum-go-utils/client"
 	"github.com/consensys/quorum-go-utils/log"
+	"github.com/consensys/quorum-go-utils/types"
 )
 
 var (
@@ -49,7 +50,7 @@ func (tm *DefaultTokenMonitor) InspectTransaction(tx *types.Transaction) (map[ty
 	if !tx.CreatedContract.IsEmpty() {
 		addresses = append(addresses, AddressWithMeta{
 			address:  tx.CreatedContract,
-			scope:    types.ExternalScope,
+			scope:    config.ExternalScope,
 			deployer: tx.From,
 		})
 	}
@@ -57,7 +58,7 @@ func (tm *DefaultTokenMonitor) InspectTransaction(tx *types.Transaction) (map[ty
 		if ic.Type == "CREATE" || ic.Type == "CREATE2" {
 			addresses = append(addresses, AddressWithMeta{
 				address:  ic.To,
-				scope:    types.InternalScope,
+				scope:    config.InternalScope,
 				deployer: ic.From,
 			})
 		}
@@ -100,7 +101,7 @@ func (tm *DefaultTokenMonitor) InspectTransaction(tx *types.Transaction) (map[ty
 
 func (tm *DefaultTokenMonitor) checkRuleMeta(rule TokenRule, meta AddressWithMeta) bool {
 	// check scope & deployer
-	if rule.scope != types.AllScope {
+	if rule.scope != config.AllScope {
 		if rule.scope != meta.scope {
 			return false
 		}

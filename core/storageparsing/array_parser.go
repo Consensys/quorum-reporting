@@ -4,7 +4,7 @@ import (
 	"strconv"
 	"strings"
 
-	"quorumengineering/quorum-report/types"
+	"github.com/consensys/quorum-go-utils/types"
 )
 
 func (p *Parser) ParseArray(entry types.SolidityStorageEntry, namedType types.SolidityTypeEntry) ([]interface{}, error) {

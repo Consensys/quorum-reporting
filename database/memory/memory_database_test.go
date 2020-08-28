@@ -1,12 +1,11 @@
 package memory
 
 import (
+	"quorumengineering/quorum-report/database"
 	"testing"
 
+	"github.com/consensys/quorum-go-utils/types"
 	"github.com/stretchr/testify/assert"
-
-	"quorumengineering/quorum-report/database"
-	"quorumengineering/quorum-report/types"
 )
 
 const jsondata = `

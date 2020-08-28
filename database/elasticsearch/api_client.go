@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"quorumengineering/quorum-report/config"
 	"strings"
 	"time"
 
@@ -14,7 +15,6 @@ import (
 	"github.com/elastic/go-elasticsearch/v7/esutil"
 
 	"quorumengineering/quorum-report/database"
-	"quorumengineering/quorum-report/types"
 )
 
 //go:generate mockgen -destination=./mocks/api_client_mock.go -package elasticsearch_mocks . APIClient
@@ -61,7 +61,7 @@ func NewClient(config elasticsearch7.Config) (*elasticsearch7.Client, error) {
 	return elasticsearch7.NewClient(config)
 }
 
-func NewConfig(config *types.ElasticsearchConfig) (elasticsearch7.Config, error) {
+func NewConfig(config *config.ElasticsearchConfig) (elasticsearch7.Config, error) {
 	var cert []byte
 	if config.CACert != "" {
 		certificate, err := ioutil.ReadFile(config.CACert)

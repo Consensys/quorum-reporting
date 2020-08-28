@@ -1,10 +1,10 @@
 package factory
 
 import (
+	"quorumengineering/quorum-report/config"
 	"quorumengineering/quorum-report/database"
 	"quorumengineering/quorum-report/database/elasticsearch"
 	"quorumengineering/quorum-report/database/memory"
-	"quorumengineering/quorum-report/types"
 
 	"github.com/consensys/quorum-go-utils/log"
 )
@@ -15,7 +15,7 @@ func NewFactory() *Factory {
 	return &Factory{}
 }
 
-func (dbFactory *Factory) Database(config *types.DatabaseConfig) (database.Database, error) {
+func (dbFactory *Factory) Database(config *config.DatabaseConfig) (database.Database, error) {
 	if config != nil && config.Elasticsearch != nil {
 		db, err := dbFactory.NewElasticsearchDatabase(config.Elasticsearch)
 		if err != nil {
@@ -32,7 +32,7 @@ func (dbFactory *Factory) NewInMemoryDatabase() *memory.MemoryDB {
 	return memory.NewMemoryDB()
 }
 
-func (dbFactory *Factory) NewElasticsearchDatabase(config *types.ElasticsearchConfig) (*elasticsearch.ElasticsearchDB, error) {
+func (dbFactory *Factory) NewElasticsearchDatabase(config *config.ElasticsearchConfig) (*elasticsearch.ElasticsearchDB, error) {
 	esConfig, err := elasticsearch.NewConfig(config)
 	if err != nil {
 		return nil, err

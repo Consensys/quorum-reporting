@@ -6,7 +6,7 @@ import (
 	"sort"
 	"strings"
 
-	"quorumengineering/quorum-report/types"
+	"github.com/consensys/quorum-go-utils/types"
 )
 
 var (

@@ -1,7 +1,7 @@
 package elasticsearch
 
 import (
-	"quorumengineering/quorum-report/types"
+	"github.com/consensys/quorum-go-utils/types"
 
 	"github.com/consensys/quorum-go-utils/log"
 )

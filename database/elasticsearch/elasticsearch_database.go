@@ -6,12 +6,12 @@ import (
 	"errors"
 	"fmt"
 	"quorumengineering/quorum-report/database"
-	"quorumengineering/quorum-report/types"
 	"strconv"
 	"strings"
 	"sync"
 
 	"github.com/consensys/quorum-go-utils/log"
+	"github.com/consensys/quorum-go-utils/types"
 	"github.com/elastic/go-elasticsearch/v7/esapi"
 	"github.com/elastic/go-elasticsearch/v7/esutil"
 )

@@ -3,8 +3,8 @@ package token
 import (
 	"math/big"
 
-	"quorumengineering/quorum-report/client"
-	"quorumengineering/quorum-report/types"
+	"github.com/consensys/quorum-go-utils/client"
+	"github.com/consensys/quorum-go-utils/types"
 )
 
 var (

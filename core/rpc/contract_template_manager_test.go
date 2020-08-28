@@ -1,12 +1,11 @@
 package rpc
 
 import (
+	"quorumengineering/quorum-report/database/memory"
 	"testing"
 
+	"github.com/consensys/quorum-go-utils/types"
 	"github.com/stretchr/testify/assert"
-
-	"quorumengineering/quorum-report/database/memory"
-	"quorumengineering/quorum-report/types"
 )
 
 func TestDefaultContractManager_AddContractABI_ExistingTemplate(t *testing.T) {

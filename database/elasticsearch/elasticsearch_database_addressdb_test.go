@@ -7,13 +7,13 @@ import (
 	"fmt"
 	"testing"
 
+	elasticsearchmocks "quorumengineering/quorum-report/database/elasticsearch/mocks"
+
+	"github.com/consensys/quorum-go-utils/types"
 	"github.com/elastic/go-elasticsearch/v7/esapi"
 	"github.com/elastic/go-elasticsearch/v7/esutil"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
-
-	elasticsearchmocks "quorumengineering/quorum-report/database/elasticsearch/mocks"
-	"quorumengineering/quorum-report/types"
 )
 
 //Tests

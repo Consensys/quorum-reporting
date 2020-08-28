@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"quorumengineering/quorum-report/config"
 	"quorumengineering/quorum-report/database"
-	"quorumengineering/quorum-report/types"
 	"sync"
 	"time"
 
@@ -32,7 +32,7 @@ type RPCService struct {
 	shutdownWg             sync.WaitGroup
 }
 
-func NewRPCService(db database.Database, config types.ReportingConfig, backendErrorChan chan error) *RPCService {
+func NewRPCService(db database.Database, config config.ReportingConfig, backendErrorChan chan error) *RPCService {
 	return &RPCService{
 		cors:        config.Server.RPCCorsList,
 		httpAddress: config.Server.RPCAddr,
