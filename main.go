@@ -93,7 +93,10 @@ func run() error {
 	if config.Server.UIPort > 0 {
 		// start a light weighted sample sample ui
 		uiHandler := ui.NewUIHandler(config.Server.UIPort)
-		uiHandler.Start()
+		if err := uiHandler.Start(); err != nil {
+			log.Error("Unable to start the UI", "err", err)
+			return err
+		}
 		defer uiHandler.Stop()
 	}
 

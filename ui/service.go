@@ -7,10 +7,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gin-gonic/contrib/static"
 	"github.com/gin-gonic/gin"
+	"github.com/rakyll/statik/fs"
 
 	"quorumengineering/quorum-report/log"
+	_ "quorumengineering/quorum-report/ui/statik" //allow the packages `init` function to run, registered the asset data
 )
 
 type UIHandler struct {
@@ -25,12 +26,17 @@ func NewUIHandler(port int) *UIHandler {
 	return &UIHandler{port: port}
 }
 
-func (handler *UIHandler) Start() {
+func (handler *UIHandler) Start() error {
 	log.Info("Start UI", "port number", handler.port)
+
+	statikFS, err := fs.New()
+	if err != nil {
+		return err
+	}
 
 	// start a light weighted sample sample ui
 	router := gin.Default()
-	router.Use(static.Serve("/", static.LocalFile("./ui/build", true)))
+	router.StaticFS("/", statikFS)
 
 	handler.srv = &http.Server{
 		Addr:    ":" + strconv.Itoa(handler.port),
@@ -42,6 +48,7 @@ func (handler *UIHandler) Start() {
 			log.Error("Unable to start UI", "err", err)
 		}
 	}()
+	return nil
 }
 
 func (handler *UIHandler) Stop() error {
