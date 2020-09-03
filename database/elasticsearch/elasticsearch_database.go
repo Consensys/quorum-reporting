@@ -637,11 +637,86 @@ func (es *ElasticsearchDB) GetAllEventsFromAddress(address types.Address, option
 	return convertedList, nil
 }
 
+func (es *ElasticsearchDB) GetStorageWithOptions(address types.Address, options *types.PageOptions) ([]*types.StorageResult, error) {
+	queryString := fmt.Sprintf(QueryByAddressWithBlockRangeOptionsTemplate(options), address.String())
+	from := options.PageSize * options.PageNumber
+
+	if from+options.PageSize > 1000 {
+		return nil, ErrPaginationLimitExceeded
+	}
+	req := esapi.SearchRequest{
+		Index: []string{StateIndex},
+		Body:  strings.NewReader(queryString),
+		From:  &from,
+		Size:  &options.PageSize,
+		Sort:  []string{"blockNumber:desc"},
+	}
+
+	results, err := es.doSearchRequest(req)
+	if err != nil {
+		if err == database.ErrNotFound {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	convertedList := make([]*types.StorageResult, len(results.Hits.Hits))
+	for i, result := range results.Hits.Hits {
+		marshalled, err := json.Marshal(result)
+		if err != nil {
+			return nil, err
+		}
+		var stateResult StateQueryResult
+		if err = json.Unmarshal(marshalled, &stateResult); err != nil {
+			return nil, err
+		}
+
+		storageFetchReq := esapi.GetRequest{
+			Index:      StorageIndex,
+			DocumentID: stateResult.Source.StorageRoot.String(),
+		}
+		body, err := es.apiClient.DoRequest(storageFetchReq)
+
+		if err != nil {
+			if err == database.ErrNotFound {
+				return nil, nil
+			}
+			return nil, err
+		}
+
+		var storageResult StorageQueryResult
+		if err = json.Unmarshal(body, &storageResult); err != nil {
+			return nil, err
+		}
+		converted := make(map[types.Hash]string)
+		for _, storageEntry := range storageResult.Source.StorageMap {
+			converted[storageEntry.Key] = storageEntry.Value
+		}
+		convertedList[i] = &types.StorageResult{Storage: converted, BlockNumber: stateResult.Source.BlockNumber}
+	}
+
+	return convertedList, nil
+}
+
 func (es *ElasticsearchDB) GetEventsFromAddressTotal(address types.Address, options *types.QueryOptions) (uint64, error) {
 	queryString := fmt.Sprintf(QueryByAddressWithOptionsTemplate(options), address.String())
 
 	req := esapi.CountRequest{
 		Index: []string{EventIndex},
+		Body:  strings.NewReader(queryString),
+	}
+	results, err := es.doCountRequest(req)
+	if err != nil {
+		return 0, err
+	}
+	return results.Count, nil
+}
+
+func (es *ElasticsearchDB) GetStorageTotal(address types.Address, options *types.PageOptions) (uint64, error) {
+	queryString := fmt.Sprintf(QueryByAddressWithBlockRangeOptionsTemplate(options), address.String())
+
+	req := esapi.CountRequest{
+		Index: []string{StateIndex},
 		Body:  strings.NewReader(queryString),
 	}
 	results, err := es.doCountRequest(req)

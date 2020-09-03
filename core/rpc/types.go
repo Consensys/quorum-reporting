@@ -35,9 +35,8 @@ type AddressWithOptionalBlock struct {
 }
 
 type AddressWithBlockRange struct {
-	Address          *types.Address
-	StartBlockNumber uint64
-	EndBlockNumber   uint64
+	Address *types.Address
+	Options *types.PageOptions
 }
 
 type ERC20TokenQuery struct {

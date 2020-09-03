@@ -2,6 +2,7 @@ package memory
 
 import (
 	"errors"
+	"fmt"
 	"math/big"
 	"sync"
 
@@ -379,6 +380,14 @@ func (db *MemoryDB) GetEventsFromAddressTotal(address types.Address, options *ty
 		return 0, errors.New("address is not registered")
 	}
 	return uint64(len(db.eventIndexDB[address])), nil
+}
+
+func (db *MemoryDB) GetStorageWithOptions(types.Address, *types.PageOptions) ([]*types.StorageResult, error) {
+	return nil, fmt.Errorf("method not implemented")
+}
+
+func (db *MemoryDB) GetStorageTotal(types.Address, *types.PageOptions) (uint64, error) {
+	return 0, errors.New("method not implemented")
 }
 
 func (db *MemoryDB) GetStorage(address types.Address, blockNumber uint64) (map[types.Hash]string, error) {

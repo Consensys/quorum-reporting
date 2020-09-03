@@ -103,12 +103,15 @@ export const getEvents = (baseURL, address) => {
     })
 };
 
-export const getReportData = (baseURL, address, startBlockNumber, endBlockNumber) => {
-    return getStorageHistory(baseURL, address, startBlockNumber, endBlockNumber).then( (res) => {
+export const getReportData = (baseURL, address, startBlockNumber, endBlockNumber, currentPage) => {
+    return getStorageHistory(baseURL, address, startBlockNumber, endBlockNumber, currentPage).then( (res) => {
         if (res.data.error) {
             throw res.data.error.message
         }
-        return generateReportData(res.data.result.historicState)
+        return {
+            data: generateReportData(res.data.result.historicState),
+            total: res.data.result["total"]
+    }
     })
 };
 

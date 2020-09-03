@@ -18,6 +18,8 @@ const styles = {
     },
 };
 
+const pageSize=10
+
 class ReportContainer extends React.Component {
 
     constructor(props) {
@@ -26,6 +28,8 @@ class ReportContainer extends React.Component {
             startBlockNumber: "",
             endBlockNumber: "",
             reportData: [],
+            displayDataLength: 0,
+            currentPage: 0,
             isLoading: false,
             displayReport: false,
             errorMessage: "",
@@ -62,35 +66,54 @@ class ReportContainer extends React.Component {
         })
     };
 
-    handleReport = () => {
-        if (this.props.selectedContract === "") {
-            this.setState({ errorMessage: "no contract selected" });
-            return
-        }
-        if (this.state.startBlockNumber === "" || isNaN(this.state.startBlockNumber)) {
+    handleChangePage = (event, newPage) => {
+        this.setState({currentPage: newPage});
+        this.handleReport(false)
+    };
+
+    handleReport = (newSearch) => {
+        if(newSearch) {
+            if (this.props.selectedContract === "") {
+                this.setState({errorMessage: "no contract selected"});
+                return
+            }
+            if (this.state.startBlockNumber === "" || isNaN(this.state.startBlockNumber)) {
+                this.setState({
+                    startBlockNumber: "",
+                    errorMessage: "invalid start block number",
+                });
+                return
+            }
+            if (this.state.endBlockNumber === "" || isNaN(this.state.endBlockNumber)) {
+                this.setState({
+                    endBlockNumber: "",
+                    errorMessage: "invalid end block number",
+                });
+                return
+            }
             this.setState({
-                startBlockNumber: "",
-                errorMessage: "invalid start block number",
+                reportData: [],
+                displayReport: true,
+                isLoading: true,
+                errorMessage: "",
+                displayDataLength: 0,
+                currentPage: 0
             });
-            return
         }
-        if (this.state.endBlockNumber === "" || isNaN(this.state.endBlockNumber)) {
-            this.setState({
-                endBlockNumber: "",
-                errorMessage: "invalid end block number",
-            });
-            return
-        }
+
         this.setState({
             reportData: [],
             displayReport: true,
             isLoading: true,
             errorMessage: "",
+            displayDataLength: 0
         });
-        getReportData(this.props.rpcEndpoint, this.props.selectedContract, this.state.startBlockNumber, this.state.endBlockNumber).then( (res) => {
+
+        getReportData(this.props.rpcEndpoint, this.props.selectedContract, this.state.startBlockNumber, this.state.endBlockNumber, this.state.currentPage).then( (res) => {
             this.setState({
-                reportData: res,
+                reportData: res.data,
                 isLoading: false,
+                displayDataLength: res.total
             })
         }).catch( (e) => {
             this.setState({
@@ -138,6 +161,10 @@ class ReportContainer extends React.Component {
                         <Report
                             parsedStorage={this.state.reportData}
                             isLoading={this.state.isLoading}
+                            currentPage={this.state.currentPage}
+                            pageSize={pageSize}
+                            totalStorages={this.state.displayDataLength}
+                            handleChangePage={this.handleChangePage}
                         />
                     }
                 </CardContent>

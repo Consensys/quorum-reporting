@@ -130,11 +130,11 @@ export const getTransaction = (baseURL, txHash) => {
     })
 };
 
-export const getStorageHistory = (baseURL, address, startBlockNumber, endBlockNumber) => {
+export const getStorageHistory = (baseURL, address, startBlockNumber, endBlockNumber, currentPage) => {
     return axios.post(baseURL, {
         jsonrpc: '2.0',
         method: "reporting.GetStorageHistory",
-        params: [{address, startBlockNumber: parseInt(startBlockNumber), endBlockNumber: parseInt(endBlockNumber)}],
+        params: [{address, options:{beginBlockNumber: parseInt(startBlockNumber), endBlockNumber: parseInt(endBlockNumber),pageNumber:currentPage, pageSize:10}}],
         id: requestCount++,
     })
 };

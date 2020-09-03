@@ -8,6 +8,7 @@ import TableBody from '@material-ui/core/TableBody';
 import TableContainer from '@material-ui/core/TableContainer';
 import TextareaAutosize from '@material-ui/core/TextareaAutosize';
 import CircularProgress from '@material-ui/core/CircularProgress';
+import TablePagination from "@material-ui/core/TablePagination";
 
 function Report(props) {
     return (
@@ -88,6 +89,14 @@ function Report(props) {
                         </TableBody>
                     }
                 </Table>
+                <TablePagination
+                    component="div"
+                    rowsPerPageOptions={[]}
+                    count={props.totalStorages}
+                    rowsPerPage={props.pageSize}
+                    page={props.currentPage}
+                    onChangePage={props.handleChangePage}
+                />
             </TableContainer>
             { props.isLoading &&
                 <div align="center">
