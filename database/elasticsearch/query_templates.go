@@ -59,6 +59,21 @@ func QueryByAddressWithOptionsTemplate(options *types.QueryOptions) string {
 `
 }
 
+func QueryByAddressWithBlockRangeOptionsTemplate(opt *types.PageOptions) string {
+	return `
+{
+	"query": {
+		"bool": {
+			"must": [
+				{ "match": { "address": "%s" } },
+` + createRangeQuery("blockNumber", opt.BeginBlockNumber, opt.EndBlockNumber) + `
+			]
+		}
+	}
+}
+`
+}
+
 func QueryInternalTransactionsWithOptionsTemplate(options *types.QueryOptions) string {
 	return `
 {

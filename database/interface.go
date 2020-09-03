@@ -2,7 +2,6 @@ package database
 
 import (
 	"math/big"
-
 	"quorumengineering/quorum-report/types"
 )
 
@@ -67,6 +66,8 @@ type IndexDB interface {
 	GetAllEventsFromAddress(types.Address, *types.QueryOptions) ([]*types.Event, error)
 	GetEventsFromAddressTotal(types.Address, *types.QueryOptions) (uint64, error)
 	GetStorage(types.Address, uint64) (map[types.Hash]string, error)
+	GetStorageWithOptions(types.Address, *types.PageOptions) ([]*types.StorageResult, error)
+	GetStorageTotal(types.Address, *types.PageOptions) (uint64, error)
 	GetLastFiltered(types.Address) (uint64, error)
 }
 

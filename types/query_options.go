@@ -13,6 +13,13 @@ var defaultQueryOptions = &QueryOptions{
 	PageNumber:       0,
 }
 
+var defaultPageOptions = &PageOptions{
+	BeginBlockNumber: big.NewInt(0),
+	EndBlockNumber:   big.NewInt(-1),
+	PageSize:         10,
+	PageNumber:       0,
+}
+
 type QueryOptions struct {
 	BeginBlockNumber *big.Int `json:"beginBlockNumber"`
 	EndBlockNumber   *big.Int `json:"endBlockNumber"`
@@ -42,5 +49,29 @@ func (opts *QueryOptions) SetDefaults() {
 	}
 	if opts.PageNumber == 0 {
 		opts.PageNumber = defaultQueryOptions.PageNumber
+	}
+}
+
+type PageOptions struct {
+	BeginBlockNumber *big.Int `json:"beginBlockNumber"`
+	EndBlockNumber   *big.Int `json:"endBlockNumber"`
+	PageSize         int      `json:"pageSize"`
+	PageNumber       int      `json:"pageNumber"`
+}
+
+func (opts *PageOptions) SetDefaults() {
+	if opts.BeginBlockNumber == nil {
+		opts.BeginBlockNumber = defaultPageOptions.BeginBlockNumber
+	}
+	if opts.EndBlockNumber == nil {
+		opts.EndBlockNumber = defaultPageOptions.EndBlockNumber
+	}
+
+	if opts.PageSize == 0 {
+		opts.PageSize = defaultPageOptions.PageSize
+	}
+
+	if opts.PageNumber == 0 {
+		opts.PageNumber = defaultPageOptions.PageNumber
 	}
 }

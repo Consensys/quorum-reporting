@@ -22,6 +22,14 @@ type DatabaseWithCache struct {
 	addressMux sync.RWMutex
 }
 
+func (cachingDB *DatabaseWithCache) GetStorageWithOptions(address types.Address, options *types.PageOptions) ([]*types.StorageResult, error) {
+	return cachingDB.db.GetStorageWithOptions(address, options)
+}
+
+func (cachingDB *DatabaseWithCache) GetStorageTotal(address types.Address, options *types.PageOptions) (uint64, error) {
+	return cachingDB.db.GetStorageTotal(address, options)
+}
+
 func NewDatabaseWithCache(db database.Database, cacheSize int) (database.Database, error) {
 	if cacheSize == 0 {
 		return db, nil

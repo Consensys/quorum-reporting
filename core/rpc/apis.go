@@ -221,6 +221,11 @@ func (r *RPCAPIs) GetStorageHistory(req *http.Request, args *AddressWithBlockRan
 		return ErrNoAddress
 	}
 
+	if args.Options == nil {
+		args.Options = &types.PageOptions{}
+	}
+	args.Options.SetDefaults()
+
 	rawAbi, err := r.db.GetStorageLayout(*args.Address)
 	if err != nil {
 		return err
@@ -233,28 +238,38 @@ func (r *RPCAPIs) GetStorageHistory(req *http.Request, args *AddressWithBlockRan
 		return errors.New("unable to decode Storage Layout: " + err.Error())
 	}
 
+	total, err := r.db.GetStorageTotal(*args.Address, args.Options)
+
+	if err != nil {
+		return err
+	}
+
 	// TODO: implement GetStorageRoot to reduce the response list
 	historicStates := []*types.ParsedState{}
-	for i := args.StartBlockNumber; i <= args.EndBlockNumber; i++ {
-		rawStorage, err := r.db.GetStorage(*args.Address, i)
-		if err != nil {
-			return err
-		}
+	results, err := r.db.GetStorageWithOptions(*args.Address, args.Options)
+	if err != nil {
+		return err
+	}
+	for _, rawStorage := range results {
+
 		if rawStorage == nil {
 			continue
 		}
-		historicStorage, err := storageparsing.ParseRawStorage(rawStorage, parsedAbi)
+
+		historicStorage, err := storageparsing.ParseRawStorage(rawStorage.Storage, parsedAbi)
 		if err != nil {
 			return err
 		}
 		historicStates = append(historicStates, &types.ParsedState{
-			BlockNumber:     i,
+			BlockNumber:     rawStorage.BlockNumber,
 			HistoricStorage: historicStorage,
 		})
 	}
 	*reply = types.ReportingResponseTemplate{
 		Address:       *args.Address,
 		HistoricState: historicStates,
+		Total:         total,
+		Options:       args.Options,
 	}
 	return nil
 }
