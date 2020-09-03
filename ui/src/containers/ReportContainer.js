@@ -73,10 +73,6 @@ class ReportContainer extends React.Component {
 
     handleReport = (newSearch) => {
         if(newSearch) {
-            if (this.props.selectedContract === "") {
-                this.setState({errorMessage: "no contract selected"});
-                return
-            }
             if (this.state.startBlockNumber === "" || isNaN(this.state.startBlockNumber)) {
                 this.setState({
                     startBlockNumber: "",
@@ -109,7 +105,7 @@ class ReportContainer extends React.Component {
             displayDataLength: 0
         });
 
-        getReportData(this.props.rpcEndpoint, this.props.selectedContract, this.state.startBlockNumber, this.state.endBlockNumber, this.state.currentPage).then( (res) => {
+        getReportData(this.props.rpcEndpoint, this.props.address, this.state.startBlockNumber, this.state.endBlockNumber, this.state.currentPage).then( (res) => {
             this.setState({
                 reportData: res.data,
                 isLoading: false,
@@ -131,23 +127,13 @@ class ReportContainer extends React.Component {
                         Report
                     </Typography>
                     <br/>
-                    {
-                        this.props.contracts.length === 0 &&
-                        <h1 align="center">&lt; No Records Found &gt;</h1>
-                    }
-                    {
-                        this.props.contracts.length !== 0 &&
-                        <ReportForm
-                            selectedContract={this.props.selectedContract}
-                            startBlockNumber={this.state.startBlockNumber}
-                            endBlockNumber={this.state.endBlockNumber}
-                            contracts={this.props.contracts}
-                            handleSelectedContractChange={this.handleSelectedContractChange}
-                            handleStartBlockChange={this.handleStartBlockChange}
-                            handleEndBlockChange={this.handleEndBlockChange}
-                            handleReport={this.handleReport}
-                        />
-                    }
+                    <ReportForm
+                        startBlockNumber={this.state.startBlockNumber}
+                        endBlockNumber={this.state.endBlockNumber}
+                        handleStartBlockChange={this.handleStartBlockChange}
+                        handleEndBlockChange={this.handleEndBlockChange}
+                        handleReport={this.handleReport}
+                    />
                     <br/>
                     {
                         this.state.errorMessage &&
@@ -176,8 +162,6 @@ class ReportContainer extends React.Component {
 const mapStateToProps = state => {
     return {
         rpcEndpoint: state.system.rpcEndpoint,
-        contracts: state.user.contracts,
-        selectedContract: state.user.selectedContract,
         lastPersistedBlockNumber: state.system.lastPersistedBlockNumber,
     }
 };

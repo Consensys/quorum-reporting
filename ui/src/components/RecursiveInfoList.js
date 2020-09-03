@@ -22,15 +22,6 @@ export default function RecursiveInfoList(props) {
     const classes = useStyles();
     return (
         <Paper className={classes.root} align="center">
-            <br/>
-            <div>
-                <Button variant="contained" color="primary" onClick={props.handleReturn}>
-                    <ArrowBackIcon />
-                    &nbsp;
-                    Return
-                </Button>
-            </div>
-            <br/>
             <List>
                 {
                     Object.keys(props.displayData).map( (k, i) => (

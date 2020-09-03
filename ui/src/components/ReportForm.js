@@ -18,17 +18,6 @@ function ReportForm(props) {
     const classes = useStyles();
     return (
         <div align="center">
-            <FormControl variant="filled" size="small" className={classes.formControl} style={{minWidth:400}}>
-                <InputLabel>Contract</InputLabel>
-                <Select
-                    value={props.selectedContract}
-                    onChange={props.handleSelectedContractChange}
-                >
-                    {props.contracts.map( c => (
-                        <MenuItem key={c.address} value={c.address}>{c.address}</MenuItem>
-                    ))}
-                </Select>
-            </FormControl>
             <FormControl className={classes.formControl}>
                 <TextField
                     label="Start Block Number"

@@ -1,8 +1,9 @@
 import {
     getLastPersistedBlockNumber, getAddresses, getABI, getStorageABI, getContractCreationTransaction,
     getAllTransactionsToAddress, getAllTransactionsInternalToAddress, getAllEventsFromAddress, getStorageHistory,
-    addAddress, addABI, addStorageABI, deleteAddress, getBlock, getTransaction,
-} from '../client/rpcClient';
+    addAddress, deleteAddress, getBlock, getTransaction, addTemplate, assignTemplate,
+} from '../client/rpcClient'
+import { getContractTemplate } from './rpcClient'
 
 export const getBlockNumber = (baseURL) => {
     return getLastPersistedBlockNumber(baseURL).then( (res) => {
@@ -18,12 +19,11 @@ export const addContract = (baseURL, newContract) => {
         if (res.data.error) {
             throw res.data.error.message
         }
-        return addABI(baseURL, newContract.address, newContract.abi).then( (res) => {
-            if (res.data.error) {
-                throw res.data.error.message
-            }
-            return addStorageABI(baseURL, newContract.address, newContract.template)
-        })
+        if(newContract.template === 'new') {
+            return addTemplate(baseURL, newContract.newTemplate)
+              .then((template) => assignTemplate(baseURL, newContract.address, newContract.newTemplate.name))
+        }
+        return assignTemplate(baseURL, newContract.address, newContract.template)
     })
 };
 
@@ -140,35 +140,19 @@ export const getSingleTransaction = (baseURL, txHash) => {
 };
 
 const getContractsDetail = (baseURL, addresses) => {
-    return new Promise( (resolve, reject) => {
-        if (addresses.length === 0) {
-            resolve([])
-        }
-        let contracts = [];
-        let abiCounter = addresses.length;
-        let templateCounter = addresses.length;
-        for (let i = 0; i < addresses.length; i++) {
-            contracts.push({address: addresses[i]});
-            ( (x) => {
-                getABI(baseURL, addresses[x]).then( (res) => {
-                    contracts[x].abi = res.data.result;
-                    abiCounter--;
-                    if (abiCounter === 0 && templateCounter === 0) {
-                        resolve(contracts)
-                    }
-                }).catch(reject)
-            })(i);
-            ( (x) => {
-                getStorageABI(baseURL, addresses[x]).then( (res) => {
-                    contracts[x].template = res.data.result;
-                    templateCounter--;
-                    if (abiCounter === 0 && templateCounter === 0) {
-                        resolve(contracts)
-                    }
-                }).catch(reject)
-            })(i)
-        }
+  return Promise.all(
+    addresses.map((address) => {
+        console.log("looking up address details for", address)
+        return Promise.all([
+          getABI(baseURL, address).then((res) => res.data.result),
+          getStorageABI(baseURL, address).then((res) => res.data.result),
+          getContractTemplate(baseURL, address).then((res) => res.data.result),
+          ]
+        ).then(([abi, storageLayout, name]) => {
+            return { address, abi, storageLayout, name }
+        })
     })
+  )
 };
 
 const getTransactionsDetail = (baseURL, txs) => {

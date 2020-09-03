@@ -40,6 +40,42 @@ export const deleteAddress = (baseURL, address) => {
     })
 };
 
+export const getTemplates = (baseURL) => {
+    return axios.post(baseURL, {
+        jsonrpc: '2.0',
+        method: "reporting.GetTemplates",
+        params: [],
+        id: requestCount++,
+    })
+};
+
+export const addTemplate = (baseURL, newTemplate) => {
+    return axios.post(baseURL, {
+        jsonrpc: '2.0',
+        method: "reporting.AddTemplate",
+        params: [newTemplate],
+        id: requestCount++,
+    })
+};
+
+export const assignTemplate = (baseURL, address, templateName) => {
+    return axios.post(baseURL, {
+        jsonrpc: '2.0',
+        method: "reporting.AssignTemplate",
+        params: [{address: address, data: templateName}],
+        id: requestCount++,
+    })
+};
+
+export const getContractTemplate = (baseURL, address) => {
+    return axios.post(baseURL, {
+        jsonrpc: '2.0',
+        method: "reporting.GetContractTemplate",
+        params: [address],
+        id: requestCount++,
+    })
+};
+
 export const getABI = (baseURL, address) => {
     return axios.post(baseURL, {
         jsonrpc: '2.0',
@@ -54,24 +90,6 @@ export const getStorageABI = (baseURL, address) => {
         jsonrpc: '2.0',
         method: "reporting.GetStorageABI",
         params: [address],
-        id: requestCount++,
-    })
-};
-
-export const addABI = (baseURL, address, abi) => {
-    return axios.post(baseURL, {
-        jsonrpc: '2.0',
-        method: "reporting.AddABI",
-        params: [{address, data: abi}],
-        id: requestCount++,
-    })
-};
-
-export const addStorageABI = (baseURL, address, template) => {
-    return axios.post(baseURL, {
-        jsonrpc: '2.0',
-        method: "reporting.AddStorageABI",
-        params: [{address, data: template}],
         id: requestCount++,
     })
 };

@@ -10,16 +10,21 @@ import RefreshIcon from '@material-ui/icons/Refresh';
 import ContractTable from '../components/ContractTable';
 import ContractForm from '../components/ContractForm';
 import { getContractsAction, selectContractAction } from '../redux/actions/contractActions';
-import { changePageAction } from '../redux/actions/pageActions';
-import { ContractPageId, ReportPageId } from '../constants';
 import { addContract, deleteContract, getContracts } from '../client/fetcher';
+import Button from '@material-ui/core/Button'
 
 const styles = {
     card: {
         minWidth: 275,
         marginTop: 5,
         marginBottom: 5,
+        width: '95%',
+        maxWidth: 1080,
     },
+    cardContent: {
+        display: 'flex',
+        flexDirection: 'column',
+    }
 };
 
 class ContractListContainer extends React.Component {
@@ -28,11 +33,6 @@ class ContractListContainer extends React.Component {
         super(props);
         this.state = {
             formIsOpen: false,
-            newContract: {
-                address: "",
-                abi: "",
-                template: "",
-            },
             errorMessage: "",
         }
     }
@@ -53,85 +53,10 @@ class ContractListContainer extends React.Component {
 
     handleCloseSetting = () => {
         this.setState({ formIsOpen: false })
-    };
-
-    handleNewContractAddressChange = (e) => {
-        this.setState({
-            newContract: {
-                ...this.state.newContract,
-                address: e.target.value,
-            },
-            errorMessage: "",
-        })
-    };
-
-    handleNewContractABIChange = (e) => {
-        this.setState({
-            newContract: {
-                ...this.state.newContract,
-                abi: e.target.value,
-            },
-            errorMessage: "",
-        })
-    };
-
-    handleNewContractTemplateChange = (e) => {
-        this.setState({
-            newContract: {
-                ...this.state.newContract,
-                template: e.target.value,
-            },
-            errorMessage: "",
-        })
-    };
-
-    handleNavigateContract = (e) => {
-        this.props.dispatch(selectContractAction(e.target.value));
-        this.props.dispatch(changePageAction(ContractPageId))
-    };
-
-    handleNavigateReport = (address) => {
-        this.props.dispatch(selectContractAction(address));
-        this.props.dispatch(changePageAction(ReportPageId))
-    };
-
-    handleRegisterNewContract = () => {
-        if (this.state.newContract.address === ""){
-            this.setState({
-                errorMessage: "address must not be empty",
-            });
-            return
-        }
-        if (this.state.newContract.abi === ""){
-            this.setState({
-                errorMessage: "abi must not be empty",
-            });
-            return
-        }
-        if (this.state.newContract.template === "") {
-            this.setState({
-                errorMessage: "template must not be empty",
-            });
-            return
-        }
-        addContract(this.props.rpcEndpoint, this.state.newContract).then( (res) => {
-            if (res.data.error) {
-                throw res.data.error.message
-            }
-            this.setState({ formIsOpen: false });
-            // give a small timeout to avoid fetch too fast
-            setTimeout( () => {
-                this.getAllRegisteredContract()
-            }, 500)
-        }).catch( (e) => {
-            this.setState({
-                errorMessage: e.toString()
-            });
-        });
-    };
-
-    handleContractUpdate = () => {
-        // TODO: update contract
+        // give a small timeout to avoid fetch too fast
+        setTimeout( () => {
+            this.getAllRegisteredContract()
+        }, 500)
     };
 
     handleContractDelete = (address) => {
@@ -147,9 +72,9 @@ class ContractListContainer extends React.Component {
     render(){
         return (
             <Card className={this.props.classes.card}>
-                <CardContent>
+                <CardContent className={this.props.classes.cardContent}>
                     <br/>
-                    <Typography variant="h6" align="center">
+                    <Typography variant="h6" align="left">
                         Registered Contract List&nbsp;
                         <IconButton onClick={this.getAllRegisteredContract} >
                             <RefreshIcon/>
@@ -171,18 +96,12 @@ class ContractListContainer extends React.Component {
                         />
                     }
                     <br/>
-                    <IconButton color="primary" variant="h4" onClick={this.handleOpenSetting}>
-                        <AddIcon />
-                    </IconButton>
+                    <Button color="primary" onClick={this.handleOpenSetting}>
+                        <AddIcon />&nbsp;Add Contract
+                    </Button>
                     <ContractForm
                         isOpen={this.state.formIsOpen}
                         handleCloseSetting={this.handleCloseSetting}
-                        handleNewContractAddressChange={this.handleNewContractAddressChange}
-                        handleNewContractABIChange={this.handleNewContractABIChange}
-                        handleNewContractTemplateChange={this.handleNewContractTemplateChange}
-                        handleRegisterNewContract={this.handleRegisterNewContract}
-                        newContract={this.state.newContract}
-                        errorMessage={this.state.errorMessage}
                     />
                 </CardContent>
             </Card>

@@ -49,11 +49,6 @@ class ContractInfoContainer extends React.Component {
         this.props.dispatch(selectContractAction(""))
     }
 
-    handleSelectedContractChange = (e) => {
-        this.setState({ errorMessage: ""});
-        this.props.dispatch(selectContractAction(e.target.value))
-    };
-
     handleSelectedActionChange = (e) => {
         this.setState({
             errorMessage: "",
@@ -73,19 +68,14 @@ class ContractInfoContainer extends React.Component {
             displayEventResult: false,
         });
         // check new search condition
-        let currentContract = this.state.currentContract;
+        let currentContract = this.props.address;
         let currentSelectedAction = this.state.currentSelectedAction;
         let currentPage = this.state.currentPage;
         if (newSearch) {
-            if (this.props.selectedContract === "") {
-                this.setState({ errorMessage: "no contract selected"});
-                return
-            }
             if (this.state.selectedAction === ""){
                 this.setState({ errorMessage: "no action selected"});
                 return
             }
-            currentContract = this.props.selectedContract;
             currentSelectedAction = this.state.selectedAction;
             currentPage = 0;
             this.setState({ currentContract, currentSelectedAction, currentPage: 0 })
@@ -183,14 +173,7 @@ class ContractInfoContainer extends React.Component {
             <Card className={this.props.classes.card}>
                 <CardContent>
                     <div align="center">
-                        <Typography variant="h6">
-                            Select Contract
-                        </Typography>
-                        <br/>
                         <ContractSelector
-                            selectedContract={this.props.selectedContract}
-                            contracts={this.props.contracts}
-                            handleSelectedContractChange={this.handleSelectedContractChange}
                             actions={actions}
                             selectedAction={this.state.selectedAction}
                             handleSelectedActionChange={this.handleSelectedActionChange}
