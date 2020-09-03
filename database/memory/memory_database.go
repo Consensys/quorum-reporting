@@ -387,7 +387,7 @@ func (db *MemoryDB) GetStorageWithOptions(types.Address, *types.PageOptions) ([]
 }
 
 func (db *MemoryDB) GetStorageTotal(types.Address, *types.PageOptions) (uint64, error) {
-	panic("method not implemented")
+	return 0, errors.New("method not implemented")
 }
 
 func (db *MemoryDB) GetStorage(address types.Address, blockNumber uint64) (map[types.Hash]string, error) {
