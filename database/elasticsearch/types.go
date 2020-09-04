@@ -9,6 +9,9 @@ type Contract struct {
 	TemplateName        string        `json:"templateName"`
 	CreationTransaction types.Hash    `json:"creationTx"`
 	LastFiltered        uint64        `json:"lastFiltered"`
+
+	//Non-user facing field
+	IsDeleted bool `json:"deleted"`
 }
 
 type Template struct {

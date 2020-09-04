@@ -18,11 +18,17 @@ import (
 
 type ElasticsearchDB struct {
 	apiClient APIClient
+	deleter   DeletionCoordinator
 }
 
 func New(client APIClient) (*ElasticsearchDB, error) {
+	return NewWithDeps(client, NewDefaultDeletionCoordinator(client))
+}
+
+func NewWithDeps(client APIClient, dataDeleter DeletionCoordinator) (*ElasticsearchDB, error) {
 	db := &ElasticsearchDB{
 		apiClient: client,
+		deleter:   dataDeleter,
 	}
 
 	initialized, err := db.checkIsInitialized()
@@ -149,18 +155,9 @@ func (es *ElasticsearchDB) AddAddressFrom(address types.Address, from uint64) er
 }
 
 func (es *ElasticsearchDB) DeleteAddress(address types.Address) error {
-	deleteRequest := esapi.DeleteRequest{
-		Index:      ContractIndex,
-		DocumentID: address.String(),
-		Refresh:    "true",
-	}
-
-	_, err := es.apiClient.DoRequest(deleteRequest)
-	if err != nil {
+	if err := es.deleter.Delete(address); err != nil {
 		return errors.New("error deleting address: " + err.Error())
 	}
-
-	//TODO: delete data from other indices (event + storage)
 	return nil
 }
 
@@ -803,7 +800,7 @@ func (es *ElasticsearchDB) updateAllLastFiltered(addresses []types.Address, last
 	return nil
 }
 
-func (es *ElasticsearchDB) updateContract(address types.Address, property string, value string) error {
+func (es *ElasticsearchDB) updateContract(address types.Address, property string, value interface{}) error {
 	//check contract exists before updating
 	_, err := es.getContractByAddress(address)
 	if err != nil {

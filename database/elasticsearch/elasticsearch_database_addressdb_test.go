@@ -205,26 +205,21 @@ func TestAddMultipleAddressWithError(t *testing.T) {
 	assert.EqualError(t, err, "test error", "expected test error")
 }
 
-func TestElasticsearchDB_DeleteAddress(t *testing.T) {
+func TestElasticsearchDB_DeleteAddress_Delegates(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
 	mockedClient := elasticsearchmocks.NewMockAPIClient(ctrl)
+	mockedDeleter := elasticsearchmocks.NewMockDeletionCoordinator(ctrl)
 
 	addr := types.NewAddress("0x1932c48b2bf8102ba33b4a6b545c32236e342f34")
-	req := esapi.DeleteRequest{
-		Index:      ContractIndex,
-		DocumentID: addr.String(),
-		Refresh:    "true",
-	}
 
 	mockedClient.EXPECT().DoRequest(gomock.Any()) //for setup, not relevant to test
-	mockedClient.EXPECT().DoRequest(NewDeleteRequestMatcher(req)).Return(nil, nil)
+	mockedDeleter.EXPECT().Delete(addr).Return(nil)
 
-	db, _ := New(mockedClient)
+	db, _ := NewWithDeps(mockedClient, mockedDeleter)
 
 	err := db.DeleteAddress(addr)
-
 	assert.Nil(t, err, "expected error to be nil")
 }
 
@@ -233,22 +228,18 @@ func TestElasticsearchDB_DeleteAddress_WithError(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockedClient := elasticsearchmocks.NewMockAPIClient(ctrl)
+	mockedDeleter := elasticsearchmocks.NewMockDeletionCoordinator(ctrl)
 
 	addr := types.NewAddress("0x1932c48b2bf8102ba33b4a6b545c32236e342f34")
-	req := esapi.DeleteRequest{
-		Index:      ContractIndex,
-		DocumentID: addr.String(),
-		Refresh:    "true",
-	}
 
 	mockedClient.EXPECT().DoRequest(gomock.Any()) //for setup, not relevant to test
-	mockedClient.EXPECT().DoRequest(NewDeleteRequestMatcher(req)).Return(nil, errors.New("test error"))
+	mockedDeleter.EXPECT().Delete(addr).Return(errors.New("test error"))
 
-	db, _ := New(mockedClient)
+	db, _ := NewWithDeps(mockedClient, mockedDeleter)
 
 	err := db.DeleteAddress(addr)
 
-	assert.EqualError(t, err, "error deleting address: test error", "wrong error message")
+	assert.EqualError(t, err, "error deleting address: test error")
 }
 
 func TestElasticsearchDB_GetAddresses_NoAddresses(t *testing.T) {
