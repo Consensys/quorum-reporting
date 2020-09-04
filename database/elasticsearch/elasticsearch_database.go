@@ -649,7 +649,7 @@ func (es *ElasticsearchDB) GetStorageWithOptions(address types.Address, options 
 		Body:  strings.NewReader(queryString),
 		From:  &from,
 		Size:  &options.PageSize,
-		Sort:  []string{"blockNumber:desc"},
+		Sort:  []string{"blockNumber:asc"},
 	}
 
 	results, err := es.doSearchRequest(req)
