@@ -442,7 +442,6 @@ func (es *ElasticsearchDB) IndexBlocks(addresses []types.Address, blocks []*type
 }
 
 func (es *ElasticsearchDB) IndexStorage(rawStorage map[types.Address]*types.AccountState, blockNumber uint64) error {
-	biState := es.apiClient.GetBulkHandler(StateIndex)
 	biStorage := es.apiClient.GetBulkHandler(StorageIndex)
 
 	var (
@@ -450,41 +449,23 @@ func (es *ElasticsearchDB) IndexStorage(rawStorage map[types.Address]*types.Acco
 		returnErr error
 	)
 	for address, dumpAccount := range rawStorage {
-		wg.Add(2)
-		stateObj := State{
-			Address:     address,
-			BlockNumber: blockNumber,
-			StorageRoot: dumpAccount.Root,
-		}
+		wg.Add(1)
 		converted := make([]StorageEntry, 0, len(dumpAccount.Storage))
 		for slot, val := range dumpAccount.Storage {
 			converted = append(converted, StorageEntry{slot, val})
 		}
 		storageMap := Storage{
+			Contract:    address,
+			BlockNumber: blockNumber,
 			StorageRoot: dumpAccount.Root,
 			StorageMap:  converted,
 		}
 
-		_ = biState.Add(
-			context.Background(),
-			esutil.BulkIndexerItem{
-				Action:     "create",
-				DocumentID: address.String() + "-" + strconv.FormatUint(blockNumber, 10),
-				Body:       esutil.NewJSONReader(stateObj),
-				OnSuccess: func(ctx context.Context, item esutil.BulkIndexerItem, item2 esutil.BulkIndexerResponseItem) {
-					wg.Done()
-				},
-				OnFailure: func(ctx context.Context, item esutil.BulkIndexerItem, item2 esutil.BulkIndexerResponseItem, err error) {
-					returnErr = err
-					wg.Done()
-				},
-			},
-		)
 		_ = biStorage.Add(
 			context.Background(),
 			esutil.BulkIndexerItem{
 				Action:     "create",
-				DocumentID: dumpAccount.Root.String(),
+				DocumentID: address.String() + "-" + strconv.FormatUint(blockNumber, 10),
 				Body:       esutil.NewJSONReader(storageMap),
 				OnSuccess: func(ctx context.Context, item esutil.BulkIndexerItem, item2 esutil.BulkIndexerResponseItem) {
 					wg.Done()
@@ -645,7 +626,7 @@ func (es *ElasticsearchDB) GetStorageWithOptions(address types.Address, options 
 		return nil, ErrPaginationLimitExceeded
 	}
 	req := esapi.SearchRequest{
-		Index: []string{StateIndex},
+		Index: []string{StorageIndex},
 		Body:  strings.NewReader(queryString),
 		From:  &from,
 		Size:  &options.PageSize,
@@ -663,36 +644,18 @@ func (es *ElasticsearchDB) GetStorageWithOptions(address types.Address, options 
 	convertedList := make([]*types.StorageResult, len(results.Hits.Hits))
 	for i, result := range results.Hits.Hits {
 		marshalled, err := json.Marshal(result)
-		if err != nil {
-			return nil, err
-		}
-		var stateResult StateQueryResult
-		if err = json.Unmarshal(marshalled, &stateResult); err != nil {
-			return nil, err
-		}
-
-		storageFetchReq := esapi.GetRequest{
-			Index:      StorageIndex,
-			DocumentID: stateResult.Source.StorageRoot.String(),
-		}
-		body, err := es.apiClient.DoRequest(storageFetchReq)
-
-		if err != nil {
-			if err == database.ErrNotFound {
-				return nil, nil
-			}
-			return nil, err
-		}
-
 		var storageResult StorageQueryResult
-		if err = json.Unmarshal(body, &storageResult); err != nil {
+		if err = json.Unmarshal(marshalled, &storageResult); err != nil {
 			return nil, err
 		}
 		converted := make(map[types.Hash]string)
 		for _, storageEntry := range storageResult.Source.StorageMap {
 			converted[storageEntry.Key] = storageEntry.Value
 		}
-		convertedList[i] = &types.StorageResult{Storage: converted, BlockNumber: stateResult.Source.BlockNumber}
+		convertedList[i] = &types.StorageResult{
+			Storage:     converted,
+			StorageRoot: storageResult.Source.StorageRoot,
+			BlockNumber: storageResult.Source.BlockNumber}
 	}
 
 	return convertedList, nil
@@ -716,7 +679,7 @@ func (es *ElasticsearchDB) GetStorageTotal(address types.Address, options *types
 	queryString := fmt.Sprintf(QueryByAddressWithBlockRangeOptionsTemplate(options), address.String())
 
 	req := esapi.CountRequest{
-		Index: []string{StateIndex},
+		Index: []string{StorageIndex},
 		Body:  strings.NewReader(queryString),
 	}
 	results, err := es.doCountRequest(req)
@@ -726,43 +689,42 @@ func (es *ElasticsearchDB) GetStorageTotal(address types.Address, options *types
 	return results.Count, nil
 }
 
-func (es *ElasticsearchDB) GetStorage(address types.Address, blockNumber uint64) (map[types.Hash]string, error) {
-	fetchReq := esapi.GetRequest{
-		Index:      StateIndex,
-		DocumentID: address.String() + "-" + strconv.FormatUint(blockNumber, 10),
+func (es *ElasticsearchDB) GetStorage(address types.Address, blockNumber uint64) (*types.StorageResult, error) {
+	size := 1
+	searchReq := esapi.SearchRequest{
+		Index: []string{StorageIndex},
+		Body:  strings.NewReader(fmt.Sprintf(QueryMatchContract, address.String(), blockNumber)),
+		Size:  &size,
 	}
-	body, err := es.apiClient.DoRequest(fetchReq)
-	if err != nil && err != database.ErrNotFound {
-		return nil, err
-	}
-	if err == database.ErrNotFound {
-		return nil, nil
-	}
-	var stateResult StateQueryResult
-	if err = json.Unmarshal(body, &stateResult); err != nil {
+	result, err := es.doSearchRequest(searchReq)
+	if err != nil {
 		return nil, err
 	}
 
-	storageFetchReq := esapi.GetRequest{
-		Index:      StorageIndex,
-		DocumentID: stateResult.Source.StorageRoot.String(),
+	// There are no results, probably trying to query before the contract exists
+	if len(result.Hits.Hits) == 0 {
+		return &types.StorageResult{
+			Storage:     make(map[types.Hash]string),
+			StorageRoot: types.NewHash(""),
+			BlockNumber: blockNumber,
+		}, nil
 	}
-	body, err = es.apiClient.DoRequest(storageFetchReq)
-	if err != nil && err != database.ErrNotFound {
-		return nil, err
-	}
-	if err == database.ErrNotFound {
-		return nil, nil
-	}
+
+	// There is a single result, map it to the proper output object
+	marshalled, _ := json.Marshal(result.Hits.Hits[0])
 	var storageResult StorageQueryResult
-	if err = json.Unmarshal(body, &storageResult); err != nil {
+	if err := json.Unmarshal(marshalled, &storageResult); err != nil {
 		return nil, err
 	}
 	converted := make(map[types.Hash]string)
 	for _, storageEntry := range storageResult.Source.StorageMap {
 		converted[storageEntry.Key] = storageEntry.Value
 	}
-	return converted, nil
+	return &types.StorageResult{
+		Storage:     converted,
+		StorageRoot: storageResult.Source.StorageRoot,
+		BlockNumber: blockNumber,
+	}, nil
 }
 
 func (es *ElasticsearchDB) GetLastFiltered(address types.Address) (uint64, error) {

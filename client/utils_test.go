@@ -318,3 +318,24 @@ func TestCallBalanceOfERC20(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, types.HexData("12345"), contractCallResult)
 }
+
+func TestStorageRoot_WithError(t *testing.T) {
+	stubClient := NewStubQuorumClient(nil, nil)
+
+	result, err := StorageRoot(stubClient, types.NewAddress(""), 1)
+	assert.EqualError(t, err, "not found")
+	assert.EqualValues(t, "", result)
+}
+
+func TestStorageRoot(t *testing.T) {
+	mockRPC := map[string]interface{}{
+		"eth_storageRoot0x00000000000000000000000000000000000000000x1": types.NewHash("1"),
+	}
+
+	stubClient := NewStubQuorumClient(nil, mockRPC)
+
+	result, err := StorageRoot(stubClient, types.NewAddress(""), 1)
+
+	assert.Nil(t, err)
+	assert.EqualValues(t, "0000000000000000000000000000000000000000000000000000000000000001", result)
+}

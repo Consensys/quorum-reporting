@@ -239,7 +239,7 @@ func (cachingDB *DatabaseWithCache) GetEventsFromAddressTotal(address types.Addr
 	return cachingDB.db.GetEventsFromAddressTotal(address, options)
 }
 
-func (cachingDB *DatabaseWithCache) GetStorage(address types.Address, blockNumber uint64) (map[types.Hash]string, error) {
+func (cachingDB *DatabaseWithCache) GetStorage(address types.Address, blockNumber uint64) (*types.StorageResult, error) {
 	return cachingDB.db.GetStorage(address, blockNumber)
 }
 

@@ -194,7 +194,7 @@ func (r *RPCAPIs) GetAllEventsFromAddress(req *http.Request, args *AddressWithOp
 	return nil
 }
 
-func (r *RPCAPIs) GetStorage(req *http.Request, args *AddressWithOptionalBlock, reply *map[types.Hash]string) error {
+func (r *RPCAPIs) GetStorage(req *http.Request, args *AddressWithOptionalBlock, reply *types.StorageResult) error {
 	if args.Address == nil {
 		return ErrNoAddress
 	}
@@ -212,7 +212,7 @@ func (r *RPCAPIs) GetStorage(req *http.Request, args *AddressWithOptionalBlock, 
 	if err != nil {
 		return err
 	}
-	*reply = result
+	*reply = *result
 	return nil
 }
 

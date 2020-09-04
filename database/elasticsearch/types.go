@@ -17,13 +17,9 @@ type Template struct {
 	StorageABI   string `json:"storageAbi"`
 }
 
-type State struct {
-	Address     types.Address `json:"address"`
-	BlockNumber uint64        `json:"blockNumber"`
-	StorageRoot types.Hash    `json:"storageRoot"`
-}
-
 type Storage struct {
+	Contract    types.Address  `json:"contract"`
+	BlockNumber uint64         `json:"blockNumber"`
 	StorageRoot types.Hash     `json:"storageRoot"`
 	StorageMap  []StorageEntry `json:"storageMap"`
 }
@@ -72,10 +68,6 @@ type BlockQueryResult struct {
 
 type TokenHolderQueryResult struct {
 	Source ERC20TokenHolder `json:"_source"`
-}
-
-type StateQueryResult struct {
-	Source State `json:"_source"`
 }
 
 type StorageQueryResult struct {

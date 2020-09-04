@@ -124,5 +124,6 @@ type ParsedState struct {
 
 type StorageResult struct {
 	Storage     map[Hash]string
+	StorageRoot Hash
 	BlockNumber uint64
 }
