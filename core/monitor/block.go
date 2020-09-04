@@ -77,10 +77,19 @@ func (bm *DefaultBlockMonitor) SyncHistoricBlocks(lastPersisted uint64, cancelCh
 func (bm *DefaultBlockMonitor) processChainHead(header types.RawHeader) {
 	log.Info("Processing chain head", "block hash", header.Hash.String(), "block number", header.Number)
 	blockOrigin, err := client.BlockByNumber(bm.quorumClient, header.Number.ToUint64())
-	for err != nil {
+	tryCount := 10
+	for tryCount > 0 {
 		log.Warn("Error fetching block from Quorum", "block hash", header.Hash, "block number", header.Number, "err", err)
 		time.Sleep(1 * time.Second) //TODO: return err and let caller handle?
 		blockOrigin, err = client.BlockByNumber(bm.quorumClient, header.Number.ToUint64())
+		if err == nil {
+			break
+		}
+		tryCount--
+	}
+	if err != nil {
+		log.Error("Error fetching block from Quorum", "block hash", header.Hash, "block number", header.Number, "err", err)
+		return
 	}
 	bm.newBlockChan <- bm.createBlock(&blockOrigin)
 }
