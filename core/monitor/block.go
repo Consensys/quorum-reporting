@@ -76,22 +76,12 @@ func (bm *DefaultBlockMonitor) SyncHistoricBlocks(lastPersisted uint64, cancelCh
 
 func (bm *DefaultBlockMonitor) processChainHead(header types.RawHeader) {
 	log.Info("Processing chain head", "block hash", header.Hash.String(), "block number", header.Number)
-	blockOrigin, err := client.BlockByNumber(bm.quorumClient, header.Number.ToUint64())
-	tryCount := 10
-	for tryCount > 0 {
-		log.Warn("Error fetching block from Quorum", "block hash", header.Hash, "block number", header.Number, "err", err)
-		time.Sleep(1 * time.Second) //TODO: return err and let caller handle?
-		blockOrigin, err = client.BlockByNumber(bm.quorumClient, header.Number.ToUint64())
-		if err == nil {
-			break
-		}
-		tryCount--
-	}
+	blockOrigin, err := bm.tryFetchingBlock(header.Number.ToUint64(), 10)
 	if err != nil {
-		log.Error("Error fetching block from Quorum", "block hash", header.Hash, "block number", header.Number, "err", err)
+		log.Error("Error - fetching block from Quorum failed", "block hash", header.Hash, "block number", header.Number, "err", err)
 		return
 	}
-	bm.newBlockChan <- bm.createBlock(&blockOrigin)
+	bm.newBlockChan <- bm.createBlock(blockOrigin)
 }
 
 func (bm *DefaultBlockMonitor) createBlock(block *types.RawBlock) *types.Block {
@@ -128,7 +118,7 @@ func (bm *DefaultBlockMonitor) syncBlocks(start, end uint64, stopChan chan bool)
 		default:
 		}
 
-		blockOrigin, err := client.BlockByNumber(bm.quorumClient, i)
+		blockOrigin, err := bm.tryFetchingBlock(i, 10)
 		if err != nil {
 			return NewSyncError(err.Error(), i)
 		}
@@ -136,10 +126,33 @@ func (bm *DefaultBlockMonitor) syncBlocks(start, end uint64, stopChan chan bool)
 		select {
 		case <-stopChan:
 			return nil
-		case bm.newBlockChan <- bm.createBlock(&blockOrigin):
+		case bm.newBlockChan <- bm.createBlock(blockOrigin):
 		}
 	}
 
-	log.Info("Complete historical sync finished")
+	log.Info("Complete historical sync finished", "start", start, "end", end)
 	return nil
+}
+
+func (bm *DefaultBlockMonitor) tryFetchingBlock(number uint64, tryCount int) (*types.RawBlock, error) {
+	var err error
+	var block types.RawBlock
+	for tryCount > 0 {
+		block, err = client.BlockByNumber(bm.quorumClient, number)
+		if err == nil {
+			log.Info("fetched block", "block number", number)
+			break
+		}
+
+		if err != nil {
+			log.Warn("fetching block from Quorum failed, retry", "tryCount", tryCount, "block number", number, "err", err)
+		}
+
+		tryCount--
+		time.Sleep(time.Second)
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &block, err
 }
