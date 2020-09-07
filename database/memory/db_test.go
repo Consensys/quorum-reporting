@@ -342,12 +342,14 @@ func testGetAllEventsByAddress(t *testing.T, db database.Database, address types
 
 func testGetStorage(t *testing.T, db database.Database, address types.Address, blockNumber uint64, expected int) {
 	storage, err := db.GetStorage(address, blockNumber)
-	if err != nil {
-		t.Fatalf("expected no error, but got %v", err)
-	}
-	if len(storage) != expected {
-		t.Fatalf("expected %v, but got %v", expected, len(storage))
-	}
+	assert.Nil(t, err)
+	assert.Len(t, storage.Storage, expected)
+
+	//test on a block number we don't have storage for
+	storageUnknown, err := db.GetStorage(address, blockNumber+1)
+	assert.Nil(t, err)
+	assert.Len(t, storageUnknown.Storage, 0)
+	assert.EqualValues(t, types.NewHash(""), storageUnknown.StorageRoot)
 }
 
 func TestMemoryDB_ContractCreationTransactions(t *testing.T) {

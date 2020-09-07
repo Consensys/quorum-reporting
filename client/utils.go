@@ -160,3 +160,12 @@ func CallBalanceOfERC20(c Client, contract types.Address, holder types.Address, 
 	err := c.RPCCall(&res, ethCall, msg, blockAsHex)
 	return res, err
 }
+
+func StorageRoot(c Client, account types.Address, blockNum uint64) (types.Hash, error) {
+	var res types.Hash
+	err := c.RPCCall(&res, "eth_storageRoot", account.String(), fmt.Sprintf("0x%x", blockNum))
+	if err != nil && err.Error() == "can't find state object" {
+		return types.NewHash(""), nil
+	}
+	return res, err
+}
