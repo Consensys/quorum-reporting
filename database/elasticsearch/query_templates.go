@@ -65,7 +65,7 @@ func QueryByAddressWithBlockRangeOptionsTemplate(opt *types.PageOptions) string 
 	"query": {
 		"bool": {
 			"must": [
-				{ "match": { "address": "%s" } },
+				{ "match": { "contract": "%s" } },
 ` + createRangeQuery("blockNumber", opt.BeginBlockNumber, opt.EndBlockNumber) + `
 			]
 		}
@@ -73,6 +73,27 @@ func QueryByAddressWithBlockRangeOptionsTemplate(opt *types.PageOptions) string 
 }
 `
 }
+
+const QueryMatchContract = `
+{
+	"query": {
+		"bool": {
+			"must": [
+				{ "match": { "contract": "%s" } },
+				{ "range": { "blockNumber": { "lte": %d } } }
+			]
+		}
+	},
+	"sort": [
+		{
+			"blockNumber": {
+				"order": "desc",
+				"unmapped_type": "long"
+			}
+		}
+	]
+}
+`
 
 func QueryInternalTransactionsWithOptionsTemplate(options *types.QueryOptions) string {
 	return `

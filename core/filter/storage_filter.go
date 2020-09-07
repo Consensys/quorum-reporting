@@ -85,6 +85,14 @@ func (sf *StorageFilter) StateFetchWorker() {
 			case blockToPull := <-sf.incomingBlockChan:
 				log.Debug("Fetching contract storage", "block number", blockToPull.BlockNumber)
 				for _, address := range blockToPull.Addresses {
+					changed, err := sf.didStorageRootChange(address, blockToPull.BlockNumber)
+					for err != nil {
+						changed, err = sf.didStorageRootChange(address, blockToPull.BlockNumber)
+					}
+					if !changed {
+						continue
+					}
+
 					log.Debug("Fetching contract storage", "address", address.String(), "block number", blockToPull.BlockNumber)
 					dumpAccount, err := client.DumpAddress(sf.quorumClient, address, blockToPull.BlockNumber)
 					for err != nil {
@@ -167,4 +175,18 @@ func (sf *StorageFilter) Stop() {
 	sf.outstandingBlocks.Wait()
 	close(sf.shutdownChannel)
 	log.Info("Finished stopping storage filter")
+}
+
+func (sf *StorageFilter) didStorageRootChange(contract types.Address, blockNum uint64) (bool, error) {
+	storageRootThisBlock, err := client.StorageRoot(sf.quorumClient, contract, blockNum)
+	if err != nil {
+		return false, err
+	}
+
+	storageRootPrevBlock, err := client.StorageRoot(sf.quorumClient, contract, blockNum-1)
+	if err != nil {
+		return false, err
+	}
+
+	return storageRootPrevBlock != storageRootThisBlock, nil
 }

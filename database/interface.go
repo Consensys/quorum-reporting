@@ -65,7 +65,7 @@ type IndexDB interface {
 	GetTransactionsInternalToAddressTotal(types.Address, *types.QueryOptions) (uint64, error)
 	GetAllEventsFromAddress(types.Address, *types.QueryOptions) ([]*types.Event, error)
 	GetEventsFromAddressTotal(types.Address, *types.QueryOptions) (uint64, error)
-	GetStorage(types.Address, uint64) (map[types.Hash]string, error)
+	GetStorage(types.Address, uint64) (*types.StorageResult, error)
 	GetStorageWithOptions(types.Address, *types.PageOptions) ([]*types.StorageResult, error)
 	GetStorageTotal(types.Address, *types.PageOptions) (uint64, error)
 	GetLastFiltered(types.Address) (uint64, error)
