@@ -215,31 +215,19 @@ func TestElasticsearchDB_DeleteAddress_Delegates(t *testing.T) {
 	addr := types.NewAddress("0x1932c48b2bf8102ba33b4a6b545c32236e342f34")
 
 	mockedClient.EXPECT().DoRequest(gomock.Any()) //for setup, not relevant to test
-	mockedDeleter.EXPECT().Delete(addr).Return(nil)
 
 	db, _ := NewWithDeps(mockedClient, mockedDeleter)
+
+	// simulate calling point of actually deleting address
+	// in the live app, this is done by GetLastPersistedBlockNumber()
+	go func() {
+		for len(db.deleteQueue) == 0 {
+		}
+		db.deleteQueue[addr].Done()
+	}()
 
 	err := db.DeleteAddress(addr)
 	assert.Nil(t, err, "expected error to be nil")
-}
-
-func TestElasticsearchDB_DeleteAddress_WithError(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockedClient := elasticsearchmocks.NewMockAPIClient(ctrl)
-	mockedDeleter := elasticsearchmocks.NewMockDeletionCoordinator(ctrl)
-
-	addr := types.NewAddress("0x1932c48b2bf8102ba33b4a6b545c32236e342f34")
-
-	mockedClient.EXPECT().DoRequest(gomock.Any()) //for setup, not relevant to test
-	mockedDeleter.EXPECT().Delete(addr).Return(errors.New("test error"))
-
-	db, _ := NewWithDeps(mockedClient, mockedDeleter)
-
-	err := db.DeleteAddress(addr)
-
-	assert.EqualError(t, err, "error deleting address: test error")
 }
 
 func TestElasticsearchDB_GetAddresses_NoAddresses(t *testing.T) {

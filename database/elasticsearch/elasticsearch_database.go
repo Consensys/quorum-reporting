@@ -19,6 +19,9 @@ import (
 type ElasticsearchDB struct {
 	apiClient APIClient
 	deleter   DeletionCoordinator
+
+	deleteMux   sync.Mutex
+	deleteQueue map[types.Address]*sync.WaitGroup
 }
 
 func New(client APIClient) (*ElasticsearchDB, error) {
@@ -27,8 +30,9 @@ func New(client APIClient) (*ElasticsearchDB, error) {
 
 func NewWithDeps(client APIClient, dataDeleter DeletionCoordinator) (*ElasticsearchDB, error) {
 	db := &ElasticsearchDB{
-		apiClient: client,
-		deleter:   dataDeleter,
+		apiClient:   client,
+		deleter:     dataDeleter,
+		deleteQueue: make(map[types.Address]*sync.WaitGroup),
 	}
 
 	initialized, err := db.checkIsInitialized()
@@ -155,9 +159,12 @@ func (es *ElasticsearchDB) AddAddressFrom(address types.Address, from uint64) er
 }
 
 func (es *ElasticsearchDB) DeleteAddress(address types.Address) error {
-	if err := es.deleter.Delete(address); err != nil {
-		return errors.New("error deleting address: " + err.Error())
-	}
+	var wg sync.WaitGroup
+	wg.Add(1)
+	es.deleteMux.Lock()
+	es.deleteQueue[address] = &wg
+	es.deleteMux.Unlock()
+	wg.Wait()
 	return nil
 }
 
@@ -344,6 +351,19 @@ func (es *ElasticsearchDB) ReadBlock(number uint64) (*types.Block, error) {
 }
 
 func (es *ElasticsearchDB) GetLastPersistedBlockNumber() (uint64, error) {
+	// At this point, we know no data insertions are happening so we can safely
+	// delete data
+	es.deleteMux.Lock()
+	for address, wg := range es.deleteQueue {
+		if err := es.deleter.Delete(address); err != nil {
+			log.Warn("Error when servicing deletion request", "address", address.String(), "err", err)
+			return 0, errors.New("error performing deletion of contract " + address.String())
+		}
+		delete(es.deleteQueue, address)
+		wg.Done()
+	}
+	es.deleteMux.Unlock()
+
 	fetchReq := esapi.GetRequest{
 		Index:      MetaIndex,
 		DocumentID: "lastPersisted",
