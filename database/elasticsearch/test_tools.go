@@ -78,6 +78,29 @@ func (rm *DeleteRequestMatcher) String() string {
 	return fmt.Sprintf("DeleteRequestMatcher{%s}", rm.req.Index)
 }
 
+type DeleteByQueryRequestMatcher struct {
+	req esapi.DeleteByQueryRequest
+}
+
+func NewDeleteByQueryRequestMatcher(req esapi.DeleteByQueryRequest) *DeleteByQueryRequestMatcher {
+	return &DeleteByQueryRequestMatcher{req: req}
+}
+
+func (rm *DeleteByQueryRequestMatcher) Matches(x interface{}) bool {
+	if val, ok := x.(esapi.DeleteByQueryRequest); ok {
+		expectedBody, _ := ioutil.ReadAll(rm.req.Body)
+		actualBody, _ := ioutil.ReadAll(val.Body)
+		a := string(expectedBody)
+		b := string(actualBody)
+		return len(rm.req.Index) == len(val.Index) && a == b
+	}
+	return false
+}
+
+func (rm *DeleteByQueryRequestMatcher) String() string {
+	return fmt.Sprintf("DeleteByQueryRequestMatcher{%s}", rm.req.Index)
+}
+
 type UpdateRequestMatcher struct {
 	req esapi.UpdateRequest
 }
