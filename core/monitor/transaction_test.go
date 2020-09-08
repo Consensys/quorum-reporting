@@ -65,7 +65,7 @@ func TestCreateTransaction(t *testing.T) {
 		},
 	}
 	tm := NewDefaultTransactionMonitor(client.NewStubQuorumClient(mockGraphQL, mockRPC))
-	tx, err := tm.createTransaction(testBlock, types.NewHash("0xe625ba9f14eed0671508966080fb01374d0a3a16b9cee545a324179b75f30aa8"))
+	tx, err := tm.fetchTransaction(testBlock, types.NewHash("0xe625ba9f14eed0671508966080fb01374d0a3a16b9cee545a324179b75f30aa8"))
 	assert.Nil(t, err)
 	assert.EqualValues(t, types.NewHash("0xe625ba9f14eed0671508966080fb01374d0a3a16b9cee545a324179b75f30aa8"), tx.Hash)
 	assert.True(t, tx.Status)
