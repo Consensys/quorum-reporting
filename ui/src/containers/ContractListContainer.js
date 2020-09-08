@@ -73,7 +73,6 @@ class ContractListContainer extends React.Component {
         return (
             <Card className={this.props.classes.card}>
                 <CardContent className={this.props.classes.cardContent}>
-                    <br/>
                     <Typography variant="h6" align="left">
                         Registered Contract List&nbsp;
                         <IconButton onClick={this.getAllRegisteredContract} >
@@ -83,16 +82,13 @@ class ContractListContainer extends React.Component {
                     <br/>
                     {
                         this.props.contracts.length === 0 &&
-                        <h1 align="center">&lt; No Records Found &gt;</h1>
+                        <h1 align="center">No Contracts Registered</h1>
                     }
                     {
                         this.props.contracts.length !== 0 &&
                         <ContractTable
                             contracts={this.props.contracts}
-                            handleContractUpdate={this.handleContractUpdate}
                             handleContractDelete={this.handleContractDelete}
-                            handleNavigateContract={this.handleNavigateContract}
-                            handleNavigateReport={this.handleNavigateReport}
                         />
                     }
                     <br/>

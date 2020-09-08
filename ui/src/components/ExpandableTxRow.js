@@ -11,6 +11,7 @@ import KeyboardArrowDownIcon from '@material-ui/icons/KeyboardArrowDown';
 import Collapse from '@material-ui/core/Collapse';
 import Box from '@material-ui/core/Box';
 import Typography from '@material-ui/core/Typography';
+import { Link } from 'react-router-dom'
 
 const useRowStyles = makeStyles({
     root: {
@@ -18,6 +19,11 @@ const useRowStyles = makeStyles({
             borderBottom: 'unset',
         },
     },
+    link: {
+        cursor: 'pointer',
+        textDecoration: 'none',
+        color: '#1976D2',
+    }
 });
 
 function ExpandableTxRow(props) {
@@ -32,17 +38,14 @@ function ExpandableTxRow(props) {
                         {open ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
                     </IconButton>
                 </TableCell>
+                <TableCell component="th" scope="row" align="center">
+                    <Link className={classes.link} to={`/blocks/${props.blockNumber}`}>{props.blockNumber}</Link>
+                </TableCell>
                 <TableCell component="th" scope="row">
-                    {props.txHash}
+                    <Link className={classes.link} to={`/transactions/${props.txHash}`}>{props.txHash}</Link>
                 </TableCell>
                 <TableCell component="th" scope="row">
                     {props.from}
-                </TableCell>
-                <TableCell component="th" scope="row">
-                    {props.to}
-                </TableCell>
-                <TableCell component="th" scope="row">
-                    {props.blockNumber}
                 </TableCell>
             </TableRow>
             <TableRow>

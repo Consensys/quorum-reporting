@@ -1,232 +1,149 @@
-import React from 'react';
-import { connect } from 'react-redux';
-import { withStyles } from '@material-ui/core/styles';
-import CardContent from '@material-ui/core/CardContent';
-import Card from '@material-ui/core/Card';
-import Typography from '@material-ui/core/Typography';
-import Button from '@material-ui/core/Button';
-import SearchIcon from '@material-ui/icons/Search';
-import Alert from '@material-ui/lab/Alert';
-import ContractSelector from '../components/ContractSelector';
-import TransactionResultTable from '../components/TransactionResultTable';
-import EventResultTable from '../components/EventResultTable';
-import { selectContractAction } from '../redux/actions/contractActions';
-import { GetContractCreationTx, GetEvents, GetInternalToTxs, GetToTxs } from '../constants';
-import { getContractCreationTx, getInternalToTxs, getToTxs, getEvents } from '../client/fetcher';
+import React, { useEffect, useState } from 'react'
+import Alert from '@material-ui/lab/Alert'
+import TransactionResultTable from '../components/TransactionResultTable'
+import EventResultTable from '../components/EventResultTable'
+import { GenerateReport, GetContractCreationTx, GetEvents, GetInternalToTxs, GetToTxs } from '../constants'
+import { getContractCreationTx, getEvents, getInternalToTxs, getReportData, getToTxs } from '../client/fetcher'
+import { makeStyles } from '@material-ui/core/styles'
+import { useSelector } from 'react-redux'
+import Report from '../components/Report'
+import Paper from '@material-ui/core/Paper'
 
-const styles = {
-    card: {
-        minWidth: 275,
-        marginTop: 5,
-        marginBottom: 5,
-    },
-};
+const useStyles = makeStyles((theme) => ({
+  card: {
+    marginTop: theme.spacing(0.5),
+    marginBottom: theme.spacing(0.5),
+    marginLeft: theme.spacing(1),
+    marginRight: theme.spacing(1),
+  },
+}))
 
-const pageSize = 10;
+const pageSize = 10
 
-const actions = [GetContractCreationTx, GetToTxs, GetInternalToTxs, GetEvents];
+export default function ContractInfoContainer (props) {
 
-class ContractInfoContainer extends React.Component {
+  const classes = useStyles()
+  const rpcEndpoint = useSelector(state => state.system.rpcEndpoint)
+  const [displayTxResult, setDisplayTxResult] = useState(false)
+  const [displayEventResult, setDisplayEventResult] = useState(false)
+  const [displayReportResult, setDisplayReportResult] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+  const [displayData, setDisplayData] = useState([])
+  const [displayDataLength, setDisplayDataLength] = useState(0)
+  const [currentPage, setCurrentPage] = useState(0)
+  const [error, setError] = useState('')
 
-    constructor(props) {
-        super(props);
-        this.state = {
-            selectedAction: "",
-            displayTxResult: false,
-            displayEventResult: false,
-            isLoading: true,
-            displayData: [],
-            displayDataLength: 0,
-            currentPage: 0,
-            errorMessage: "",
-            // fix current contract and action for paging
-            currentContract: "",
-            currentSelectedAction: "",
-        }
+  const handleChangePage = (event, newPage) => {
+    setCurrentPage(newPage)
+  }
+
+  useEffect(() => {
+    // clear display
+    setDisplayTxResult(false)
+    setDisplayEventResult(false)
+    setDisplayReportResult(false)
+    // check new search condition
+    setIsLoading(true)
+    searchByPage(props.address, props.action, currentPage)
+  }, [props.address, props.action, currentPage])
+
+  function handleError (e) {
+    setDisplayData([])
+    setDisplayDataLength(0)
+    setIsLoading(false)
+    setError(e.toString)
+  }
+
+  const searchByPage = (contract, action, pageNumber) => {
+    if (action.action === GetEvents) {
+      getEvents(rpcEndpoint, contract, { pageSize, pageNumber }).then((res) => {
+        setDisplayData(res.data)
+        setDisplayDataLength(res.total)
+        setIsLoading(false)
+      }).catch(handleError)
+
+      setDisplayEventResult(true)
+    } else if (action.action === GenerateReport) {
+      getReportData(rpcEndpoint, props.address, action.startBlock, action.endBlock, currentPage).then( (res) => {
+        setDisplayData(res.data)
+        setDisplayDataLength(res.total)
+        setIsLoading(false)
+      })
+      setDisplayReportResult(true)
+    } else {
+      switch (action.action) {
+        case GetContractCreationTx:
+          getContractCreationTx(rpcEndpoint, contract).then((res) => {
+            setDisplayData([res])
+            setDisplayDataLength(1)
+            setIsLoading(false)
+          }).catch(handleError)
+          break
+        case GetToTxs:
+          getToTxs(rpcEndpoint, contract, { pageSize, pageNumber }).then((res) => {
+            setDisplayData(res.data)
+            setDisplayDataLength(res.total)
+            setIsLoading(false)
+          }).catch(handleError)
+          break
+        case GetInternalToTxs:
+          getInternalToTxs(rpcEndpoint, contract, { pageSize, pageNumber }).then((res) => {
+            setDisplayData(res.data)
+            setDisplayDataLength(res.total)
+            setIsLoading(false)
+          }).catch(handleError)
+          break
+        default:
+          setDisplayData([])
+          setDisplayDataLength(0)
+          setIsLoading(false)
+      }
+      setDisplayTxResult(true)
     }
+  }
 
-    componentWillUnmount() {
-        this.props.dispatch(selectContractAction(""))
-    }
-
-    handleSelectedActionChange = (e) => {
-        this.setState({
-            errorMessage: "",
-            selectedAction: e.target.value,
-        })
-    };
-
-    handleChangePage = (event, newPage) => {
-        this.setState({currentPage: newPage});
-        this.handleSearch(false)
-    };
-
-    handleSearch = (newSearch) => {
-        // clear display
-        this.setState({
-            displayTxResult: false,
-            displayEventResult: false,
-        });
-        // check new search condition
-        let currentContract = this.props.address;
-        let currentSelectedAction = this.state.currentSelectedAction;
-        let currentPage = this.state.currentPage;
-        if (newSearch) {
-            if (this.state.selectedAction === ""){
-                this.setState({ errorMessage: "no action selected"});
-                return
-            }
-            currentSelectedAction = this.state.selectedAction;
-            currentPage = 0;
-            this.setState({ currentContract, currentSelectedAction, currentPage: 0 })
-        }
-        // start loading
-        this.setState({
-            isLoading: true,
-            errorMessage: "",
-        });
-        this.searchByPage(currentContract, currentSelectedAction, currentPage)
-    };
-
-    searchByPage = (contract, action, pageNumber) => {
-        if (action === GetEvents) {
-            getEvents(this.props.rpcEndpoint, contract, {pageSize, pageNumber}).then( (res) => {
-                this.setState({
-                    displayData: res.data,
-                    displayDataLength: res.total,
-                    isLoading: false,
-                })
-            }).catch( (e) => {
-                this.setState({
-                    displayData: [],
-                    displayDataLength: 0,
-                    isLoading: false,
-                    errorMessage: e.toString(),
-                })
-            });
-            this.setState({displayEventResult: true});
-        } else {
-            switch (action) {
-                case GetContractCreationTx:
-                    getContractCreationTx(this.props.rpcEndpoint, contract).then( (res) => {
-                        this.setState({
-                            displayData: [res],
-                            displayDataLength: 1,
-                            isLoading: false,
-                        })
-                    }).catch( (e) => {
-                        console.log(e);
-                        this.setState({
-                            displayData: [],
-                            displayDataLength: 0,
-                            isLoading: false,
-                            errorMessage: e.toString(),
-                        })
-                    });
-                    break;
-                case GetToTxs:
-                    getToTxs(this.props.rpcEndpoint, contract, {pageSize, pageNumber}).then( (res) => {
-                        this.setState({
-                            displayData: res.data,
-                            displayDataLength: res.total,
-                            isLoading: false,
-                        })
-                    }).catch( (e) => {
-                        this.setState({
-                            displayData: [],
-                            displayDataLength: 0,
-                            isLoading: false,
-                            errorMessage: e.toString(),
-                        })
-                    });
-                    break;
-                case GetInternalToTxs:
-                    getInternalToTxs(this.props.rpcEndpoint, contract, {pageSize, pageNumber}).then( (res) => {
-                        this.setState({
-                            displayData: res.data,
-                            displayDataLength: res.total,
-                            isLoading: false,
-                        })
-                    }).catch( (e) => {
-                        this.setState({
-                            displayData: [],
-                            displayDataLength: 0,
-                            isLoading: false,
-                            errorMessage: e.toString(),
-                        })
-                    });
-                    break;
-                default:
-                    this.setState({
-                        displayData: [],
-                        displayDataLength: 0,
-                        isLoading: false,
-                        errorMessage: "unknown action: " + action.toString(),
-                    })
-            }
-            this.setState({displayTxResult: true});
-        }
-    };
-
-    render(){
-        return (
-            <Card className={this.props.classes.card}>
-                <CardContent>
-                    <div align="center">
-                        <ContractSelector
-                            actions={actions}
-                            selectedAction={this.state.selectedAction}
-                            handleSelectedActionChange={this.handleSelectedActionChange}
-                        />
-                        <br/>
-                        <Button variant="contained" color="primary" onClick={this.handleSearch.bind(null, true)}>
-                            <SearchIcon />
-                            &nbsp;
-                            Search
-                        </Button>
-                    </div>
-                    <br/>
-                    {
-                        this.state.errorMessage &&
-                        <div>
-                            <br/>
-                            <Alert severity="error">{this.state.errorMessage}</Alert>
-                        </div>
-                    }
-                    {
-                        this.state.displayTxResult &&
-                        <TransactionResultTable
-                            displayData={this.state.displayData}
-                            isLoading={this.state.isLoading}
-                            currentPage={this.state.currentPage}
-                            pageSize={pageSize}
-                            totalTxs={this.state.displayDataLength}
-                            handleChangePage={this.handleChangePage}
-                        />
-                    }
-                    {
-                        this.state.displayEventResult &&
-                        <EventResultTable
-                            displayData={this.state.displayData}
-                            isLoading={this.state.isLoading}
-                            currentPage={this.state.currentPage}
-                            pageSize={pageSize}
-                            totalEvents={this.state.displayDataLength}
-                            handleChangePage={this.handleChangePage}
-                        />
-                    }
-                </CardContent>
-            </Card>
-        )
-    }
+  return (
+    <Paper className={classes.card}>
+      {
+        error &&
+        <div>
+          <br/>
+          <Alert severity="error">{error}</Alert>
+        </div>
+      }
+      {
+        displayTxResult &&
+        <TransactionResultTable
+          displayData={displayData}
+          isLoading={isLoading}
+          currentPage={currentPage}
+          pageSize={pageSize}
+          totalTxs={displayDataLength}
+          handleChangePage={handleChangePage}
+        />
+      }
+      {
+        displayEventResult &&
+        <EventResultTable
+          displayData={displayData}
+          isLoading={isLoading}
+          currentPage={currentPage}
+          pageSize={pageSize}
+          totalEvents={displayDataLength}
+          handleChangePage={handleChangePage}
+        />
+      }
+      {
+        displayReportResult &&
+        <Report
+          parsedStorage={displayData}
+          isLoading={isLoading}
+          currentPage={currentPage}
+          pageSize={pageSize}
+          totalEvents={displayDataLength}
+          handleChangePage={handleChangePage}
+        />
+      }
+    </Paper>
+  )
 }
-
-const mapStateToProps = state => {
-    return {
-        rpcEndpoint: state.system.rpcEndpoint,
-        contracts: state.user.contracts,
-        selectedContract: state.user.selectedContract,
-    }
-};
-
-export default connect(mapStateToProps)(withStyles(styles)(ContractInfoContainer))

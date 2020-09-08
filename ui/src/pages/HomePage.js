@@ -1,8 +1,5 @@
 import React from 'react'
-import { connect } from 'react-redux'
 import HeaderContainer from '../containers/HeaderContainer'
-import ContractInfoContainer from '../containers/ContractInfoContainer'
-import ReportContainer from '../containers/ReportContainer'
 import { BrowserRouter as Router, Route, Switch } from 'react-router-dom'
 import { BlockDetail } from '../containers/BlockDetail'
 import { TransactionDetail } from '../containers/TransactionDetail'

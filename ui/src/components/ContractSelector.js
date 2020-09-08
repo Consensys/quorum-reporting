@@ -14,8 +14,7 @@ const useStyles = makeStyles((theme) => ({
 function ContractSelector(props) {
     const classes = useStyles();
     return (
-        <div>
-            <FormControl variant="filled" size="small" className={classes.formControl} style={{minWidth: 400}}>
+            <FormControl variant="filled" size="small" className={classes.formControl} style={{width: 400, maxWidth: '90%'}}>
                 <InputLabel>Actions</InputLabel>
                 <Select
                     value={props.selectedAction}
@@ -26,7 +25,6 @@ function ContractSelector(props) {
                     ))}
                 </Select>
             </FormControl>
-        </div>
     )
 }
 

@@ -19,6 +19,7 @@ import SearchField from '../components/SearchField'
 import { makeStyles } from '@material-ui/styles'
 import { shallowEqual, useDispatch, useSelector } from 'react-redux'
 import { getContractsAction } from '../redux/actions/contractActions'
+import { Lens } from '@material-ui/icons'
 
 const useStyles = makeStyles((theme) => ({
   grow: {
@@ -88,7 +89,7 @@ export default function HeaderContainer () {
   }
 
   return (
-    <AppBar position="static">
+    <AppBar color={'white'} position="static">
       <Toolbar>
         <Link to="/" className={classes.home}>
           <Typography variant="h6" color="inherit">
@@ -100,18 +101,11 @@ export default function HeaderContainer () {
         </Link>
         <span className={classes.grow}/>
         <SearchField/>
-        <Typography variant="h4">
-          {
-            isConnected ? <SyncIcon color="inherit"/> : <SyncDisabledIcon color="error"/>
-          }
-        </Typography>
-        {/*<Fade in={blockNumberAppear} timeout={1000}>*/}
+        <Lens style={{ fontSize: 16, color: isConnected ? 'green' : 'red', margin: 6 }}/>
         <Typography variant="h5" color="inherit">
-          &nbsp;
-          {isConnected ? ('# ' + lastPersistedBlockNumber) : '# N/A'}
+          {isConnected ? ('#' + lastPersistedBlockNumber) : '#N/A'}
           &nbsp;
         </Typography>
-        {/*</Fade>*/}
         <IconButton variant="h4" onClick={() => setFormIsOpen(true)}>
           <SettingsIcon color="action"/>
         </IconButton>

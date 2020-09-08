@@ -19,11 +19,10 @@ function TransactionResultTable(props) {
                         <Table size="small" aria-label="collapsible table">
                             <TableHead>
                                 <TableRow>
-                                    <TableCell width="20%"/>
-                                    <TableCell width="20%"><strong>Transaction Hash</strong></TableCell>
-                                    <TableCell width="20%"><strong>From</strong></TableCell>
-                                    <TableCell width="20%"><strong>To</strong></TableCell>
-                                    <TableCell width="20%"><strong>Block Number</strong></TableCell>
+                                    <TableCell width="5%"/>
+                                    <TableCell width="5%"><strong>Block</strong></TableCell>
+                                    <TableCell width="45%"><strong>Transaction Hash</strong></TableCell>
+                                    <TableCell width="45%"><strong>From</strong></TableCell>
                                 </TableRow>
                             </TableHead>
                             <TableBody>

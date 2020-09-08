@@ -3,30 +3,39 @@ import Alert from '@material-ui/lab/Alert'
 import { useDispatch, useSelector } from 'react-redux'
 import { makeStyles } from '@material-ui/core/styles'
 import ContractInfoContainer from './ContractInfoContainer'
-import ReportContainer from './ReportContainer'
 import shallowEqual from 'react-redux/lib/utils/shallowEqual'
-import Paper from '@material-ui/core/Paper'
 import Typography from '@material-ui/core/Typography'
 import TextareaAutosize from '@material-ui/core/TextareaAutosize'
+import ContractActions from '../components/ContractActions'
+import Grid from '@material-ui/core/Grid'
+import Card from '@material-ui/core/Card'
+import CardContent from '@material-ui/core/CardContent'
 
 const useStyles = makeStyles((theme) => ({
   root: {
-    marginTop: 10,
-    marginBottom: 10,
-    maxWidth: 1080,
+    width: '100%',
+  },
+  grid: {
+    maxWidth: 1280,
+    margin: '0 auto',
   },
   alert: {
-    marginTop: 5,
-    width: 1000,
+    marginTop: theme.spacing(0.5),
+    marginBottom: theme.spacing(0.5),
+    marginLeft: theme.spacing(1),
+    marginRight: theme.spacing(1),
   },
   details: {
     display: 'flex',
     flexDirection: 'column',
-    padding: 24,
+    marginTop: theme.spacing(0.5),
+    marginBottom: theme.spacing(0.5),
+    marginLeft: theme.spacing(1),
+    marginRight: theme.spacing(1),
   },
   label: {
     fontSize: 13,
-    marginBottom: 2,
+    display: 'block',
   },
   value: {
     marginBottom: 8,
@@ -38,48 +47,68 @@ export function ContractDetail ({ address }) {
   const classes = useStyles()
   const [contractDetail, setContractDetail] = useState()
   const [errorMessage, setErrorMessage] = useState()
-  const { lastPersistedBlockNumber, rpcEndpoint, isConnected } = useSelector(state => state.system, shallowEqual)
+  const [searchAction, setSearchAction] = useState()
   const { contracts = [] } = useSelector(state => state.user, shallowEqual)
   const dispatch = useDispatch()
 
   useEffect(() => {
-    console.log('contracts', contracts)
     setContractDetail(contracts.find((contract) => contract.address === address))
   }, [address, contracts])
 
+  const onSearch = (action, startBlock, endBlock) => {
+    setSearchAction({ action, startBlock, endBlock })
+  }
+
   return (
     <div className={classes.root}>
-      {errorMessage &&
-      <Alert severity="error" className={classes.alert}>{errorMessage}</Alert>
-      }
-      {contractDetail &&
-      <Paper className={classes.details}>
-        <Typography variant="caption" className={classes.label}>Type</Typography>
-        <Typography variant={'h6'} className={classes.value}>{contractDetail.name}</Typography>
-        <Typography variant="caption" className={classes.label}>Address</Typography>
-        <Typography variant="h6" className={classes.value}>{contractDetail.address}</Typography>
-        <Typography variant="caption" className={classes.label}>ABI</Typography>
-        <TextareaAutosize
-          readOnly
-          rowsMax={4}
-          style={{ fontSize: '16px', width: '1000px' }}
-          defaultValue={contractDetail.abi}
-          className={classes.value}/>
-        <Typography variant="caption" className={classes.label}>Storage</Typography>
-        <TextareaAutosize
-          readOnly
-          rowsMax={4}
-          style={{ fontSize: '16px', width: '1000px' }}
-          defaultValue={contractDetail.storageLayout}
-          className={classes.value}/>
-      </Paper>
-      }
-      {contractDetail &&
-      <ContractInfoContainer address={address}/>
-      }
-      {contractDetail &&
-      <ReportContainer address={address}/>
-      }
+      <Grid container
+            direction="row"
+            justify="center"
+            className={classes.grid} alignItems={'stretch'}>
+        {errorMessage &&
+        <Grid item xs={12}>
+          <Alert severity="error" className={classes.alert}>{errorMessage}</Alert>
+        </Grid>
+        }
+        {contractDetail &&
+        <Grid item xs={12} md={8}>
+          <Card className={classes.details}>
+            <CardContent>
+              <Typography variant={'h5'}>Contract Details</Typography>
+              <br/>
+              <Typography variant="caption" className={classes.label}>Type</Typography>
+              <Typography variant={'h6'} className={classes.value}>{contractDetail.name}</Typography>
+              <Typography variant="caption" className={classes.label}>Address</Typography>
+              <Typography variant="h6" className={classes.value}>{contractDetail.address}</Typography>
+              <Typography variant="caption" className={classes.label}>ABI</Typography>
+              <TextareaAutosize
+                readOnly
+                rowsMax={4}
+                style={{ fontSize: '14px', width: '720px', maxWidth: '100%' }}
+                defaultValue={contractDetail.abi}
+                className={classes.value}/>
+              <Typography variant="caption" className={classes.label}>Storage</Typography>
+              <TextareaAutosize
+                readOnly
+                rowsMax={4}
+                style={{ fontSize: '14px', width: '720px', maxWidth: '100%' }}
+                defaultValue={contractDetail.storageLayout}
+                className={classes.value}/>
+            </CardContent>
+          </Card>
+        </Grid>
+        }
+        {contractDetail &&
+        <Grid item xs={12} md={4}>
+          <ContractActions onSearch={onSearch}/>
+        </Grid>
+        }
+        {searchAction &&
+        <Grid item xs={12}>
+          <ContractInfoContainer address={address} action={searchAction}/>
+        </Grid>
+        }
+      </Grid>
     </div>
   )
 }
