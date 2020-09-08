@@ -32,23 +32,8 @@ Reporting engine is built on top of Quorum 2.6.0 as it supports `graphql` with a
 
 ## Architecture & Design
 
+ ![Architecture & Design](ReportingArch.jpg)
 
-```
-Quorum Reporting -----> [ Backend ] ----------> [ RPC Service ]
-                           |   |                       |
-                           |   +---------+             |
-                           |             |             |
-                           |             V             |
-   +-----------------------+------- [ Filter Service ] |
-   |                       |                    |      |
-   |                       |                    |      |
-   |                       V                    |      |
-   |              [ Monitor Service ]           |      |
-   |                       |                    |      |
-   |                       |                    |      |
-   V                       V                    V      V
-Quorum <- [ Block/Transaction/Token Monitor ] -> Database <---------- Visualization (e.g. Cakeshop)
-```
 
 #### Database Schema
 
@@ -57,42 +42,3 @@ Elasticsearch Database Schema [Reference](database/elasticsearch/README.md)
 #### RPC API Specification
 
 [Reference](core/rpc/README.md)
-
-## Roadmap
-
-#### Phase 0 (done)
-
-- Complete the base code architecture
-- Sync blocks & Store blocks/ transactions in a memory database
-- Filter transactions by registered addresses
-- Filter events by registered addresses
-- Dynamically change registered addresses, clean up and refilter
-- Expose basic RPC endpoints to serve queries
-- Unit tests & Github Actions CI
-
-#### Phase 1 (done)
-
-- Parse transaction/ event data inputs from contract ABI
-- Filter contract detailed storage by registered addresses (with dumpAccount available on geth side)
-- Resolve transactions with internal calls to registered addresses
-
-#### Phase 2 (done)
-
-- Design database schema & Integrate
-- Extend RPC APIs with complex queries
-- Containerize reporting
-
-#### Phase 3 (in progress)
-
-- Handle fail recover scenarios
-- Enhance performance
-- Integrate UI for visualization
-- Define reporting templates
-- Security
-  - configurable secure connection with Elasticsearch
-  - configurable secure connection with RPC endpoint
-
-#### Future Items
-
-- After Quorum supports go module, we should use Quorum module instead of ethereum 1.9.8
-- Use Docker-compose/Kubernetes for orchestration

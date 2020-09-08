@@ -43,19 +43,13 @@ Template {
 }
 ```
 
-#### State Index & Storage Index
-Storage has been split into "Storage" and "State". This is so that we only need to store the storage mapping with same 
-root once in "Storage", which can then be reference by the "State" multiple times in an effort to keep as little 
-duplicate data as possible.
-```
-State {
-    Address
-    BlockNumber
-    StorageRoot
-}
-```
+#### Storage Index
+Storage stores contract's storageroot and storage map if there is a state change.
+
 ```
 Storage {
+    Contract
+    BlockNumber
     StorageRoot
     Storage : {
         Key: Value
