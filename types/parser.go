@@ -56,7 +56,7 @@ func (ptx *ParsedTransaction) ParseTransaction(rawABI string) error {
 		// contract deployment transaction
 		ptx.Sig = "constructor" + internalAbi.Constructor.String()
 		dataHex := hex.EncodeToString(data)
-		if index := strings.Index(dataHex, "a165627a7a72305820"); index > 0 {
+		if index := strings.LastIndex(dataHex, "a165627a7a72305820"); index > 0 {
 			// search for pattern a165627a7a72305820 for solidity < 0.5.10
 			// <bytecode> + "a165627a7a72305820" + <256 bits whisperHash> + "0029"
 			index = (index + 18 + 64 + 4) / 2 // find hex position 18+64+4 after

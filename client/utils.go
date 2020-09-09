@@ -4,6 +4,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+
 	"quorumengineering/quorum-report/log"
 	"quorumengineering/quorum-report/types"
 )
@@ -15,6 +16,7 @@ const (
 	traceTransaction = "debug_traceTransaction"
 	getCode          = "eth_getCode"
 	getBlockByNumber = "eth_getBlockByNumber"
+	ethStorageRoot   = "eth_storageRoot"
 	protocolKey      = "protocols"
 	istanbulKey      = "istanbul"
 	consensusKey     = "consensus"
@@ -163,7 +165,7 @@ func CallBalanceOfERC20(c Client, contract types.Address, holder types.Address, 
 
 func StorageRoot(c Client, account types.Address, blockNum uint64) (types.Hash, error) {
 	var res types.Hash
-	err := c.RPCCall(&res, "eth_storageRoot", account.String(), fmt.Sprintf("0x%x", blockNum))
+	err := c.RPCCall(&res, ethStorageRoot, account.String(), fmt.Sprintf("0x%x", blockNum))
 	if err != nil && err.Error() == "can't find state object" {
 		return types.NewHash(""), nil
 	}
