@@ -12,7 +12,7 @@ effort.
 
 ### Pre-requisites
 
-- Running Quorum (use https://github.com/QuorumEngineering/quorum/tree/dump_account_api branch)
+- Running Quorum 2.8.0
     - Quorum needs to be run with GraphQL and websockets open, with `eth`, `admin` and `debug` endpoints available.
     - Quorum Reporting fetches a lot of historic data that is pruned by Quorum under default `full` gcmode. It is recommended to run Quorum in `archive` mode.
     
@@ -95,6 +95,17 @@ git clone https://github.com/QuorumEngineering/quorum-reporting.git
 go get ./...
 ```
 
-## Design & Roadmap
+## Design
 
-Refer to [design document](design.md).
+#### Architecture
+
+![Architecture & Design](ReportingArch.jpg)
+
+
+#### Database Schema
+
+Elasticsearch Database Schema [Reference](database/elasticsearch/README.md)
+
+#### RPC API Specification
+
+[Reference](core/rpc/README.md)
