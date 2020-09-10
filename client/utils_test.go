@@ -59,21 +59,20 @@ func TestTraceTransaction_WithError(t *testing.T) {
 
 	trace, err := TraceTransaction(stubClient, types.NewHash("0x0000000000000000000000000000000000000000000000000000000000000000"))
 	assert.EqualError(t, err, "not found")
-	assert.Nil(t, trace)
+	assert.Equal(t, trace, types.RawOuterCall{})
 }
 
 func TestTraceTransaction(t *testing.T) {
-	res := map[string]interface{}{
-		"customField": "value",
-	}
 	mockRPC := map[string]interface{}{
-		"debug_traceTransaction0x0000000000000000000000000000000000000000000000000000000000000000<*client.TraceConfig Value>": res,
+		"debug_traceTransaction0x0000000000000000000000000000000000000000000000000000000000000000<*client.TraceConfig Value>": types.RawOuterCall{
+			Calls: []types.RawInnerCall{{}},
+		},
 	}
 	stubClient := NewStubQuorumClient(nil, mockRPC)
 
 	trace, err := TraceTransaction(stubClient, types.NewHash("0x0000000000000000000000000000000000000000000000000000000000000000"))
 	assert.Nil(t, err)
-	assert.Equal(t, res, trace)
+	assert.Len(t, trace.Calls, 1)
 }
 
 func TestDumpAddress_WithError(t *testing.T) {

@@ -26,6 +26,21 @@ type RawBlock struct {
 	Transactions []Hash    `json:"transactions"`
 }
 
+type RawInnerCall struct {
+	Type    string
+	To      Address
+	Input   HexData
+	From    Address
+	Value   HexNumber
+	Gas     HexNumber
+	GasUsed HexNumber
+	Output  HexData
+}
+
+type RawOuterCall struct {
+	Calls []RawInnerCall
+}
+
 type Block struct {
 	Hash         Hash   `json:"hash"`
 	ParentHash   Hash   `json:"parentHash"`
