@@ -168,7 +168,7 @@ export const getERC721TokensAtBlock = (baseURL, address, block, options) => {
       [{contract: address, block: parseInt(block),
           options: {
               ...options,
-              after: options.after.tokenId,
+              after: options.after ? options.after.tokenId : undefined,
           },
       }],
     )
@@ -180,7 +180,7 @@ export const getERC721TokensForAccountAtBlock = (baseURL, address, holder, block
       [{contract: address, holder: holder, block: parseInt(block),
           options: {
               ...options,
-              after: options.after.tokenId,
+              after: options.after ? options.after.tokenId : undefined,
           },
       }],
     )
