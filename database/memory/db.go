@@ -390,17 +390,25 @@ func (db *MemoryDB) GetStorageTotal(types.Address, *types.PageOptions) (uint64, 
 	return 0, errors.New("method not implemented")
 }
 
-func (db *MemoryDB) GetStorage(address types.Address, blockNumber uint64) (map[types.Hash]string, error) {
+func (db *MemoryDB) GetStorage(address types.Address, blockNumber uint64) (*types.StorageResult, error) {
 	db.mux.RLock()
 	defer db.mux.RUnlock()
 	if !db.addressIsRegistered(address) {
 		return nil, errors.New("address is not registered")
 	}
 	storageRoot, ok := db.storageIndexDB[address].root[blockNumber]
-	if db.storageIndexDB[address] == nil || !ok {
-		return nil, errors.New("no record found")
+	if !ok {
+		return &types.StorageResult{
+			Storage:     make(map[types.Hash]string),
+			StorageRoot: types.NewHash(""),
+			BlockNumber: blockNumber,
+		}, nil
 	}
-	return db.storageIndexDB[address].storage[storageRoot], nil
+	return &types.StorageResult{
+		Storage:     db.storageIndexDB[address].storage[storageRoot],
+		StorageRoot: types.NewHash(storageRoot),
+		BlockNumber: blockNumber,
+	}, nil
 }
 
 func (db *MemoryDB) GetLastFiltered(address types.Address) (uint64, error) {

@@ -28,7 +28,7 @@ func (tm *DefaultTransactionMonitor) PullTransactions(block *types.Block) ([]*ty
 	fetchedTransactions := make([]*types.Transaction, 0, len(block.Transactions))
 	for _, txHash := range block.Transactions {
 		// Query transaction details by graphql.
-		tx, err := tm.createTransaction(block, txHash)
+		tx, err := tm.fetchTransaction(block, txHash)
 		if err != nil {
 			return nil, err
 		}
@@ -37,7 +37,7 @@ func (tm *DefaultTransactionMonitor) PullTransactions(block *types.Block) ([]*ty
 	return fetchedTransactions, nil
 }
 
-func (tm *DefaultTransactionMonitor) createTransaction(block *types.Block, hash types.Hash) (*types.Transaction, error) {
+func (tm *DefaultTransactionMonitor) fetchTransaction(block *types.Block, hash types.Hash) (*types.Transaction, error) {
 	log.Debug("Processing transaction", "hash", hash.String())
 
 	txOrigin, err := client.TransactionWithReceipt(tm.quorumClient, hash)

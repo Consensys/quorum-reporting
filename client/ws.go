@@ -71,14 +71,13 @@ func newWebSocketClient(rawUrl string) (*webSocketClient, error) {
 func (c *webSocketClient) dial(rawUrl string) error {
 	c.connMux.Lock()
 	defer c.connMux.Unlock()
-
-	conn, _, err := websocket.DefaultDialer.Dial(rawUrl, nil)
+	var err error
+	c.conn, _, err = websocket.DefaultDialer.Dial(rawUrl, nil)
 	if err != nil {
 		log.Error("Dial WebSocket endpoint error", "error", err)
 		return err
 	}
 	log.Info("Dial to WebSocket endpoint success", "rawUrl", rawUrl)
-	c.conn = conn
 
 	return nil
 }
@@ -96,10 +95,11 @@ func (c *webSocketClient) subscribeChainHead(ch chan<- types.RawHeader) error {
 
 	params, _ := json.Marshal([]interface{}{"newHeads"})
 
+	const ethSubscribe = "eth_subscribe"
 	msg := &message{
 		Version: "2.0",
 		ID:      c.chainHeadSubscriptionCallId,
-		Method:  "eth_subscribe",
+		Method:  ethSubscribe,
 		Params:  params,
 	}
 
@@ -199,6 +199,7 @@ func (c *webSocketClient) listen(shutdownChan <-chan struct{}) {
 		}
 
 		// handle websocket message
+		const ethSubscription = "eth_subscription"
 		if ch := c.getPendingRPC(receivedMsg.ID); ch != nil {
 			// handle rpc message
 			ch <- &receivedMsg
@@ -206,7 +207,7 @@ func (c *webSocketClient) listen(shutdownChan <-chan struct{}) {
 			// handle subscription
 			c.chainHeadSubscriptionCallId = ""
 			c.chainHeadSubscriptionId = strings.Trim(string(receivedMsg.Result), "\"")
-		} else if receivedMsg.Method == "eth_subscription" {
+		} else if receivedMsg.Method == ethSubscription {
 			// handle chain head message
 			var subMsg subMessage
 			if err = json.Unmarshal(receivedMsg.Params, &subMsg); err != nil {

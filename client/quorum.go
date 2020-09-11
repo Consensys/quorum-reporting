@@ -29,13 +29,12 @@ func NewQuorumClient(rawUrl, qgUrl string) (*QuorumClient, error) {
 		graphqlClient: graphql.NewClient(qgUrl),
 		shutdownChan:  make(chan struct{}),
 	}
-
+	var err error
 	log.Debug("Connecting to Quorum WebSocket endpoint", "rawUrl", rawUrl)
-	wsClient, err := newWebSocketClient(rawUrl)
+	quorumClient.wsClient, err = newWebSocketClient(rawUrl)
 	if err != nil {
 		return nil, errors.New("connect Quorum WebSocket endpoint failed")
 	}
-	quorumClient.wsClient = wsClient
 	log.Debug("Connected to WebSocket endpoint")
 
 	// Test graphql endpoint connection.
@@ -77,8 +76,8 @@ func (qc *QuorumClient) RPCCall(result interface{}, method string, args ...inter
 		return err
 	}
 
-	ticker := time.NewTicker(time.Second * 1)
-	defer ticker.Stop()
+	rpcCallTimeout := time.NewTicker(time.Second * 1)
+	defer rpcCallTimeout.Stop()
 	select {
 	case response := <-resultChan:
 		if response == nil {
@@ -93,7 +92,7 @@ func (qc *QuorumClient) RPCCall(result interface{}, method string, args ...inter
 			reflect.ValueOf(result).Elem().Set(reflect.ValueOf(response.Result))
 		}
 		return nil
-	case <-ticker.C:
+	case <-rpcCallTimeout.C:
 		return errors.New("rpc call timeout")
 	}
 }

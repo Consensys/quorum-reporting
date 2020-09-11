@@ -9,10 +9,24 @@ import (
 	"quorumengineering/quorum-report/types"
 )
 
+const (
+	ethCall          = "eth_call"
+	adminInfo        = "admin_nodeInfo"
+	dumpAddress      = "debug_dumpAddress"
+	traceTransaction = "debug_traceTransaction"
+	getCode          = "eth_getCode"
+	getBlockByNumber = "eth_getBlockByNumber"
+	ethStorageRoot   = "eth_storageRoot"
+	protocolKey      = "protocols"
+	istanbulKey      = "istanbul"
+	consensusKey     = "consensus"
+	ethKey           = "eth"
+)
+
 func DumpAddress(c Client, address types.Address, blockNumber uint64) (*types.AccountState, error) {
 	log.Debug("Fetching account dump", "account", address.String(), "blocknumber", blockNumber)
 	dumpAccount := &types.RawAccountState{}
-	err := c.RPCCall(&dumpAccount, "debug_dumpAddress", address.String(), fmt.Sprintf("0x%x", blockNumber))
+	err := c.RPCCall(&dumpAccount, dumpAddress, address.String(), fmtBlockNum(blockNumber))
 	if err != nil {
 		return nil, err
 	}
@@ -24,6 +38,10 @@ func DumpAddress(c Client, address types.Address, blockNumber uint64) (*types.Ac
 	return &types.AccountState{Root: dumpAccount.Root, Storage: converted}, nil
 }
 
+func fmtBlockNum(blockNumber uint64) string {
+	return fmt.Sprintf("0x%x", blockNumber)
+}
+
 func TraceTransaction(c Client, txHash types.Hash) (map[string]interface{}, error) {
 	log.Debug("Tracing transaction", "tx", txHash.String())
 
@@ -33,7 +51,7 @@ func TraceTransaction(c Client, txHash types.Hash) (map[string]interface{}, erro
 	type TraceConfig struct {
 		Tracer string
 	}
-	err := c.RPCCall(&resp, "debug_traceTransaction", txHash.String(), &TraceConfig{Tracer: "callTracer"})
+	err := c.RPCCall(&resp, traceTransaction, txHash.String(), &TraceConfig{Tracer: "callTracer"})
 	if err != nil {
 		return nil, err
 	}
@@ -43,7 +61,7 @@ func TraceTransaction(c Client, txHash types.Hash) (map[string]interface{}, erro
 func GetCode(c Client, address types.Address, blockNumber uint64) (types.HexData, error) {
 	log.Debug("Querying account code", "account", address.String(), "block number", blockNumber)
 	var res types.HexData
-	if err := c.RPCCall(&res, "eth_getCode", address.String(), fmt.Sprintf("0x%x", blockNumber)); err != nil {
+	if err := c.RPCCall(&res, getCode, address.String(), fmtBlockNum(blockNumber)); err != nil {
 		log.Debug("Error querying account code", "account", address.String(), "block number", blockNumber, "err", err)
 		return "", err
 	}
@@ -55,22 +73,22 @@ func Consensus(c Client) (string, error) {
 	log.Debug("Fetching consensus info")
 
 	var resp map[string]interface{}
-	err := c.RPCCall(&resp, "admin_nodeInfo")
+	err := c.RPCCall(&resp, adminInfo)
 	if err != nil {
 		return "", err
 	}
-	if resp["protocols"] == nil {
+	if resp[protocolKey] == nil {
 		return "", errors.New("no consensus info found")
 	}
-	protocols, ok := resp["protocols"].(map[string]interface{})
+	protocols, ok := resp[protocolKey].(map[string]interface{})
 	if !ok {
 		return "", errors.New("invalid consensus info found")
 	}
-	if protocols["istanbul"] != nil {
+	if protocols[istanbulKey] != nil {
 		return "istanbul", nil
 	}
-	protocol := protocols["eth"].(map[string]interface{})
-	return protocol["consensus"].(string), nil
+	protocol := protocols[ethKey].(map[string]interface{})
+	return protocol[consensusKey].(string), nil
 }
 
 func CallEIP165(c Client, address types.Address, interfaceId []byte, blockNum uint64) (bool, error) {
@@ -91,7 +109,7 @@ func CallEIP165(c Client, address types.Address, interfaceId []byte, blockNum ui
 	}
 
 	var res types.HexData
-	err := c.RPCCall(&res, "eth_call", msg, fmt.Sprintf("0x%x", blockNum))
+	err := c.RPCCall(&res, ethCall, msg, fmtBlockNum(blockNum))
 	if err != nil {
 		return false, err
 	}
@@ -105,7 +123,7 @@ func CallEIP165(c Client, address types.Address, interfaceId []byte, blockNum ui
 
 func BlockByNumber(c Client, blockNum uint64) (types.RawBlock, error) {
 	var blockOrigin types.RawBlock
-	err := c.RPCCall(&blockOrigin, "eth_getBlockByNumber", fmt.Sprintf("0x%x", blockNum), false)
+	err := c.RPCCall(&blockOrigin, getBlockByNumber, fmtBlockNum(blockNum), false)
 
 	return blockOrigin, err
 }
@@ -134,13 +152,22 @@ func CallBalanceOfERC20(c Client, contract types.Address, holder types.Address, 
 	// 70a08231 is the 4byte function sig for `balanceOf(address)`
 	// "000000000000000000000000" + string(holder) is the token holders address, padded to 32 bytes
 
-	blockAsHex := fmt.Sprintf("0x%x", blockNum)
+	blockAsHex := fmtBlockNum(blockNum)
 	msg := types.EIP165Call{
 		To:   contract,
 		Data: types.NewHexData("0x70a08231" + "000000000000000000000000" + string(holder)),
 	}
 
 	var res types.HexData
-	err := c.RPCCall(&res, "eth_call", msg, blockAsHex)
+	err := c.RPCCall(&res, ethCall, msg, blockAsHex)
+	return res, err
+}
+
+func StorageRoot(c Client, account types.Address, blockNum uint64) (types.Hash, error) {
+	var res types.Hash
+	err := c.RPCCall(&res, ethStorageRoot, account.String(), fmt.Sprintf("0x%x", blockNum))
+	if err != nil && err.Error() == "can't find state object" {
+		return types.NewHash(""), nil
+	}
 	return res, err
 }

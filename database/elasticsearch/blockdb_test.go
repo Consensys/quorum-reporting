@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/elastic/go-elasticsearch/v7/esapi"
@@ -513,4 +514,81 @@ func TestElasticsearchDB_WriteBlocks_MultipleBlocks(t *testing.T) {
 	err := db.WriteBlocks([]*types.Block{&testBlock, p})
 
 	assert.Nil(t, err, "unexpected error")
+}
+
+func TestElasticsearchDB_GetLastPersistedBlockNumber_NothingToDelete(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockedClient := elasticsearch_mocks.NewMockAPIClient(ctrl)
+
+	lastPersistedRequest := esapi.GetRequest{
+		Index:      MetaIndex,
+		DocumentID: "lastPersisted",
+	}
+	mockedClient.EXPECT().DoRequest(gomock.Any()) //for setup, not relevant to test
+	mockedClient.EXPECT().
+		DoRequest(NewGetRequestMatcher(lastPersistedRequest)).
+		Return([]byte(`{"_source":{"lastPersisted": 5}}`), nil)
+
+	db, _ := New(mockedClient)
+
+	lastNum, err := db.GetLastPersistedBlockNumber()
+
+	assert.Nil(t, err, "unexpected error")
+	assert.EqualValues(t, 5, lastNum)
+}
+
+func TestElasticsearchDB_GetLastPersistedBlockNumber_DeletingContractData(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockedClient := elasticsearch_mocks.NewMockAPIClient(ctrl)
+	mockedDeleter := elasticsearch_mocks.NewMockDeletionCoordinator(ctrl)
+
+	addressToDelete := types.NewAddress("1")
+	var deletionWg sync.WaitGroup
+	deletionWg.Add(1)
+
+	lastPersistedRequest := esapi.GetRequest{
+		Index:      MetaIndex,
+		DocumentID: "lastPersisted",
+	}
+	mockedClient.EXPECT().DoRequest(gomock.Any()) //for setup, not relevant to test
+	mockedDeleter.EXPECT().Delete(addressToDelete).Return(nil)
+	mockedClient.EXPECT().
+		DoRequest(NewGetRequestMatcher(lastPersistedRequest)).
+		Return([]byte(`{"_source":{"lastPersisted": 5}}`), nil)
+
+	db, _ := NewWithDeps(mockedClient, mockedDeleter)
+	db.deleteQueue[addressToDelete] = &deletionWg
+
+	lastNum, err := db.GetLastPersistedBlockNumber()
+
+	assert.Nil(t, err)
+	assert.EqualValues(t, 5, lastNum)
+	assert.Len(t, db.deleteQueue, 0)
+}
+
+func TestElasticsearchDB_GetLastPersistedBlockNumber_DeletingContractData_WithError(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockedClient := elasticsearch_mocks.NewMockAPIClient(ctrl)
+	mockedDeleter := elasticsearch_mocks.NewMockDeletionCoordinator(ctrl)
+
+	addressToDelete := types.NewAddress("1")
+	var deletionWg sync.WaitGroup
+
+	mockedClient.EXPECT().DoRequest(gomock.Any()) //for setup, not relevant to test
+	mockedDeleter.EXPECT().Delete(addressToDelete).Return(errors.New("test error"))
+
+	db, _ := NewWithDeps(mockedClient, mockedDeleter)
+	db.deleteQueue[addressToDelete] = &deletionWg
+
+	lastNum, err := db.GetLastPersistedBlockNumber()
+
+	assert.EqualError(t, err, "error performing deletion of contract 0x0000000000000000000000000000000000000001")
+	assert.EqualValues(t, 0, lastNum)
+	assert.Len(t, db.deleteQueue, 1)
 }
