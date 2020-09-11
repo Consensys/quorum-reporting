@@ -56,10 +56,13 @@ export default function SearchField(props) {
             // search block
             let blockNumber = parseInt(searchText);
             history.push(`/blocks/${blockNumber}`)
+            setSearchText('')
         } else if ((/^0x[0-9a-fA-F]{64}$/g).test(searchText)) {
             history.push(`/transactions/${searchText}`)
+            setSearchText('')
         } else if ((/^0x[0-9a-fA-F]{40}$/g).test(searchText)) {
             history.push(`/contracts/${searchText}`)
+            setSearchText('')
         } else {
             alert("Please input a valid block number, transaction hash, or address")
         }

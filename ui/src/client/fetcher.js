@@ -1,9 +1,28 @@
 import {
-    getLastPersistedBlockNumber, getAddresses, getABI, getStorageABI, getContractCreationTransaction,
-    getAllTransactionsToAddress, getAllTransactionsInternalToAddress, getAllEventsFromAddress, getStorageHistory,
-    addAddress, deleteAddress, getBlock, getTransaction, addTemplate, assignTemplate,
+    getLastPersistedBlockNumber,
+    getAddresses,
+    getABI,
+    getStorageABI,
+    getContractCreationTransaction,
+    getAllTransactionsToAddress,
+    getAllTransactionsInternalToAddress,
+    getAllEventsFromAddress,
+    getStorageHistory,
+    addAddress,
+    deleteAddress,
+    getBlock,
+    getTransaction,
+    addTemplate,
+    assignTemplate,
+    getERC20TokenHolders,
+    getERC721TokensAtBlock, getHolderForERC721TokenAtBlock,
 } from '../client/rpcClient'
-import { getContractTemplate } from './rpcClient'
+import {
+    getContractTemplate,
+    getERC20TokenBalance,
+    getERC721TokenHolders,
+    getERC721TokensForAccountAtBlock
+} from './rpcClient'
 
 export const getBlockNumber = (baseURL) => {
     return getLastPersistedBlockNumber(baseURL).then( (res) => {
@@ -51,11 +70,13 @@ export const getContractCreationTx = (baseURL, address) => {
             throw res.data.error.message
         }
         return getTransactionDetail(baseURL, res.data.result)
+          // Make it look like a pagination result for now
+          .then(result => ({ data: [result], total: 1}))
     })
 };
 
-export const getToTxs = (baseURL, address) => {
-    return getAllTransactionsToAddress(baseURL, address).then( (res) => {
+export const getToTxs = (baseURL, address, options) => {
+    return getAllTransactionsToAddress(baseURL, address, options).then( (res) => {
         if (res.data.error) {
             throw res.data.error.message
         }
@@ -82,8 +103,8 @@ export const getInternalToTxs = (baseURL, address) => {
     })
 };
 
-export const getEvents = (baseURL, address) => {
-    return getAllEventsFromAddress(baseURL, address).then( (res) => {
+export const getEvents = (baseURL, address, options) => {
+    return getAllEventsFromAddress(baseURL, address, options).then( (res) => {
         if (res.data.error) {
             throw res.data.error.message
         }
@@ -103,8 +124,8 @@ export const getEvents = (baseURL, address) => {
     })
 };
 
-export const getReportData = (baseURL, address, startBlockNumber, endBlockNumber, currentPage) => {
-    return getStorageHistory(baseURL, address, startBlockNumber, endBlockNumber, currentPage).then( (res) => {
+export const getReportData = (baseURL, address, startBlockNumber, endBlockNumber, options) => {
+    return getStorageHistory(baseURL, address, startBlockNumber, endBlockNumber, options).then( (res) => {
         if (res.data.error) {
             throw res.data.error.message
         }
@@ -114,6 +135,99 @@ export const getReportData = (baseURL, address, startBlockNumber, endBlockNumber
     }
     })
 };
+
+function calculateTotal (result, options) {
+    let lastPage = result.length < options.pageSize
+    let currentTotal = options.pageSize * options.pageNumber + result.length
+    // -1 means total unknown, set current total to disable next on last page
+    let total = lastPage ? currentTotal : -1
+    return total
+}
+
+export const getERC20Holders = (baseURL, address, block, options) => {
+    return getERC20TokenHolders(baseURL, address, block, options).then( (res) => {
+        console.log('response', res)
+        if (res.data.error) {
+            throw res.data.error.message
+        }
+        let total = calculateTotal(res.data.result, options)
+        return {
+            data: res.data.result,
+            total
+        }
+    })
+};
+
+export const getERC20Balance = (baseURL, address, holder, startBlockNumber, endBlockNumber, options) => {
+    return getERC20TokenBalance(baseURL, address, holder, startBlockNumber, endBlockNumber, options).then( (res) => {
+        console.log('response', res)
+        if (res.data.error) {
+            throw res.data.error.message
+        }
+        let data = Object.entries(res.data.result).map(([key, value]) => ({ block: key, balance: value })).sort((one, two) => two.block - one.block)
+        let total = calculateTotal(res.data.result, options)
+        return {
+            data: data,
+            total,
+        }
+    })
+};
+
+export const getERC721Holders = (baseURL, address, block, options) => {
+    return getERC721TokenHolders(baseURL, address, block, options).then( (res) => {
+      console.log('response', res)
+        if (res.data.error) {
+            throw res.data.error.message
+        }
+        let total = calculateTotal(res.data.result, options)
+        return {
+            data: res.data.result,
+            total
+        }
+    })
+};
+
+export const getERC721Tokens = (baseURL, address, block, options) => {
+    return getERC721TokensAtBlock(baseURL, address, block, options).then( (res) => {
+        console.log('response', res)
+        if (res.data.error) {
+            throw res.data.error.message
+        }
+        let total = calculateTotal(res.data.result, options)
+        return {
+            data: res.data.result,
+            total
+        }
+    })
+};
+
+export const getERC721TokensForAccount = (baseURL, address, holder, block, options) => {
+    return getERC721TokensForAccountAtBlock(baseURL, address, holder, block, options).then( (res) => {
+        console.log('response', res)
+        if (res.data.error) {
+            throw res.data.error.message
+        }
+        let total = calculateTotal(res.data.result, options)
+        return {
+            data: res.data.result,
+            total
+        }
+    })
+};
+
+export const getHolderForERC721Token = (baseURL, address, tokenId, block) => {
+    return getHolderForERC721TokenAtBlock(baseURL, address, tokenId, block).then( (res) => {
+        console.log('response', res)
+        if (res.data.error) {
+            throw res.data.error.message
+        }
+        return {
+            data: [res.data.result.replace('0x0x', '0x')], // TODO remove this when fixed
+            total: 1,
+        }
+    })
+};
+
 
 export const getSingleBlock = (baseURL, blockNumber) => {
     return getBlock(baseURL, blockNumber).then( (res) => {
@@ -142,7 +256,6 @@ export const getSingleTransaction = (baseURL, txHash) => {
 const getContractsDetail = (baseURL, addresses) => {
   return Promise.all(
     addresses.map((address) => {
-        console.log("looking up address details for", address)
         return Promise.all([
           getABI(baseURL, address).then((res) => res.data.result),
           getStorageABI(baseURL, address).then((res) => res.data.result),

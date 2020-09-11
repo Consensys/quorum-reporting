@@ -20,8 +20,8 @@ function ContractSelector(props) {
                     value={props.selectedAction}
                     onChange={props.handleSelectedActionChange}
                 >
-                    {props.actions.map(a => (
-                        <MenuItem key={a} value={a}>{a}</MenuItem>
+                    {props.actions.map(({ label, value }) => (
+                        <MenuItem key={value} value={value}>{label}</MenuItem>
                     ))}
                 </Select>
             </FormControl>

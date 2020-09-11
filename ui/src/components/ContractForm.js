@@ -30,7 +30,6 @@ function ContractForm(props) {
       console.log('returning', rpcEndpoint)
       return
     }
-    console.log('getting templates', rpcEndpoint)
       getTemplates(rpcEndpoint)
         .then((res) => {
             setTemplates(res.data.result)

@@ -89,7 +89,7 @@ export default function HeaderContainer () {
   }
 
   return (
-    <AppBar color={'white'} position="static">
+    <AppBar color="transparent" position="static">
       <Toolbar>
         <Link to="/" className={classes.home}>
           <Typography variant="h6" color="inherit">

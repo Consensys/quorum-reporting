@@ -17,3 +17,8 @@ export const updateBlockNumberAction = (lastPersistedBlockNumber) => ({
     type: types.UPDATE_BLOCK_NUMBER,
     lastPersistedBlockNumber,
 });
+
+export const updateRowsPerPageAction = (rowsPerPage) => ({
+    type: types.UPDATE_ROWS_PER_PAGE,
+    rowsPerPage,
+});

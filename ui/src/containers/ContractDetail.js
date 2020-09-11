@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react'
 import Alert from '@material-ui/lab/Alert'
 import { useDispatch, useSelector } from 'react-redux'
 import { makeStyles } from '@material-ui/core/styles'
-import ContractInfoContainer from './ContractInfoContainer'
 import shallowEqual from 'react-redux/lib/utils/shallowEqual'
 import Typography from '@material-ui/core/Typography'
 import TextareaAutosize from '@material-ui/core/TextareaAutosize'
@@ -10,6 +9,7 @@ import ContractActions from '../components/ContractActions'
 import Grid from '@material-ui/core/Grid'
 import Card from '@material-ui/core/Card'
 import CardContent from '@material-ui/core/CardContent'
+import { PaginatedTableView } from '../components/table/PaginatedTableView'
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -49,15 +49,12 @@ export function ContractDetail ({ address }) {
   const [errorMessage, setErrorMessage] = useState()
   const [searchAction, setSearchAction] = useState()
   const { contracts = [] } = useSelector(state => state.user, shallowEqual)
+  const { rpcEndpoint, lastPersistedBlockNumber } = useSelector(state => state.system, shallowEqual)
   const dispatch = useDispatch()
 
   useEffect(() => {
     setContractDetail(contracts.find((contract) => contract.address === address))
   }, [address, contracts])
-
-  const onSearch = (action, startBlock, endBlock) => {
-    setSearchAction({ action, startBlock, endBlock })
-  }
 
   return (
     <div className={classes.root}>
@@ -87,28 +84,33 @@ export function ContractDetail ({ address }) {
                 style={{ fontSize: '14px', width: '720px', maxWidth: '100%' }}
                 defaultValue={contractDetail.abi}
                 className={classes.value}/>
-              <Typography variant="caption" className={classes.label}>Storage</Typography>
-              <TextareaAutosize
-                readOnly
-                rowsMax={4}
-                style={{ fontSize: '14px', width: '720px', maxWidth: '100%' }}
-                defaultValue={contractDetail.storageLayout}
-                className={classes.value}/>
+              {contractDetail.storageLayout &&
+              <div>
+                <Typography variant="caption" className={classes.label}>Storage</Typography>,
+                <TextareaAutosize
+                  readOnly
+                  rowsMax={4}
+                  style={{ fontSize: '14px', width: '720px', maxWidth: '100%' }}
+                  defaultValue={contractDetail.storageLayout}
+                  className={classes.value}/>
+              </div>
+              }
             </CardContent>
           </Card>
         </Grid>
         }
         {contractDetail &&
         <Grid item xs={12} md={4}>
-          <ContractActions onSearch={onSearch}/>
+          <ContractActions onSearch={setSearchAction} contractDetail={contractDetail}/>
         </Grid>
         }
         {searchAction &&
         <Grid item xs={12}>
-          <ContractInfoContainer address={address} action={searchAction}/>
+          <searchAction.View searchAction={searchAction} address={address} />
         </Grid>
         }
       </Grid>
     </div>
   )
 }
+

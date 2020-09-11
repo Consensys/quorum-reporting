@@ -12,6 +12,8 @@ import Collapse from '@material-ui/core/Collapse';
 import Box from '@material-ui/core/Box';
 import Typography from '@material-ui/core/Typography';
 import { Link } from 'react-router-dom'
+import { useSelector } from 'react-redux'
+import { PaginatedTableView } from './PaginatedTableView'
 
 const useRowStyles = makeStyles({
     root: {
@@ -26,7 +28,47 @@ const useRowStyles = makeStyles({
     }
 });
 
-function ExpandableTxRow(props) {
+export function TransactionTable ({ searchAction, address }) {
+    const rpcEndpoint = useSelector(state => state.system.rpcEndpoint)
+    return <PaginatedTableView
+      title={searchAction.label}
+      HeaderView={TransactionHeader}
+      ItemView={TransactionRowItem}
+      getItems={(page, rowsPerPage, lastItem) => {
+          return searchAction.getItems(rpcEndpoint, { address, ...searchAction.params }, {
+              pageNumber: page,
+              pageSize: rowsPerPage,
+              after: lastItem
+          })
+      }}
+    />
+}
+
+export function TransactionHeader () {
+    return <TableHead>
+        <TableRow>
+            <TableCell width="5%"/>
+            <TableCell width="5%"><strong>Block</strong></TableCell>
+            <TableCell width="45%"><strong>Transaction Hash</strong></TableCell>
+            <TableCell width="45%"><strong>From</strong></TableCell>
+        </TableRow>
+    </TableHead>
+}
+
+export function TransactionRowItem (tx) {
+    return <ExpandableTxRow
+      key={tx.hash}
+      txHash={tx.hash}
+      from={tx.from}
+      to={tx.to}
+      blockNumber={tx.blockNumber}
+      parsedTransaction={tx.parsedTransaction}
+      parsedEvents={tx.parsedEvents}
+      internalCalls={tx.internalCalls}
+    />
+}
+
+export function ExpandableTxRow(props) {
     const [open, setOpen] = React.useState(false);
     const classes = useRowStyles();
 
@@ -126,5 +168,3 @@ function ExpandableTxRow(props) {
         </React.Fragment>
     );
 }
-
-export default ExpandableTxRow
