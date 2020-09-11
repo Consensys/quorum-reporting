@@ -56,6 +56,7 @@ export function PaginatedTableView ({ title, getItems, ItemView, HeaderView, sta
     const newRowsPerPage = parseInt(event.target.value, 10)
     dispatch(updateRowsPerPageAction(newRowsPerPage))
     setPage(0)
+    setLastItemEachPage([])
   }
 
   return <Paper className={classes.container}>
