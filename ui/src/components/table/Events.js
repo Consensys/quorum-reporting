@@ -14,7 +14,6 @@ import Typography from '@material-ui/core/Typography';
 import { Link } from 'react-router-dom'
 import { useSelector } from 'react-redux'
 import { PaginatedTableView } from './PaginatedTableView'
-import { TransactionRowItem } from './Transactions'
 
 const useRowStyles = makeStyles({
     root: {

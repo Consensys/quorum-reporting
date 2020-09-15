@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import Alert from '@material-ui/lab/Alert'
-import { useDispatch, useSelector } from 'react-redux'
+import { useSelector } from 'react-redux'
 import { makeStyles } from '@material-ui/core/styles'
 import shallowEqual from 'react-redux/lib/utils/shallowEqual'
 import Typography from '@material-ui/core/Typography'
@@ -57,7 +57,6 @@ export function ContractDetail ({ address }) {
   const [creationTx, setCreationTx] = useState()
   const { contracts = [] } = useSelector(state => state.user, shallowEqual)
   const { rpcEndpoint, lastPersistedBlockNumber } = useSelector(state => state.system, shallowEqual)
-  const dispatch = useDispatch()
 
   useEffect(() => {
     const detail = contracts.find((contract) => contract.address === address)

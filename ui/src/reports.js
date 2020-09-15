@@ -1,4 +1,3 @@
-import React from 'react'
 import {
   getERC20Balance,
   getERC20Holders,

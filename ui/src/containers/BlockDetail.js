@@ -21,7 +21,7 @@ export function BlockDetail ({ number }) {
   const classes = useStyles()
   const [displayData, setDisplayData] = useState()
   const [errorMessage, setErrorMessage] = useState()
-  const { lastPersistedBlockNumber, rpcEndpoint, isConnected } = useSelector(state => state.system)
+  const { rpcEndpoint } = useSelector(state => state.system)
 
   useEffect(() => {
     setDisplayData(undefined)
@@ -32,7 +32,7 @@ export function BlockDetail ({ number }) {
       setErrorMessage(`Block not found (${e.toString()})`)
       setDisplayData(undefined)
     })
-  }, [number])
+  }, [rpcEndpoint, number])
 
   return (
     <div className={classes.root} align="center">
@@ -42,7 +42,6 @@ export function BlockDetail ({ number }) {
       {displayData &&
       <RecursiveInfoList
         displayData={displayData}
-        // handleReturn={handleReturn}
       />
       }
     </div>

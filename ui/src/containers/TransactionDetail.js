@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import Alert from '@material-ui/lab/Alert'
 import RecursiveInfoList from '../components/RecursiveInfoList'
-import { getSingleBlock, getSingleTransaction } from '../client/fetcher'
+import { getSingleTransaction } from '../client/fetcher'
 import { useSelector } from 'react-redux'
 import { makeStyles } from '@material-ui/core/styles'
 
@@ -21,7 +21,7 @@ export function TransactionDetail ({ id }) {
   const classes = useStyles()
   const [displayData, setDisplayData] = useState()
   const [errorMessage, setErrorMessage] = useState()
-  const { lastPersistedBlockNumber, rpcEndpoint, isConnected } = useSelector(state => state.system)
+  const { rpcEndpoint, } = useSelector(state => state.system)
 
   useEffect(() => {
     setDisplayData(undefined)
@@ -31,7 +31,7 @@ export function TransactionDetail ({ id }) {
       setErrorMessage(`Transaction not found (${e.toString()})`)
       setDisplayData(undefined)
     })
-  }, [id])
+  }, [id, rpcEndpoint])
 
   return (
     <div className={classes.root} align="center">
@@ -41,7 +41,6 @@ export function TransactionDetail ({ id }) {
       {displayData &&
       <RecursiveInfoList
         displayData={displayData}
-        // handleReturn={handleReturn}
       />
       }
     </div>

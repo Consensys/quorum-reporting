@@ -5,8 +5,6 @@ import Toolbar from '@material-ui/core/Toolbar'
 import Typography from '@material-ui/core/Typography'
 import IconButton from '@material-ui/core/IconButton'
 import SettingsIcon from '@material-ui/icons/Settings'
-import SyncIcon from '@material-ui/icons/Sync'
-import SyncDisabledIcon from '@material-ui/icons/SyncDisabled'
 import SettingForm from '../components/SettingForm'
 import {
   connectAction,
@@ -42,7 +40,6 @@ export default function HeaderContainer () {
   const classes = useStyles()
   const [formIsOpen, setFormIsOpen] = useState(false)
   const [newRPCEndpoint, setNewRPCEndpoint] = useState('')
-  const [blockNumberAppear, setBlockNumberAppear] = useState(false)
   const {
     rpcEndpoint,
     isConnected,
@@ -63,17 +60,9 @@ export default function HeaderContainer () {
     }
   }, [])
 
-  const blockNumberBlinkEffect = () => {
-    setBlockNumberAppear(false)
-    setTimeout(() => {
-      setBlockNumberAppear(true)
-    }, 500)
-  }
-
   const connectReporting = () => {
     getBlockNumber(rpcEndpoint).then((res) => {
       if (lastPersistedBlockNumber !== res) {
-        blockNumberBlinkEffect()
         if (!isConnected) {
           dispatch(connectAction())
         }
@@ -81,7 +70,6 @@ export default function HeaderContainer () {
       }
     }).catch((e) => {
       if (isConnected) {
-        blockNumberBlinkEffect()
         dispatch(disconnectAction())
         dispatch(updateBlockNumberAction(''))
       }

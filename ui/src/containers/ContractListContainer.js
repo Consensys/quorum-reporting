@@ -35,10 +35,10 @@ export default function ContractListContainer() {
   const contracts = useSelector(state => state.user.contracts)
 
   useEffect(() => {
-    getAllRegisteredContract()
+    getAllRegisteredContracts()
   }, [])
 
-  const getAllRegisteredContract = () => {
+  const getAllRegisteredContracts = () => {
     getContracts(rpcEndpoint).then((contracts) => {
       const sortedContracts = contracts.sort((a, b) => a.name.localeCompare(b.name))
       dispatch(getContractsAction(sortedContracts))
@@ -49,7 +49,7 @@ export default function ContractListContainer() {
     setFormIsOpen(false)
     // give a small timeout to avoid fetch too fast
     setTimeout(() => {
-      getAllRegisteredContract()
+      getAllRegisteredContracts()
     }, 500)
   }
 
@@ -58,7 +58,7 @@ export default function ContractListContainer() {
       // TODO: handle error?
       // give a small timeout to avoid fetch too fast
       setTimeout(() => {
-        getAllRegisteredContract()
+        getAllRegisteredContracts()
       }, 500)
     })
   }
@@ -68,7 +68,7 @@ export default function ContractListContainer() {
       <CardContent className={classes.cardContent}>
         <Typography variant="h6" align="left">
           Registered Contract List&nbsp;
-          <IconButton onClick={getAllRegisteredContract}>
+          <IconButton onClick={getAllRegisteredContracts}>
             <RefreshIcon/>
           </IconButton>
         </Typography>
