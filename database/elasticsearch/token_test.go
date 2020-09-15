@@ -498,8 +498,8 @@ func TestElasticsearchDB_ERC721TokenByTokenID(t *testing.T) {
 	result, err := db.ERC721TokenByTokenID(tokenContractAddress, 12, tokenId)
 
 	expected := types.ERC721Token{
-		Contract: "0x1932c48b2bf8102ba33b4a6b545c32236e342f34",
-		Holder:   "0x1932c48b2bf8102ba33b4a6b545c32236e342f34",
+		Contract: "1932c48b2bf8102ba33b4a6b545c32236e342f34",
+		Holder:   "1932c48b2bf8102ba33b4a6b545c32236e342f34",
 		Token:    "500",
 		HeldFrom: 1,
 	}
