@@ -12,6 +12,7 @@ export function ReportTable ({ searchReport, address }) {
   const rpcEndpoint = useSelector(state => state.system.rpcEndpoint)
   return <PaginatedTableView
     title={searchReport.label}
+    note={'Note: Blocks with changes to contract fields of type \'mapping\' will show up in the list, but the actual change in value will not be shown.'}
     HeaderView={ReportHeader}
     ItemView={ReportRowItem}
     getItems={(page, rowsPerPage, lastItem) => {
@@ -27,14 +28,13 @@ export function ReportTable ({ searchReport, address }) {
 export function ReportHeader () {
   return <TableHead>
     <TableRow>
-      <TableCell width="10%"><strong>Block Number</strong></TableCell>
+      <TableCell width="10%"><strong>Block</strong></TableCell>
       <TableCell width="90%"><strong>State</strong></TableCell>
     </TableRow>
   </TableHead>
 }
 
 export function ReportRowItem (s) {
-  console.log('here', s)
   return <TableRow key={s.blockNumber}>
     <TableCell>{s.blockNumber}</TableCell>
     <TableCell>
