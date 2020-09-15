@@ -43,7 +43,8 @@ class ContractListContainer extends React.Component {
 
     getAllRegisteredContract = () => {
         getContracts(this.props.rpcEndpoint).then( (contracts) => {
-            this.props.dispatch(getContractsAction(contracts))
+            const sortedContracts = contracts.sort((a, b) => a.name.localeCompare(b.name))
+            this.props.dispatch(getContractsAction(sortedContracts))
         })
     };
 
