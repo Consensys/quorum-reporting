@@ -47,7 +47,7 @@ export function ContractDetail ({ address }) {
   const classes = useStyles()
   const [contractDetail, setContractDetail] = useState()
   const [errorMessage, setErrorMessage] = useState()
-  const [searchAction, setSearchAction] = useState()
+  const [searchReport, setSearchReport] = useState()
   const { contracts = [] } = useSelector(state => state.user, shallowEqual)
   const { rpcEndpoint, lastPersistedBlockNumber } = useSelector(state => state.system, shallowEqual)
   const dispatch = useDispatch()
@@ -101,12 +101,12 @@ export function ContractDetail ({ address }) {
         }
         {contractDetail &&
         <Grid item xs={12} md={4}>
-          <ContractActions onSearch={setSearchAction} contractDetail={contractDetail}/>
+          <ContractActions onSearch={setSearchReport} contractDetail={contractDetail}/>
         </Grid>
         }
-        {searchAction &&
+        {searchReport &&
         <Grid item xs={12}>
-          <searchAction.View searchAction={searchAction} address={address} />
+          <searchReport.View searchReport={searchReport} address={address} />
         </Grid>
         }
       </Grid>

@@ -1,37 +1,20 @@
 import React from 'react';
 import { makeStyles } from '@material-ui/core/styles';
-import Table from '@material-ui/core/Table';
 import TableHead from '@material-ui/core/TableHead';
-import TableBody from '@material-ui/core/TableBody';
 import TableRow from '@material-ui/core/TableRow';
 import TableCell from '@material-ui/core/TableCell';
-import IconButton from '@material-ui/core/IconButton';
-import KeyboardArrowUpIcon from '@material-ui/icons/KeyboardArrowUp';
-import KeyboardArrowDownIcon from '@material-ui/icons/KeyboardArrowDown';
-import Collapse from '@material-ui/core/Collapse';
-import Box from '@material-ui/core/Box';
-import Typography from '@material-ui/core/Typography';
 import { Link } from 'react-router-dom'
 import { useSelector } from 'react-redux'
 import { PaginatedTableView } from './PaginatedTableView'
-import { ReportRowItem } from './Report'
 
-const useRowStyles = makeStyles({
-    root: {
-        '& > *': {
-            borderBottom: 'unset',
-        },
-    },
-});
-
-export function TokenHolderTable ({ searchAction, address }) {
+export function TokenHolderTable ({ searchReport, address }) {
     const rpcEndpoint = useSelector(state => state.system.rpcEndpoint)
     return <PaginatedTableView
-      title={searchAction.label}
+      title={searchReport.label}
       HeaderView={TokenHolderHeader}
       ItemView={TokenHolderRowItem}
       getItems={(page, rowsPerPage, lastItem) => {
-          return searchAction.getItems(rpcEndpoint, { address, ...searchAction.params }, {
+          return searchReport.getItems(rpcEndpoint, { address, ...searchReport.params }, {
               pageNumber: page,
               pageSize: rowsPerPage,
               after: lastItem
@@ -56,14 +39,14 @@ export function TokenHolderRowItem (item) {
     </TableRow>
 }
 
-export function TokenTable ({ searchAction, address }) {
+export function TokenTable ({ searchReport, address }) {
     const rpcEndpoint = useSelector(state => state.system.rpcEndpoint)
     return <PaginatedTableView
-      title={searchAction.label}
+      title={searchReport.label}
       HeaderView={TokenHeader}
       ItemView={TokenRowItem}
       getItems={(page, rowsPerPage, lastItem) => {
-          return searchAction.getItems(rpcEndpoint, { address, ...searchAction.params }, {
+          return searchReport.getItems(rpcEndpoint, { address, ...searchReport.params }, {
               pageNumber: page,
               pageSize: rowsPerPage,
               after: lastItem
@@ -101,14 +84,14 @@ export function TokenRowItem (item) {
     </TableRow>
 }
 
-export function TokenBalanceTable ({ searchAction, address }) {
+export function TokenBalanceTable ({ searchReport, address }) {
     const rpcEndpoint = useSelector(state => state.system.rpcEndpoint)
     return <PaginatedTableView
-      title={searchAction.label}
+      title={searchReport.label}
       HeaderView={BalanceHeader}
       ItemView={BalanceRowItem}
       getItems={(page, rowsPerPage, lastItem) => {
-          return searchAction.getItems(rpcEndpoint, { address, ...searchAction.params }, {
+          return searchReport.getItems(rpcEndpoint, { address, ...searchReport.params }, {
               pageNumber: page,
               pageSize: rowsPerPage,
               after: lastItem

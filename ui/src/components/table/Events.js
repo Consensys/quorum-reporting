@@ -24,14 +24,14 @@ const useRowStyles = makeStyles({
     },
 });
 
-export function EventTable ({ searchAction, address }) {
+export function EventTable ({ searchReport, address }) {
   const rpcEndpoint = useSelector(state => state.system.rpcEndpoint)
   return <PaginatedTableView
-    title={searchAction.label}
+    title={searchReport.label}
     HeaderView={EventHeader}
     ItemView={EventRowItem}
     getItems={(page, rowsPerPage, lastItem) => {
-      return searchAction.getItems(rpcEndpoint, { address, ...searchAction.params }, {
+      return searchReport.getItems(rpcEndpoint, { address, ...searchReport.params }, {
         pageNumber: page,
         pageSize: rowsPerPage,
         after: lastItem

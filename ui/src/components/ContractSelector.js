@@ -17,10 +17,10 @@ function ContractSelector(props) {
             <FormControl variant="filled" size="small" className={classes.formControl} style={{width: 400, maxWidth: '90%'}}>
                 <InputLabel>Actions</InputLabel>
                 <Select
-                    value={props.selectedAction}
-                    onChange={props.handleSelectedActionChange}
+                    value={props.selectedReport}
+                    onChange={props.handleSelectedReportChange}
                 >
-                    {props.actions.map(({ label, value }) => (
+                    {props.reports.map(({ label, value }) => (
                         <MenuItem key={value} value={value}>{label}</MenuItem>
                     ))}
                 </Select>

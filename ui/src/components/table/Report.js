@@ -7,16 +7,15 @@ import TableBody from '@material-ui/core/TableBody'
 import TextareaAutosize from '@material-ui/core/TextareaAutosize'
 import { useSelector } from 'react-redux'
 import { PaginatedTableView } from './PaginatedTableView'
-import { EventRowItem } from './Events'
 
-export function ReportTable ({ searchAction, address }) {
+export function ReportTable ({ searchReport, address }) {
   const rpcEndpoint = useSelector(state => state.system.rpcEndpoint)
   return <PaginatedTableView
-    title={searchAction.label}
+    title={searchReport.label}
     HeaderView={ReportHeader}
     ItemView={ReportRowItem}
     getItems={(page, rowsPerPage, lastItem) => {
-      return searchAction.getItems(rpcEndpoint, { address, ...searchAction.params }, {
+      return searchReport.getItems(rpcEndpoint, { address, ...searchReport.params }, {
         pageNumber: page,
         pageSize: rowsPerPage,
         after: lastItem
@@ -79,4 +78,3 @@ export function ReportRowItem (s) {
     </TableCell>
   </TableRow>
 }
-

@@ -1,5 +1,4 @@
 import * as types from '../actionTypes';
-import { HomePageId } from "../../constants";
 
 const initialState = {
     selectedContract: "",

@@ -4,20 +4,7 @@ import Card from '@material-ui/core/Card'
 import Button from '@material-ui/core/Button'
 import SearchIcon from '@material-ui/icons/Search'
 import ContractSelector from '../components/ContractSelector'
-import {
-  Actions,
-  GenerateReport,
-  ContractCreationTx,
-  ERC20TokenBalance,
-  ERC20TokenHolders,
-  ERC721HolderForToken,
-  ERC721Holders,
-  ERC721Tokens,
-  ERC721TokensForAccount,
-  Events,
-  InternalToTxs,
-  ToTxs,
-} from '../constants'
+import Reports from '../reports'
 import { makeStyles } from '@material-ui/core/styles'
 import FormControl from '@material-ui/core/FormControl'
 import TextField from '@material-ui/core/TextField'
@@ -38,16 +25,16 @@ const useStyles = makeStyles((theme) => ({
 }))
 
 export default function ContractActions ({ onSearch, contractDetail }) {
-  let actions = [ToTxs, ContractCreationTx, InternalToTxs, Events]
+  let reports = [Reports.ToTxs, Reports.ContractCreationTx, Reports.InternalToTxs, Reports.Events]
   switch (contractDetail.name) {
     case 'ERC20':
-      actions = [ERC20TokenHolders, ERC20TokenBalance, ...actions]
+      reports = [Reports.ERC20TokenHolders, Reports.ERC20TokenBalance, ...reports]
       break
     case 'ERC721':
-      actions = [ERC721Holders, ERC721Tokens, ERC721TokensForAccount, ERC721HolderForToken, ...actions]
+      reports = [Reports.ERC721Holders, Reports.ERC721Tokens, Reports.ERC721TokensForAccount, Reports.ERC721HolderForToken, ...reports]
       break
     default:
-      actions = [...actions, GenerateReport]
+      reports = [...reports, Reports.GenerateReport]
       break
   }
   const classes = useStyles()
@@ -56,9 +43,9 @@ export default function ContractActions ({ onSearch, contractDetail }) {
   const [account, setAccount] = useState('')
   const [atBlock, setAtBlock] = useState(lastPersistedBlockNumber)
   const [tokenId, setTokenId] = useState('')
-  const [startNumber, setStartNumber] = useState("1")
-  const [endNumber, setEndNumber] = useState(lastPersistedBlockNumber)
-  const [selectedAction, setSelectedAction] = useState(actions[0])
+  const [startNumber, setStartNumber] = useState('')
+  const [endNumber, setEndNumber] = useState('')
+  const [selectedReport, setSelectedReport] = useState(reports[0])
   return (
     <Card className={classes.card}>
       <CardContent>
@@ -73,16 +60,17 @@ export default function ContractActions ({ onSearch, contractDetail }) {
           }
           <br/>
           <ContractSelector
-            actions={actions}
-            selectedAction={selectedAction.value}
-            handleSelectedActionChange={(e) => {
-              setSelectedAction(Actions[e.target.value])
+            reports={reports}
+            selectedReport={selectedReport.value}
+            handleSelectedReportChange={(e) => {
+              setSelectedReport(Reports[e.target.value])
             }}
           />
-          {selectedAction.fields.account &&
+          {selectedReport.fields.account &&
           <FormControl className={classes.formControl}>
             <TextField
               label="For Account"
+              placeholder={'0xb6ae71...'}
               value={account}
               onChange={(e) => setAccount(e.target.value)}
               variant="filled"
@@ -90,7 +78,7 @@ export default function ContractActions ({ onSearch, contractDetail }) {
             />
           </FormControl>
           }
-          {selectedAction.fields.tokenId &&
+          {selectedReport.fields.tokenId &&
           <FormControl className={classes.formControl}>
             <TextField
               label="Token ID"
@@ -101,33 +89,36 @@ export default function ContractActions ({ onSearch, contractDetail }) {
             />
           </FormControl>
           }
-          {selectedAction.fields.block &&
+          {selectedReport.fields.block &&
           <FormControl className={classes.formControl}>
             <TextField
               label="At Block Number"
               value={atBlock}
+              placeholder={lastPersistedBlockNumber}
               onChange={(e) => setAtBlock(e.target.value)}
               variant="filled"
               size="small"
             />
           </FormControl>
           }
-          {selectedAction.fields.startBlock &&
+          {selectedReport.fields.startBlock &&
           <FormControl className={classes.formControl}>
             <TextField
               label="Start Block Number"
               value={startNumber}
+              placeholder={'1'}
               onChange={(e) => setStartNumber(e.target.value)}
               variant="filled"
               size="small"
             />
           </FormControl>
           }
-          {selectedAction.fields.endBlock &&
+          {selectedReport.fields.endBlock &&
           <FormControl className={classes.formControl}>
             <TextField
               label="End Block Number"
               value={endNumber}
+              placeholder={lastPersistedBlockNumber}
               onChange={(e) => setEndNumber(e.target.value)}
               variant="filled"
               size="small"
@@ -137,46 +128,46 @@ export default function ContractActions ({ onSearch, contractDetail }) {
           <br/>
           <br/>
           <Button align="right" variant="contained" color="primary" onClick={() => {
-            if (selectedAction.fields.startBlock === 'required' &&
-              (startNumber === '' || isNaN(startNumber))) {
+            if (selectedReport.fields.startBlock === 'required' &&
+              (startNumber !== '' || isNaN(startNumber))) {
               setError('Invalid start block number')
               return
             }
-            if (selectedAction.fields.startBlock === 'required' &&
-              (endNumber === '' || isNaN(endNumber))) {
+            if (selectedReport.fields.endBlock === 'required' &&
+              (endNumber !== '' || isNaN(endNumber))) {
               setError('Invalid end block number')
               return
             }
-            if (selectedAction.fields.block === 'required' &&
-              (atBlock === '' || isNaN(atBlock))) {
+            if (selectedReport.fields.block === 'required' &&
+              (atBlock !== '' || isNaN(atBlock))) {
               setError('Invalid block number')
               return
             }
-            if (selectedAction.fields.account === 'required' &&
+            if (selectedReport.fields.account === 'required' &&
               (account === '')) {
               setError('Account cannot be empty')
               return
             }
-            if (selectedAction.fields.tokenId === 'required' &&
+            if (selectedReport.fields.tokenId === 'required' &&
               (tokenId === '')) {
               setError('Token ID cannot be empty')
               return
             }
             onSearch({
-              ...selectedAction,
+              ...selectedReport,
               params: {
-                startNumber,
-                endNumber,
-                atBlock,
+                startNumber: startNumber || 1,
+                endNumber: endNumber || lastPersistedBlockNumber,
+                atBlock: endNumber || lastPersistedBlockNumber,
                 account,
                 tokenId,
               }
             })
-            setStartNumber("1")
-            setEndNumber(lastPersistedBlockNumber)
-            setAccount("")
-            setAtBlock(lastPersistedBlockNumber)
-            setTokenId("")
+            setStartNumber('')
+            setEndNumber('')
+            setAccount('')
+            setAtBlock('')
+            setTokenId('')
           }}>
             <SearchIcon/>
             &nbsp;
