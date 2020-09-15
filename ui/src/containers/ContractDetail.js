@@ -60,6 +60,9 @@ export function ContractDetail ({ address }) {
 
   useEffect(() => {
     const detail = contracts.find((contract) => contract.address === address)
+    if(!detail) {
+      return
+    }
     setContractDetail(detail)
     const report = getDefaultReportForTemplate(detail.name)
     setSearchReport({

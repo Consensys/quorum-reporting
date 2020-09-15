@@ -83,7 +83,7 @@ export default function ContractActions ({ onSearch, contractDetail }) {
             <TextField
               label="At Block Number"
               value={atBlock}
-              placeholder={lastPersistedBlockNumber}
+              placeholder={lastPersistedBlockNumber ? lastPersistedBlockNumber.toString() : ''}
               onChange={(e) => setAtBlock(e.target.value)}
               variant="filled"
               size="small"
@@ -107,7 +107,7 @@ export default function ContractActions ({ onSearch, contractDetail }) {
             <TextField
               label="End Block Number"
               value={endNumber}
-              placeholder={lastPersistedBlockNumber}
+              placeholder={lastPersistedBlockNumber ? lastPersistedBlockNumber.toString() : ''}
               onChange={(e) => setEndNumber(e.target.value)}
               variant="filled"
               size="small"
