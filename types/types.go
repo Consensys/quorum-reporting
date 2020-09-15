@@ -35,6 +35,7 @@ type RawInnerCall struct {
 	Gas     HexNumber
 	GasUsed HexNumber
 	Output  HexData
+	Calls   []RawInnerCall
 }
 
 type RawOuterCall struct {

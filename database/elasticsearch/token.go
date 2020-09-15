@@ -242,8 +242,12 @@ func (es *ElasticsearchDB) ERC721TokenByTokenID(contract types.Address, block ui
 	}
 
 	var tokenResult types.ERC721Token
-	err = mapstructure.Decode(results.Hits.Hits[0].Source, &tokenResult)
-	return tokenResult, err
+	if err = mapstructure.Decode(results.Hits.Hits[0].Source, &tokenResult); err != nil {
+		return types.ERC721Token{}, err
+	}
+	tokenResult.Contract = contract
+	tokenResult.Holder = types.NewAddress(string(tokenResult.Holder))
+	return tokenResult, nil
 }
 
 func (es *ElasticsearchDB) ERC721TokensForAccountAtBlock(contract types.Address, holder types.Address, block uint64, options *types.TokenQueryOptions) ([]types.ERC721Token, error) {

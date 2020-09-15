@@ -84,8 +84,9 @@ func (tm *DefaultTransactionMonitor) fetchTransaction(block *types.Block, hash t
 		return nil, err
 	}
 
-	tx.InternalCalls = make([]*types.InternalCall, len(traceResp.Calls))
-	for i, respCall := range traceResp.Calls {
+	calls := flattenCalls(traceResp.Calls)
+	tx.InternalCalls = make([]*types.InternalCall, len(calls))
+	for i, respCall := range calls {
 		tx.InternalCalls[i] = &types.InternalCall{
 			From:    respCall.From,
 			To:      respCall.To,
@@ -98,4 +99,19 @@ func (tm *DefaultTransactionMonitor) fetchTransaction(block *types.Block, hash t
 		}
 	}
 	return tx, nil
+}
+
+//flattens the list of internal calls to a single list
+//e.g [1 [2 3 [4 5] 6 [7]]] -> [1 2 3 4 5 6 7]
+func flattenCalls(calls []types.RawInnerCall) []types.RawInnerCall {
+	if len(calls) == 0 {
+		return []types.RawInnerCall{}
+	}
+
+	var results []types.RawInnerCall
+	for _, c := range calls {
+		results = append(results, c)
+		results = append(results, flattenCalls(c.Calls)...)
+	}
+	return results
 }
