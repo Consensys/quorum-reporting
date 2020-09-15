@@ -69,9 +69,7 @@ export const getContractCreationTx = (baseURL, address) => {
         if (res.data.error) {
             throw res.data.error.message
         }
-        return getTransactionDetail(baseURL, res.data.result)
-          // Make it look like a pagination result for now
-          .then(result => ({ data: [result], total: 1}))
+        return res.data.result
     })
 };
 

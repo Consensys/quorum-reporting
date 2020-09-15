@@ -4,7 +4,7 @@ import Card from '@material-ui/core/Card'
 import Button from '@material-ui/core/Button'
 import SearchIcon from '@material-ui/icons/Search'
 import ContractSelector from '../components/ContractSelector'
-import Reports from '../reports'
+import Reports, { getReportsForTemplate } from '../reports'
 import { makeStyles } from '@material-ui/core/styles'
 import FormControl from '@material-ui/core/FormControl'
 import TextField from '@material-ui/core/TextField'
@@ -25,23 +25,12 @@ const useStyles = makeStyles((theme) => ({
 }))
 
 export default function ContractActions ({ onSearch, contractDetail }) {
-  let reports = [Reports.ToTxs, Reports.ContractCreationTx, Reports.InternalToTxs, Reports.Events]
-  switch (contractDetail.name) {
-    case 'ERC20':
-      reports = [Reports.ERC20TokenHolders, Reports.ERC20TokenBalance, ...reports]
-      break
-    case 'ERC721':
-      reports = [Reports.ERC721Holders, Reports.ERC721Tokens, Reports.ERC721TokensForAccount, Reports.ERC721HolderForToken, ...reports]
-      break
-    default:
-      reports = [...reports, Reports.GenerateReport]
-      break
-  }
+  const reports = getReportsForTemplate(contractDetail.name)
   const classes = useStyles()
   const lastPersistedBlockNumber = useSelector(state => state.system.lastPersistedBlockNumber)
   const [error, setError] = useState('')
   const [account, setAccount] = useState('')
-  const [atBlock, setAtBlock] = useState(lastPersistedBlockNumber)
+  const [atBlock, setAtBlock] = useState('')
   const [tokenId, setTokenId] = useState('')
   const [startNumber, setStartNumber] = useState('')
   const [endNumber, setEndNumber] = useState('')

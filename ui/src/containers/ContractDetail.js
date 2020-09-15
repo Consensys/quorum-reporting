@@ -9,7 +9,9 @@ import ContractActions from '../components/ContractActions'
 import Grid from '@material-ui/core/Grid'
 import Card from '@material-ui/core/Card'
 import CardContent from '@material-ui/core/CardContent'
-import { PaginatedTableView } from '../components/table/PaginatedTableView'
+import { getContractCreationTx } from '../client/fetcher'
+import { Link } from 'react-router-dom'
+import { getDefaultReportForTemplate } from '../reports'
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -40,6 +42,10 @@ const useStyles = makeStyles((theme) => ({
   value: {
     marginBottom: 8,
   },
+  linkValue: {
+    fontSize: 18,
+    marginBottom: 8,
+  },
 }))
 
 export function ContractDetail ({ address }) {
@@ -48,12 +54,27 @@ export function ContractDetail ({ address }) {
   const [contractDetail, setContractDetail] = useState()
   const [errorMessage, setErrorMessage] = useState()
   const [searchReport, setSearchReport] = useState()
+  const [creationTx, setCreationTx] = useState()
   const { contracts = [] } = useSelector(state => state.user, shallowEqual)
   const { rpcEndpoint, lastPersistedBlockNumber } = useSelector(state => state.system, shallowEqual)
   const dispatch = useDispatch()
 
   useEffect(() => {
-    setContractDetail(contracts.find((contract) => contract.address === address))
+    const detail = contracts.find((contract) => contract.address === address)
+    setContractDetail(detail)
+    const report = getDefaultReportForTemplate(detail.name)
+    setSearchReport({
+      ...report,
+      params: {
+        startNumber: 1,
+        endNumber: lastPersistedBlockNumber,
+        atBlock: lastPersistedBlockNumber,
+      }
+    })
+    getContractCreationTx(rpcEndpoint, address)
+      .then((transaction) => {
+        setCreationTx(transaction)
+      })
   }, [address, contracts])
 
   return (
@@ -77,6 +98,14 @@ export function ContractDetail ({ address }) {
               <Typography variant={'h6'} className={classes.value}>{contractDetail.name}</Typography>
               <Typography variant="caption" className={classes.label}>Address</Typography>
               <Typography variant="h6" className={classes.value}>{contractDetail.address}</Typography>
+              {creationTx &&
+              <div>
+                <Typography variant="caption" className={classes.label}>Creation Transaction</Typography>
+                <Link to={`/transactions/${creationTx}`}>
+                  <Typography variant="h6" className={classes.linkValue}>{creationTx}</Typography>
+                </Link>
+              </div>
+              }
               <Typography variant="caption" className={classes.label}>ABI</Typography>
               <TextareaAutosize
                 readOnly
@@ -86,7 +115,7 @@ export function ContractDetail ({ address }) {
                 className={classes.value}/>
               {contractDetail.storageLayout &&
               <div>
-                <Typography variant="caption" className={classes.label}>Storage</Typography>,
+                <Typography variant="caption" className={classes.label}>Storage</Typography>
                 <TextareaAutosize
                   readOnly
                   rowsMax={4}
@@ -106,7 +135,7 @@ export function ContractDetail ({ address }) {
         }
         {searchReport &&
         <Grid item xs={12}>
-          <searchReport.View searchReport={searchReport} address={address} />
+          <searchReport.View searchReport={searchReport} address={address}/>
         </Grid>
         }
       </Grid>

@@ -1,6 +1,5 @@
 import React from 'react'
 import {
-  getContractCreationTx,
   getERC20Balance,
   getERC20Holders,
   getERC721Holders,
@@ -17,7 +16,7 @@ import { EventTable } from './components/table/Events'
 import { ReportTable } from './components/table/Report'
 import { TokenBalanceTable, TokenHolderTable, TokenTable } from './components/table/Tokens'
 
-export default {
+export const Reports = {
   GenerateReport: {
     label: 'Full Report',
     value: 'GenerateReport',
@@ -27,13 +26,6 @@ export default {
     },
     View: ReportTable,
     getItems: (rpcEndpoint, params, options) => getReportData(rpcEndpoint, params.address, params.startBlockNumber, params.endBlockNumber, options),
-  },
-  ContractCreationTx: {
-    label: 'Contract Creation Tx',
-    value: 'ContractCreationTx',
-    fields: {},
-    View: TransactionTable,
-    getItems: (rpcEndpoint, params, options) => getContractCreationTx(rpcEndpoint, params.address),
   },
   ERC20TokenBalance: {
     label: 'ERC20 Token Balance',
@@ -115,3 +107,21 @@ export default {
     getItems: (rpcEndpoint, params, options) => getToTxs(rpcEndpoint, params.address, options),
   },
 }
+
+export function getReportsForTemplate (templateName) {
+  const commonReports = [Reports.ToTxs, Reports.InternalToTxs, Reports.Events]
+  switch (templateName) {
+    case 'ERC20':
+      return [Reports.ERC20TokenHolders, Reports.ERC20TokenBalance, ...commonReports]
+    case 'ERC721':
+      return [Reports.ERC721Holders, Reports.ERC721Tokens, Reports.ERC721TokensForAccount, Reports.ERC721HolderForToken, ...commonReports]
+    default:
+      return [...commonReports, Reports.GenerateReport]
+  }
+}
+
+export function getDefaultReportForTemplate (templateName) {
+  return getReportsForTemplate(templateName)[0]
+}
+
+export default Reports

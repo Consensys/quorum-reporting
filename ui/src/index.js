@@ -6,7 +6,18 @@ import App from './App'
 import CssBaseline from '@material-ui/core/CssBaseline'
 import { createMuiTheme, MuiThemeProvider } from '@material-ui/core/styles'
 
-const theme = createMuiTheme({})
+const theme = createMuiTheme({
+  overrides: {
+    MuiCssBaseline: {
+      '@global': {
+        a: {
+          textDecoration: 'none',
+          color: '#1976D2',
+        },
+      },
+    },
+  },
+})
 
 function render (TheApp) {
   ReactDOM.render((
