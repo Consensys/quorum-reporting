@@ -61,8 +61,10 @@ export function ContractDetail ({ address }) {
   useEffect(() => {
     const detail = contracts.find((contract) => contract.address === address)
     if(!detail) {
+      setErrorMessage(`No contract registered at ${address}`)
       return
     }
+    setErrorMessage(undefined)
     setContractDetail(detail)
     const report = getDefaultReportForTemplate(detail.name)
     setSearchReport({

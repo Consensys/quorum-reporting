@@ -144,7 +144,6 @@ function calculateTotal (result, options) {
 
 export const getERC20Holders = (baseURL, address, block, options) => {
     return getERC20TokenHolders(baseURL, address, block, options).then( (res) => {
-        console.log('response', res)
         if (res.data.error) {
             throw res.data.error.message
         }
@@ -158,7 +157,6 @@ export const getERC20Holders = (baseURL, address, block, options) => {
 
 export const getERC20Balance = (baseURL, address, holder, startBlockNumber, endBlockNumber, options) => {
     return getERC20TokenBalance(baseURL, address, holder, startBlockNumber, endBlockNumber, options).then( (res) => {
-        console.log('response', res)
         if (res.data.error) {
             throw res.data.error.message
         }
@@ -173,7 +171,6 @@ export const getERC20Balance = (baseURL, address, holder, startBlockNumber, endB
 
 export const getERC721Holders = (baseURL, address, block, options) => {
     return getERC721TokenHolders(baseURL, address, block, options).then( (res) => {
-      console.log('response', res)
         if (res.data.error) {
             throw res.data.error.message
         }
@@ -187,7 +184,6 @@ export const getERC721Holders = (baseURL, address, block, options) => {
 
 export const getERC721Tokens = (baseURL, address, block, options) => {
     return getERC721TokensAtBlock(baseURL, address, block, options).then( (res) => {
-        console.log('response', res)
         if (res.data.error) {
             throw res.data.error.message
         }
@@ -201,7 +197,6 @@ export const getERC721Tokens = (baseURL, address, block, options) => {
 
 export const getERC721TokensForAccount = (baseURL, address, holder, block, options) => {
     return getERC721TokensForAccountAtBlock(baseURL, address, holder, block, options).then( (res) => {
-        console.log('response', res)
         if (res.data.error) {
             throw res.data.error.message
         }
@@ -215,7 +210,6 @@ export const getERC721TokensForAccount = (baseURL, address, holder, block, optio
 
 export const getHolderForERC721Token = (baseURL, address, tokenId, block) => {
     return getHolderForERC721TokenAtBlock(baseURL, address, tokenId, block).then( (res) => {
-        console.log('response', res)
         if (res.data.error) {
             throw res.data.error.message
         }
