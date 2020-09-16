@@ -39,7 +39,7 @@ function ContractTable(props) {
                                 e.stopPropagation()
                                 props.handleContractDelete(c.address)
                               }}>
-                                  <DeleteIcon color="primary"/>
+                                  <DeleteIcon color="action"/>
                               </IconButton>
                           </TableCell>
                       </TableRow>
