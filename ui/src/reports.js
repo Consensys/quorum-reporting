@@ -113,7 +113,7 @@ export function getReportsForTemplate (templateName) {
     case 'ERC20':
       return [Reports.ERC20TokenHolders, Reports.ERC20TokenBalance, ...commonReports]
     case 'ERC721':
-      return [Reports.ERC721Holders, Reports.ERC721Tokens, Reports.ERC721TokensForAccount, Reports.ERC721HolderForToken, ...commonReports]
+      return [Reports.ERC721Tokens, Reports.ERC721Holders, Reports.ERC721TokensForAccount, Reports.ERC721HolderForToken, ...commonReports]
     default:
       return [...commonReports, Reports.GenerateReport]
   }
