@@ -40,8 +40,7 @@ export default function ContractListContainer() {
 
   const getAllRegisteredContracts = () => {
     getContracts(rpcEndpoint).then((contracts) => {
-      const sortedContracts = contracts.sort((a, b) => a.name.localeCompare(b.name))
-      dispatch(getContractsAction(sortedContracts))
+      dispatch(getContractsAction(contracts))
     })
   }
 

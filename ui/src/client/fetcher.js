@@ -61,6 +61,12 @@ export const getContracts = (baseURL) => {
             throw res.data.error.message
         }
         return getContractsDetail(baseURL, res.data.result)
+          .then((contracts) => {
+                // sort by template name + address for consistent order
+                return contracts.sort((a, b) =>
+                  `${a.name}${a.address}`.localeCompare(`${b.name}${b.address}`))
+            }
+          )
     })
 };
 
