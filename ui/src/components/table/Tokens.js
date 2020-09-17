@@ -71,6 +71,7 @@ export function TokenTable ({ searchReport, address }) {
     const rpcEndpoint = useSelector(state => state.system.rpcEndpoint)
     return <PaginatedTableView
       title={searchReport.label}
+      subtitle={searchReport.subtitle && searchReport.subtitle(searchReport.params)}
       HeaderView={TokenHeader}
       ItemView={TokenRowItem}
       getItems={(page, rowsPerPage, lastItem) => {
@@ -116,6 +117,7 @@ export function TokenBalanceTable ({ searchReport, address }) {
     const rpcEndpoint = useSelector(state => state.system.rpcEndpoint)
     return <PaginatedTableView
       title={searchReport.label}
+      subtitle={searchReport.subtitle && searchReport.subtitle(searchReport.params)}
       HeaderView={BalanceHeader}
       ItemView={BalanceRowItem}
       getItems={(page, rowsPerPage, lastItem) => {

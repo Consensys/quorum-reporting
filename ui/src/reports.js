@@ -29,6 +29,7 @@ export const Reports = {
   ERC20TokenBalance: {
     label: 'ERC20 Token Balance',
     value: 'ERC20TokenBalance',
+    subtitle: (params) => `For ${params.account}`,
     fields: {
       account: 'required',
       startBlock: 'optional',
@@ -77,6 +78,7 @@ export const Reports = {
   ERC721TokensForAccount: {
     label: 'ERC721 Tokens for Account',
     value: 'ERC721TokensForAccount',
+    subtitle: (params) => `For ${params.account}`,
     fields: {
       account: 'required',
       block: 'optional',

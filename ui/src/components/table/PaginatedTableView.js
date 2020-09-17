@@ -32,13 +32,17 @@ const useStyles = makeStyles((theme) => ({
   loading: {
     marginRight: 8,
   },
+  subtitle: {
+    paddingLeft: 12,
+    paddingRight: 12,
+  },
   errorRow: {
     padding: 16,
     fontSize: 18,
-  }
+  },
 }))
 
-export function PaginatedTableView ({ title, note, getItems, ItemView, HeaderView, startingRowsPerPage = 10 }) {
+export function PaginatedTableView ({ title, subtitle, note, getItems, ItemView, HeaderView, startingRowsPerPage = 10 }) {
   const classes = useStyles()
   const [total, setTotal] = useState(0)
   const [list, setList] = useState([])
@@ -91,6 +95,7 @@ export function PaginatedTableView ({ title, note, getItems, ItemView, HeaderVie
         </Tooltip>
       }
     </div>
+    <Typography variant="subtitle1" className={classes.subtitle}>{subtitle}</Typography>
     {error && <Typography className={classes.errorRow}>{error}</Typography>}
     <TableContainer component={Paper}>
       <Table size="small" className={classes.table} aria-label="simple table">
