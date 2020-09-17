@@ -24,7 +24,7 @@ type FilterServiceDB interface {
 	GetAddresses() ([]types.Address, error)
 	GetContractABI(types.Address) (string, error)
 
-	IndexBlocks([]types.Address, []*types.Block) error
+	IndexBlocks([]types.Address, []*types.BlockWithTransactions) error
 	IndexStorage(map[types.Address]*types.AccountState, uint64) error
 	SetContractCreationTransaction(map[types.Hash][]types.Address) error
 }
@@ -137,7 +137,7 @@ func (fs *FilterService) getLastFiltered(current uint64) (map[types.Address]uint
 
 type IndexBatch struct {
 	addresses []types.Address
-	blocks    []*types.Block
+	blocks    []*types.BlockWithTransactions
 }
 
 func (fs *FilterService) index(lastFiltered map[types.Address]uint64, blockNumber uint64, endBlockNumber uint64) error {
@@ -145,7 +145,7 @@ func (fs *FilterService) index(lastFiltered map[types.Address]uint64, blockNumbe
 	indexBatches := make([]IndexBatch, 0)
 	curBatch := IndexBatch{
 		addresses: make([]types.Address, 0),
-		blocks:    make([]*types.Block, 0),
+		blocks:    make([]*types.BlockWithTransactions, 0),
 	}
 	addressInBatch := make(map[types.Address]bool)
 	for blockNumber <= endBlockNumber {
@@ -157,7 +157,7 @@ func (fs *FilterService) index(lastFiltered map[types.Address]uint64, blockNumbe
 					addrList := curBatch.addresses
 					curBatch = IndexBatch{
 						addresses: []types.Address{address},
-						blocks:    make([]*types.Block, 0),
+						blocks:    make([]*types.BlockWithTransactions, 0),
 					}
 					curBatch.addresses = append(curBatch.addresses, addrList...)
 					addressInBatch[address] = true
@@ -174,7 +174,11 @@ func (fs *FilterService) index(lastFiltered map[types.Address]uint64, blockNumbe
 		if err != nil {
 			return err
 		}
-		curBatch.blocks = append(curBatch.blocks, block)
+		blockWithTxns, err := fs.makeBlockWithTransactions(block)
+		if err != nil {
+			return err
+		}
+		curBatch.blocks = append(curBatch.blocks, blockWithTxns)
 		blockNumber++
 	}
 	if len(curBatch.addresses) > 0 {
@@ -224,4 +228,28 @@ func (fs *FilterService) processBatch(batch IndexBatch) error {
 
 	log.Info("Processed batch", "start", batch.blocks[0].Number, "end", batch.blocks[len(batch.blocks)-1].Number)
 	return nil
+}
+
+func (fs *FilterService) makeBlockWithTransactions(block *types.Block) (*types.BlockWithTransactions, error) {
+	allTxns := make([]*types.Transaction, 0, len(block.Transactions))
+	for _, txHash := range block.Transactions {
+		tx, err := fs.db.ReadTransaction(txHash)
+		if err != nil {
+			return nil, err
+		}
+		allTxns = append(allTxns, tx)
+	}
+	return &types.BlockWithTransactions{
+		Hash:         block.Hash,
+		ParentHash:   block.ParentHash,
+		StateRoot:    block.StateRoot,
+		TxRoot:       block.TxRoot,
+		ReceiptRoot:  block.ReceiptRoot,
+		Number:       block.Number,
+		GasLimit:     block.GasLimit,
+		GasUsed:      block.GasUsed,
+		Timestamp:    block.Timestamp,
+		ExtraData:    block.ExtraData,
+		Transactions: allTxns,
+	}, nil
 }

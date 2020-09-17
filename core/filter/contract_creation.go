@@ -22,7 +22,7 @@ func NewContractCreationFilter(db FilterServiceDB, quorumClient client.Client) *
 	}
 }
 
-func (ccFilter *ContractCreationFilter) ProcessBlocks(indexedAddresses []types.Address, blocks []*types.Block) error {
+func (ccFilter *ContractCreationFilter) ProcessBlocks(indexedAddresses []types.Address, blocks []*types.BlockWithTransactions) error {
 	log.Debug("Filtering for contract creations")
 	defer func() { log.Debug("Finished filtering for contract creations") }()
 
@@ -33,11 +33,7 @@ func (ccFilter *ContractCreationFilter) ProcessBlocks(indexedAddresses []types.A
 
 	allDeployedContacts := make(map[types.Hash][]types.Address)
 	for _, block := range blocks {
-		for _, txHash := range block.Transactions {
-			tx, err := ccFilter.db.ReadTransaction(txHash)
-			if err != nil {
-				return err
-			}
+		for _, tx := range block.Transactions {
 			deployedContracts, err := ccFilter.findDeployedContracts(tx)
 			if err != nil {
 				return err

@@ -451,7 +451,7 @@ func (es *ElasticsearchDB) ReadTransaction(hash types.Hash) (*types.Transaction,
 
 // IndexDB
 
-func (es *ElasticsearchDB) IndexBlocks(addresses []types.Address, blocks []*types.Block) error {
+func (es *ElasticsearchDB) IndexBlocks(addresses []types.Address, blocks []*types.BlockWithTransactions) error {
 	indexer := NewBlockIndexer(addresses, blocks, es)
 	if err := indexer.Index(); err != nil {
 		return err

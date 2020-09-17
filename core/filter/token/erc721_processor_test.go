@@ -16,15 +16,6 @@ var testErc721TokenBlock = &types.Block{
 	Transactions: []types.Hash{"f4f803b8d6c6b38e0b15d6cfe80fd1dcea4270ad24e93385fca36512bb9c2c59"},
 }
 
-func TestERC721Processor_ProcessBlock_TxReadFail(t *testing.T) {
-	db := NewFakeTestTokenDatabase(errors.New("test tx read fail"), []*types.Transaction{})
-	processor := NewERC721Processor(db)
-
-	err := processor.ProcessBlock(map[types.Address]string{}, testErc721TokenBlock)
-
-	assert.EqualError(t, err, "test tx read fail")
-}
-
 func TestERC721Processor_ProcessTransaction_NoEventsDoesNothing(t *testing.T) {
 	tokenAddress := types.NewAddress("0x1932c48b2bf8102ba33b4a6b545c32236e342f34")
 	tx := &types.Transaction{
@@ -32,7 +23,7 @@ func TestERC721Processor_ProcessTransaction_NoEventsDoesNothing(t *testing.T) {
 		Events: []*types.Event{},
 	}
 
-	db := NewFakeTestTokenDatabase(nil, []*types.Transaction{tx})
+	db := NewFakeTestTokenDatabase(nil)
 	processor := NewERC721Processor(db)
 
 	err := processor.ProcessBlock(map[types.Address]string{tokenAddress: erc721AbiString}, testErc721TokenBlock)

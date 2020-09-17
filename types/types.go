@@ -56,6 +56,20 @@ type Block struct {
 	Transactions []Hash `json:"transactions"`
 }
 
+type BlockWithTransactions struct {
+	Hash         Hash
+	ParentHash   Hash
+	StateRoot    Hash
+	TxRoot       Hash
+	ReceiptRoot  Hash
+	Number       uint64
+	GasLimit     uint64
+	GasUsed      uint64
+	Timestamp    uint64
+	ExtraData    string
+	Transactions []*Transaction
+}
+
 type Transaction struct {
 	Hash              Hash            `json:"hash"`
 	Status            bool            `json:"status"`

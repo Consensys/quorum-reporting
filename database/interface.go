@@ -49,7 +49,7 @@ type TransactionDB interface {
 
 // IndexDB stores the location to find all transactions/ events/ storage for a contract.
 type IndexDB interface {
-	IndexBlocks([]types.Address, []*types.Block) error
+	IndexBlocks([]types.Address, []*types.BlockWithTransactions) error
 	IndexStorage(map[types.Address]*types.AccountState, uint64) error
 
 	// SetContractCreationTransaction sets the transaction hash that a contract was created at
