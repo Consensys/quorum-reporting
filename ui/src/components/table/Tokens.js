@@ -5,12 +5,13 @@ import TableCell from '@material-ui/core/TableCell';
 import { Link } from 'react-router-dom'
 import { useSelector } from 'react-redux'
 import { PaginatedTableView } from './PaginatedTableView'
+import Reports from '../../reports'
 
 export function TokenHolderTable ({ searchReport, address }) {
     const rpcEndpoint = useSelector(state => state.system.rpcEndpoint)
     return <PaginatedTableView
       title={searchReport.label}
-      HeaderView={TokenHolderHeader}
+      HeaderView={getHeaderView(searchReport)}
       ItemView={TokenHolderRowItem}
       getItems={(page, rowsPerPage, lastItem) => {
           return searchReport.getItems(rpcEndpoint, { address, ...searchReport.params }, {
@@ -22,18 +23,46 @@ export function TokenHolderTable ({ searchReport, address }) {
     />
 }
 
-export function TokenHolderHeader () {
+function getHeaderView(report) {
+    switch (report.value) {
+        case Reports.ERC721Holders.value:
+            return ERC721HolderCountHeader
+        case Reports.ERC721HolderForToken.value:
+            return ERC721HolderHeader
+        case Reports.ERC20TokenHolders.value:
+        default:
+            return ERC20HolderHeader
+    }
+}
+
+function ERC20HolderHeader () {
+    return <TokenHolderHeader secondColumnName={'Balance'} />
+}
+
+function ERC721HolderCountHeader () {
+    return <TokenHolderHeader secondColumnName={'Token Count'} />
+}
+
+function ERC721HolderHeader () {
+    return <TokenHolderHeader secondColumnName={'Token ID'} />
+}
+
+function TokenHolderHeader ({ secondColumnName }) {
     return <TableHead>
         <TableRow>
             <TableCell><strong>Account</strong></TableCell>
+            <TableCell><strong>{secondColumnName}</strong></TableCell>
         </TableRow>
     </TableHead>
 }
 
 export function TokenHolderRowItem (item) {
-    return <TableRow key={item}>
+    return <TableRow key={item.holder + item.value}>
         <TableCell component="th" scope="row">
-            {item}
+            {item.holder}
+        </TableCell>
+        <TableCell component="th" scope="row">
+            {item.value}
         </TableCell>
     </TableRow>
 }
@@ -67,7 +96,7 @@ export function TokenHeader () {
 }
 
 export function TokenRowItem (item) {
-    return <TableRow key={item}>
+    return <TableRow key={item.token}>
         <TableCell component="th" scope="row">
             {item.token}
         </TableCell>
@@ -108,7 +137,7 @@ export function BalanceHeader () {
     </TableHead>
 }
 export function BalanceRowItem (item) {
-    return <TableRow key={item}>
+    return <TableRow key={item.block}>
         <TableCell component="th" scope="row">
             <Link to={`/blocks/${item.block}`}>{item.block}</Link>
         </TableCell>

@@ -154,10 +154,22 @@ export const getERC20Holders = (baseURL, address, block, options) => {
             throw res.data.error.message
         }
         let total = calculateTotal(res.data.result, options)
-        return {
-            data: res.data.result,
-            total
-        }
+        return Promise.all(res.data.result.map((holder) => {
+            return getERC20Balance(baseURL, address, holder, block, block, {})
+              .then((balanceRes) => {
+                  const value = balanceRes.data && balanceRes.data[0].balance
+                  return {
+                      holder,
+                      value,
+                  }
+              })
+        }))
+          .then((balances) => {
+              return {
+                  data: balances,
+                  total
+              }
+          })
     })
 };
 
@@ -181,10 +193,22 @@ export const getERC721Holders = (baseURL, address, block, options) => {
             throw res.data.error.message
         }
         let total = calculateTotal(res.data.result, options)
-        return {
-            data: res.data.result,
-            total
-        }
+        return Promise.all(res.data.result.map((holder) => {
+            return getERC721TokensForAccount(baseURL, address, holder, block, block, {})
+              .then((tokensRes) => {
+                  const value = tokensRes.data && tokensRes.data.length
+                  return {
+                      holder,
+                      value,
+                  }
+              })
+        }))
+          .then((balances) => {
+              return {
+                  data: balances,
+                  total
+              }
+          })
     })
 };
 
@@ -220,7 +244,7 @@ export const getHolderForERC721Token = (baseURL, address, tokenId, block) => {
             throw res.data.error.message
         }
         return {
-            data: [res.data.result.replace('0x0x', '0x')], // TODO remove this when fixed
+            data: [{ holder: res.data.result.replace('0x0x', '0x'), value: tokenId}], // TODO remove this when fixed
             total: 1,
         }
     })
