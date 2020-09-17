@@ -1,7 +1,7 @@
-import React from 'react';
-import TableHead from '@material-ui/core/TableHead';
-import TableRow from '@material-ui/core/TableRow';
-import TableCell from '@material-ui/core/TableCell';
+import React from 'react'
+import TableHead from '@material-ui/core/TableHead'
+import TableRow from '@material-ui/core/TableRow'
+import TableCell from '@material-ui/core/TableCell'
 import { Link } from 'react-router-dom'
 import { useSelector } from 'react-redux'
 import { PaginatedTableView } from './PaginatedTableView'
@@ -51,17 +51,17 @@ function TokenHolderHeader ({ secondColumnName }) {
     return <TableHead>
         <TableRow>
             <TableCell><strong>Account</strong></TableCell>
-            <TableCell><strong>{secondColumnName}</strong></TableCell>
+            <TableCell width="10%"><strong>{secondColumnName}</strong></TableCell>
         </TableRow>
     </TableHead>
 }
 
 export function TokenHolderRowItem (item) {
     return <TableRow key={item.holder + item.value}>
-        <TableCell component="th" scope="row">
+        <TableCell>
             {item.holder}
         </TableCell>
-        <TableCell component="th" scope="row">
+        <TableCell>
             {item.value}
         </TableCell>
     </TableRow>
@@ -88,27 +88,27 @@ export function TokenTable ({ searchReport, address }) {
 export function TokenHeader () {
     return <TableHead>
         <TableRow>
-            <TableCell><strong>Token</strong></TableCell>
+            <TableCell width="10%"><strong>Token</strong></TableCell>
             <TableCell><strong>Holder</strong></TableCell>
-            <TableCell><strong>From</strong></TableCell>
-            <TableCell><strong>Until</strong></TableCell>
+            <TableCell width="10%"><strong>From</strong></TableCell>
+            <TableCell width="10%"><strong>Until</strong></TableCell>
         </TableRow>
     </TableHead>
 }
 
 export function TokenRowItem (item) {
     return <TableRow key={item.token}>
-        <TableCell component="th" scope="row">
+        <TableCell>
             {item.token}
         </TableCell>
-        <TableCell component="th" scope="row">
+        <TableCell>
             {item.holder}
         </TableCell>
-        <TableCell component="th" scope="row">
+        <TableCell>
             <Link to={`/blocks/${item.heldFrom}`}>{item.heldFrom}</Link>
         </TableCell>
-        <TableCell component="th" scope="row">
-            {item.heldUntil ? <Link to={`/blocks/${item.heldFrom}`}>{item.heldFrom}</Link> : ""}
+        <TableCell>
+            {item.heldUntil ? <Link to={`/blocks/${item.heldFrom}`}>{item.heldFrom}</Link> : ''}
         </TableCell>
     </TableRow>
 }
@@ -140,10 +140,10 @@ export function BalanceHeader () {
 }
 export function BalanceRowItem (item) {
     return <TableRow key={item.block}>
-        <TableCell component="th" scope="row">
+        <TableCell>
             <Link to={`/blocks/${item.block}`}>{item.block}</Link>
         </TableCell>
-        <TableCell component="th" scope="row">
+        <TableCell>
             {item.balance}
         </TableCell>
     </TableRow>

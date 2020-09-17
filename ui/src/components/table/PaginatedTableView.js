@@ -27,7 +27,7 @@ const useStyles = makeStyles((theme) => ({
     alignItems: 'center',
   },
   table: {
-    minWidth: 650,
+    maxWidth: '100%',
   },
   loading: {
     marginRight: 8,

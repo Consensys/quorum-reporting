@@ -22,6 +22,12 @@ const theme = createMuiTheme({
         },
         '.MuiTooltip-tooltip': {
           fontSize: 14,
+        },
+        td: {
+          maxWidth: 0,
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
+          overflow: 'hidden',
         }
       },
     },

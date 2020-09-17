@@ -75,18 +75,18 @@ export function ExpandableTxRow(props) {
     return (
         <React.Fragment>
             <TableRow className={classes.root}>
-                <TableCell>
+                <TableCell component="th">
                     <IconButton aria-label="expand row" size="small" onClick={() => setOpen(!open) }>
                         {open ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
                     </IconButton>
                 </TableCell>
-                <TableCell component="th" scope="row" align="center">
+                <TableCell align="center">
                     <Link className={classes.link} to={`/blocks/${props.blockNumber}`}>{props.blockNumber}</Link>
                 </TableCell>
-                <TableCell component="th" scope="row">
+                <TableCell>
                     <Link className={classes.link} to={`/transactions/${props.txHash}`}>{props.txHash}</Link>
                 </TableCell>
-                <TableCell component="th" scope="row">
+                <TableCell>
                     {props.from}
                 </TableCell>
             </TableRow>
@@ -105,7 +105,7 @@ export function ExpandableTxRow(props) {
                                 </TableHead>
                                 <TableBody>
                                     <TableRow>
-                                        <TableCell component="th" scope="row">{props.parsedTransaction.txSig}</TableCell>
+                                        <TableCell>{props.parsedTransaction.txSig}</TableCell>
                                         <TableCell>{props.parsedTransaction.func4Bytes}</TableCell>
                                         <TableCell>{JSON.stringify(props.parsedTransaction.parsedData)}</TableCell>
                                     </TableRow>

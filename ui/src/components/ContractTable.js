@@ -24,16 +24,16 @@ function ContractTable(props) {
                 {props.contracts.map( (c, i) => {
                     return (
                         <TableRow hover={true} className={classes.row} onClick={() => history.push(`/contracts/${c.address}`)} key={c.address}>
-                          <TableCell>
+                          <TableCell width="10%">
                               {i + 1}
                           </TableCell>
-                          <TableCell>
+                          <TableCell width="30%">
                               {c.name}
                           </TableCell>
                           <TableCell>
                                   {c.address}
                           </TableCell>
-                          <TableCell align="right">
+                          <TableCell component="th" width="15%" align="right">
                               <IconButton onClick={(e) => {
                                 e.preventDefault()
                                 e.stopPropagation()

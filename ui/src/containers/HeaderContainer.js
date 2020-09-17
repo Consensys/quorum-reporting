@@ -24,9 +24,17 @@ const useStyles = makeStyles((theme) => ({
     flexGrow: 1,
   },
   home: {
+    display: 'flex',
+    flexDirection: 'row',
+    alignItems: 'center',
     textDecoration: 'none',
     color: 'inherit',
     marginRight: 16,
+  },
+  homeText: {
+    paddingLeft: 12,
+    paddingRight: 12,
+    fontSize: 20,
   },
   link: {
     textDecoration: 'none',
@@ -80,11 +88,9 @@ export default function HeaderContainer () {
     <AppBar color="transparent" position="static">
       <Toolbar>
         <Link to="/" className={classes.home}>
-          <Typography variant="h6" color="inherit">
-            <img src={require('../resources/quorum-logo.png')} width="40" height="20" alt=""/>
-            &nbsp;
+          <img src={require('../resources/quorum-logo.png')} width="40" height="20" alt=""/>
+          <Typography className={classes.homeText}>
             Quorum Reporting
-            &nbsp;
           </Typography>
         </Link>
         <span className={classes.grow}/>
