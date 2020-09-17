@@ -31,6 +31,10 @@ const useStyles = makeStyles((theme) => ({
   },
   loading: {
     marginRight: 8,
+  },
+  errorRow: {
+    padding: 16,
+    fontSize: 18,
   }
 }))
 
@@ -39,6 +43,7 @@ export function PaginatedTableView ({ title, note, getItems, ItemView, HeaderVie
   const [total, setTotal] = useState(0)
   const [list, setList] = useState([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
   const [page, setPage] = useState(0)
   const [lastItemEachPage, setLastItemEachPage] = useState([])
   const dispatch = useDispatch()
@@ -53,6 +58,14 @@ export function PaginatedTableView ({ title, note, getItems, ItemView, HeaderVie
         setTotal(total)
         setList(data)
         setLoading(false)
+        setError('')
+      })
+      .catch((e) => {
+        setLastItemEachPage([])
+        setTotal(0)
+        setList([])
+        setLoading(false)
+        setError(e.message)
       })
 
   }, [page, rowsPerPage, getItems])
@@ -78,6 +91,7 @@ export function PaginatedTableView ({ title, note, getItems, ItemView, HeaderVie
         </Tooltip>
       }
     </div>
+    {error && <Typography className={classes.errorRow}>{error}</Typography>}
     <TableContainer component={Paper}>
       <Table size="small" className={classes.table} aria-label="simple table">
         <HeaderView/>
