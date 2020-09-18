@@ -20,7 +20,7 @@ const useStyles = makeStyles((theme) => ({
     width: '100%',
   },
   grid: {
-    maxWidth: 1280,
+    maxWidth: 1080,
     margin: '0 auto',
   },
   alert: {
@@ -39,10 +39,11 @@ const useStyles = makeStyles((theme) => ({
   },
   title: {
     padding: 12,
+    textOverflow: 'ellipsis',
+    overflow: 'hidden',
+    whiteSpace: 'nowrap',
   },
   table: {
-    minWidth: 650,
-    maxWidth: '100%',
   },
 }))
 
@@ -71,73 +72,73 @@ export function BlockDetail ({ number }) {
             justify="center"
             className={classes.grid} alignItems={'stretch'}>
         {errorMessage &&
-        <Grid item xs={9}>
+        <Grid item xs={12}>
           <Alert severity="error" className={classes.alert}>{errorMessage}</Alert>
         </Grid>
         }
         {block &&
-        <Grid item xs={9}>
+        <Grid item xs={12}>
           <Card className={classes.details}>
             <CardContent>
-              <Typography variant="h6" className={classes.title}>Block {number}</Typography>
+              <Typography component="div" className={classes.title}>Block {number}</Typography>
               <TableContainer>
                 <Table className={classes.table} aria-label="simple table">
                   <TableBody>
                     <TableRow key={'hash'}>
-                      <TableCell size="small" component="th" scope="row">Hash</TableCell>
+                      <TableCell width="25%" size="small">Hash</TableCell>
                       <TableCell align="left" padding="default" data-value={block.hash}>
                         {block.hash}
                       </TableCell>
                     </TableRow>
                     <TableRow key={'gasUsed'}>
-                      <TableCell size="small" component="th" scope="row">gasUsed</TableCell>
+                      <TableCell width="25%" size="small">gasUsed</TableCell>
                       <TableCell align="left" padding="default" data-value={block.gasUsed}>
                         {block.gasUsed}
                       </TableCell>
                     </TableRow>
                     <TableRow key={'gasLimit'}>
-                      <TableCell size="small" component="th" scope="row">gasLimit</TableCell>
+                      <TableCell width="25%" size="small">gasLimit</TableCell>
                       <TableCell align="left" padding="default" data-value={block.gasLimit}>
                         {block.gasLimit}
                       </TableCell>
                     </TableRow>
                     <TableRow key={'timestamp'}>
-                      <TableCell size="small" component="th" scope="row">timestamp</TableCell>
+                      <TableCell width="25%" size="small">timestamp</TableCell>
                       <TableCell align="left" padding="default" data-value={block.timestamp}>
                         {block.timestamp}
                       </TableCell>
                     </TableRow>
                     <TableRow key={'parentHash'}>
-                      <TableCell size="small" component="th" scope="row">parentHash</TableCell>
+                      <TableCell width="25%" size="small">parentHash</TableCell>
                       <TableCell align="left" padding="default" data-value={block.parentHash}>
                         {block.parentHash}
                       </TableCell>
                     </TableRow>
                     <TableRow key={'txRoot'}>
-                      <TableCell size="small" component="th" scope="row">txRoot</TableCell>
+                      <TableCell width="25%" size="small">txRoot</TableCell>
                       <TableCell align="left" padding="default" data-value={block.txRoot}>
                         {block.txRoot}
                       </TableCell>
                     </TableRow>
                     <TableRow key={'stateRoot'}>
-                      <TableCell size="small" component="th" scope="row">stateRoot</TableCell>
+                      <TableCell width="25%" size="small">stateRoot</TableCell>
                       <TableCell align="left" padding="default" data-value={block.stateRoot}>
                         {block.stateRoot}
                       </TableCell>
                     </TableRow>
                     <TableRow key={'receiptRoot'}>
-                      <TableCell size="small" component="th" scope="row">receiptRoot</TableCell>
+                      <TableCell width="25%" size="small">receiptRoot</TableCell>
                       <TableCell align="left" padding="default" data-value={block.receiptRoot}>
                         {block.receiptRoot}
                       </TableCell>
                     </TableRow>
                     <TableRow key={'extraData'}>
-                      <TableCell size="small" component="th" scope="row">extraData</TableCell>
+                      <TableCell width="25%" size="small">extraData</TableCell>
                       <TableCell align="left" padding="default"
-                                 data-value={block.extraData}>{block.extraData.substring(0, Math.min(block.extraData.length, 64))}...</TableCell>
+                                 data-value={block.extraData}>{block.extraData}</TableCell>
                     </TableRow>
                     <TableRow key={'transactions'}>
-                      <TableCell size="small" component="th" scope="row">Transactions</TableCell>
+                      <TableCell width="25%" size="small">Transactions</TableCell>
                       <TableCell align="left" padding="default" data-value={block.transactions}>
                         {block.transactions.map((tx) => <div><Link to={`/transactions/${tx}`}>{tx}</Link></div>)}
                       </TableCell>

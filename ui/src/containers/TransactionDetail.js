@@ -20,7 +20,7 @@ const useStyles = makeStyles((theme) => ({
     width: '100%',
   },
   grid: {
-    maxWidth: 1280,
+    maxWidth: 1080,
     margin: '0 auto',
   },
   alert: {
@@ -39,10 +39,11 @@ const useStyles = makeStyles((theme) => ({
   },
   title: {
     padding: 12,
+    textOverflow: 'ellipsis',
+    overflow: 'hidden',
+    whiteSpace: 'nowrap',
   },
   table: {
-    minWidth: 650,
-    maxWidth: '100%',
   },
 }))
 
@@ -70,12 +71,12 @@ export function TransactionDetail ({ id }) {
             justify="center"
             className={classes.grid} alignItems={'stretch'}>
         {errorMessage &&
-        <Grid item xs={9}>
+        <Grid item xs={12}>
           <Alert severity="error" className={classes.alert}>{errorMessage}</Alert>
         </Grid>
         }
         {transaction &&
-        <Grid item xs={9}>
+        <Grid item xs={12}>
           <Card className={classes.details}>
             <CardContent>
               <Typography variant="h6" className={classes.title}>Transaction {id}</Typography>
@@ -83,7 +84,7 @@ export function TransactionDetail ({ id }) {
                 <Table className={classes.table} aria-label="simple table">
                   <TableBody>
                     <TableRow key={'from'}>
-                      <TableCell size="small" component="th" scope="row">from</TableCell>
+                      <TableCell width="25%" size="small">from</TableCell>
                       <TableCell align="left" padding="default" data-value={transaction.from}>
                         <Link to={`/contracts/${transaction.from}`}>{transaction.from}</Link>
                       </TableCell>
@@ -91,7 +92,7 @@ export function TransactionDetail ({ id }) {
                     {transaction.to &&
                     transaction.to !== '0x0000000000000000000000000000000000000000' &&
                     <TableRow key={'to'}>
-                      <TableCell size="small" component="th" scope="row">to</TableCell>
+                      <TableCell width="25%" size="small">to</TableCell>
                       <TableCell align="left" padding="default" data-value={transaction.to}>
                         <Link to={`/contracts/${transaction.to}`}>{transaction.to}</Link>
                       </TableCell>
@@ -100,79 +101,79 @@ export function TransactionDetail ({ id }) {
                     {transaction.createdContract &&
                     transaction.createdContract !== '0x0000000000000000000000000000000000000000' &&
                     <TableRow key={'createdContract'}>
-                      <TableCell size="small" component="th" scope="row">createdContract</TableCell>
+                      <TableCell width="25%" size="small">createdContract</TableCell>
                       <TableCell align="left" padding="default" data-value={transaction.createdContract}>
                         <Link to={`/contracts/${transaction.createdContract}`}>{transaction.createdContract}</Link>
                       </TableCell>
                     </TableRow>
                     }
                     <TableRow key={'value'}>
-                      <TableCell size="small" component="th" scope="row">value</TableCell>
+                      <TableCell width="25%" size="small">value</TableCell>
                       <TableCell align="left" padding="default"
                                  data-value={transaction.value}>{transaction.value}</TableCell>
                     </TableRow>
                     <TableRow key={'gas'}>
-                      <TableCell size="small" component="th" scope="row">gas</TableCell>
+                      <TableCell width="25%" size="small">gas</TableCell>
                       <TableCell align="left" padding="default"
                                  data-value={transaction.gas}>{transaction.gas}</TableCell>
                     </TableRow>
                     <TableRow key={'gasPrice'}>
-                      <TableCell size="small" component="th" scope="row">gasPrice</TableCell>
+                      <TableCell width="25%" size="small">gasPrice</TableCell>
                       <TableCell align="left" padding="default"
                                  data-value={transaction.gasPrice}>{transaction.gasPrice}</TableCell>
                     </TableRow>
                     <TableRow key={'data'}>
-                      <TableCell size="small" component="th" scope="row">data</TableCell>
+                      <TableCell width="25%" size="small">data</TableCell>
                       <TableCell align="left" padding="default"
-                                 data-value={transaction.data}>{transaction.data.substring(0, Math.min(transaction.data.length, 64))}...</TableCell>
+                                 data-value={transaction.data}>{transaction.data}</TableCell>
                     </TableRow>
                     <TableRow key={'blockNumber'}>
-                      <TableCell size="small" component="th" scope="row">blockNumber</TableCell>
+                      <TableCell width="25%" size="small">blockNumber</TableCell>
                       <TableCell align="left" padding="default" data-value={transaction.blockNumber}>
                         <Link to={`/blocks/${transaction.blockNumber}`}>{transaction.blockNumber}</Link>
                       </TableCell>
                     </TableRow>
                     <TableRow key={'blockHash'}>
-                      <TableCell size="small" component="th" scope="row">blockHash</TableCell>
+                      <TableCell width="25%" size="small">blockHash</TableCell>
                       <TableCell align="left" padding="default" data-value={transaction.blockHash}>
                         {transaction.blockHash}
                       </TableCell>
                     </TableRow>
                     <TableRow key={'status'}>
-                      <TableCell size="small" component="th" scope="row">status</TableCell>
+                      <TableCell width="25%" size="small">status</TableCell>
                       <TableCell align="left" padding="default"
                                  data-value={transaction.status}>{transaction.status ? 1 : 0}</TableCell>
                     </TableRow>
                     <TableRow key={'nonce'}>
-                      <TableCell size="small" component="th" scope="row">nonce</TableCell>
+                      <TableCell width="25%" size="small">nonce</TableCell>
                       <TableCell align="left" padding="default"
                                  data-value={transaction.nonce}>{transaction.nonce}</TableCell>
                     </TableRow>
                     <TableRow key={'index'}>
-                      <TableCell size="small" component="th" scope="row">index</TableCell>
+                      <TableCell width="25%" size="small">index</TableCell>
                       <TableCell align="left" padding="default" data-value={transaction.index}>
                         {transaction.index}
                       </TableCell>
                     </TableRow>
                     <TableRow key={'parsedData'}>
-                      <TableCell size="small" component="th" scope="row">parsedData</TableCell>
+                      <TableCell width="25%" size="small">parsedData</TableCell>
                       <TableCell align="left" padding="default" data-value={transaction.parsedData}>
                         {transaction.parsedData ? JSON.stringify(transaction.parsedData) : ''}
                       </TableCell>
                     </TableRow>
                     <TableRow key={'parsedEvents'}>
-                      <TableCell size="small" component="th" scope="row">Events</TableCell>
+                      <TableCell width="25%" size="small">Events</TableCell>
                       <TableCell align="left" padding="default" data-value={transaction.parsedEvents}>
                         {transaction.parsedEvents ? transaction.parsedEvents.length : ''}
                       </TableCell>
                     </TableRow>
                     <TableRow key={'cumulativeGasUsed'}>
-                      <TableCell size="small" component="th" scope="row">cumulativeGasUsed</TableCell>
+                      <TableCell width="25%" size="small">cumulativeGasUsed</TableCell>
                       <TableCell align="left" padding="default"
                                  data-value={transaction.cumulativeGasUsed}>{transaction.cumulativeGasUsed}</TableCell>
                     </TableRow>
                     <TableRow key={'gasUsed'}>
-                      <TableCell size="small" component="th" scope="row">gasUsed</TableCell>
+                      <TableCell width="25%" size="small">gasUsed</TableCell>
                       <TableCell align="left" padding="default" data-value={transaction.gasUsed}>
                         {transaction.gasUsed}
                       </TableCell>

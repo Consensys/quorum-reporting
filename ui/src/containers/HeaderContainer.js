@@ -35,6 +35,7 @@ const useStyles = makeStyles((theme) => ({
     paddingLeft: 12,
     paddingRight: 12,
     fontSize: 20,
+    lineHeight: 'normal',
   },
   link: {
     textDecoration: 'none',
