@@ -216,6 +216,25 @@ func (r *RPCAPIs) GetStorage(req *http.Request, args *AddressWithOptionalBlock, 
 	return nil
 }
 
+func (r *RPCAPIs) GetStorageHistoryCount(req *http.Request, args *AddressWithBlockRange, reply *RangeQueryResult) error {
+	if args.Address == nil {
+		return ErrNoAddress
+	}
+
+	if args.Options == nil {
+		args.Options = &types.PageOptions{}
+	}
+	args.Options.SetDefaults()
+
+	ranges, err := r.db.GetStorageRanges(*args.Address, args.Options)
+	if err != nil {
+		return err
+	}
+
+	*reply = RangeQueryResult{Ranges: ranges}
+	return nil
+}
+
 func (r *RPCAPIs) GetStorageHistory(req *http.Request, args *AddressWithBlockRange, reply *types.ReportingResponseTemplate) error {
 	if args.Address == nil {
 		return ErrNoAddress

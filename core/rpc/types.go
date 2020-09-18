@@ -67,3 +67,7 @@ type EventsResp struct {
 	Total   uint64               `json:"total"`
 	Options *types.QueryOptions  `json:"options"`
 }
+
+type RangeQueryResult struct {
+	Ranges []types.RangeResult `json:"ranges"`
+}
