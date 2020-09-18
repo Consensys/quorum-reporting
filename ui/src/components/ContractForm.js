@@ -21,8 +21,12 @@ const useStyles = makeStyles((theme) => ({
   tooltipControl: {
     display: 'flex',
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-end',
   },
+  helpIcon: {
+    marginLeft: 6,
+    marginBottom: 6,
+  }
 }))
 
 function ContractForm (props) {
@@ -83,7 +87,7 @@ function ContractForm (props) {
           </FormControl>
           <Tooltip
             title={'Contract Templates are reusable definitions of the structure of a contract, including contract ABI and storage layouts.'}>
-            <HelpIcon color="action" fontSize={'small'}/>
+            <HelpIcon color="action" fontSize={'small'} className={classes.helpIcon}/>
           </Tooltip>
         </div>
         {selectedTemplate === 'new' && <div>
