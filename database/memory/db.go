@@ -390,6 +390,65 @@ func (db *MemoryDB) GetStorageTotal(types.Address, *types.PageOptions) (uint64, 
 	return 0, errors.New("method not implemented")
 }
 
+func (db *MemoryDB) GetStorageRanges(contract types.Address, options *types.PageOptions) ([]types.RangeResult, error) {
+	db.mux.RLock()
+	defer db.mux.RUnlock()
+	if !db.addressIsRegistered(contract) {
+		return nil, errors.New("address is not registered")
+	}
+
+	end := options.EndBlockNumber
+	if big.NewInt(-1).Cmp(end) == 0 {
+		endUint64, _ := db.GetLastFiltered(contract)
+		end = new(big.Int).SetUint64(endUint64)
+	}
+
+	startUint64 := options.BeginBlockNumber.Uint64()
+	endUint64 := end.Uint64()
+
+	storage, ok := db.storageIndexDB[contract]
+	if !ok {
+		return nil, errors.New("contract is not storage indexed")
+	}
+
+	var results []types.RangeResult
+
+	currentCount := 0
+	lastEnd := endUint64
+	for endUint64 >= startUint64 {
+		_, ok := storage.root[endUint64]
+		if ok {
+			currentCount++
+		}
+
+		if currentCount == 1000 {
+			rangeRes := types.RangeResult{
+				Start:       endUint64,
+				End:         lastEnd,
+				ResultCount: 1000,
+			}
+			results = append(results, rangeRes)
+			currentCount = 0
+			lastEnd = endUint64 - 1
+		}
+		if endUint64 == startUint64 {
+			break
+		}
+		endUint64--
+	}
+	rangeRes := types.RangeResult{
+		Start:       endUint64,
+		End:         lastEnd,
+		ResultCount: currentCount,
+	}
+	if options.BeginBlockNumber.Uint64() == 0 {
+		rangeRes.Start = 0
+	}
+	results = append(results, rangeRes)
+
+	return results, nil
+}
+
 func (db *MemoryDB) GetStorage(address types.Address, blockNumber uint64) (*types.StorageResult, error) {
 	db.mux.RLock()
 	defer db.mux.RUnlock()

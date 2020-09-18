@@ -1,6 +1,7 @@
 package memory
 
 import (
+	"math/big"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -410,4 +411,58 @@ func TestMemoryDB_ContractCreationTransactions_DeletedAddress(t *testing.T) {
 	actualTxHash, err := db.GetContractCreationTransaction(sampleAddress)
 	assert.EqualError(t, err, "address is not registered")
 	assert.EqualValues(t, "", actualTxHash)
+}
+
+func TestMemoryDB_GetStorageRanges(t *testing.T) {
+	db := NewMemoryDB()
+	contract := types.NewAddress("0x8a5e2a6343108babed07899510fb42297938d41f")
+	db.AddAddressFrom(contract, 0)
+
+	for i := uint64(1); i < 4500; i += 2 {
+		storageMap := map[types.Address]*types.AccountState{
+			contract: {Root: "0x73607aa4f228bd19dc95575d08adacede9550df70b9ca9253cb3abf7d8115990"},
+		}
+		db.IndexStorage(storageMap, i)
+	}
+
+	//every odd block num has storage
+
+	testCases := []struct {
+		options        types.PageOptions
+		expectedResult []types.RangeResult
+	}{
+		{
+			options:        types.PageOptions{BeginBlockNumber: big.NewInt(0), EndBlockNumber: big.NewInt(0)},
+			expectedResult: []types.RangeResult{{Start: 0, End: 0, ResultCount: 0}},
+		},
+		{
+			options:        types.PageOptions{BeginBlockNumber: big.NewInt(0), EndBlockNumber: big.NewInt(800)},
+			expectedResult: []types.RangeResult{{Start: 0, End: 800, ResultCount: 400}},
+		},
+		{
+			options:        types.PageOptions{BeginBlockNumber: big.NewInt(0), EndBlockNumber: big.NewInt(1500)},
+			expectedResult: []types.RangeResult{{Start: 0, End: 1500, ResultCount: 750}},
+		},
+		{
+			options: types.PageOptions{BeginBlockNumber: big.NewInt(0), EndBlockNumber: big.NewInt(4499)},
+			expectedResult: []types.RangeResult{
+				{Start: 2501, End: 4499, ResultCount: 1000},
+				{Start: 501, End: 2500, ResultCount: 1000},
+				{Start: 0, End: 500, ResultCount: 250},
+			},
+		},
+		{
+			options: types.PageOptions{BeginBlockNumber: big.NewInt(1300), EndBlockNumber: big.NewInt(3500)},
+			expectedResult: []types.RangeResult{
+				{Start: 1501, End: 3500, ResultCount: 1000},
+				{Start: 1300, End: 1500, ResultCount: 100},
+			},
+		},
+	}
+
+	for _, test := range testCases {
+		res, err := db.GetStorageRanges(contract, &test.options)
+		assert.Nil(t, err)
+		assert.Equal(t, test.expectedResult, res)
+	}
 }

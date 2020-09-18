@@ -101,3 +101,9 @@ type Event struct {
 	TransactionIndex uint64  `json:"transactionIndex"`
 	Timestamp        uint64  `json:"timestamp"`
 }
+
+type RangeResult struct {
+	Start       uint64 `json:"start"`
+	End         uint64 `json:"end"`
+	ResultCount int    `json:"resultCount"`
+}
