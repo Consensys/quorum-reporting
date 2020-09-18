@@ -302,6 +302,48 @@ Output:
 }
 ```
 
+#### reporting.GetStorageHistoryCount
+
+Fetches the number of storage entries for the given block range and account. It will subdivide the total entries
+into block ranges with 1000 results in, so that effective pagination can be used.
+
+Input:
+```json
+{
+	"address": "<address>",
+    "options": {
+      	"startBlockNumber": <integer>,
+      	"endBlockNumber": <integer>
+    }
+}
+```
+Note: `startBlockNumber` must be greater than or equal to 0. `endBlockNumber` can be `-1` to indicate the latest 
+indexed block for the given address.
+
+Output:
+```json
+{
+    "ranges": [
+        {
+            "start": 1205,
+            "end": 2205,
+            "resultCount": 1000
+        },
+        {
+            "start": 205,
+            "end": 1204,
+            "resultCount": 1000
+        },
+        {
+            "start": 0,
+            "end": 204,
+            "resultCount": 199
+        }
+    ]
+}
+```
+Note: the output works backwards, giving the most recent blocks first.
+
 ## Transaction
 
 Transaction APIs query 
