@@ -42,18 +42,18 @@ func fmtBlockNum(blockNumber uint64) string {
 	return fmt.Sprintf("0x%x", blockNumber)
 }
 
-func TraceTransaction(c Client, txHash types.Hash) (map[string]interface{}, error) {
+func TraceTransaction(c Client, txHash types.Hash) (types.RawOuterCall, error) {
 	log.Debug("Tracing transaction", "tx", txHash.String())
 
 	// Trace internal calls of the transaction
 	// Reference: https://github.com/ethereum/go-ethereum/issues/3128
-	var resp map[string]interface{}
+	var resp types.RawOuterCall
 	type TraceConfig struct {
 		Tracer string
 	}
 	err := c.RPCCall(&resp, traceTransaction, txHash.String(), &TraceConfig{Tracer: "callTracer"})
 	if err != nil {
-		return nil, err
+		return types.RawOuterCall{}, err
 	}
 	return resp, nil
 }

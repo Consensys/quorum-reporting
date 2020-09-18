@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math/big"
 	"strconv"
 	"strings"
 	"sync"
@@ -636,46 +637,7 @@ func (es *ElasticsearchDB) GetAllEventsFromAddress(address types.Address, option
 }
 
 func (es *ElasticsearchDB) GetStorageWithOptions(address types.Address, options *types.PageOptions) ([]*types.StorageResult, error) {
-	queryString := fmt.Sprintf(QueryByAddressWithBlockRangeOptionsTemplate(options), address.String())
-	from := options.PageSize * options.PageNumber
-
-	if from+options.PageSize > 1000 {
-		return nil, ErrPaginationLimitExceeded
-	}
-	req := esapi.SearchRequest{
-		Index: []string{StorageIndex},
-		Body:  strings.NewReader(queryString),
-		From:  &from,
-		Size:  &options.PageSize,
-		Sort:  []string{"blockNumber:asc"},
-	}
-
-	results, err := es.doSearchRequest(req)
-	if err != nil {
-		if err == database.ErrNotFound {
-			return nil, nil
-		}
-		return nil, err
-	}
-
-	convertedList := make([]*types.StorageResult, len(results.Hits.Hits))
-	for i, result := range results.Hits.Hits {
-		marshalled, err := json.Marshal(result)
-		var storageResult StorageQueryResult
-		if err = json.Unmarshal(marshalled, &storageResult); err != nil {
-			return nil, err
-		}
-		converted := make(map[types.Hash]string)
-		for _, storageEntry := range storageResult.Source.StorageMap {
-			converted[storageEntry.Key] = storageEntry.Value
-		}
-		convertedList[i] = &types.StorageResult{
-			Storage:     converted,
-			StorageRoot: storageResult.Source.StorageRoot,
-			BlockNumber: storageResult.Source.BlockNumber}
-	}
-
-	return convertedList, nil
+	return es.getStorageWithOptionsAndDirection(address, options, true)
 }
 
 func (es *ElasticsearchDB) GetEventsFromAddressTotal(address types.Address, options *types.QueryOptions) (uint64, error) {
@@ -742,6 +704,60 @@ func (es *ElasticsearchDB) GetStorage(address types.Address, blockNumber uint64)
 		StorageRoot: storageResult.Source.StorageRoot,
 		BlockNumber: blockNumber,
 	}, nil
+}
+
+func (es *ElasticsearchDB) GetStorageRanges(contract types.Address, options *types.PageOptions) ([]types.RangeResult, error) {
+	end := options.EndBlockNumber
+	if big.NewInt(-1).Cmp(end) == 0 {
+		endUint64, err := es.GetLastFiltered(contract)
+		if err != nil {
+			return nil, err
+		}
+		end = new(big.Int).SetUint64(endUint64)
+	}
+
+	startUint64 := options.BeginBlockNumber.Uint64()
+	endUint64 := end.Uint64()
+
+	var results []types.RangeResult
+	for endUint64 >= startUint64 {
+		options := &types.PageOptions{
+			BeginBlockNumber: options.BeginBlockNumber,
+			EndBlockNumber:   new(big.Int).SetUint64(endUint64),
+			PageSize:         1000,
+		}
+		options.SetDefaults()
+		res, err := es.getStorageWithOptionsAndDirection(contract, options, false)
+		if err != nil {
+			return nil, err
+		}
+
+		foundEndBlockNumber := startUint64
+		if len(res) != 0 {
+			foundEndBlockNumber = res[len(res)-1].BlockNumber
+		}
+		rangeRes := types.RangeResult{
+			Start:       foundEndBlockNumber,
+			End:         endUint64,
+			ResultCount: len(res),
+		}
+		results = append(results, rangeRes)
+
+		if foundEndBlockNumber == startUint64 {
+			break
+		}
+		endUint64 = foundEndBlockNumber - 1
+	}
+
+	//TODO: remove this limitation
+	//This is caused by the fact that indexing doesn't happen for block 0, but queries can start at block 0
+	if options.BeginBlockNumber.Uint64() == 0 && len(results) > 1 {
+		//more than 1 result && the penultimate result wasn't full, merge the last 2
+		results = results[:len(results)-1]
+		results[len(results)-1].Start = 0
+	}
+
+	return results, nil
 }
 
 func (es *ElasticsearchDB) GetLastFiltered(address types.Address) (uint64, error) {
@@ -929,4 +945,52 @@ func (es *ElasticsearchDB) updateLastPersisted(startingBlockNumber uint64) error
 		return err
 	}
 	return nil
+}
+
+func (es *ElasticsearchDB) getStorageWithOptionsAndDirection(address types.Address, options *types.PageOptions, ascending bool) ([]*types.StorageResult, error) {
+	queryString := fmt.Sprintf(QueryByAddressWithBlockRangeOptionsTemplate(options), address.String())
+	from := options.PageSize * options.PageNumber
+
+	direction := "desc"
+	if ascending {
+		direction = "asc"
+	}
+
+	if from+options.PageSize > 1000 {
+		return nil, ErrPaginationLimitExceeded
+	}
+	req := esapi.SearchRequest{
+		Index: []string{StorageIndex},
+		Body:  strings.NewReader(queryString),
+		From:  &from,
+		Size:  &options.PageSize,
+		Sort:  []string{"blockNumber:" + direction},
+	}
+
+	results, err := es.doSearchRequest(req)
+	if err != nil {
+		if err == database.ErrNotFound {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	convertedList := make([]*types.StorageResult, len(results.Hits.Hits))
+	for i, result := range results.Hits.Hits {
+		marshalled, err := json.Marshal(result)
+		var storageResult StorageQueryResult
+		if err = json.Unmarshal(marshalled, &storageResult); err != nil {
+			return nil, err
+		}
+		converted := make(map[types.Hash]string)
+		for _, storageEntry := range storageResult.Source.StorageMap {
+			converted[storageEntry.Key] = storageEntry.Value
+		}
+		convertedList[i] = &types.StorageResult{
+			Storage:     converted,
+			StorageRoot: storageResult.Source.StorageRoot,
+			BlockNumber: storageResult.Source.BlockNumber}
+	}
+
+	return convertedList, nil
 }

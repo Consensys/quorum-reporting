@@ -22,14 +22,6 @@ type DatabaseWithCache struct {
 	addressMux sync.RWMutex
 }
 
-func (cachingDB *DatabaseWithCache) GetStorageWithOptions(address types.Address, options *types.PageOptions) ([]*types.StorageResult, error) {
-	return cachingDB.db.GetStorageWithOptions(address, options)
-}
-
-func (cachingDB *DatabaseWithCache) GetStorageTotal(address types.Address, options *types.PageOptions) (uint64, error) {
-	return cachingDB.db.GetStorageTotal(address, options)
-}
-
 func NewDatabaseWithCache(db database.Database, cacheSize int) (database.Database, error) {
 	if cacheSize == 0 {
 		return db, nil
@@ -241,6 +233,18 @@ func (cachingDB *DatabaseWithCache) GetEventsFromAddressTotal(address types.Addr
 
 func (cachingDB *DatabaseWithCache) GetStorage(address types.Address, blockNumber uint64) (*types.StorageResult, error) {
 	return cachingDB.db.GetStorage(address, blockNumber)
+}
+
+func (cachingDB *DatabaseWithCache) GetStorageWithOptions(address types.Address, options *types.PageOptions) ([]*types.StorageResult, error) {
+	return cachingDB.db.GetStorageWithOptions(address, options)
+}
+
+func (cachingDB *DatabaseWithCache) GetStorageTotal(address types.Address, options *types.PageOptions) (uint64, error) {
+	return cachingDB.db.GetStorageTotal(address, options)
+}
+
+func (cachingDB *DatabaseWithCache) GetStorageRanges(contract types.Address, options *types.PageOptions) ([]types.RangeResult, error) {
+	return cachingDB.db.GetStorageRanges(contract, options)
 }
 
 func (cachingDB *DatabaseWithCache) GetLastFiltered(address types.Address) (uint64, error) {

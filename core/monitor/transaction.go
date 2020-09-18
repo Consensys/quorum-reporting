@@ -1,8 +1,6 @@
 package monitor
 
 import (
-	"strconv"
-
 	"quorumengineering/quorum-report/client"
 	"quorumengineering/quorum-report/log"
 	"quorumengineering/quorum-report/types"
@@ -65,9 +63,10 @@ func (tm *DefaultTransactionMonitor) fetchTransaction(block *types.Block, hash t
 		IsPrivate:         txOrigin.IsPrivate,
 		Timestamp:         block.Timestamp,
 	}
-	events := []*types.Event{}
-	for _, l := range txOrigin.Logs {
-		e := &types.Event{
+
+	tx.Events = make([]*types.Event, len(txOrigin.Logs))
+	for i, l := range txOrigin.Logs {
+		tx.Events[i] = &types.Event{
 			Index:            l.Index,
 			Address:          l.Account.Address,
 			Topics:           l.Topics,
@@ -78,46 +77,41 @@ func (tm *DefaultTransactionMonitor) fetchTransaction(block *types.Block, hash t
 			TransactionIndex: txOrigin.Index,
 			Timestamp:        block.Timestamp,
 		}
-		events = append(events, e)
 	}
-	tx.Events = events
 
-	var traceResp map[string]interface{}
-	traceResp, err = client.TraceTransaction(tm.quorumClient, types.NewHash(tx.Hash.Hex()))
+	traceResp, err := client.TraceTransaction(tm.quorumClient, tx.Hash)
 	if err != nil {
 		return nil, err
 	}
-	if traceResp["calls"] != nil {
-		respCalls := traceResp["calls"].([]interface{})
-		tx.InternalCalls = make([]*types.InternalCall, len(respCalls))
-		for i, respCall := range respCalls {
-			respCallMap := respCall.(map[string]interface{})
-			gas, err := strconv.ParseUint(respCallMap["gas"].(string), 0, 64)
-			if err != nil {
-				return nil, err
-			}
-			gasUsed, err := strconv.ParseUint(respCallMap["gasUsed"].(string), 0, 64)
-			if err != nil {
-				return nil, err
-			}
-			value := uint64(0)
-			if val, ok := respCallMap["value"].(string); ok {
-				value, err = strconv.ParseUint(val, 0, 64)
-				if err != nil {
-					return nil, err
-				}
-			}
-			tx.InternalCalls[i] = &types.InternalCall{
-				From:    types.NewAddress(respCallMap["from"].(string)),
-				To:      types.NewAddress(respCallMap["to"].(string)),
-				Gas:     gas,
-				GasUsed: gasUsed,
-				Value:   value,
-				Input:   types.NewHexData(respCallMap["input"].(string)),
-				Output:  types.NewHexData(respCallMap["output"].(string)),
-				Type:    respCallMap["type"].(string),
-			}
+
+	calls := flattenCalls(traceResp.Calls)
+	tx.InternalCalls = make([]*types.InternalCall, len(calls))
+	for i, respCall := range calls {
+		tx.InternalCalls[i] = &types.InternalCall{
+			From:    respCall.From,
+			To:      respCall.To,
+			Gas:     respCall.Gas.ToUint64(),
+			GasUsed: respCall.GasUsed.ToUint64(),
+			Value:   respCall.Value.ToUint64(),
+			Input:   respCall.Input,
+			Output:  respCall.Output,
+			Type:    respCall.Type,
 		}
 	}
 	return tx, nil
+}
+
+//flattens the list of internal calls to a single list
+//e.g [1 [2 3 [4 5] 6 [7]]] -> [1 2 3 4 5 6 7]
+func flattenCalls(calls []types.RawInnerCall) []types.RawInnerCall {
+	if len(calls) == 0 {
+		return []types.RawInnerCall{}
+	}
+
+	var results []types.RawInnerCall
+	for _, c := range calls {
+		results = append(results, c)
+		results = append(results, flattenCalls(c.Calls)...)
+	}
+	return results
 }

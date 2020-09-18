@@ -26,6 +26,22 @@ type RawBlock struct {
 	Transactions []Hash    `json:"transactions"`
 }
 
+type RawInnerCall struct {
+	Type    string
+	To      Address
+	Input   HexData
+	From    Address
+	Value   HexNumber
+	Gas     HexNumber
+	GasUsed HexNumber
+	Output  HexData
+	Calls   []RawInnerCall
+}
+
+type RawOuterCall struct {
+	Calls []RawInnerCall
+}
+
 type Block struct {
 	Hash         Hash   `json:"hash"`
 	ParentHash   Hash   `json:"parentHash"`
@@ -84,4 +100,10 @@ type Event struct {
 	TransactionHash  Hash    `json:"transactionHash"`
 	TransactionIndex uint64  `json:"transactionIndex"`
 	Timestamp        uint64  `json:"timestamp"`
+}
+
+type RangeResult struct {
+	Start       uint64 `json:"start"`
+	End         uint64 `json:"end"`
+	ResultCount int    `json:"resultCount"`
 }
