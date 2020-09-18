@@ -1,27 +1,29 @@
 import {
-    getLastPersistedBlockNumber,
-    getAddresses,
-    getABI,
-    getStorageABI,
-    getContractCreationTransaction,
-    getAllTransactionsToAddress,
-    getAllTransactionsInternalToAddress,
-    getAllEventsFromAddress,
-    getStorageHistory,
     addAddress,
-    deleteAddress,
-    getBlock,
-    getTransaction,
     addTemplate,
     assignTemplate,
+    deleteAddress,
+    getABI,
+    getAddresses,
+    getAllEventsFromAddress,
+    getAllTransactionsInternalToAddress,
+    getAllTransactionsToAddress,
+    getBlock,
+    getContractCreationTransaction,
     getERC20TokenHolders,
-    getERC721TokensAtBlock, getHolderForERC721TokenAtBlock,
+    getERC721TokensAtBlock,
+    getHolderForERC721TokenAtBlock,
+    getLastPersistedBlockNumber,
+    getStorageABI,
+    getStorageHistory,
+    getTransaction,
 } from '../client/rpcClient'
 import {
     getContractTemplate,
     getERC20TokenBalance,
     getERC721TokenHolders,
-    getERC721TokensForAccountAtBlock
+    getERC721TokensForAccountAtBlock,
+    getStorageHistoryCount
 } from './rpcClient'
 
 export const getBlockNumber = (baseURL) => {
@@ -129,16 +131,34 @@ export const getEvents = (baseURL, address, options) => {
 };
 
 export const getReportData = (baseURL, address, startBlockNumber, endBlockNumber, options) => {
-    return getStorageHistory(baseURL, address, startBlockNumber, endBlockNumber, options).then( (res) => {
-        if (res.data.error) {
-            throw res.data.error.message
-        }
-        return {
-            data: generateReportData(res.data.result.historicState),
-            total: res.data.result["total"]
-    }
-    })
-};
+    return getStorageHistoryCount(baseURL, address, startBlockNumber, endBlockNumber)
+      .then(res => {
+          if (res.data.error) {
+              throw res.data.error.message
+          }
+          const { ranges } = res.data.result
+          const total = ranges.reduce((sum, range) => sum + range.resultCount, 0)
+          const pagesPerRange = 1000 / options.pageSize
+          const rangeIndex = Math.floor((options.pageNumber * options.pageSize) / 1000)
+          const range = ranges[rangeIndex]
+          const pageNumberWithinRange = options.pageNumber % pagesPerRange
+
+          return getStorageHistory(baseURL, address, {
+              pageSize: options.pageSize,
+              pageNumber: pageNumberWithinRange,
+              beginBlockNumber: range.start,
+              endBlockNumber: range.end,
+          }).then((res) => {
+              if (res.data.error) {
+                  throw res.data.error.message
+              }
+              return {
+                  data: res.data.result.historicState,
+                  total: total
+              }
+          })
+      })
+}
 
 function calculateTotal (result, options) {
     let lastPage = result.length < options.pageSize
@@ -328,35 +348,4 @@ const getTransactionDetail = (baseURL, txHash) => {
             internalCalls: res.data.result.rawTransaction.internalCalls,
         }
     })
-};
-
-const generateReportData = (historicState) => {
-    if (historicState.length === 0) {
-        return []
-    }
-    let reportData = [historicState[0]];
-    let currentState = historicState[0];
-    for (let i = 1; i < historicState.length; i++) {
-        let nextState = isStateEqual(currentState, historicState[i]);
-        if (nextState) {
-            reportData.unshift(nextState);
-            currentState = nextState
-        }
-    }
-    return reportData
-};
-
-const isStateEqual = (state1, state2) => {
-    let markedState2 = state2;
-    let noChange = true;
-    for (let i = 0; i < state1.historicStorage.length; i++) {
-        if (state1.historicStorage[i].value !== state2.historicStorage[i].value) {
-            markedState2.historicStorage[i].changed = true;
-            noChange = false
-        }
-    }
-    if (noChange) {
-        return false
-    }
-    return markedState2
 };

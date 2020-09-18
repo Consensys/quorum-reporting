@@ -125,12 +125,20 @@ export const getTransaction = (baseURL, txHash) => {
     )
 };
 
-export const getStorageHistory = (baseURL, address, startBlockNumber, endBlockNumber, options) => {
+export const getStorageHistory = (baseURL, address, options) => {
     return request(baseURL,
         "reporting.GetStorageHistory",
-        [{address, options:{...options, beginBlockNumber: parseInt(startBlockNumber), endBlockNumber: parseInt(endBlockNumber)}}],
+        [{address, options}],
     )
 };
+
+export const getStorageHistoryCount = (baseURL, address, startBlockNumber, endBlockNumber) => {
+    return request(baseURL,
+      "reporting.GetStorageHistoryCount",
+      [{address, options:{beginBlockNumber: parseInt(startBlockNumber), endBlockNumber: parseInt(endBlockNumber)}}],
+    )
+};
+
 
 export const getERC20TokenHolders = (baseURL, address, block, options) => {
     return request(baseURL,
