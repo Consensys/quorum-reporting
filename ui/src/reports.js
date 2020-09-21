@@ -24,7 +24,7 @@ export const Reports = {
       endBlock: 'optional',
     },
     View: ReportTable,
-    getItems: (rpcEndpoint, params, options) => getReportData(rpcEndpoint, params.address, params.startBlockNumber, params.endBlockNumber, options),
+    getItems: (rpcEndpoint, params, options) => getReportData(rpcEndpoint, params.address, params.startNumber, params.endNumber, options),
   },
   ERC20TokenBalance: {
     label: 'ERC20 Token Balance',
@@ -36,7 +36,7 @@ export const Reports = {
       endBlock: 'optional',
     },
     View: TokenBalanceTable,
-    getItems: (rpcEndpoint, params, options) => getERC20Balance(rpcEndpoint, params.address, params.account, params.startBlockNumber, params.endBlockNumber, options),
+    getItems: (rpcEndpoint, params, options) => getERC20Balance(rpcEndpoint, params.address, params.account, params.startNumber, params.endNumber, options),
   },
   ERC20TokenHolders: {
     label: 'ERC20 Token Holders',
