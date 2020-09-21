@@ -14,30 +14,17 @@ const useStyles = makeStyles((theme) => ({
 function ContractSelector(props) {
     const classes = useStyles();
     return (
-        <div>
-            <FormControl variant="filled" size="small" className={classes.formControl} style={{minWidth: 400}}>
-                <InputLabel>Contract</InputLabel>
-                <Select
-                    value={props.selectedContract}
-                    onChange={props.handleSelectedContractChange}
-                >
-                    {props.contracts.map(c => (
-                        <MenuItem key={c.address} value={c.address}>{c.address}</MenuItem>
-                    ))}
-                </Select>
-            </FormControl>
-            <FormControl variant="filled" size="small" className={classes.formControl} style={{minWidth: 400}}>
+            <FormControl variant="filled" size="small" className={classes.formControl} style={{width: 400, maxWidth: '90%'}}>
                 <InputLabel>Actions</InputLabel>
                 <Select
-                    value={props.selectedAction}
-                    onChange={props.handleSelectedActionChange}
+                    value={props.selectedReport}
+                    onChange={props.handleSelectedReportChange}
                 >
-                    {props.actions.map(a => (
-                        <MenuItem key={a} value={a}>{a}</MenuItem>
+                    {props.reports.map(({ label, value }) => (
+                        <MenuItem key={value} value={value}>{label}</MenuItem>
                     ))}
                 </Select>
             </FormControl>
-        </div>
     )
 }
 

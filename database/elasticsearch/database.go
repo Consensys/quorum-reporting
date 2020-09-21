@@ -637,7 +637,7 @@ func (es *ElasticsearchDB) GetAllEventsFromAddress(address types.Address, option
 }
 
 func (es *ElasticsearchDB) GetStorageWithOptions(address types.Address, options *types.PageOptions) ([]*types.StorageResult, error) {
-	return es.getStorageWithOptionsAndDirection(address, options, true)
+	return es.getStorageWithOptionsAndDirection(address, options, false)
 }
 
 func (es *ElasticsearchDB) GetEventsFromAddressTotal(address types.Address, options *types.QueryOptions) (uint64, error) {

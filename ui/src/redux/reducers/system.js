@@ -5,6 +5,7 @@ const initialState = {
     rpcEndpoint: DefaultRPCEndpoint,
     isConnected: false,
     lastPersistedBlockNumber: "",
+    rowsPerPage: 25,
 };
 
 const systemReducer = (state=initialState, action) => {
@@ -28,6 +29,11 @@ const systemReducer = (state=initialState, action) => {
             return {
                 ...state,
                 lastPersistedBlockNumber: action.lastPersistedBlockNumber,
+            };
+        case types.UPDATE_ROWS_PER_PAGE:
+            return {
+                ...state,
+                rowsPerPage: action.rowsPerPage,
             };
         default:
             return state

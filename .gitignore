@@ -3,3 +3,5 @@
 config.toml
 /ui/node_modules/
 /ui/build/
+/ui/statik/
+quorum-report
