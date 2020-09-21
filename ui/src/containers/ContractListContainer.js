@@ -12,6 +12,7 @@ import { deleteContract, getContracts } from '../client/fetcher'
 import Button from '@material-ui/core/Button'
 import { makeStyles } from '@material-ui/core/styles'
 import { useDispatch, useSelector } from 'react-redux'
+import Alert from '@material-ui/lab/Alert'
 
 const useStyles = makeStyles((theme) => ({
   card: {
@@ -31,6 +32,7 @@ export default function ContractListContainer() {
   const classes = useStyles()
   const dispatch = useDispatch()
   const [formIsOpen, setFormIsOpen] = useState(false)
+  const [errorMessage, setErrorMessage] = useState()
   const rpcEndpoint = useSelector(state => state.system.rpcEndpoint)
   const contracts = useSelector(state => state.user.contracts)
 
@@ -41,6 +43,8 @@ export default function ContractListContainer() {
   const getAllRegisteredContracts = () => {
     getContracts(rpcEndpoint).then((contracts) => {
       dispatch(getContractsAction(contracts))
+    }).catch((e) => {
+      console.error("Could not fetch contracts", e)
     })
   }
 
@@ -54,17 +58,21 @@ export default function ContractListContainer() {
 
   const handleContractDelete = (address) => {
     deleteContract(rpcEndpoint, address).then(() => {
-      // TODO: handle error?
       // give a small timeout to avoid fetch too fast
       setTimeout(() => {
         getAllRegisteredContracts()
       }, 500)
+    }).catch(e => {
+      setErrorMessage(e.message)
     })
   }
 
   return (
     <Card className={classes.card}>
       <CardContent className={classes.cardContent}>
+        {errorMessage &&
+          <Alert severity="error" className={classes.alert} onClose={() => setErrorMessage(undefined)}>{errorMessage}</Alert>
+        }
         <Typography variant="h6" align="left">
           Registered Contract List&nbsp;
           <IconButton onClick={getAllRegisteredContracts}>

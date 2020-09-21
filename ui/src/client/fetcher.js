@@ -28,18 +28,12 @@ import {
 
 export const getBlockNumber = (baseURL) => {
     return getLastPersistedBlockNumber(baseURL).then( (res) => {
-        if (res.data.error) {
-            throw res.data.error.message
-        }
-        return res.data.result
+        return res
     })
 };
 
 export const addContract = (baseURL, newContract) => {
     return addAddress(baseURL, newContract.address).then( (res) => {
-        if (res.data.error) {
-            throw res.data.error.message
-        }
         if(newContract.template === 'new') {
             return addTemplate(baseURL, newContract.newTemplate)
               .then((template) => assignTemplate(baseURL, newContract.address, newContract.newTemplate.name))
@@ -49,20 +43,12 @@ export const addContract = (baseURL, newContract) => {
 };
 
 export const deleteContract = (baseURL, address) => {
-    return deleteAddress(baseURL, address).then( (res) => {
-        if (res.data.error) {
-            throw res.data.error.message
-        }
-        return res
-    })
+    return deleteAddress(baseURL, address)
 };
 
 export const getContracts = (baseURL) => {
     return getAddresses(baseURL).then( (res) => {
-        if (res.data.error) {
-            throw res.data.error.message
-        }
-        return getContractsDetail(baseURL, res.data.result)
+        return getContractsDetail(baseURL, res)
           .then((contracts) => {
                 // sort by template name + address for consistent order
                 return contracts.sort((a, b) =>
@@ -74,22 +60,16 @@ export const getContracts = (baseURL) => {
 
 export const getContractCreationTx = (baseURL, address) => {
     return getContractCreationTransaction(baseURL, address).then( (res) => {
-        if (res.data.error) {
-            throw res.data.error.message
-        }
-        return res.data.result
+        return res
     })
 };
 
 export const getToTxs = (baseURL, address, options) => {
     return getAllTransactionsToAddress(baseURL, address, options).then( (res) => {
-        if (res.data.error) {
-            throw res.data.error.message
-        }
-        return getTransactionsDetail(baseURL, res.data.result["transactions"]).then( (txs) => {
+        return getTransactionsDetail(baseURL, res["transactions"]).then( (txs) => {
             return {
                 data: txs,
-                total: res.data.result["total"]
+                total: res["total"]
             }
         })
     })
@@ -97,13 +77,10 @@ export const getToTxs = (baseURL, address, options) => {
 
 export const getInternalToTxs = (baseURL, address) => {
     return getAllTransactionsInternalToAddress(baseURL, address).then( (res) => {
-        if (res.data.error) {
-            throw res.data.error.message
-        }
-        return getTransactionsDetail(baseURL, res.data.result["transactions"]).then( (txs) => {
+        return getTransactionsDetail(baseURL, res["transactions"]).then( (txs) => {
             return {
                 data: txs,
-                total: res.data.result["total"]
+                total: res["total"]
             }
         })
     })
@@ -111,11 +88,8 @@ export const getInternalToTxs = (baseURL, address) => {
 
 export const getEvents = (baseURL, address, options) => {
     return getAllEventsFromAddress(baseURL, address, options).then( (res) => {
-        if (res.data.error) {
-            throw res.data.error.message
-        }
         return {
-            data: res.data.result["events"].map( (event) => ({
+            data: res["events"].map( (event) => ({
                 topic: event.rawEvent.topics[0],
                 txHash: event.rawEvent.transactionHash,
                 address: event.rawEvent.address,
@@ -125,7 +99,7 @@ export const getEvents = (baseURL, address, options) => {
                     parsedData: event.parsedData,
                 },
             })),
-            total: res.data.result["total"]
+            total: res["total"]
         }
     })
 };
@@ -133,10 +107,7 @@ export const getEvents = (baseURL, address, options) => {
 export const getReportData = (baseURL, address, startBlockNumber, endBlockNumber, options) => {
     return getStorageHistoryCount(baseURL, address, startBlockNumber, endBlockNumber)
       .then(res => {
-          if (res.data.error) {
-              throw res.data.error.message
-          }
-          const { ranges } = res.data.result
+          const { ranges } = res
           const total = ranges.reduce((sum, range) => sum + range.resultCount, 0)
           const pagesPerRange = 1000 / options.pageSize
           const rangeIndex = Math.floor((options.pageNumber * options.pageSize) / 1000)
@@ -149,11 +120,8 @@ export const getReportData = (baseURL, address, startBlockNumber, endBlockNumber
               beginBlockNumber: range.start,
               endBlockNumber: range.end,
           }).then((res) => {
-              if (res.data.error) {
-                  throw res.data.error.message
-              }
               return {
-                  data: res.data.result.historicState,
+                  data: res.historicState,
                   total: total
               }
           })
@@ -170,11 +138,8 @@ function calculateTotal (result, options) {
 
 export const getERC20Holders = (baseURL, address, block, options) => {
     return getERC20TokenHolders(baseURL, address, block, options).then( (res) => {
-        if (res.data.error) {
-            throw res.data.error.message
-        }
-        let total = calculateTotal(res.data.result, options)
-        return Promise.all(res.data.result.map((holder) => {
+        let total = calculateTotal(res, options)
+        return Promise.all(res.map((holder) => {
             return getERC20Balance(baseURL, address, holder, block, block, {})
               .then((balanceRes) => {
                   const value = balanceRes.data && balanceRes.data[0].balance
@@ -195,11 +160,8 @@ export const getERC20Holders = (baseURL, address, block, options) => {
 
 export const getERC20Balance = (baseURL, address, holder, startBlockNumber, endBlockNumber, options) => {
     return getERC20TokenBalance(baseURL, address, holder, startBlockNumber, endBlockNumber, options).then( (res) => {
-        if (res.data.error) {
-            throw res.data.error.message
-        }
-        let data = Object.entries(res.data.result).map(([key, value]) => ({ block: key, balance: value })).sort((one, two) => two.block - one.block)
-        let total = calculateTotal(res.data.result, options)
+        let data = Object.entries(res).map(([key, value]) => ({ block: key, balance: value })).sort((one, two) => two.block - one.block)
+        let total = calculateTotal(res, options)
         return {
             data: data,
             total,
@@ -209,11 +171,8 @@ export const getERC20Balance = (baseURL, address, holder, startBlockNumber, endB
 
 export const getERC721Holders = (baseURL, address, block, options) => {
     return getERC721TokenHolders(baseURL, address, block, options).then( (res) => {
-        if (res.data.error) {
-            throw res.data.error.message
-        }
-        let total = calculateTotal(res.data.result, options)
-        return Promise.all(res.data.result.map((holder) => {
+        let total = calculateTotal(res, options)
+        return Promise.all(res.map((holder) => {
             return getERC721TokensForAccount(baseURL, address, holder, block, block, {})
               .then((tokensRes) => {
                   const value = tokensRes.data && tokensRes.data.length
@@ -234,12 +193,9 @@ export const getERC721Holders = (baseURL, address, block, options) => {
 
 export const getERC721Tokens = (baseURL, address, block, options) => {
     return getERC721TokensAtBlock(baseURL, address, block, options).then( (res) => {
-        if (res.data.error) {
-            throw res.data.error.message
-        }
-        let total = calculateTotal(res.data.result, options)
+        let total = calculateTotal(res, options)
         return {
-            data: res.data.result,
+            data: res,
             total
         }
     })
@@ -247,12 +203,9 @@ export const getERC721Tokens = (baseURL, address, block, options) => {
 
 export const getERC721TokensForAccount = (baseURL, address, holder, block, options) => {
     return getERC721TokensForAccountAtBlock(baseURL, address, holder, block, options).then( (res) => {
-        if (res.data.error) {
-            throw res.data.error.message
-        }
-        let total = calculateTotal(res.data.result, options)
+        let total = calculateTotal(res, options)
         return {
-            data: res.data.result,
+            data: res,
             total
         }
     })
@@ -260,11 +213,8 @@ export const getERC721TokensForAccount = (baseURL, address, holder, block, optio
 
 export const getHolderForERC721Token = (baseURL, address, tokenId, block) => {
     return getHolderForERC721TokenAtBlock(baseURL, address, tokenId, block).then( (res) => {
-        if (res.data.error) {
-            throw res.data.error.message
-        }
         return {
-            data: [{ holder: res.data.result.replace('0x0x', '0x'), value: tokenId}], // TODO remove this when fixed
+            data: [{ holder: res.replace('0x0x', '0x'), value: tokenId}], // TODO remove this when fixed
             total: 1,
         }
     })
@@ -273,24 +223,18 @@ export const getHolderForERC721Token = (baseURL, address, tokenId, block) => {
 
 export const getSingleBlock = (baseURL, blockNumber) => {
     return getBlock(baseURL, blockNumber).then( (res) => {
-        if (res.data.error) {
-            throw res.data.error.message
-        }
-        return res.data.result
+        return res
     })
 };
 
 export const getSingleTransaction = (baseURL, txHash) => {
     return getTransaction(baseURL, txHash).then( (res) => {
-        if (res.data.error) {
-            throw res.data.error.message
-        }
         return {
-            txSig: res.data.result.txSig,
-            func4Bytes: res.data.result.func4Bytes,
-            parsedData: res.data.result.parsedData,
-            parsedEvents: res.data.result.parsedEvents,
-            ...res.data.result.rawTransaction
+            txSig: res.txSig,
+            func4Bytes: res.func4Bytes,
+            parsedData: res.parsedData,
+            parsedEvents: res.parsedEvents,
+            ...res.rawTransaction
         }
     })
 };
@@ -299,9 +243,9 @@ const getContractsDetail = (baseURL, addresses) => {
   return Promise.all(
     addresses.map((address) => {
         return Promise.all([
-          getABI(baseURL, address).then((res) => res.data.result),
-          getStorageABI(baseURL, address).then((res) => res.data.result),
-          getContractTemplate(baseURL, address).then((res) => res.data.result),
+          getABI(baseURL, address).then((res) => res),
+          getStorageABI(baseURL, address).then((res) => res),
+          getContractTemplate(baseURL, address).then((res) => res),
           ]
         ).then(([abi, storageLayout, name]) => {
             return { address, abi, storageLayout, name }
@@ -335,17 +279,17 @@ const getTransactionsDetail = (baseURL, txs) => {
 const getTransactionDetail = (baseURL, txHash) => {
     return getTransaction(baseURL, txHash).then( (res) => {
         return {
-            hash: res.data.result.rawTransaction.hash,
-            from: res.data.result.rawTransaction.from,
-            to: res.data.result.rawTransaction.to,
-            blockNumber: res.data.result.rawTransaction.blockNumber,
+            hash: res.rawTransaction.hash,
+            from: res.rawTransaction.from,
+            to: res.rawTransaction.to,
+            blockNumber: res.rawTransaction.blockNumber,
             parsedTransaction: {
-                txSig: res.data.result.txSig,
-                func4Bytes: res.data.result.func4Bytes,
-                parsedData: res.data.result.parsedData,
+                txSig: res.txSig,
+                func4Bytes: res.func4Bytes,
+                parsedData: res.parsedData,
             },
-            parsedEvents: res.data.result.parsedEvents,
-            internalCalls: res.data.result.rawTransaction.internalCalls,
+            parsedEvents: res.parsedEvents,
+            internalCalls: res.rawTransaction.internalCalls,
         }
     })
 };

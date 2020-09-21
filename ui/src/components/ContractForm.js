@@ -46,7 +46,7 @@ function ContractForm (props) {
     }
     getTemplates(rpcEndpoint)
       .then((res) => {
-        setTemplates(res.data.result)
+        setTemplates(res)
       })
   }, [rpcEndpoint])
 
@@ -175,13 +175,9 @@ function ContractForm (props) {
             }
           }
           addContract(rpcEndpoint, newContract).then((res) => {
-            if (res.data.error) {
-              setErrorMessage(res.data.error)
-            } else {
-              props.handleCloseSetting()
-            }
+            props.handleCloseSetting()
           }).catch((e) => {
-            setErrorMessage(e.toString)
+            setErrorMessage(e.message)
           })
         }} color="primary">
           Register

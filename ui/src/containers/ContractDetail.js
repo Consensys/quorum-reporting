@@ -79,6 +79,10 @@ export function ContractDetail ({ address }) {
       .then((transaction) => {
         setCreationTx(transaction)
       })
+      .catch((e) => {
+        console.log('Contract Creation Tx not found', e)
+        setCreationTx(undefined)
+      })
   }, [address, contracts])
 
   return (

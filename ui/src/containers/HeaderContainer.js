@@ -59,6 +59,8 @@ export default function HeaderContainer () {
   useEffect(() => {
     getContracts(rpcEndpoint).then( (contracts) => {
       dispatch(getContractsAction(contracts))
+    }).catch((e) => {
+      console.error("Could not fetch contracts", e)
     })
     const timerID = setInterval(
       () => connectReporting(),
@@ -79,6 +81,7 @@ export default function HeaderContainer () {
       }
     }).catch((e) => {
       if (isConnected) {
+        console.error('Could not get latest block number, disconnecting.', e)
         dispatch(disconnectAction())
         dispatch(updateBlockNumberAction(''))
       }

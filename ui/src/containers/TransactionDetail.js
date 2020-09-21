@@ -59,7 +59,7 @@ export function TransactionDetail ({ id }) {
     getSingleTransaction(rpcEndpoint, id).then((res) => {
       setDisplayData(res)
     }).catch((e) => {
-      setErrorMessage(`Transaction not found (${e.toString()})`)
+      setErrorMessage(`Transaction not found (${e.message})`)
       setDisplayData(undefined)
     })
   }, [id, rpcEndpoint])

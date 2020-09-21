@@ -60,7 +60,7 @@ export function BlockDetail ({ number }) {
     getSingleBlock(rpcEndpoint, blockNumber).then((res) => {
       setBlock(res)
     }).catch((e) => {
-      setErrorMessage(`Block not found (${e.toString()})`)
+      setErrorMessage(`Block not found (${e.message})`)
       setBlock(undefined)
     })
   }, [rpcEndpoint, number])

@@ -11,6 +11,10 @@ export const request = (baseURL, method, params) => {
         params: params,
         id: requestCount++,
     })
+        .then(res => res.data.result)
+        .catch((e) => {
+            throw new Error(e.response.data.error)
+        })
 };
 
 export const getLastPersistedBlockNumber = (baseURL) => {
