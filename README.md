@@ -17,7 +17,7 @@ over its lifetime. It will also interpret and parse events that the contract emi
     e.g. `geth --graphql --graphql.vhosts=* --ws --wsport 23000 --wsapi admin,eth,debug --wsorigins=* --gcmode=archive ...`
 
 - ElasticSearch v7 (For Production)
-    - Quorum Reporting uses ElasticSearch as its data store, and can be set up in many configurations.
+    - Quorum Reporting uses ElasticSearch as its data store.
         [Click here](https://www.elastic.co/guide/en/elasticsearch/reference/current/getting-started.html) to get started with ElasticSearch.
 
 ### Up & Running
