@@ -1,6 +1,4 @@
-# quorum-reporting-ui
-
-Basic UI for quorum reporting engine
+Basic UI for Quorum Reporting engine
 
 ## Getting Started
 
@@ -21,13 +19,17 @@ Open UI
 In order to have the assets be part of the application binary, they
 must be packaged up and included in the build process.
 
-Currently, (statik)[https://github.com/rakyll/statik] is used for this; refer to their documentation 
-on how to install it.
+Currently, (statik)[https://github.com/rakyll/statik] is used for this purpose. Install it with:
+```
+go get github.com/rakyll/statik
+```
 
-To generate the production resource, run the following from within the UI folder:
-- `npm install`
-- `npm run-script build`
-- `statik -src=./build -f`
+To generate the production resources, run the following from within the UI folder:
+```
+npm install
+npm run-script build
+statik -src=./build -f
+```
 
-This will have updated the assets file under `statik/statik.go` and the new resources
-will be compiled into the application.
+This will update the assets file under `statik/statik.go` and the new resources
+will be compiled next time you build the reporting application.
