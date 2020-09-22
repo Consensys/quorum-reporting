@@ -1,7 +1,7 @@
 # Quorum Reporting
 
 Quorum Reporting is a tool that indexes blocks and transactions in a Quorum network and generates reports to 
-give users insights into what is happening to their contracts.
+give users insights into what is happening with their contracts.
 
 It generates reports of the contract's state, allowing you to see how the contract changes and evolves
 over its lifetime. It will also interpret and parse events that the contract emits so that they can be viewed in a dashboard or other application using the reporting API.
