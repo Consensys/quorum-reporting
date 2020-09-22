@@ -5,16 +5,16 @@ import Typography from '@material-ui/core/Typography'
 import IconButton from '@material-ui/core/IconButton'
 import AddIcon from '@material-ui/icons/Add'
 import RefreshIcon from '@material-ui/icons/Refresh'
-import ContractTable from '../components/ContractTable'
-import ContractForm from '../components/ContractForm'
-import { getContractsAction } from '../redux/actions/contractActions'
-import { deleteContract, getContracts } from '../client/fetcher'
 import Button from '@material-ui/core/Button'
 import { makeStyles } from '@material-ui/core/styles'
 import { useDispatch, useSelector } from 'react-redux'
 import Alert from '@material-ui/lab/Alert'
+import ContractTable from '../components/ContractTable'
+import ContractForm from '../components/ContractForm'
+import { getContractsAction } from '../redux/actions/contractActions'
+import { deleteContract, getContracts } from '../client/fetcher'
 
-const useStyles = makeStyles((theme) => ({
+const useStyles = makeStyles(() => ({
   card: {
     minWidth: 275,
     marginTop: 5,
@@ -25,7 +25,7 @@ const useStyles = makeStyles((theme) => ({
   cardContent: {
     display: 'flex',
     flexDirection: 'column',
-  }
+  },
 }))
 
 export default function ContractListContainer() {
@@ -33,19 +33,21 @@ export default function ContractListContainer() {
   const dispatch = useDispatch()
   const [formIsOpen, setFormIsOpen] = useState(false)
   const [errorMessage, setErrorMessage] = useState()
-  const rpcEndpoint = useSelector(state => state.system.rpcEndpoint)
-  const contracts = useSelector(state => state.user.contracts)
+  const rpcEndpoint = useSelector((state) => state.system.rpcEndpoint)
+  const contracts = useSelector((state) => state.user.contracts)
 
   useEffect(() => {
     getAllRegisteredContracts()
   }, [])
 
   const getAllRegisteredContracts = () => {
-    getContracts(rpcEndpoint).then((contracts) => {
-      dispatch(getContractsAction(contracts))
-    }).catch((e) => {
-      console.error("Could not fetch contracts", e)
-    })
+    getContracts(rpcEndpoint)
+      .then((res) => {
+        dispatch(getContractsAction(res))
+      })
+      .catch((e) => {
+        console.error('Could not fetch contracts', e)
+      })
   }
 
   const handleCloseSetting = () => {
@@ -57,45 +59,60 @@ export default function ContractListContainer() {
   }
 
   const handleContractDelete = (address) => {
-    deleteContract(rpcEndpoint, address).then(() => {
-      // give a small timeout to avoid fetch too fast
-      setTimeout(() => {
-        getAllRegisteredContracts()
-      }, 500)
-    }).catch(e => {
-      setErrorMessage(e.message)
-    })
+    deleteContract(rpcEndpoint, address)
+      .then(() => {
+        // give a small timeout to avoid fetch too fast
+        setTimeout(() => {
+          getAllRegisteredContracts()
+        }, 500)
+      })
+      .catch((e) => {
+        setErrorMessage(e.message)
+      })
   }
 
   return (
     <Card className={classes.card}>
       <CardContent className={classes.cardContent}>
-        {errorMessage &&
-          <Alert severity="error" className={classes.alert} onClose={() => setErrorMessage(undefined)}>{errorMessage}</Alert>
-        }
+        {errorMessage
+        && (
+          <Alert
+            severity="error"
+            className={classes.alert}
+            onClose={() => setErrorMessage(undefined)}
+          >
+            {errorMessage}
+          </Alert>
+        )}
         <Typography variant="h6" align="left">
           Registered Contract List&nbsp;
           <IconButton onClick={getAllRegisteredContracts}>
-            <RefreshIcon/>
+            <RefreshIcon />
           </IconButton>
         </Typography>
-        <br/>
+        <br />
         {
-          contracts.length === 0 &&
-          <h1 align="center">No Contracts Registered</h1>
+          contracts.length === 0
+          && <h1 align="center">No Contracts Registered</h1>
         }
         {
-          contracts.length !== 0 &&
-          <ContractTable
-            contracts={contracts}
-            handleContractDelete={handleContractDelete}
-          />
+          contracts.length !== 0
+          && (
+            <ContractTable
+              contracts={contracts}
+              handleContractDelete={handleContractDelete}
+            />
+          )
         }
-        <br/>
-        <Button color="primary" onClick={() => {
-          setFormIsOpen(true)
-        }}>
-          <AddIcon/>&nbsp;Add Contract
+        <br />
+        <Button
+          color="primary"
+          onClick={() => {
+            setFormIsOpen(true)
+          }}
+        >
+          <AddIcon />
+          &nbsp;Add Contract
         </Button>
         <ContractForm
           isOpen={formIsOpen}

@@ -5,21 +5,21 @@ import Toolbar from '@material-ui/core/Toolbar'
 import Typography from '@material-ui/core/Typography'
 import IconButton from '@material-ui/core/IconButton'
 import SettingsIcon from '@material-ui/icons/Settings'
+import { makeStyles } from '@material-ui/core/styles'
+import { shallowEqual, useDispatch, useSelector } from 'react-redux'
+import { Lens } from '@material-ui/icons'
 import SettingForm from '../components/SettingForm'
 import {
   connectAction,
   disconnectAction,
   updateBlockNumberAction,
-  updateEndpointAction
+  updateEndpointAction,
 } from '../redux/actions/systemActions'
 import { getBlockNumber, getContracts } from '../client/fetcher'
 import SearchField from '../components/SearchField'
-import { makeStyles } from '@material-ui/styles'
-import { shallowEqual, useDispatch, useSelector } from 'react-redux'
 import { getContractsAction } from '../redux/actions/contractActions'
-import { Lens } from '@material-ui/icons'
 
-const useStyles = makeStyles((theme) => ({
+const useStyles = makeStyles(() => ({
   grow: {
     flexGrow: 1,
   },
@@ -44,8 +44,7 @@ const useStyles = makeStyles((theme) => ({
   },
 }))
 
-export default function HeaderContainer () {
-
+export default function HeaderContainer() {
   const classes = useStyles()
   const [formIsOpen, setFormIsOpen] = useState(false)
   const [newRPCEndpoint, setNewRPCEndpoint] = useState('')
@@ -53,18 +52,20 @@ export default function HeaderContainer () {
     rpcEndpoint,
     isConnected,
     lastPersistedBlockNumber,
-  } = useSelector(state => state.system, shallowEqual)
+  } = useSelector((state) => state.system, shallowEqual)
   const dispatch = useDispatch()
 
   useEffect(() => {
-    getContracts(rpcEndpoint).then( (contracts) => {
-      dispatch(getContractsAction(contracts))
-    }).catch((e) => {
-      console.error("Could not fetch contracts", e)
-    })
+    getContracts(rpcEndpoint)
+      .then((contracts) => {
+        dispatch(getContractsAction(contracts))
+      })
+      .catch((e) => {
+        console.error('Could not fetch contracts', e)
+      })
     const timerID = setInterval(
       () => connectReporting(),
-      1000
+      1000,
     )
     return () => {
       clearInterval(timerID)
@@ -72,40 +73,49 @@ export default function HeaderContainer () {
   }, [])
 
   const connectReporting = () => {
-    getBlockNumber(rpcEndpoint).then((res) => {
-      if (lastPersistedBlockNumber !== res) {
-        if (!isConnected) {
-          dispatch(connectAction())
+    getBlockNumber(rpcEndpoint)
+      .then((res) => {
+        if (lastPersistedBlockNumber !== res) {
+          if (!isConnected) {
+            dispatch(connectAction())
+          }
+          dispatch(updateBlockNumberAction(res))
         }
-        dispatch(updateBlockNumberAction(res))
-      }
-    }).catch((e) => {
-      if (isConnected) {
-        console.error('Could not get latest block number, disconnecting.', e)
-        dispatch(disconnectAction())
-        dispatch(updateBlockNumberAction(''))
-      }
-    })
+      })
+      .catch((e) => {
+        if (isConnected) {
+          console.error('Could not get latest block number, disconnecting.', e)
+          dispatch(disconnectAction())
+          dispatch(updateBlockNumberAction(''))
+        }
+      })
   }
 
   return (
     <AppBar color="transparent" position="static">
       <Toolbar>
         <Link to="/" className={classes.home}>
-          <img src={require('../resources/quorum-logo.png')} width="40" height="20" alt=""/>
+          {/* eslint-disable-next-line global-require */}
+          <img src={require('../resources/quorum-logo.png')} width="40" height="20" alt="" />
           <Typography className={classes.homeText}>
             Quorum Reporting
           </Typography>
         </Link>
-        <span className={classes.grow}/>
-        <SearchField/>
-        <Lens style={{ fontSize: 16, color: isConnected ? 'green' : 'red', margin: 6 }}/>
+        <span className={classes.grow} />
+        <SearchField />
+        <Lens
+          style={{
+            fontSize: 16,
+            color: isConnected ? 'green' : 'red',
+            margin: 6,
+          }}
+        />
         <Typography variant="h5" color="inherit">
-          {isConnected ? ('#' + lastPersistedBlockNumber) : '#N/A'}
+          {isConnected ? (`#${lastPersistedBlockNumber}`) : '#N/A'}
           &nbsp;
         </Typography>
         <IconButton variant="h4" onClick={() => setFormIsOpen(true)}>
-          <SettingsIcon color="action"/>
+          <SettingsIcon color="action" />
         </IconButton>
         <SettingForm
           rpcEndpoint={rpcEndpoint}
@@ -123,4 +133,3 @@ export default function HeaderContainer () {
     </AppBar>
   )
 }
-

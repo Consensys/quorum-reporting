@@ -10,14 +10,14 @@ import FormControl from '@material-ui/core/FormControl'
 import InputLabel from '@material-ui/core/InputLabel'
 import Select from '@material-ui/core/Select'
 import MenuItem from '@material-ui/core/MenuItem'
-import { getTemplates } from '../client/rpcClient'
 import { useSelector } from 'react-redux'
-import { addContract } from '../client/fetcher'
 import Tooltip from '@material-ui/core/Tooltip'
 import HelpIcon from '@material-ui/icons/Help'
 import { makeStyles } from '@material-ui/core/styles'
+import { addContract } from '../client/fetcher'
+import { getTemplates } from '../client/rpcClient'
 
-const useStyles = makeStyles((theme) => ({
+const useStyles = makeStyles(() => ({
   tooltipControl: {
     display: 'flex',
     flexDirection: 'row',
@@ -26,10 +26,10 @@ const useStyles = makeStyles((theme) => ({
   helpIcon: {
     marginLeft: 6,
     marginBottom: 6,
-  }
+  },
 }))
 
-function ContractForm (props) {
+function ContractForm({ handleCloseSetting, handleRegisterNewContract, isOpen }) {
   const classes = useStyles()
   const [templates, setTemplates] = useState([])
   const [selectedTemplate, setSelectedTemplate] = useState('')
@@ -38,7 +38,7 @@ function ContractForm (props) {
   const [name, setName] = useState('')
   const [storageLayout, setStorageLayout] = useState('')
   const [errorMessage, setErrorMessage] = useState('')
-  const rpcEndpoint = useSelector(state => state.system.rpcEndpoint)
+  const rpcEndpoint = useSelector((state) => state.system.rpcEndpoint)
 
   useEffect(() => {
     if (!rpcEndpoint) {
@@ -52,13 +52,18 @@ function ContractForm (props) {
 
   const handleKeyPress = (e) => {
     if (e.key === 'Enter') {
-      props.handleRegisterNewContract()
+      handleRegisterNewContract()
     }
   }
 
   return (
-    <Dialog open={props.isOpen} onClose={props.handleCloseSetting} aria-labelledby="form-dialog-title"
-            maximumwidth="400" fullWidth>
+    <Dialog
+      open={isOpen}
+      onClose={handleCloseSetting}
+      aria-labelledby="form-dialog-title"
+      maximumwidth="400"
+      fullWidth
+    >
       <DialogTitle id="form-dialog-title">
         Register a new contract for reporting.
       </DialogTitle>
@@ -79,107 +84,119 @@ function ContractForm (props) {
               value={selectedTemplate}
               onChange={(e) => setSelectedTemplate(e.target.value)}
             >
-              {templates.map(c => (
+              {templates.map((c) => (
                 <MenuItem key={c} value={c}>{c}</MenuItem>
               ))}
-              <MenuItem key={'new'} value={'new'}><strong>New Template</strong></MenuItem>
+              <MenuItem key="new" value="new"><strong>New Template</strong></MenuItem>
             </Select>
           </FormControl>
           <Tooltip
-            title={'Contract Templates are reusable definitions of the structure of a contract, including contract ABI and storage layouts.'}>
-            <HelpIcon color="action" fontSize={'small'} className={classes.helpIcon}/>
+            title="Contract Templates are reusable definitions of the structure of a contract, including contract ABI and storage layouts."
+          >
+            <HelpIcon color="action" fontSize="small" className={classes.helpIcon} />
           </Tooltip>
         </div>
-        {selectedTemplate === 'new' && <div>
-          <Tooltip
-            title={'Give your template a name so to identify what type of contract is at an address (i.e. SimpleStorage, ERC20, ERC721)'}>
-            <TextField
-              label="Contract Template Name"
-              key="name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              onKeyPress={handleKeyPress}
-              margin="dense"
-              fullWidth
-            />
-          </Tooltip>
-          <Tooltip
-            title={'Copy and paste the ABI output from the results of compiling your contract.'}>
-            <TextField
-              label="Contract Template ABI"
-              key="abi"
-              value={abi}
-              onChange={(e) => setAbi(e.target.value)}
-              onKeyPress={handleKeyPress}
-              margin="dense"
-              fullWidth
-              multiline
-            />
-          </Tooltip>
-          <Tooltip
-            title="You can get the storageLayout from the results of compiling your contract if you run 'solc <contract> --combined-json storage-layout --pretty-json' on solc version 6.5+">
-            <TextField
-              label="Contract Template Storage Template"
-              key="storageLayout"
-              value={storageLayout}
-              onChange={(e) => setStorageLayout(e.target.value)}
-              onKeyPress={handleKeyPress}
-              margin="dense"
-              fullWidth
-              multiline
-            />
-          </Tooltip>
-        </div>
-        }
+        {selectedTemplate === 'new' && (
+          <div>
+            <Tooltip
+              title="Give your template a name so to identify what type of contract is at an address (i.e. SimpleStorage, ERC20, ERC721)"
+            >
+              <TextField
+                label="Contract Template Name"
+                key="name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                onKeyPress={handleKeyPress}
+                margin="dense"
+                fullWidth
+              />
+            </Tooltip>
+            <Tooltip
+              title="Copy and paste the ABI output from the results of compiling your contract."
+            >
+              <TextField
+                label="Contract Template ABI"
+                key="abi"
+                value={abi}
+                onChange={(e) => setAbi(e.target.value)}
+                onKeyPress={handleKeyPress}
+                margin="dense"
+                fullWidth
+                multiline
+              />
+            </Tooltip>
+            <Tooltip
+              title="You can get the storageLayout from the results of compiling your contract if you run 'solc <contract> --combined-json storage-layout --pretty-json' on solc version 6.5+"
+            >
+              <TextField
+                label="Contract Template Storage Template"
+                key="storageLayout"
+                value={storageLayout}
+                onChange={(e) => setStorageLayout(e.target.value)}
+                onKeyPress={handleKeyPress}
+                margin="dense"
+                fullWidth
+                multiline
+              />
+            </Tooltip>
+          </div>
+        )}
       </DialogContent>
       {
-        errorMessage &&
-        <div>
-          <br/>
-          <Alert severity="error">{errorMessage}</Alert>
-        </div>
+        errorMessage
+        && (
+          <div>
+            <br />
+            <Alert severity="error">{errorMessage}</Alert>
+          </div>
+        )
       }
       <DialogActions>
-        <Button onClick={props.handleCloseSetting} color="primary">
+        <Button onClick={handleCloseSetting} color="primary">
           Cancel
         </Button>
-        <Button onClick={() => {
-          if (address === '') {
-            setErrorMessage('Address must not be empty')
-            return
-          }
-          if (selectedTemplate === 'new') {
-            if (name === '') {
-              setErrorMessage('Template name must not be empty')
+        <Button
+          onClick={() => {
+            if (address === '') {
+              setErrorMessage('Address must not be empty')
               return
             }
-            if (abi === '') {
-              setErrorMessage('Template abi must not be empty')
+            if (selectedTemplate === 'new') {
+              if (name === '') {
+                setErrorMessage('Template name must not be empty')
+                return
+              }
+              if (abi === '') {
+                setErrorMessage('Template abi must not be empty')
+                return
+              }
+              if (storageLayout === '') {
+                setErrorMessage('Storage Template must not be empty')
+                return
+              }
+            } else if (selectedTemplate === '') {
+              setErrorMessage('Please select a template')
               return
             }
-            if (storageLayout === '') {
-              setErrorMessage('Storage Template must not be empty')
-              return
+            const newContract = {
+              address,
+              template: selectedTemplate,
+              newTemplate: {
+                name,
+                abi,
+                storageLayout,
+              },
             }
-          } else if (selectedTemplate === '') {
-            setErrorMessage('Please select a template')
-            return
-          }
-          const newContract = {
-            address,
-            template: selectedTemplate,
-            newTemplate: {
-              name,
-              abi,
-              storageLayout,
-            }
-          }
-          addContract(rpcEndpoint, newContract).then((res) => {
-            props.handleCloseSetting()
-          }).catch((e) => {
-            setErrorMessage(e.message)
-          })
-        }} color="primary">
+            addContract(rpcEndpoint, newContract)
+              .then(() => {
+                handleCloseSetting()
+              })
+              .catch((e) => {
+                setErrorMessage(e.message)
+              })
+          }}
+          color="primary"
+        >
           Register
         </Button>
       </DialogActions>

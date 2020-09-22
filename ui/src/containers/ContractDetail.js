@@ -5,12 +5,12 @@ import { makeStyles } from '@material-ui/core/styles'
 import shallowEqual from 'react-redux/lib/utils/shallowEqual'
 import Typography from '@material-ui/core/Typography'
 import TextareaAutosize from '@material-ui/core/TextareaAutosize'
-import ContractActions from '../components/ContractActions'
 import Grid from '@material-ui/core/Grid'
 import Card from '@material-ui/core/Card'
 import CardContent from '@material-ui/core/CardContent'
-import { getContractCreationTx } from '../client/fetcher'
 import { Link } from 'react-router-dom'
+import { getContractCreationTx } from '../client/fetcher'
+import ContractActions from '../components/ContractActions'
 import { getDefaultReportForTemplate } from '../reports'
 
 const useStyles = makeStyles((theme) => ({
@@ -48,19 +48,21 @@ const useStyles = makeStyles((theme) => ({
   },
 }))
 
-export function ContractDetail ({ address }) {
-
+export default function ContractDetail({ address }) {
   const classes = useStyles()
   const [contractDetail, setContractDetail] = useState()
   const [errorMessage, setErrorMessage] = useState()
   const [searchReport, setSearchReport] = useState()
   const [creationTx, setCreationTx] = useState()
-  const { contracts = [] } = useSelector(state => state.user, shallowEqual)
-  const { rpcEndpoint, lastPersistedBlockNumber } = useSelector(state => state.system, shallowEqual)
+  const { contracts = [] } = useSelector((state) => state.user, shallowEqual)
+  const { rpcEndpoint, lastPersistedBlockNumber } = useSelector(
+    (state) => state.system,
+    shallowEqual,
+  )
 
   useEffect(() => {
     const detail = contracts.find((contract) => contract.address === address)
-    if(!detail) {
+    if (!detail) {
       setErrorMessage(`No contract registered at ${address}`)
       return
     }
@@ -73,7 +75,7 @@ export function ContractDetail ({ address }) {
         startNumber: 1,
         endNumber: lastPersistedBlockNumber,
         atBlock: lastPersistedBlockNumber,
-      }
+      },
     })
     getContractCreationTx(rpcEndpoint, address)
       .then((transaction) => {
@@ -87,67 +89,100 @@ export function ContractDetail ({ address }) {
 
   return (
     <div className={classes.root}>
-      <Grid container
-            direction="row"
-            justify="center"
-            className={classes.grid} alignItems={'stretch'}>
-        {errorMessage &&
-        <Grid item xs={12}>
-          <Alert severity="error" className={classes.alert}>{errorMessage}</Alert>
-        </Grid>
-        }
-        {contractDetail &&
-        <Grid item xs={12} md={8}>
-          <Card className={classes.details}>
-            <CardContent>
-              <Typography variant={'h5'}>Contract Details</Typography>
-              <br/>
-              <Typography variant="caption" className={classes.label}>Type</Typography>
-              <Typography variant={'h6'} className={classes.value}>{contractDetail.name}</Typography>
-              <Typography variant="caption" className={classes.label}>Address</Typography>
-              <Typography variant="h6" className={classes.value}>{contractDetail.address}</Typography>
-              {creationTx &&
-              <div>
-                <Typography variant="caption" className={classes.label}>Creation Transaction</Typography>
-                <Link to={`/transactions/${creationTx}`}>
-                  <Typography variant="h6" className={classes.linkValue}>{creationTx}</Typography>
-                </Link>
-              </div>
-              }
-              <Typography variant="caption" className={classes.label}>ABI</Typography>
-              <TextareaAutosize
-                readOnly
-                rowsMax={4}
-                style={{ fontSize: '14px', width: '720px', maxWidth: '100%' }}
-                defaultValue={contractDetail.abi}
-                className={classes.value}/>
-              {contractDetail.storageLayout &&
-              <div>
-                <Typography variant="caption" className={classes.label}>Storage</Typography>
+      <Grid
+        container
+        direction="row"
+        justify="center"
+        className={classes.grid}
+        alignItems="stretch"
+      >
+        {errorMessage
+        && (
+          <Grid item xs={12}>
+            <Alert severity="error" className={classes.alert}>{errorMessage}</Alert>
+          </Grid>
+        )}
+        {contractDetail
+        && (
+          <Grid item xs={12} md={8}>
+            <Card className={classes.details}>
+              <CardContent>
+                <Typography variant="h5">Contract Details</Typography>
+                <br />
+                <Typography variant="caption" className={classes.label}>Type</Typography>
+                <Typography
+                  variant="h6"
+                  className={classes.value}
+                >
+                  {contractDetail.name}
+                </Typography>
+                <Typography variant="caption" className={classes.label}>Address</Typography>
+                <Typography
+                  variant="h6"
+                  className={classes.value}
+                >
+                  {contractDetail.address}
+                </Typography>
+                {creationTx
+                && (
+                  <div>
+                    <Typography variant="caption" className={classes.label}>
+                      Creation
+                      Transaction
+                    </Typography>
+                    <Link to={`/transactions/${creationTx}`}>
+                      <Typography variant="h6" className={classes.linkValue}>
+                        {creationTx}
+                      </Typography>
+                    </Link>
+                  </div>
+                )}
+                <Typography variant="caption" className={classes.label}>ABI</Typography>
                 <TextareaAutosize
                   readOnly
                   rowsMax={4}
-                  style={{ fontSize: '14px', width: '720px', maxWidth: '100%' }}
-                  defaultValue={contractDetail.storageLayout}
-                  className={classes.value}/>
-              </div>
-              }
-            </CardContent>
-          </Card>
-        </Grid>
-        }
-        {contractDetail &&
-        <Grid item xs={12} md={4}>
-          <ContractActions onSearch={setSearchReport} contractDetail={contractDetail}/>
-        </Grid>
-        }
-        {searchReport &&
-        <Grid item xs={12}>
-          <searchReport.View searchReport={searchReport} address={address}/>
-        </Grid>
-        }
+                  style={{
+                    fontSize: '14px',
+                    width: '720px',
+                    maxWidth: '100%',
+                  }}
+                  defaultValue={contractDetail.abi}
+                  className={classes.value}
+                />
+                {contractDetail.storageLayout
+                && (
+                  <div>
+                    <Typography variant="caption" className={classes.label}>Storage</Typography>
+                    <TextareaAutosize
+                      readOnly
+                      rowsMax={4}
+                      style={{
+                        fontSize: '14px',
+                        width: '720px',
+                        maxWidth: '100%',
+                      }}
+                      defaultValue={contractDetail.storageLayout}
+                      className={classes.value}
+                    />
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </Grid>
+        )}
+        {contractDetail
+        && (
+          <Grid item xs={12} md={4}>
+            <ContractActions onSearch={setSearchReport} contractDetail={contractDetail} />
+          </Grid>
+        )}
+        {searchReport
+        && (
+          <Grid item xs={12}>
+            <searchReport.View searchReport={searchReport} address={address} />
+          </Grid>
+        )}
       </Grid>
     </div>
   )
 }
-

@@ -10,8 +10,8 @@ import TableBody from '@material-ui/core/TableBody'
 import TablePagination from '@material-ui/core/TablePagination'
 import { makeStyles } from '@material-ui/core/styles'
 import { useDispatch, useSelector } from 'react-redux'
-import { updateRowsPerPageAction } from '../../redux/actions/systemActions'
 import Tooltip from '@material-ui/core/Tooltip'
+import { updateRowsPerPageAction } from '../../redux/actions/systemActions'
 
 const useStyles = makeStyles((theme) => ({
   container: {
@@ -42,7 +42,9 @@ const useStyles = makeStyles((theme) => ({
   },
 }))
 
-export function PaginatedTableView ({ title, subtitle, note, getItems, ItemView, HeaderView, startingRowsPerPage = 10 }) {
+export default function PaginatedTableView({
+  title, subtitle, note, getItems, ItemView, HeaderView,
+}) {
   const classes = useStyles()
   const [total, setTotal] = useState(0)
   const [list, setList] = useState([])
@@ -51,15 +53,15 @@ export function PaginatedTableView ({ title, subtitle, note, getItems, ItemView,
   const [page, setPage] = useState(0)
   const [lastItemEachPage, setLastItemEachPage] = useState([])
   const dispatch = useDispatch()
-  const rowsPerPage = useSelector(state => state.system.rowsPerPage)
+  const rowsPerPage = useSelector((state) => state.system.rowsPerPage)
 
   useEffect(() => {
     setLoading(true)
-    const lastItem = page === 0 ? undefined : lastItemEachPage[page-1]
+    const lastItem = page === 0 ? undefined : lastItemEachPage[page - 1]
     getItems(page, rowsPerPage, lastItem)
-      .then(({data, total}) => {
-        setLastItemEachPage([...lastItemEachPage, data[data.length-1]])
-        setTotal(total)
+      .then(({ data, total: newTotal }) => {
+        setLastItemEachPage([...lastItemEachPage, data[data.length - 1]])
+        setTotal(newTotal)
         setList(data)
         setLoading(false)
         setError('')
@@ -71,53 +73,54 @@ export function PaginatedTableView ({ title, subtitle, note, getItems, ItemView,
         setLoading(false)
         setError(e.message)
       })
-
   }, [page, rowsPerPage, getItems])
   const handleChangePage = (event, newPage) => {
     setPage(newPage)
   }
 
   const handleChangeRowsPerPage = (event) => {
-    const newRowsPerPage = parseInt(event.target.value, 10)
+    const newRowsPerPage = parseInt(event.target.value, 10, 10)
     dispatch(updateRowsPerPageAction(newRowsPerPage))
     setPage(0)
     setLastItemEachPage([])
   }
 
-  return <Paper className={classes.container}>
-    <div className={classes.titleContainer}>
-      <Typography variant="h6">{title}</Typography>
-      <div style={{flex: 1}} />
-      {loading && <CircularProgress size={18} className={classes.loading}/>}
-      {note &&
-        <Tooltip title={note}>
-          <InfoIcon color="secondary" />
-        </Tooltip>
-      }
-    </div>
-    <Typography variant="subtitle1" className={classes.subtitle}>{subtitle}</Typography>
-    {error && <Typography className={classes.errorRow}>{error}</Typography>}
-    <TableContainer component={Paper}>
-      <Table size="small" className={classes.table} aria-label="simple table">
-        <HeaderView/>
-        <TableBody>
-          {list.map(ItemView)}
-          <TableRow key="pagination">
-            <TablePagination
-              count={total}
-              rowsPerPage={rowsPerPage}
-              page={page}
-              SelectProps={{
-                inputProps: { 'aria-label': 'rows per page' },
-                native: true,
-              }}
-              onChangePage={handleChangePage}
-              onChangeRowsPerPage={handleChangeRowsPerPage}
-            />
-          </TableRow>
-        </TableBody>
-      </Table>
-    </TableContainer>
-  </Paper>
-
+  return (
+    <Paper className={classes.container}>
+      <div className={classes.titleContainer}>
+        <Typography variant="h6">{title}</Typography>
+        <div style={{ flex: 1 }} />
+        {loading && <CircularProgress size={18} className={classes.loading} />}
+        {note
+        && (
+          <Tooltip title={note}>
+            <InfoIcon color="secondary" />
+          </Tooltip>
+        )}
+      </div>
+      <Typography variant="subtitle1" className={classes.subtitle}>{subtitle}</Typography>
+      {error && <Typography className={classes.errorRow}>{error}</Typography>}
+      <TableContainer component={Paper}>
+        <Table size="small" className={classes.table} aria-label="simple table">
+          <HeaderView />
+          <TableBody>
+            {list.map(ItemView)}
+            <TableRow key="pagination">
+              <TablePagination
+                count={total}
+                rowsPerPage={rowsPerPage}
+                page={page}
+                SelectProps={{
+                  inputProps: { 'aria-label': 'rows per page' },
+                  native: true,
+                }}
+                onChangePage={handleChangePage}
+                onChangeRowsPerPage={handleChangeRowsPerPage}
+              />
+            </TableRow>
+          </TableBody>
+        </Table>
+      </TableContainer>
+    </Paper>
+  )
 }

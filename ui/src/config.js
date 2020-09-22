@@ -1,1 +1,0 @@
-export const DefaultRPCEndpoint = "http://localhost:4000";
