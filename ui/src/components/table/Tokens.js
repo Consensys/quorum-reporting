@@ -3,19 +3,17 @@ import TableHead from '@material-ui/core/TableHead'
 import TableRow from '@material-ui/core/TableRow'
 import TableCell from '@material-ui/core/TableCell'
 import { Link } from 'react-router-dom'
-import { useSelector } from 'react-redux'
 import PaginatedTableView from './PaginatedTableView'
 import Reports from '../../reports'
 
 export function TokenHolderTable({ searchReport, address }) {
-  const rpcEndpoint = useSelector((state) => state.system.rpcEndpoint)
   return (
     <PaginatedTableView
       title={searchReport.label}
       HeaderView={getHeaderView(searchReport)}
       ItemView={TokenHolderRowItem}
       getItems={(page, rowsPerPage, lastItem) => {
-        return searchReport.getItems(rpcEndpoint, { address, ...searchReport.params }, {
+        return searchReport.getItems({ address, ...searchReport.params }, {
           pageNumber: page,
           pageSize: rowsPerPage,
           after: lastItem,
@@ -74,7 +72,6 @@ export function TokenHolderRowItem(item) {
 }
 
 export function TokenTable({ searchReport, address }) {
-  const rpcEndpoint = useSelector((state) => state.system.rpcEndpoint)
   return (
     <PaginatedTableView
       title={searchReport.label}
@@ -82,7 +79,7 @@ export function TokenTable({ searchReport, address }) {
       HeaderView={TokenHeader}
       ItemView={TokenRowItem}
       getItems={(page, rowsPerPage, lastItem) => {
-        return searchReport.getItems(rpcEndpoint, { address, ...searchReport.params }, {
+        return searchReport.getItems({ address, ...searchReport.params }, {
           pageNumber: page,
           pageSize: rowsPerPage,
           after: lastItem,
@@ -125,7 +122,6 @@ export function TokenRowItem(item) {
 }
 
 export function TokenBalanceTable({ searchReport, address }) {
-  const rpcEndpoint = useSelector((state) => state.system.rpcEndpoint)
   return (
     <PaginatedTableView
       title={searchReport.label}
@@ -133,7 +129,7 @@ export function TokenBalanceTable({ searchReport, address }) {
       HeaderView={BalanceHeader}
       ItemView={BalanceRowItem}
       getItems={(page, rowsPerPage, lastItem) => {
-        return searchReport.getItems(rpcEndpoint, { address, ...searchReport.params }, {
+        return searchReport.getItems({ address, ...searchReport.params }, {
           pageNumber: page,
           pageSize: rowsPerPage,
           after: lastItem,

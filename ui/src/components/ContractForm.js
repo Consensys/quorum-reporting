@@ -44,7 +44,7 @@ function ContractForm({ handleCloseSetting, handleRegisterNewContract, isOpen })
     if (!rpcEndpoint) {
       return
     }
-    getTemplates(rpcEndpoint)
+    getTemplates()
       .then((res) => {
         setTemplates(res)
       })
@@ -187,7 +187,7 @@ function ContractForm({ handleCloseSetting, handleRegisterNewContract, isOpen })
                 storageLayout,
               },
             }
-            addContract(rpcEndpoint, newContract)
+            addContract(newContract)
               .then(() => {
                 handleCloseSetting()
               })

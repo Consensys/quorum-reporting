@@ -2,11 +2,18 @@ import axios from 'axios'
 
 // lower level RPC services, should only be used by fetcher.js
 
+export const DEFAULT_RPC_URL = 'http://localhost:4000'
+
+let baseUrl = DEFAULT_RPC_URL
 let requestCount = 0
 
-export const request = (baseURL, method, params) => {
+export function setBaseUrl(url) {
+  baseUrl = url
+}
+
+export function request(method, params) {
   return axios.post(
-    baseURL,
+    baseUrl,
     {
       jsonrpc: '2.0',
       method,
@@ -21,276 +28,181 @@ export const request = (baseURL, method, params) => {
     })
 }
 
-export const getLastPersistedBlockNumber = (baseURL) => {
-  return request(
-    baseURL,
-    'reporting.GetLastPersistedBlockNumber',
-    [],
-  )
+export function getLastPersistedBlockNumber() {
+  return request('reporting.GetLastPersistedBlockNumber', [])
 }
 
-export const getAddresses = (baseURL) => {
-  return request(
-    baseURL,
-    'reporting.GetAddresses',
-    [],
-  )
+export function getAddresses() {
+  return request('reporting.GetAddresses', [])
 }
 
-export const addAddress = (baseURL, address) => {
-  return request(
-    baseURL,
-    'reporting.AddAddress',
-    [{ address }],
-  )
+export function addAddress(address) {
+  return request('reporting.AddAddress', [{ address }])
 }
 
-export const deleteAddress = (baseURL, address) => {
-  return request(
-    baseURL,
-    'reporting.DeleteAddress',
-    [address],
-  )
+export function deleteAddress(address) {
+  return request('reporting.DeleteAddress', [address])
 }
 
-export const getTemplates = (baseURL) => {
-  return request(
-    baseURL,
-    'reporting.GetTemplates',
-    [],
-  )
+export function getTemplates() {
+  return request('reporting.GetTemplates', [])
 }
 
-export const addTemplate = (baseURL, newTemplate) => {
-  return request(
-    baseURL,
-    'reporting.AddTemplate',
-    [newTemplate],
-  )
+export function addTemplate(newTemplate) {
+  return request('reporting.AddTemplate', [newTemplate])
 }
 
-export const assignTemplate = (baseURL, address, templateName) => {
-  return request(
-    baseURL,
-    'reporting.AssignTemplate',
-    [
-      {
-        address,
-        data: templateName,
+export function assignTemplate(address, templateName) {
+  return request('reporting.AssignTemplate', [
+    {
+      address,
+      data: templateName,
+    },
+  ])
+}
+
+export function getContractTemplate(address) {
+  return request('reporting.GetContractTemplate', [address])
+}
+
+export function getABI(address) {
+  return request('reporting.GetABI', [address])
+}
+
+export function getStorageABI(address) {
+  return request('reporting.GetStorageABI', [address])
+}
+
+export function getContractCreationTransaction(address) {
+  return request('reporting.GetContractCreationTransaction', [address])
+}
+
+export function getAllTransactionsToAddress(address, options) {
+  return request('reporting.GetAllTransactionsToAddress', [
+    {
+      address,
+      options,
+    },
+  ])
+}
+
+export function getAllTransactionsInternalToAddress(address, options) {
+  return request('reporting.GetAllTransactionsInternalToAddress', [
+    {
+      address,
+      options,
+    },
+  ])
+}
+
+export function getAllEventsFromAddress(address, options) {
+  return request('reporting.GetAllEventsFromAddress', [
+    {
+      address,
+      options,
+    },
+  ])
+}
+
+export function getBlock(blockNumber) {
+  return request('reporting.GetBlock', [blockNumber])
+}
+
+export function getTransaction(txHash) {
+  return request('reporting.GetTransaction', [txHash])
+}
+
+export function getStorageHistory(address, options) {
+  return request('reporting.GetStorageHistory', [
+    {
+      address,
+      options,
+    },
+  ])
+}
+
+export function getStorageHistoryCount(address, startBlockNumber, endBlockNumber) {
+  return request('reporting.GetStorageHistoryCount', [
+    {
+      address,
+      options: {
+        beginBlockNumber: parseInt(startBlockNumber, 10),
+        endBlockNumber: parseInt(endBlockNumber, 10),
       },
-    ],
-  )
+    },
+  ])
 }
 
-export const getContractTemplate = (baseURL, address) => {
-  return request(
-    baseURL,
-    'reporting.GetContractTemplate',
-    [address],
-  )
+export function getERC20TokenHolders(address, block, options) {
+  return request('token.GetERC20TokenHoldersAtBlock', [
+    {
+      contract: address,
+      block: parseInt(block, 10),
+      options,
+    },
+  ])
 }
 
-export const getABI = (baseURL, address) => {
-  return request(
-    baseURL,
-    'reporting.GetABI',
-    [address],
-  )
-}
-
-export const getStorageABI = (baseURL, address) => {
-  return request(
-    baseURL,
-    'reporting.GetStorageABI',
-    [address],
-  )
-}
-
-export const getContractCreationTransaction = (baseURL, address) => {
-  return request(
-    baseURL,
-    'reporting.GetContractCreationTransaction',
-    [address],
-  )
-}
-
-export const getAllTransactionsToAddress = (baseURL, address, options) => {
-  return request(
-    baseURL,
-    'reporting.GetAllTransactionsToAddress',
-    [
-      {
-        address,
-        options,
+export function getERC20TokenBalance(
+  address, holder, startBlockNumber, endBlockNumber, options,
+) {
+  return request('token.GetERC20TokenBalance', [
+    {
+      contract: address,
+      holder,
+      options: {
+        ...options,
+        beginBlockNumber: parseInt(startBlockNumber, 10),
+        endBlockNumber: parseInt(endBlockNumber, 10),
+        after: undefined, // use page numbers, not after value
       },
-    ],
-  )
+    },
+  ])
 }
 
-export const getAllTransactionsInternalToAddress = (baseURL, address, options) => {
-  return request(
-    baseURL,
-    'reporting.GetAllTransactionsInternalToAddress',
-    [
-      {
-        address,
-        options,
+export function getERC721TokenHolders(address, block, options) {
+  return request('token.AllERC721HoldersAtBlock', [
+    {
+      contract: address,
+      block: parseInt(block, 10),
+      options,
+    },
+  ])
+}
+
+export function getERC721TokensAtBlock(address, block, options) {
+  return request('token.AllERC721TokensAtBlock', [
+    {
+      contract: address,
+      block: parseInt(block, 10),
+      options: {
+        ...options,
+        after: options.after ? options.after.tokenId : undefined,
       },
-    ],
-  )
+    },
+  ])
 }
 
-export const getAllEventsFromAddress = (baseURL, address, options) => {
-  return request(
-    baseURL,
-    'reporting.GetAllEventsFromAddress',
-    [
-      {
-        address,
-        options,
+export function getERC721TokensForAccountAtBlock(address, holder, block, options) {
+  return request('token.ERC721TokensForAccountAtBlock', [
+    {
+      contract: address,
+      holder,
+      block: parseInt(block, 10),
+      options: {
+        ...options,
+        after: options.after ? options.after.tokenId : undefined,
       },
-    ],
-  )
+    },
+  ])
 }
 
-export const getBlock = (baseURL, blockNumber) => {
-  return request(
-    baseURL,
-    'reporting.GetBlock',
-    [blockNumber],
-  )
-}
-
-export const getTransaction = (baseURL, txHash) => {
-  return request(
-    baseURL,
-    'reporting.GetTransaction',
-    [txHash],
-  )
-}
-
-export const getStorageHistory = (baseURL, address, options) => {
-  return request(
-    baseURL,
-    'reporting.GetStorageHistory',
-    [
-      {
-        address,
-        options,
-      },
-    ],
-  )
-}
-
-export const getStorageHistoryCount = (baseURL, address, startBlockNumber, endBlockNumber) => {
-  return request(
-    baseURL,
-    'reporting.GetStorageHistoryCount',
-    [
-      {
-        address,
-        options: {
-          beginBlockNumber: parseInt(startBlockNumber, 10),
-          endBlockNumber: parseInt(endBlockNumber, 10),
-        },
-      },
-    ],
-  )
-}
-
-export const getERC20TokenHolders = (baseURL, address, block, options) => {
-  return request(
-    baseURL,
-    'token.GetERC20TokenHoldersAtBlock',
-    [
-      {
-        contract: address,
-        block: parseInt(block, 10),
-        options,
-      },
-    ],
-  )
-}
-
-export const getERC20TokenBalance = (
-  baseURL, address, holder, startBlockNumber, endBlockNumber, options,
-) => {
-  return request(
-    baseURL,
-    'token.GetERC20TokenBalance',
-    [
-      {
-        contract: address,
-        holder,
-        options: {
-          ...options,
-          beginBlockNumber: parseInt(startBlockNumber, 10),
-          endBlockNumber: parseInt(endBlockNumber, 10),
-          after: undefined, // use page numbers, not after value
-        },
-      },
-    ],
-  )
-}
-
-export const getERC721TokenHolders = (baseURL, address, block, options) => {
-  return request(
-    baseURL,
-    'token.AllERC721HoldersAtBlock',
-    [
-      {
-        contract: address,
-        block: parseInt(block, 10),
-        options,
-      },
-    ],
-  )
-}
-
-export const getERC721TokensAtBlock = (baseURL, address, block, options) => {
-  return request(
-    baseURL,
-    'token.AllERC721TokensAtBlock',
-    [
-      {
-        contract: address,
-        block: parseInt(block, 10),
-        options: {
-          ...options,
-          after: options.after ? options.after.tokenId : undefined,
-        },
-      },
-    ],
-  )
-}
-
-export const getERC721TokensForAccountAtBlock = (baseURL, address, holder, block, options) => {
-  return request(
-    baseURL,
-    'token.ERC721TokensForAccountAtBlock',
-    [
-      {
-        contract: address,
-        holder,
-        block: parseInt(block, 10),
-        options: {
-          ...options,
-          after: options.after ? options.after.tokenId : undefined,
-        },
-      },
-    ],
-  )
-}
-export const getHolderForERC721TokenAtBlock = (baseURL, address, tokenId, block) => {
-  return request(
-    baseURL,
-    'token.GetHolderForERC721TokenAtBlock',
-    [
-      {
-        contract: address,
-        tokenId: parseInt(tokenId, 10),
-        block: parseInt(block, 10),
-      },
-    ],
-  )
+export function getHolderForERC721TokenAtBlock(address, tokenId, block) {
+  return request('token.GetHolderForERC721TokenAtBlock', [
+    {
+      contract: address,
+      tokenId: parseInt(tokenId, 10),
+      block: parseInt(block, 10),
+    },
+  ])
 }

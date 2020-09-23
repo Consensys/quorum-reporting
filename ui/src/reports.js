@@ -24,8 +24,7 @@ const Reports = {
       endBlock: 'optional',
     },
     View: ReportTable,
-    getItems: (rpcEndpoint, params, options) => getReportData(
-      rpcEndpoint,
+    getItems: (params, options) => getReportData(
       params.address,
       params.startNumber,
       params.endNumber,
@@ -42,8 +41,7 @@ const Reports = {
       endBlock: 'optional',
     },
     View: TokenBalanceTable,
-    getItems: (rpcEndpoint, params, options) => getERC20Balance(
-      rpcEndpoint,
+    getItems: (params, options) => getERC20Balance(
       params.address,
       params.account,
       params.startNumber,
@@ -58,12 +56,7 @@ const Reports = {
       block: 'optional',
     },
     View: TokenHolderTable,
-    getItems: (rpcEndpoint, params, options) => getERC20Holders(
-      rpcEndpoint,
-      params.address,
-      params.atBlock,
-      options,
-    ),
+    getItems: (params, options) => getERC20Holders(params.address, params.atBlock, options),
   },
   ERC721HolderForToken: {
     label: 'Holder for ERC721',
@@ -73,12 +66,7 @@ const Reports = {
       block: 'optional',
     },
     View: TokenHolderTable,
-    getItems: (rpcEndpoint, params) => getHolderForERC721Token(
-      rpcEndpoint,
-      params.address,
-      params.tokenId,
-      params.atBlock,
-    ),
+    getItems: (params) => getHolderForERC721Token(params.address, params.tokenId, params.atBlock),
   },
   ERC721Holders: {
     label: 'ERC721 Token Holders',
@@ -87,12 +75,7 @@ const Reports = {
       block: 'optional',
     },
     View: TokenHolderTable,
-    getItems: (rpcEndpoint, params, options) => getERC721Holders(
-      rpcEndpoint,
-      params.address,
-      params.atBlock,
-      options,
-    ),
+    getItems: (params, options) => getERC721Holders(params.address, params.atBlock, options),
   },
   ERC721Tokens: {
     label: 'ERC721 Tokens',
@@ -101,12 +84,7 @@ const Reports = {
       block: 'optional',
     },
     View: TokenTable,
-    getItems: (rpcEndpoint, params, options) => getERC721Tokens(
-      rpcEndpoint,
-      params.address,
-      params.atBlock,
-      options,
-    ),
+    getItems: (params, options) => getERC721Tokens(params.address, params.atBlock, options),
   },
   ERC721TokensForAccount: {
     label: 'ERC721 Tokens for Account',
@@ -117,8 +95,7 @@ const Reports = {
       block: 'optional',
     },
     View: TokenTable,
-    getItems: (rpcEndpoint, params, options) => getERC721TokensForAccount(
-      rpcEndpoint,
+    getItems: (params, options) => getERC721TokensForAccount(
       params.address,
       params.account,
       params.atBlock,
@@ -130,25 +107,21 @@ const Reports = {
     value: 'Events',
     fields: {},
     View: EventTable,
-    getItems: (rpcEndpoint, params, options) => getEvents(rpcEndpoint, params.address, options),
+    getItems: (params, options) => getEvents(params.address, options),
   },
   InternalToTxs: {
     label: 'Internal Transactions to Contract',
     value: 'InternalToTxs',
     fields: {},
     View: TransactionTable,
-    getItems: (rpcEndpoint, params, options) => getInternalToTxs(
-      rpcEndpoint,
-      params.address,
-      options,
-    ),
+    getItems: (params, options) => getInternalToTxs(params.address, options),
   },
   ToTxs: {
     label: 'Transactions To Contract',
     value: 'ToTxs',
     fields: {},
     View: TransactionTable,
-    getItems: (rpcEndpoint, params, options) => getToTxs(rpcEndpoint, params.address, options),
+    getItems: (params, options) => getToTxs(params.address, options),
   },
 }
 

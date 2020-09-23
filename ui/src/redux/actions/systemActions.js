@@ -22,3 +22,8 @@ export const updateRowsPerPageAction = (rowsPerPage) => ({
   type: types.UPDATE_ROWS_PER_PAGE,
   rowsPerPage,
 })
+
+export const getContractsAction = (contracts) => ({
+  type: types.GET_CONTRACTS,
+  contracts,
+})

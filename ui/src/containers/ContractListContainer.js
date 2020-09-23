@@ -11,7 +11,7 @@ import { useDispatch, useSelector } from 'react-redux'
 import Alert from '@material-ui/lab/Alert'
 import ContractTable from '../components/ContractTable'
 import ContractForm from '../components/ContractForm'
-import { getContractsAction } from '../redux/actions/contractActions'
+import { getContractsAction } from '../redux/actions/systemActions'
 import { deleteContract, getContracts } from '../client/fetcher'
 
 const useStyles = makeStyles(() => ({
@@ -33,18 +33,15 @@ export default function ContractListContainer() {
   const dispatch = useDispatch()
   const [formIsOpen, setFormIsOpen] = useState(false)
   const [errorMessage, setErrorMessage] = useState()
-  const rpcEndpoint = useSelector((state) => state.system.rpcEndpoint)
-  const contracts = useSelector((state) => state.user.contracts)
+  const contracts = useSelector((state) => state.system.contracts)
 
   useEffect(() => {
     getAllRegisteredContracts()
   }, [])
 
   const getAllRegisteredContracts = () => {
-    getContracts(rpcEndpoint)
-      .then((res) => {
-        dispatch(getContractsAction(res))
-      })
+    getContracts()
+      .then((res) => dispatch(getContractsAction(res)))
       .catch((e) => {
         console.error('Could not fetch contracts', e)
       })
@@ -59,7 +56,7 @@ export default function ContractListContainer() {
   }
 
   const handleContractDelete = (address) => {
-    deleteContract(rpcEndpoint, address)
+    deleteContract(address)
       .then(() => {
         // give a small timeout to avoid fetch too fast
         setTimeout(() => {

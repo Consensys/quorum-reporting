@@ -53,10 +53,8 @@ export default function TransactionDetail({ id }) {
 
   useEffect(() => {
     setDisplayData(undefined)
-    getSingleTransaction(rpcEndpoint, id)
-      .then((res) => {
-        setDisplayData(res)
-      })
+    getSingleTransaction(id)
+      .then((res) => setDisplayData(res))
       .catch((e) => {
         setErrorMessage(`Transaction not found (${e.message})`)
         setDisplayData(undefined)

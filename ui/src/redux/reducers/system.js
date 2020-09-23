@@ -1,10 +1,13 @@
 import * as types from '../actionTypes'
+import { DEFAULT_RPC_URL } from '../../client/rpcClient'
 
 const initialState = {
-  rpcEndpoint: 'http://localhost:4000',
+  rpcEndpoint: DEFAULT_RPC_URL,
   isConnected: false,
   lastPersistedBlockNumber: '',
   rowsPerPage: 25,
+  selectedContract: '',
+  contracts: [],
 }
 
 const systemReducer = (state = initialState, action) => {
@@ -33,6 +36,11 @@ const systemReducer = (state = initialState, action) => {
       return {
         ...state,
         rowsPerPage: action.rowsPerPage,
+      }
+    case types.GET_CONTRACTS:
+      return {
+        ...state,
+        contracts: action.contracts,
       }
     default:
       return state

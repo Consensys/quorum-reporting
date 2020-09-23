@@ -49,20 +49,17 @@ export default function BlockDetail({ number }) {
   const classes = useStyles()
   const [block, setBlock] = useState()
   const [errorMessage, setErrorMessage] = useState()
-  const { rpcEndpoint } = useSelector((state) => state.system)
 
   useEffect(() => {
     setBlock(undefined)
     const blockNumber = parseInt(number, 10)
-    getSingleBlock(rpcEndpoint, blockNumber)
-      .then((res) => {
-        setBlock(res)
-      })
+    getSingleBlock(blockNumber)
+      .then((res) => setBlock(res))
       .catch((e) => {
         setErrorMessage(`Block not found (${e.message})`)
         setBlock(undefined)
       })
-  }, [rpcEndpoint, number])
+  }, [number])
 
   return (
     <div className={classes.root}>
