@@ -70,7 +70,7 @@ export default function HeaderContainer() {
     return () => {
       clearInterval(timerID)
     }
-  }, [])
+  }, [rpcEndpoint])
 
   const connectReporting = () => {
     getBlockNumber(rpcEndpoint)
