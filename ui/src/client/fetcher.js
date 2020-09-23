@@ -26,9 +26,6 @@ import {
 
 export function getBlockNumber() {
   return getLastPersistedBlockNumber()
-    .then((res) => {
-      return res
-    })
 }
 
 export function addContract(newContract) {
@@ -59,9 +56,6 @@ export function getContracts() {
 
 export function getContractCreationTx(address) {
   return getContractCreationTransaction(address)
-    .then((res) => {
-      return res
-    })
 }
 
 export function getToTxs(address, options) {
@@ -232,10 +226,10 @@ export function getHolderForERC721Token(address, tokenId, block) {
       return {
         data: [
           {
-            holder: res.replace('0x0x', '0x'),
+            holder: res,
             value: tokenId,
           },
-        ], // TODO remove this when fixed
+        ],
         total: 1,
       }
     })
@@ -243,9 +237,6 @@ export function getHolderForERC721Token(address, tokenId, block) {
 
 export function getSingleBlock(blockNumber) {
   return getBlock(blockNumber)
-    .then((res) => {
-      return res
-    })
 }
 
 export function getSingleTransaction(txHash) {
