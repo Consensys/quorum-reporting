@@ -12,12 +12,12 @@ import SettingForm from '../components/SettingForm'
 import {
   connectAction,
   disconnectAction,
+  getContractsAction,
   updateBlockNumberAction,
   updateEndpointAction,
 } from '../redux/actions/systemActions'
 import { getBlockNumber, getContracts } from '../client/fetcher'
 import SearchField from '../components/SearchField'
-import { getContractsAction } from '../redux/actions/contractActions'
 
 const useStyles = makeStyles(() => ({
   grow: {

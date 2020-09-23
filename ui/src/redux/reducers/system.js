@@ -5,6 +5,8 @@ const initialState = {
   isConnected: false,
   lastPersistedBlockNumber: '',
   rowsPerPage: 25,
+  selectedContract: '',
+  contracts: [],
 }
 
 const systemReducer = (state = initialState, action) => {
@@ -33,6 +35,11 @@ const systemReducer = (state = initialState, action) => {
       return {
         ...state,
         rowsPerPage: action.rowsPerPage,
+      }
+    case types.GET_CONTRACTS:
+      return {
+        ...state,
+        contracts: action.contracts,
       }
     default:
       return state
