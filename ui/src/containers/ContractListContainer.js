@@ -33,7 +33,6 @@ export default function ContractListContainer() {
   const dispatch = useDispatch()
   const [formIsOpen, setFormIsOpen] = useState(false)
   const [errorMessage, setErrorMessage] = useState()
-  const rpcEndpoint = useSelector((state) => state.system.rpcEndpoint)
   const contracts = useSelector((state) => state.system.contracts)
 
   useEffect(() => {
@@ -41,10 +40,8 @@ export default function ContractListContainer() {
   }, [])
 
   const getAllRegisteredContracts = () => {
-    getContracts(rpcEndpoint)
-      .then((res) => {
-        dispatch(getContractsAction(res))
-      })
+    getContracts()
+      .then((res) => dispatch(getContractsAction(res)))
       .catch((e) => {
         console.error('Could not fetch contracts', e)
       })
@@ -59,7 +56,7 @@ export default function ContractListContainer() {
   }
 
   const handleContractDelete = (address) => {
-    deleteContract(rpcEndpoint, address)
+    deleteContract(address)
       .then(() => {
         // give a small timeout to avoid fetch too fast
         setTimeout(() => {

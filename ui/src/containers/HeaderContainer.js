@@ -18,6 +18,7 @@ import {
 } from '../redux/actions/systemActions'
 import { getBlockNumber, getContracts } from '../client/fetcher'
 import SearchField from '../components/SearchField'
+import { setBaseUrl } from '../client/rpcClient'
 
 const useStyles = makeStyles(() => ({
   grow: {
@@ -56,7 +57,7 @@ export default function HeaderContainer() {
   const dispatch = useDispatch()
 
   useEffect(() => {
-    getContracts(rpcEndpoint)
+    getContracts()
       .then((contracts) => {
         dispatch(getContractsAction(contracts))
       })
@@ -73,7 +74,7 @@ export default function HeaderContainer() {
   }, [rpcEndpoint])
 
   const connectReporting = () => {
-    getBlockNumber(rpcEndpoint)
+    getBlockNumber()
       .then((res) => {
         if (lastPersistedBlockNumber !== res) {
           if (!isConnected) {
@@ -123,6 +124,7 @@ export default function HeaderContainer() {
           handleCloseSetting={() => setFormIsOpen(false)}
           handleRPCEndpointChange={(e) => setNewRPCEndpoint(e.target.value)}
           handleSetRPCEndpoint={() => {
+            setBaseUrl(newRPCEndpoint)
             dispatch(updateEndpointAction(newRPCEndpoint))
             connectReporting()
             setFormIsOpen(false)

@@ -1,7 +1,8 @@
 import * as types from '../actionTypes'
+import { DEFAULT_RPC_URL } from '../../client/rpcClient'
 
 const initialState = {
-  rpcEndpoint: 'http://localhost:4000',
+  rpcEndpoint: DEFAULT_RPC_URL,
   isConnected: false,
   lastPersistedBlockNumber: '',
   rowsPerPage: 25,

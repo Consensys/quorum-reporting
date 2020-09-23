@@ -12,7 +12,6 @@ import Collapse from '@material-ui/core/Collapse'
 import Box from '@material-ui/core/Box'
 import Typography from '@material-ui/core/Typography'
 import { Link } from 'react-router-dom'
-import { useSelector } from 'react-redux'
 import PaginatedTableView from './PaginatedTableView'
 
 const useRowStyles = makeStyles({
@@ -29,14 +28,13 @@ const useRowStyles = makeStyles({
 })
 
 export function TransactionTable({ searchReport, address }) {
-  const rpcEndpoint = useSelector((state) => state.system.rpcEndpoint)
   return (
     <PaginatedTableView
       title={searchReport.label}
       HeaderView={TransactionHeader}
       ItemView={TransactionRowItem}
       getItems={(page, rowsPerPage, lastItem) => {
-        return searchReport.getItems(rpcEndpoint, { address, ...searchReport.params }, {
+        return searchReport.getItems({ address, ...searchReport.params }, {
           pageNumber: page,
           pageSize: rowsPerPage,
           after: lastItem,

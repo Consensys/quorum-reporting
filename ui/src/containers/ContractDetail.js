@@ -55,7 +55,6 @@ export default function ContractDetail({ address }) {
   const [searchReport, setSearchReport] = useState()
   const [creationTx, setCreationTx] = useState()
   const contracts = useSelector((state) => state.system.contracts, shallowEqual)
-  const rpcEndpoint = useSelector((state) => state.system.rpcEndpoint)
   const lastPersistedBlockNumber = useSelector((state) => state.system.lastPersistedBlockNumber)
 
   useEffect(() => {
@@ -75,10 +74,8 @@ export default function ContractDetail({ address }) {
         atBlock: lastPersistedBlockNumber,
       },
     })
-    getContractCreationTx(rpcEndpoint, address)
-      .then((transaction) => {
-        setCreationTx(transaction)
-      })
+    getContractCreationTx(address)
+      .then((transaction) => setCreationTx(transaction))
       .catch((e) => {
         console.log('Contract Creation Tx not found', e)
         setCreationTx(undefined)
