@@ -86,7 +86,7 @@ The application has a set of RPC APIs that are used to interact with the applica
 
 - Clone the Git repo
 ```bash
-git clone https://github.com/QuorumEngineering/quorum-reporting.git
+git clone https://github.com/ConsenSys/quorum-reporting.git
 ```
 - Fetch dependencies using gomod
 ```bash
