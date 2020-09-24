@@ -15,7 +15,7 @@ import Tooltip from '@material-ui/core/Tooltip'
 import HelpIcon from '@material-ui/icons/Help'
 import { makeStyles } from '@material-ui/core/styles'
 import { addContract } from '../client/fetcher'
-import { getTemplates } from '../client/rpcClient'
+import { addTemplate, assignTemplate, getTemplates } from '../client/rpcClient'
 
 const useStyles = makeStyles(() => ({
   tooltipControl: {
@@ -29,11 +29,11 @@ const useStyles = makeStyles(() => ({
   },
 }))
 
-function ContractForm({ handleCloseSetting, handleRegisterNewContract, isOpen }) {
+function ContractForm({ handleCloseSetting, handleRegisterNewContract, isOpen, existingContract }) {
   const classes = useStyles()
   const [templates, setTemplates] = useState([])
   const [selectedTemplate, setSelectedTemplate] = useState('')
-  const [address, setAddress] = useState('')
+  const [address, setAddress] = useState(existingContract ? existingContract.address : '')
   const [abi, setAbi] = useState('')
   const [name, setName] = useState('')
   const [storageLayout, setStorageLayout] = useState('')
@@ -70,7 +70,8 @@ function ContractForm({ handleCloseSetting, handleRegisterNewContract, isOpen })
       <DialogContent>
         <TextField
           label="Contract Address"
-          value={address}
+          value={existingContract ? existingContract.address : address}
+          disabled={existingContract !== undefined}
           onChange={(e) => setAddress(e.target.value)}
           onKeyPress={handleKeyPress}
           margin="dense"
@@ -156,8 +157,9 @@ function ContractForm({ handleCloseSetting, handleRegisterNewContract, isOpen })
           Cancel
         </Button>
         <Button
-          onClick={() => {
-            if (address === '') {
+          onClick={async () => {
+            const contractAddress = existingContract ? existingContract.address : address
+            if (contractAddress === '') {
               setErrorMessage('Address must not be empty')
               return
             }
@@ -178,22 +180,22 @@ function ContractForm({ handleCloseSetting, handleRegisterNewContract, isOpen })
               setErrorMessage('Please select a template')
               return
             }
-            const newContract = {
-              address,
-              template: selectedTemplate,
-              newTemplate: {
-                name,
-                abi,
-                storageLayout,
-              },
+
+            try {
+              if (!existingContract) {
+                await addContract(contractAddress)
+              }
+              if (selectedTemplate === 'new') {
+                await addTemplate(name, abi, storageLayout)
+                await assignTemplate(contractAddress, name)
+              } else {
+                await assignTemplate(contractAddress, selectedTemplate)
+              }
+              handleCloseSetting()
+            } catch (e) {
+              console.error(e)
+              setErrorMessage(e.message)
             }
-            addContract(newContract)
-              .then(() => {
-                handleCloseSetting()
-              })
-              .catch((e) => {
-                setErrorMessage(e.message)
-              })
           }}
           color="primary"
         >
