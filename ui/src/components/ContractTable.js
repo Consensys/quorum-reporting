@@ -7,6 +7,7 @@ import TableRow from '@material-ui/core/TableRow'
 import IconButton from '@material-ui/core/IconButton'
 import DeleteIcon from '@material-ui/icons/Delete'
 import { useHistory } from 'react-router-dom'
+import { Edit } from '@material-ui/icons'
 
 const useStyles = makeStyles(() => ({
   row: {
@@ -15,7 +16,7 @@ const useStyles = makeStyles(() => ({
   },
 }))
 
-function ContractTable({ contracts, handleContractDelete }) {
+function ContractTable({ contracts, handleContractDelete, handleContractEdit }) {
   const history = useHistory()
   const classes = useStyles()
   return (
@@ -39,6 +40,15 @@ function ContractTable({ contracts, handleContractDelete }) {
                 {c.address}
               </TableCell>
               <TableCell component="th" width="15%" align="right">
+                <IconButton
+                  onClick={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    handleContractEdit(c)
+                  }}
+                >
+                  <Edit color="action" />
+                </IconButton>
                 <IconButton
                   onClick={(e) => {
                     e.preventDefault()

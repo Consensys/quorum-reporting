@@ -32,6 +32,7 @@ export default function ContractListContainer() {
   const classes = useStyles()
   const dispatch = useDispatch()
   const [formIsOpen, setFormIsOpen] = useState(false)
+  const [editingContract, setEditingContract] = useState()
   const [errorMessage, setErrorMessage] = useState()
   const contracts = useSelector((state) => state.system.contracts)
 
@@ -47,8 +48,14 @@ export default function ContractListContainer() {
       })
   }
 
+  const handleContractEdit = (contract) => {
+    setEditingContract(contract)
+    setFormIsOpen(true)
+  }
+
   const handleCloseSetting = () => {
     setFormIsOpen(false)
+    setEditingContract(undefined)
     // give a small timeout to avoid fetch too fast
     setTimeout(() => {
       getAllRegisteredContracts()
@@ -97,6 +104,7 @@ export default function ContractListContainer() {
           && (
             <ContractTable
               contracts={contracts}
+              handleContractEdit={handleContractEdit}
               handleContractDelete={handleContractDelete}
             />
           )
@@ -105,7 +113,7 @@ export default function ContractListContainer() {
         <Button
           color="primary"
           onClick={() => {
-            setFormIsOpen(true)
+            handleContractEdit()
           }}
         >
           <AddIcon />
@@ -113,6 +121,7 @@ export default function ContractListContainer() {
         </Button>
         <ContractForm
           isOpen={formIsOpen}
+          existingContract={editingContract}
           handleCloseSetting={handleCloseSetting}
         />
       </CardContent>

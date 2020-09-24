@@ -48,8 +48,8 @@ export function getTemplates() {
   return request('reporting.GetTemplates', [])
 }
 
-export function addTemplate(newTemplate) {
-  return request('reporting.AddTemplate', [newTemplate])
+export function addTemplate(name, abi, storageLayout) {
+  return request('reporting.AddTemplate', [{ name, abi, storageLayout }])
 }
 
 export function assignTemplate(address, templateName) {

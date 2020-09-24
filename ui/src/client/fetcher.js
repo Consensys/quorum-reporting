@@ -1,7 +1,5 @@
 import {
   addAddress,
-  addTemplate,
-  assignTemplate,
   deleteAddress,
   getABI,
   getAddresses,
@@ -28,15 +26,8 @@ export function getBlockNumber() {
   return getLastPersistedBlockNumber()
 }
 
-export function addContract(newContract) {
-  return addAddress(newContract.address)
-    .then(() => {
-      if (newContract.template === 'new') {
-        return addTemplate(newContract.newTemplate)
-          .then(() => assignTemplate(newContract.address, newContract.newTemplate.name))
-      }
-      return assignTemplate(newContract.address, newContract.template)
-    })
+export function addContract(address) {
+  return addAddress(address)
 }
 
 export function deleteContract(address) {
