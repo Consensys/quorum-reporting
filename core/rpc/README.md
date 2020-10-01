@@ -778,13 +778,10 @@ Output:
 ## With In-memory database
 
 The following RPC APIs are not supported with In-memory database.
-* `reporting.GetStorageWithOptions`
-* `reporting.GetStorageTotal`
-* `token.RecordNewERC20Balance`
+* `reporting.GetStorageHistory`
 * `token.GetERC20Balance`
-* `token.GetAllTokenHolders`
-* `token.RecordERC721Token`
-* `token.ERC721TokenByTokenID`
+* `token.GetERC20TokenHoldersAtBlock`
+* `token.GetHolderForERC721TokenAtBlock`
 * `token.ERC721TokensForAccountAtBlock`
 * `token.AllERC721TokensAtBlock`
-* `token.AllHoldersAtBlock`
+* `token.AllERC721HoldersAtBlock`

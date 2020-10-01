@@ -21,7 +21,7 @@ over its lifetime. It will also interpret and parse events that the contract emi
     - Quorum Reporting uses ElasticSearch as its data store.
         [Click here](https://www.elastic.co/guide/en/elasticsearch/reference/current/getting-started.html) to get started with ElasticSearch.
 
-- In-memory database (For development)
+- In-memory database (**For development only**)
     - Quorum Reporting supports In-memory database for development purpose. Data is stored in primary storage only during the run and its deleted when the process is shutdown.
 
 ### Up & Running
@@ -66,7 +66,7 @@ docker run -p <port mapping> --mount type=bind,source=<path to config>,target=/c
 ### Configuration
 
 A [sample configuration](./config.sample.toml) file has been provided with details about each of the options.
-**Remove ElasticSearch configuration section from `config.toml` to enable in-memory database for development mode.**
+Remove ElasticSearch configuration section from `config.toml` to enable In-memory database for development mode.
 
 
 Additionally, application logging verbosity can be controlled with the `-verbosity <level>` flag, where `<level>`
