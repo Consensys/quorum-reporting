@@ -263,7 +263,6 @@ func (r *RPCAPIs) GetStorageHistory(req *http.Request, args *AddressWithBlockRan
 		return err
 	}
 
-	// TODO: implement GetStorageRoot to reduce the response list
 	historicStates := []*types.ParsedState{}
 	results, err := r.db.GetStorageWithOptions(*args.Address, args.Options)
 	if err != nil {

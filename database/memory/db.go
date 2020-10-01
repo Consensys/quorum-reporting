@@ -2,7 +2,6 @@ package memory
 
 import (
 	"errors"
-	"fmt"
 	"math/big"
 	"sync"
 
@@ -323,7 +322,6 @@ func (db *MemoryDB) GetContractCreationTransaction(address types.Address) (types
 }
 
 func (db *MemoryDB) GetAllTransactionsToAddress(address types.Address, options *types.QueryOptions) ([]types.Hash, error) {
-	// TODO: MemoryDB doesn't implement query options
 	db.mux.RLock()
 	defer db.mux.RUnlock()
 	if !db.addressIsRegistered(address) {
@@ -333,7 +331,6 @@ func (db *MemoryDB) GetAllTransactionsToAddress(address types.Address, options *
 }
 
 func (db *MemoryDB) GetTransactionsToAddressTotal(address types.Address, options *types.QueryOptions) (uint64, error) {
-	// TODO: MemoryDB doesn't implement query options
 	db.mux.RLock()
 	defer db.mux.RUnlock()
 	if !db.addressIsRegistered(address) {
@@ -343,7 +340,6 @@ func (db *MemoryDB) GetTransactionsToAddressTotal(address types.Address, options
 }
 
 func (db *MemoryDB) GetAllTransactionsInternalToAddress(address types.Address, options *types.QueryOptions) ([]types.Hash, error) {
-	// TODO: MemoryDB doesn't implement query options
 	db.mux.RLock()
 	defer db.mux.RUnlock()
 	if !db.addressIsRegistered(address) {
@@ -353,7 +349,6 @@ func (db *MemoryDB) GetAllTransactionsInternalToAddress(address types.Address, o
 }
 
 func (db *MemoryDB) GetTransactionsInternalToAddressTotal(address types.Address, options *types.QueryOptions) (uint64, error) {
-	// TODO: MemoryDB doesn't implement query options
 	db.mux.RLock()
 	defer db.mux.RUnlock()
 	if !db.addressIsRegistered(address) {
@@ -363,7 +358,6 @@ func (db *MemoryDB) GetTransactionsInternalToAddressTotal(address types.Address,
 }
 
 func (db *MemoryDB) GetAllEventsFromAddress(address types.Address, options *types.QueryOptions) ([]*types.Event, error) {
-	// TODO: MemoryDB doesn't implement query options
 	db.mux.RLock()
 	defer db.mux.RUnlock()
 	if !db.addressIsRegistered(address) {
@@ -373,7 +367,6 @@ func (db *MemoryDB) GetAllEventsFromAddress(address types.Address, options *type
 }
 
 func (db *MemoryDB) GetEventsFromAddressTotal(address types.Address, options *types.QueryOptions) (uint64, error) {
-	// TODO: MemoryDB doesn't implement query options
 	db.mux.RLock()
 	defer db.mux.RUnlock()
 	if !db.addressIsRegistered(address) {
@@ -383,11 +376,11 @@ func (db *MemoryDB) GetEventsFromAddressTotal(address types.Address, options *ty
 }
 
 func (db *MemoryDB) GetStorageWithOptions(types.Address, *types.PageOptions) ([]*types.StorageResult, error) {
-	return nil, fmt.Errorf("method not implemented")
+	return nil, database.ErrNotImplemented
 }
 
 func (db *MemoryDB) GetStorageTotal(types.Address, *types.PageOptions) (uint64, error) {
-	return 0, errors.New("method not implemented")
+	return 0, database.ErrNotImplemented
 }
 
 func (db *MemoryDB) GetStorageRanges(contract types.Address, options *types.PageOptions) ([]types.RangeResult, error) {

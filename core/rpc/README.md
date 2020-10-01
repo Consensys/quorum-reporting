@@ -4,7 +4,7 @@
 
 Contract APIs register/ deregister contracts to be reported. Complex queries can be run for the registered contract list.
 
-#### reporting_addAddress
+#### reporting.addAddress
 
 Adds a new address to start indexing and can be querying for various reports. Optionally takes a block number from 
 which to start indexing.
@@ -20,7 +20,7 @@ Input:
 Output:
 None
 
-#### reporting_deleteAddress
+#### reporting.deleteAddress
 
 Deletes an address from being indexed or queried.
 
@@ -32,7 +32,7 @@ Input:
 Output:
 None
 
-#### reporting_getAddresses
+#### reporting.getAddresses
 
 Returns a list of all the addresses the reporting engine is indexing.
 
@@ -44,7 +44,7 @@ Output:
 ["<address>", ...]
 ```
 
-#### reporting_getContractTemplate
+#### reporting.getContractTemplate
 
 Returns the name of the template that is currently assigned to the given contract
 
@@ -58,9 +58,9 @@ Output:
 "<template name>"
 ```
 
-#### reporting_addABI
+#### reporting.addABI
 
-(Deprecated, use `reporting_addTemplate` and `reporting_assignTemplate`)
+(Deprecated, use `reporting.addTemplate` and `reporting.assignTemplate`)
 
 Assigns a contract ABI to a contract, allowing parsing of function call and event parameters.
 
@@ -75,7 +75,7 @@ Input:
 Output:
 None
 
-#### reporting_getABI
+#### reporting.getABI
 
 Returns the attached contract ABI for the given contract
 
@@ -89,9 +89,9 @@ Output:
 "<Contract ABI as escaped JSON>"
 ```
 
-#### reporting_addStorageABI
+#### reporting.addStorageABI
 
-(Deprecated. Use `reporting_addTemplate` and `reporting_assignTemplate`)
+(Deprecated. Use `reporting.addTemplate` and `reporting.assignTemplate`)
 
 Assigns a Storage Layout to a contract, allowing parsing of contract storage into variables.
 
@@ -106,7 +106,7 @@ Input:
 Output:
 None
 
-#### reporting_getStorageABI
+#### reporting.getStorageABI
 
 Returns the attached Storage Layout for the given contract
 
@@ -120,7 +120,7 @@ Output:
 "<Storage Layout as escaped JSON>"
 ```
 
-#### reporting_addTemplate
+#### reporting.addTemplate
 
 Adds a new template that can be assigned to contracts
 
@@ -136,7 +136,7 @@ Input:
 Output:
 None
 
-#### reporting_assignTemplate
+#### reporting.assignTemplate
 
 Assigns a previously added template to the given contract, replacing any existing assignment that contract had.
 
@@ -151,7 +151,7 @@ Input:
 Output:
 None
 
-#### reporting_getTemplates
+#### reporting.getTemplates
 
 Returns a list of all template names that have been added to the reporting engine
 
@@ -166,7 +166,7 @@ Output:
 ]
 ```
 
-#### reporting_getTemplateDetails
+#### reporting.getTemplateDetails
 
 Returns the details of a given template, which includes the template Contract ABI and the Storage Layout.
 
@@ -184,16 +184,16 @@ Output:
 }
 ```
 
-#### reporting_getLastFiltered
+#### reporting.getLastFiltered
 
-(Implemented) `reporting_getLastFiltered` gets the last block number before which storage & txs & events of a contract 
+(Implemented) `reporting.getLastFiltered` gets the last block number before which storage & txs & events of a contract 
 is filtered and stored.
 
 ## Block
 
 Block APIs returns basic block information.
 
-#### reporting_getBlock
+#### reporting.getBlock
 
 Fetches the full block data
 
@@ -219,7 +219,7 @@ Output:
 }
 ```
 
-#### reporting_getLastPersistedBlockNumber
+#### reporting.getLastPersistedBlockNumber
 
 Fetches the last block number before which all blocks/transactions are available.
 
@@ -235,7 +235,7 @@ Output:
 
 Storage APIs can query account storage for a given contract at any block
 
-#### reporting_getStorage
+#### reporting.getStorage
 
 Retrieves the full *raw* storage for a contract at a particular block height. This means there is no parsing of the 
 data. If no block is given, then the latest block the contract has been indexed at is used. The values of each storage 
@@ -266,7 +266,7 @@ e.g.
 }
 ```
 
-#### reporting_getStorageHistory
+#### reporting.getStorageHistory
 
 Parses the storage of a contract according to its attached storage layout. It will return a map of variables and their 
 values that exist in the contract, except for mappings. This is intended to see how the storage changes over time, 
@@ -276,8 +276,12 @@ Input:
 ```json
 {
 	"address": "<address>",
-	"startBlockNumber": <integer>,
-	"endBlockNumber": <integer>
+    "options": {
+	   "beginBlockNumber": <integer>,
+	   "endBlockNumber": <integer>,
+       "pageSize": <integer>,
+       "pageNumber": <integer>
+    }
 }
 ```
 
@@ -348,7 +352,7 @@ Note: the output works backwards, giving the most recent blocks first.
 
 Transaction APIs query 
 
-#### reporting_getTransaction
+#### reporting.getTransaction
 
 Fetches transaction data, including events and internal calls & parsed event/function call data
 
@@ -435,7 +439,7 @@ Output:
 	}
 ```
 
-#### reporting_getContractCreationTransaction
+#### reporting.getContractCreationTransaction
 
 Fetches the hash of the transaction that this requested transaction was deployed at.
 This can include external deployment, internal deployments from other contracts, or 
@@ -451,7 +455,7 @@ Output:
 "<0x-prefixed hash>"
 ```
 
-#### reporting_getAllTransactionsToAddress
+#### reporting.getAllTransactionsToAddress
 
 Returns a list of transaction hashes and total number matching the search options provided.
 
@@ -486,7 +490,7 @@ Output:
 }
 ```
 
-#### reporting_getAllTransactionsInternalToAddress
+#### reporting.getAllTransactionsInternalToAddress
 
 Returns a list of transaction hashes where the contract was called by another contract, 
 along with the total number matching records with the search options provided.
@@ -524,7 +528,7 @@ Output:
 
 ## Event
 
-#### reporting_getAllEventsFromAddress
+#### reporting.getAllEventsFromAddress
 
 Returns a list of events for a given contract, along with the total number of events matching the search options 
 provided. The events are also parsed for their parameter values if an appropriate ABI is attached to the contract.
@@ -770,3 +774,17 @@ Output:
     "0x<address>"
 ]
 ```
+
+## With In-memory database
+
+The following RPC APIs are not supported with In-memory database.
+* `reporting.GetStorageWithOptions`
+* `reporting.GetStorageTotal`
+* `token.RecordNewERC20Balance`
+* `token.GetERC20Balance`
+* `token.GetAllTokenHolders`
+* `token.RecordERC721Token`
+* `token.ERC721TokenByTokenID`
+* `token.ERC721TokensForAccountAtBlock`
+* `token.AllERC721TokensAtBlock`
+* `token.AllHoldersAtBlock`
