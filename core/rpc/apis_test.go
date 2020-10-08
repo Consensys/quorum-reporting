@@ -35,6 +35,15 @@ var (
 		TxRoot:      types.NewHash(""),
 		StateRoot:   types.NewHash(""),
 	}
+	blockWithTxns = &types.BlockWithTransactions{
+		Hash:         types.NewHash("0xc7fd1915b4b8ac6344e750e4eaeacf9114d4e185f9c10b6b3bc7049511a96998"),
+		Number:       1,
+		Transactions: []*types.Transaction{tx1, tx2, tx3},
+		ParentHash:   types.NewHash(""),
+		ReceiptRoot:  types.NewHash(""),
+		TxRoot:       types.NewHash(""),
+		StateRoot:    types.NewHash(""),
+	}
 	tx1 = &types.Transaction{ // deployment
 		Hash:            types.NewHash("0x1a6f4292bac138df9a7854a07c93fd14ca7de53265e8fe01b6c986f97d6c1ee7"),
 		BlockNumber:     1,
@@ -122,7 +131,7 @@ func TestAPIParsing(t *testing.T) {
 	assert.Equal(t, big.NewInt(1000), parsedTx3.ParsedEvents[0].ParsedData["_value"])
 
 	// Test GetAllEventsFromAddress parse event.
-	err = db.IndexBlocks([]types.Address{addr}, []*types.Block{block})
+	err = db.IndexBlocks([]types.Address{addr}, []*types.BlockWithTransactions{blockWithTxns})
 	assert.Nil(t, err)
 
 	eventsResp := &EventsResp{}

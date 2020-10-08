@@ -52,16 +52,6 @@ var testIndexBlock = &types.BlockWithTransactions{
 	},
 }
 
-func TestContractCreationFilter_ProcessBlocks_UnableToReadTransaction(t *testing.T) {
-	db := memory.NewMemoryDB()
-	ccFilter := NewContractCreationFilter(db, client.NewStubQuorumClient(nil, nil))
-	sampleAddress := types.NewAddress("0x1349f3e1b8d71effb47b840594ff27da7e603d17")
-
-	err := ccFilter.ProcessBlocks([]types.Address{sampleAddress}, []*types.BlockWithTransactions{testIndexBlock})
-
-	assert.EqualError(t, err, "transaction does not exist")
-}
-
 func TestContractCreationFilter_ProcessBlocks(t *testing.T) {
 	testAddresses := []types.Address{
 		"1349f3e1b8d71effb47b840594ff27da7e603d17", "9d13c6d3afe1721beef56b55d303b09e021e27ab",

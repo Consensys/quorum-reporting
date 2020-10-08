@@ -68,7 +68,7 @@ func (f *FakeDB) IndexStorage(map[types.Address]*types.AccountState, uint64) err
 	return nil
 }
 
-func (f *FakeDB) IndexBlock(addresses []types.Address, block *types.Block) error {
+func (f *FakeDB) IndexBlock(addresses []types.Address, block *types.BlockWithTransactions) error {
 	for _, address := range addresses {
 		if f.lastFiltered[address] < block.Number {
 			f.lastFiltered[address] = block.Number
@@ -77,7 +77,7 @@ func (f *FakeDB) IndexBlock(addresses []types.Address, block *types.Block) error
 	return nil
 }
 
-func (f *FakeDB) IndexBlocks(addresses []types.Address, blocks []*types.Block) error {
+func (f *FakeDB) IndexBlocks(addresses []types.Address, blocks []*types.BlockWithTransactions) error {
 	for _, block := range blocks {
 		f.IndexBlock(addresses, block)
 	}
