@@ -305,6 +305,7 @@ Output:
     ]
 }
 ```
+##### Note: Pagination not supported when run with In-memory db.
 
 #### reporting.GetStorageHistoryCount
 
@@ -629,6 +630,8 @@ Output:
     ...
 }
 ```
+##### Note: Pagination not supported when run with In-memory db.
+
 
 #### token.getERC20TokenHoldersAtBlock
 
@@ -656,6 +659,7 @@ Output:
     "0x<address>"
 ]
 ```
+##### Note: Pagination not supported when run with In-memory db.
 
 #### token.getHolderForERC721TokenAtBlock
 
@@ -673,6 +677,8 @@ Output:
 ```$json
 "0x<address>"
 ```
+
+##### Note: Pagination not supported when run with In-memory db.
 
 #### token.eRC721TokensForAccountAtBlock
 
@@ -709,6 +715,7 @@ Output:
     ...
 ]
 ```
+##### Note: Pagination not supported when run with In-memory db.
 
 #### token.allERC721TokensAtBlock
 
@@ -745,6 +752,7 @@ Output:
     ...
 ]
 ```
+##### Note: Pagination not supported when run with In-memory db.
 
 
 
@@ -774,14 +782,5 @@ Output:
     "0x<address>"
 ]
 ```
+##### Note: Pagination not supported when run with In-memory db.
 
-## With In-memory database
-
-The following RPC APIs are not supported with In-memory database.
-* `reporting.GetStorageHistory`
-* `token.GetERC20Balance`
-* `token.GetERC20TokenHoldersAtBlock`
-* `token.GetHolderForERC721TokenAtBlock`
-* `token.ERC721TokensForAccountAtBlock`
-* `token.AllERC721TokensAtBlock`
-* `token.AllERC721HoldersAtBlock`
