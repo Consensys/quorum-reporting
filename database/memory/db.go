@@ -588,6 +588,8 @@ func (db *MemoryDB) removeAllIndices(address types.Address) error {
 }
 
 func (db *MemoryDB) GetERC20EntryAtBlock(contract types.Address, holder types.Address, block uint64) (*ERC20TokenHolder, error) {
+	db.mux.RLock()
+	defer db.mux.RUnlock()
 	var tmpItem *ERC20TokenHolder
 	found := false
 	for i, item := range db.erc20BalancesDB {
@@ -609,9 +611,9 @@ func (db *MemoryDB) GetERC20EntryAtBlock(contract types.Address, holder types.Ad
 }
 
 func (db *MemoryDB) RecordNewERC20Balance(contract types.Address, holder types.Address, block uint64, amount *big.Int) error {
+	existingTokenEntry, errExisting := db.GetERC20EntryAtBlock(contract, holder, block-1)
 	db.mux.Lock()
 	defer db.mux.Unlock()
-	existingTokenEntry, errExisting := db.GetERC20EntryAtBlock(contract, holder, block-1)
 	if errExisting != nil && errExisting != database.ErrNotFound {
 		return errExisting
 	}
@@ -667,10 +669,10 @@ func (db *MemoryDB) GetAllTokenHolders(contract types.Address, block uint64, opt
 }
 
 func (db *MemoryDB) RecordERC721Token(contract types.Address, holder types.Address, block uint64, tokenId *big.Int) error {
-	db.mux.Lock()
-	defer db.mux.Unlock()
 	//find old entry
 	existingTokenEntry, errExisting := db.ERC721TokenByTokenID(contract, block-1, tokenId)
+	db.mux.Lock()
+	defer db.mux.Unlock()
 	if errExisting != nil && errExisting != database.ErrNotFound {
 		return errExisting
 	}
