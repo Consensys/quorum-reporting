@@ -445,7 +445,7 @@ func TestElasticsearchDB_ERC721TokenByTokenID_NotFound(t *testing.T) {
 	result, err := db.ERC721TokenByTokenID(tokenContractAddress, 12, tokenId)
 
 	assert.EqualError(t, err, "not found")
-	assert.EqualValues(t, types.ERC721Token{}, result)
+	assert.Nil(t, result)
 }
 
 func TestElasticsearchDB_ERC721TokenByTokenID(t *testing.T) {
@@ -504,5 +504,5 @@ func TestElasticsearchDB_ERC721TokenByTokenID(t *testing.T) {
 		HeldFrom: 1,
 	}
 	assert.Nil(t, err)
-	assert.EqualValues(t, expected, result)
+	assert.EqualValues(t, expected, *result)
 }

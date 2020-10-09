@@ -2,9 +2,8 @@ package memory
 
 import (
 	"errors"
-	"fmt"
 	"math/big"
-	"strconv"
+	"sort"
 	"sync"
 
 	"quorumengineering/quorum-report/database"
@@ -29,7 +28,7 @@ type MemoryDB struct {
 	storageIndexDB   map[types.Address]*StorageIndexer
 	lastFiltered     map[types.Address]uint64
 	erc20BalancesDB  []ERC20TokenHolder
-	erc721BalancesDB []SortableERC721Token
+	erc721BalancesDB []types.ERC721Token
 	// mutex lock
 	mux sync.RWMutex
 }
@@ -62,17 +61,6 @@ type ERC20TokenHolder struct {
 	BlockNumber uint64
 	Amount      string
 	HeldUntil   *uint64
-}
-
-type SortableERC721Token struct {
-	types.ERC721Token
-
-	//Allows the token to be sortable by splitting it into component parts
-	First  uint64
-	Second uint64
-	Third  uint64
-	Fourth uint64
-	Fifth  uint64
 }
 
 func NewTxIndexer() *TxIndexer {
@@ -408,7 +396,6 @@ func (db *MemoryDB) GetStorageWithOptions(address types.Address, options *types.
 
 	fromBlockNum := options.BeginBlockNumber.Uint64()
 	endBlockNum := options.EndBlockNumber.Int64()
-	blockNum := fromBlockNum
 
 	storageIndexer, ok := db.storageIndexDB[address]
 	if ok {
@@ -417,12 +404,15 @@ func (db *MemoryDB) GetStorageWithOptions(address types.Address, options *types.
 				convertedList = append(convertedList, &types.StorageResult{
 					Storage:     storageIndexer.storage[storageRoot],
 					StorageRoot: types.NewHash(storageRoot),
-					BlockNumber: blockNum,
+					BlockNumber: blkNum,
 				})
 			}
 		}
 	}
 
+	sort.SliceStable(convertedList, func(i, j int) bool {
+		return convertedList[i].BlockNumber < convertedList[j].BlockNumber
+	})
 	return convertedList, nil
 }
 
@@ -433,17 +423,15 @@ func (db *MemoryDB) GetStorageTotal(address types.Address, options *types.PageOp
 		return 0, errors.New("address is not registered")
 	}
 	fromBlockNum := options.BeginBlockNumber.Uint64()
-	endBlockNum := options.EndBlockNumber.Uint64()
+	endBlockNum := options.EndBlockNumber.Int64()
+	toBlockNum := options.EndBlockNumber.Uint64()
 	var total uint64
 	blockNum := fromBlockNum
-	for blockNum <= endBlockNum {
-		storageRoot, ok := db.storageIndexDB[address].root[blockNum]
-		if ok {
-			total += uint64(len(db.storageIndexDB[address].storage[storageRoot]))
+	for v := range db.storageIndexDB[address].root {
+		if v >= fromBlockNum && (endBlockNum == -1 || blockNum <= toBlockNum) {
+			total++
 		}
-		blockNum++
 	}
-
 	return total, nil
 }
 
@@ -600,16 +588,16 @@ func (db *MemoryDB) removeAllIndices(address types.Address) error {
 }
 
 func (db *MemoryDB) GetERC20EntryAtBlock(contract types.Address, holder types.Address, block uint64) (*ERC20TokenHolder, error) {
-	var tmpItem int
+	var tmpItem *ERC20TokenHolder
 	found := false
 	for i, item := range db.erc20BalancesDB {
 		if item.BlockNumber <= block && item.Contract == contract && item.Holder == holder {
 			if !found {
-				tmpItem = i
+				tmpItem = &db.erc20BalancesDB[i]
 				found = true
 			} else {
-				if item.BlockNumber > db.erc20BalancesDB[tmpItem].BlockNumber {
-					tmpItem = i
+				if item.BlockNumber > tmpItem.BlockNumber {
+					tmpItem = &db.erc20BalancesDB[i]
 				}
 			}
 		}
@@ -617,10 +605,12 @@ func (db *MemoryDB) GetERC20EntryAtBlock(contract types.Address, holder types.Ad
 	if !found {
 		return nil, database.ErrNotFound
 	}
-	return &db.erc20BalancesDB[tmpItem], nil
+	return tmpItem, nil
 }
 
 func (db *MemoryDB) RecordNewERC20Balance(contract types.Address, holder types.Address, block uint64, amount *big.Int) error {
+	db.mux.Lock()
+	defer db.mux.Unlock()
 	existingTokenEntry, errExisting := db.GetERC20EntryAtBlock(contract, holder, block-1)
 	if errExisting != nil && errExisting != database.ErrNotFound {
 		return errExisting
@@ -661,6 +651,8 @@ func (db *MemoryDB) GetERC20Balance(contract types.Address, holder types.Address
 }
 
 func (db *MemoryDB) GetAllTokenHolders(contract types.Address, block uint64, options *types.TokenQueryOptions) ([]types.Address, error) {
+	db.mux.RLock()
+	defer db.mux.RUnlock()
 	var holderMap = make(map[types.Address]bool)
 	for _, k := range db.erc20BalancesDB {
 		if k.Contract == contract && k.BlockNumber <= block && k.Holder != "0000000000000000000000000000000000000000" {
@@ -675,30 +667,23 @@ func (db *MemoryDB) GetAllTokenHolders(contract types.Address, block uint64, opt
 }
 
 func (db *MemoryDB) RecordERC721Token(contract types.Address, holder types.Address, block uint64, tokenId *big.Int) error {
+	db.mux.Lock()
+	defer db.mux.Unlock()
 	//find old entry
 	existingTokenEntry, errExisting := db.ERC721TokenByTokenID(contract, block-1, tokenId)
 	if errExisting != nil && errExisting != database.ErrNotFound {
 		return errExisting
 	}
 
-	paddedTokenId := fmt.Sprintf("%085d", tokenId)
-	first, _ := strconv.ParseUint(paddedTokenId[0:17], 10, 64)
-	second, _ := strconv.ParseUint(paddedTokenId[17:34], 10, 64)
-	third, _ := strconv.ParseUint(paddedTokenId[34:51], 10, 64)
-	fourth, _ := strconv.ParseUint(paddedTokenId[51:68], 10, 64)
-	fifth, _ := strconv.ParseUint(paddedTokenId[68:85], 10, 64)
-
 	//add new entry
-	tokenHolderInfo := SortableERC721Token{
+	tokenHolderInfo :=
 		types.ERC721Token{
 			Contract:  contract,
 			Holder:    holder,
 			Token:     tokenId.String(),
 			HeldFrom:  block,
 			HeldUntil: nil,
-		},
-		first, second, third, fourth, fifth,
-	}
+		}
 	db.erc721BalancesDB = append(db.erc721BalancesDB, tokenHolderInfo)
 	/////
 	if errExisting == database.ErrNotFound {
@@ -711,6 +696,8 @@ func (db *MemoryDB) RecordERC721Token(contract types.Address, holder types.Addre
 }
 
 func (db *MemoryDB) ERC721TokenByTokenID(contract types.Address, block uint64, tokenId *big.Int) (*types.ERC721Token, error) {
+	db.mux.RLock()
+	defer db.mux.RUnlock()
 	var tmpItem int
 	found := false
 	for i, item := range db.erc721BalancesDB {
@@ -729,7 +716,7 @@ func (db *MemoryDB) ERC721TokenByTokenID(contract types.Address, block uint64, t
 	if !found {
 		return nil, database.ErrNotFound
 	}
-	return &db.erc721BalancesDB[tmpItem].ERC721Token, nil
+	return &db.erc721BalancesDB[tmpItem], nil
 }
 
 func (db *MemoryDB) ERC721TokensForAccountAtBlock(contract types.Address, holder types.Address, block uint64, options *types.TokenQueryOptions) ([]types.ERC721Token, error) {
@@ -737,6 +724,8 @@ func (db *MemoryDB) ERC721TokensForAccountAtBlock(contract types.Address, holder
 }
 
 func (db *MemoryDB) erc721TokensAtBlock(contract types.Address, holder *types.Address, block uint64, options *types.TokenQueryOptions) ([]types.ERC721Token, error) {
+	db.mux.RLock()
+	defer db.mux.RUnlock()
 	startTokenId := big.NewInt(-1)
 	if options.After != "" {
 		parsed, success := new(big.Int).SetString(options.After, 10)
@@ -745,44 +734,25 @@ func (db *MemoryDB) erc721TokensAtBlock(contract types.Address, holder *types.Ad
 		}
 		startTokenId = parsed
 	}
-	next := new(big.Int).Add(startTokenId, big.NewInt(1))
+	tokenId := new(big.Int).Add(startTokenId, big.NewInt(1))
 
-	paddedStartTokenId := fmt.Sprintf("%085d", next)
-	startFirst, _ := strconv.ParseUint(paddedStartTokenId[0:17], 10, 64)
-	startSecond, _ := strconv.ParseUint(paddedStartTokenId[17:34], 10, 64)
-	startThird, _ := strconv.ParseUint(paddedStartTokenId[34:51], 10, 64)
-	startFourth, _ := strconv.ParseUint(paddedStartTokenId[51:68], 10, 64)
-	startFifth, _ := strconv.ParseUint(paddedStartTokenId[68:85], 10, 64)
 	var tmpItem types.ERC721Token
 	found := false
 	var result []types.ERC721Token
 	for _, k := range db.erc721BalancesDB {
 		if k.Contract == contract && (holder == nil || *holder == k.Holder) && k.HeldFrom <= block {
-			var first, second, third, fourth, fifth bool
-			if k.First >= startFirst {
-				first = true
+			ercTokenId, success := new(big.Int).SetString(k.Token, 10)
+			if !success {
+				return nil, errors.New(`could not parse "erc721" token ID`)
 			}
-			if k.Second >= startSecond {
-				second = true
-			}
-			if k.Third >= startThird {
-				third = true
-			}
-			if k.Fourth >= startFourth {
-				fourth = true
-			}
-			if k.Fifth >= startFifth {
-				fifth = true
-			}
-			matched := first || second || third || fourth || fifth
-			if matched {
+			if ercTokenId.Uint64() >= tokenId.Uint64() {
 				if !found {
-					tmpItem = k.ERC721Token
+					tmpItem = k
 					result = append(result, tmpItem)
 					found = true
 				} else {
 					if k.HeldFrom > tmpItem.HeldFrom {
-						tmpItem = k.ERC721Token
+						tmpItem = k
 						result = append(result, tmpItem)
 					}
 				}
@@ -805,8 +775,12 @@ func (db *MemoryDB) AllHoldersAtBlock(contract types.Address, block uint64, opti
 		return nil, err
 	}
 	var holders []types.Address
+	var hldrMap = make(map[types.Address]bool)
 	for _, k := range res {
-		holders = append(holders, k.Holder)
+		hldrMap[k.Holder] = true
+	}
+	for k := range hldrMap {
+		holders = append(holders, k)
 	}
 	return holders, nil
 }

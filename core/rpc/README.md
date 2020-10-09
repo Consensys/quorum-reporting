@@ -305,7 +305,7 @@ Output:
     ]
 }
 ```
-##### Note: Pagination not supported when run with In-memory db.
+**Note!!**: Pagination not supported when run with In-memory db.
 
 #### reporting.GetStorageHistoryCount
 
@@ -630,7 +630,7 @@ Output:
     ...
 }
 ```
-##### Note: Pagination not supported when run with In-memory db.
+**Note!!**: Pagination not supported when run with In-memory db.
 
 
 #### token.getERC20TokenHoldersAtBlock
@@ -659,7 +659,7 @@ Output:
     "0x<address>"
 ]
 ```
-##### Note: Pagination not supported when run with In-memory db.
+**Note!!**: Pagination not supported when run with In-memory db.
 
 #### token.getHolderForERC721TokenAtBlock
 
@@ -678,7 +678,7 @@ Output:
 "0x<address>"
 ```
 
-##### Note: Pagination not supported when run with In-memory db.
+**Note!!**: Pagination not supported when run with In-memory db.
 
 #### token.eRC721TokensForAccountAtBlock
 
@@ -715,7 +715,7 @@ Output:
     ...
 ]
 ```
-##### Note: Pagination not supported when run with In-memory db.
+**Note!!**: Pagination not supported when run with In-memory db.
 
 #### token.allERC721TokensAtBlock
 
@@ -752,7 +752,7 @@ Output:
     ...
 ]
 ```
-##### Note: Pagination not supported when run with In-memory db.
+**Note!!**: Pagination not supported when run with In-memory db.
 
 
 
@@ -782,5 +782,5 @@ Output:
     "0x<address>"
 ]
 ```
-##### Note: Pagination not supported when run with In-memory db.
+**Note!!**: Pagination not supported when run with In-memory db.
 

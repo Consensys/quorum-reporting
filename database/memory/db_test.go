@@ -134,7 +134,8 @@ func TestMemoryDB(t *testing.T) {
 	testGetTransactionsInternalToAddressTotal(t, db, addr, 1)
 	testGetAllEventsByAddress(t, db, addr, 1)
 	testGetStorage(t, db, addr, 1, 2)
-	testGetStorageTotal(t, db, addr, &types.PageOptions{BeginBlockNumber: big.NewInt(0), EndBlockNumber: big.NewInt(1)}, 2)
+	testGetStorageTotal(t, db, addr, &types.PageOptions{BeginBlockNumber: big.NewInt(0), EndBlockNumber: big.NewInt(1)}, 1)
+	testGetStorageTotal(t, db, addr, &types.PageOptions{BeginBlockNumber: big.NewInt(0), EndBlockNumber: big.NewInt(-1)}, 1)
 	testGetStorageWithOptions(t, db, addr, &types.PageOptions{BeginBlockNumber: big.NewInt(0), EndBlockNumber: big.NewInt(1)}, 1)
 	// 6. Delete address and check last filtered
 	testDeleteAddress(t, db, addr, false)
@@ -564,8 +565,18 @@ func TestMemorydb_erc20Balance(t *testing.T) {
 	holdrArr, err = db.GetAllTokenHolders(contrAddr, 2, &types.TokenQueryOptions{BeginBlockNumber: big.NewInt(1), EndBlockNumber: big.NewInt(2)})
 	assert.Nil(t, err)
 	assert.Equal(t, len(holdrArr), 2)
-	assert.Equal(t, holdrArr[0], holder0)
-	assert.Equal(t, holdrArr[1], holder1)
+
+	holder0Found := false
+	holder1Found := false
+	for _, h := range holdrArr {
+		if h == holder0 {
+			holder0Found = true
+		} else if h == holder1 {
+			holder1Found = true
+		}
+	}
+	assert.Equal(t, holder0Found, true)
+	assert.Equal(t, holder1Found, true)
 
 }
 
