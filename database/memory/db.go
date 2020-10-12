@@ -749,7 +749,7 @@ func (db *MemoryDB) erc721TokensAtBlock(contract types.Address, holder *types.Ad
 			if !success {
 				return nil, errors.New(`could not parse "erc721" token ID`)
 			}
-			if ercTokenId.Uint64() >= tokenId.Uint64() {
+			if ercTokenId.Cmp(tokenId) >= 0 {
 				if !found {
 					tmpItem = k
 					result = append(result, tmpItem)
