@@ -587,7 +587,7 @@ func (db *MemoryDB) removeAllIndices(address types.Address) error {
 	return nil
 }
 
-func (db *MemoryDB) GetERC20EntryAtBlock(contract types.Address, holder types.Address, block uint64) (*ERC20TokenHolder, error) {
+func (db *MemoryDB) getERC20EntryAtBlock(contract types.Address, holder types.Address, block uint64) (*ERC20TokenHolder, error) {
 	db.mux.RLock()
 	defer db.mux.RUnlock()
 	var tmpItem *ERC20TokenHolder
@@ -611,7 +611,7 @@ func (db *MemoryDB) GetERC20EntryAtBlock(contract types.Address, holder types.Ad
 }
 
 func (db *MemoryDB) RecordNewERC20Balance(contract types.Address, holder types.Address, block uint64, amount *big.Int) error {
-	existingTokenEntry, errExisting := db.GetERC20EntryAtBlock(contract, holder, block-1)
+	existingTokenEntry, errExisting := db.getERC20EntryAtBlock(contract, holder, block-1)
 	db.mux.Lock()
 	defer db.mux.Unlock()
 	if errExisting != nil && errExisting != database.ErrNotFound {
@@ -637,6 +637,8 @@ func (db *MemoryDB) RecordNewERC20Balance(contract types.Address, holder types.A
 }
 
 func (db *MemoryDB) GetERC20Balance(contract types.Address, holder types.Address, options *types.TokenQueryOptions) (map[uint64]*big.Int, error) {
+	db.mux.RLock()
+	defer db.mux.RUnlock()
 	balanceMap := make(map[uint64]*big.Int)
 	frmBlkNum := options.BeginBlockNumber.Uint64()
 	endBlkNum := options.EndBlockNumber.Int64()
