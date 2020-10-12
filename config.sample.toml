@@ -12,7 +12,6 @@ addresses = [
 # A template contains an ABI definition for parsing contract events, and a storage layout for a the contracts variables
 # These definitions allow the data collected by the reporting tool to be parsed in a more usable format
 # ABI and storage layout can be obtained by compiling the solidity contract
-# - the ABI is available in almost all versions of the compiler
 # - the storage layout is available from version 0.6.5 of the compiler
 templates = [
     { templateName = "SimpleStorage", abi = '[{"constant":true,"inputs":[],"name":"storedData","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"_x","type":"uint256"}],"name":"set","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[],"name":"get","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"inputs":[{"name":"_initVal","type":"uint256"}],"payable":false,"stateMutability":"nonpayable","type":"constructor"},{"anonymous":false,"inputs":[{"indexed":false,"name":"_value","type":"uint256"}],"name":"valueSet","type":"event"}]', storageLayout = '{"storage":[{"astId":3,"contract":"scripts/simplestorage.sol:SimpleStorage","label":"storedData","offset":0,"slot":"0","type":"t_uint256"}],"types":{"t_uint256":{"encoding":"inplace","label":"uint256","numberOfBytes":"32"}}}' },
