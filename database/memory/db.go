@@ -665,14 +665,14 @@ func (db *MemoryDB) GetERC20Balance(contract types.Address, holder types.Address
 		}
 	}
 
-	if len(balanceMap) == 0 && maxEntryFound {
+	if _, ok := balanceMap[options.BeginBlockNumber.Uint64()]; !ok {
 		tokAmt, success := new(big.Int).SetString(maxEntry.Amount, 10)
 		if !success {
 			return nil, errors.New("could not parse token value")
 		}
 		balanceMap[options.BeginBlockNumber.Uint64()] = tokAmt
-		return balanceMap, nil
 	}
+
 	return balanceMap, nil
 }
 
