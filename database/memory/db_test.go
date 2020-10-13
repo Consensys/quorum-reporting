@@ -645,8 +645,18 @@ func TestMemorydb_erc721Balance(t *testing.T) {
 
 	holdrArr, err := db.AllHoldersAtBlock(contrAddr, 3, &types.TokenQueryOptions{BeginBlockNumber: big.NewInt(1), EndBlockNumber: big.NewInt(1)})
 	assert.Nil(t, err)
-	assert.Equal(t, len(tokenArr), 2)
-	assert.Equal(t, holdrArr[0], holder0)
-	assert.Equal(t, holdrArr[1], holder1)
+	assert.Equal(t, len(holdrArr), 2)
+
+	holder0Found := false
+	holder1Found := false
+	for _, h := range holdrArr {
+		if h == holder0 {
+			holder0Found = true
+		} else if h == holder1 {
+			holder1Found = true
+		}
+	}
+	assert.Equal(t, holder0Found, true)
+	assert.Equal(t, holder1Found, true)
 
 }
