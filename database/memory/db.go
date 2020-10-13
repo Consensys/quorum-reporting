@@ -411,7 +411,7 @@ func (db *MemoryDB) GetStorageWithOptions(address types.Address, options *types.
 	}
 
 	sort.SliceStable(convertedList, func(i, j int) bool {
-		return convertedList[i].BlockNumber < convertedList[j].BlockNumber
+		return convertedList[i].BlockNumber > convertedList[j].BlockNumber
 	})
 	return convertedList, nil
 }
@@ -642,14 +642,36 @@ func (db *MemoryDB) GetERC20Balance(contract types.Address, holder types.Address
 	balanceMap := make(map[uint64]*big.Int)
 	frmBlkNum := options.BeginBlockNumber.Uint64()
 	endBlkNum := options.EndBlockNumber.Int64()
+	var maxEntry ERC20TokenHolder
+	maxEntryFound := false
 	for _, b := range db.erc20BalancesDB {
-		if contract == b.Contract && holder == b.Holder && b.BlockNumber >= frmBlkNum && (b.BlockNumber <= uint64(endBlkNum) || endBlkNum == -1) {
-			tokAmt, success := new(big.Int).SetString(b.Amount, 10)
-			if !success {
-				return nil, errors.New("could not parse token value")
+		if contract == b.Contract && holder == b.Holder {
+			if b.BlockNumber >= frmBlkNum && (b.BlockNumber <= uint64(endBlkNum) || endBlkNum == -1) {
+				tokAmt, success := new(big.Int).SetString(b.Amount, 10)
+				if !success {
+					return nil, errors.New("could not parse token value")
+				}
+				balanceMap[b.BlockNumber] = tokAmt
+			} else if len(balanceMap) == 0 {
+				if !maxEntryFound {
+					maxEntry = b
+					maxEntryFound = true
+				} else {
+					if maxEntry.BlockNumber < b.BlockNumber {
+						maxEntry = b
+					}
+				}
 			}
-			balanceMap[b.BlockNumber] = tokAmt
 		}
+	}
+
+	if len(balanceMap) == 0 && maxEntryFound {
+		tokAmt, success := new(big.Int).SetString(maxEntry.Amount, 10)
+		if !success {
+			return nil, errors.New("could not parse token value")
+		}
+		balanceMap[options.BeginBlockNumber.Uint64()] = tokAmt
+		return balanceMap, nil
 	}
 	return balanceMap, nil
 }
@@ -663,7 +685,7 @@ func (db *MemoryDB) GetAllTokenHolders(contract types.Address, block uint64, opt
 			holderMap[k.Holder] = true
 		}
 	}
-	var holderArr []types.Address
+	holderArr := make([]types.Address, 0, len(holderMap))
 	for holdr := range holderMap {
 		holderArr = append(holderArr, holdr)
 	}
@@ -742,7 +764,7 @@ func (db *MemoryDB) erc721TokensAtBlock(contract types.Address, holder *types.Ad
 
 	var tmpItem types.ERC721Token
 	found := false
-	var result []types.ERC721Token
+	result := make([]types.ERC721Token, 0, 0)
 	for _, k := range db.erc721BalancesDB {
 		if k.Contract == contract && (holder == nil || *holder == k.Holder) && k.HeldFrom <= block {
 			ercTokenId, success := new(big.Int).SetString(k.Token, 10)
@@ -778,11 +800,12 @@ func (db *MemoryDB) AllHoldersAtBlock(contract types.Address, block uint64, opti
 	if err != nil {
 		return nil, err
 	}
-	var holders []types.Address
+
 	var hldrMap = make(map[types.Address]bool)
 	for _, k := range res {
 		hldrMap[k.Holder] = true
 	}
+	holders := make([]types.Address, 0, len(hldrMap))
 	for k := range hldrMap {
 		holders = append(holders, k)
 	}

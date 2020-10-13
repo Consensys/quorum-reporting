@@ -395,8 +395,7 @@ func TestElasticsearchDB_GetERC20Balance_ResultBeforeBeginBlock(t *testing.T) {
 	results, err := db.GetERC20Balance(tokenContractAddress, holderAddress, options)
 
 	assert.Nil(t, err)
-	assert.Len(t, results, 2)
-	assert.EqualValues(t, 500, results[0].Int64())
+	assert.Len(t, results, 1)
 	assert.EqualValues(t, 500, results[1].Int64())
 }
 

@@ -578,6 +578,11 @@ func TestMemorydb_erc20Balance(t *testing.T) {
 	assert.Equal(t, holder0Found, true)
 	assert.Equal(t, holder1Found, true)
 
+	// balance before begin block
+	result, err = db.GetERC20Balance(contrAddr, holder0, &types.TokenQueryOptions{BeginBlockNumber: big.NewInt(5), EndBlockNumber: big.NewInt(5)})
+	assert.Nil(t, err)
+	assert.Equal(t, len(result), 1)
+	assert.Equal(t, result[5], big.NewInt(850))
 }
 
 func TestMemorydb_erc721Balance(t *testing.T) {
