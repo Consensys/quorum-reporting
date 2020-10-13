@@ -338,7 +338,15 @@ func (db *MemoryDB) GetAllTransactionsToAddress(address types.Address, options *
 	if !db.addressIsRegistered(address) {
 		return nil, errors.New("address is not registered")
 	}
-	return db.txIndexDB[address].txsTo, nil
+	var txs []types.Hash
+	txIndex := len(db.txIndexDB[address].txsTo) - 1
+
+	// reverse the order to get descending order
+	for txIndex >= 0 {
+		txs = append(txs, db.txIndexDB[address].txsTo[txIndex])
+		txIndex--
+	}
+	return txs, nil
 }
 
 func (db *MemoryDB) GetTransactionsToAddressTotal(address types.Address, options *types.QueryOptions) (uint64, error) {
@@ -356,7 +364,16 @@ func (db *MemoryDB) GetAllTransactionsInternalToAddress(address types.Address, o
 	if !db.addressIsRegistered(address) {
 		return nil, errors.New("address is not registered")
 	}
-	return db.txIndexDB[address].txsInternalTo, nil
+	var txs []types.Hash
+	txIndex := len(db.txIndexDB[address].txsInternalTo) - 1
+
+	// reverse the order to get descending order
+	for txIndex >= 0 {
+		txs = append(txs, db.txIndexDB[address].txsInternalTo[txIndex])
+		txIndex--
+	}
+
+	return txs, nil
 }
 
 func (db *MemoryDB) GetTransactionsInternalToAddressTotal(address types.Address, options *types.QueryOptions) (uint64, error) {
@@ -374,7 +391,11 @@ func (db *MemoryDB) GetAllEventsFromAddress(address types.Address, options *type
 	if !db.addressIsRegistered(address) {
 		return nil, errors.New("address is not registered")
 	}
-	return db.eventIndexDB[address], nil
+	events := db.eventIndexDB[address]
+	sort.SliceStable(events, func(i, j int) bool {
+		return events[i].BlockNumber > events[j].BlockNumber
+	})
+	return events, nil
 }
 
 func (db *MemoryDB) GetEventsFromAddressTotal(address types.Address, options *types.QueryOptions) (uint64, error) {
