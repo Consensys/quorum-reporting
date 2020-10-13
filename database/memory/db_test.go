@@ -527,6 +527,12 @@ func TestMemorydb_erc20Balance(t *testing.T) {
 			BlockNumber: 4,
 			Amount:      "850",
 		},
+		{
+			Contract:    contrAddr,
+			Holder:      holder0,
+			BlockNumber: 7,
+			Amount:      "77",
+		},
 	}
 
 	for _, b := range balances {
@@ -583,6 +589,13 @@ func TestMemorydb_erc20Balance(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, len(result), 1)
 	assert.Equal(t, result[5], big.NewInt(850))
+
+	result, err = db.GetERC20Balance(contrAddr, holder0, &types.TokenQueryOptions{BeginBlockNumber: big.NewInt(5), EndBlockNumber: big.NewInt(7)})
+	assert.Nil(t, err)
+	assert.Equal(t, len(result), 2)
+	assert.Equal(t, result[5], big.NewInt(850))
+	assert.Equal(t, result[7], big.NewInt(77))
+
 }
 
 func TestMemorydb_erc721Balance(t *testing.T) {
