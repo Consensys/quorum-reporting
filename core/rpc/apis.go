@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
-
 	"quorumengineering/quorum-report/core/storageparsing"
 	"quorumengineering/quorum-report/database"
 	"quorumengineering/quorum-report/types"

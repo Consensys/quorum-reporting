@@ -80,7 +80,7 @@ type TokenDB interface {
 	GetAllTokenHolders(contract types.Address, block uint64, options *types.TokenQueryOptions) ([]types.Address, error)
 
 	RecordERC721Token(contract types.Address, holder types.Address, block uint64, tokenId *big.Int) error
-	ERC721TokenByTokenID(contract types.Address, block uint64, tokenId *big.Int) (types.ERC721Token, error)
+	ERC721TokenByTokenID(contract types.Address, block uint64, tokenId *big.Int) (*types.ERC721Token, error)
 	ERC721TokensForAccountAtBlock(contract types.Address, holder types.Address, block uint64, options *types.TokenQueryOptions) ([]types.ERC721Token, error)
 	AllERC721TokensAtBlock(contract types.Address, block uint64, options *types.TokenQueryOptions) ([]types.ERC721Token, error)
 	AllHoldersAtBlock(contract types.Address, block uint64, options *types.TokenQueryOptions) ([]types.Address, error)
