@@ -267,7 +267,7 @@ func (cachingDB *DatabaseWithCache) RecordERC721Token(contract types.Address, ho
 	return cachingDB.db.RecordERC721Token(contract, holder, block, tokenId)
 }
 
-func (cachingDB *DatabaseWithCache) ERC721TokenByTokenID(contract types.Address, block uint64, tokenId *big.Int) (types.ERC721Token, error) {
+func (cachingDB *DatabaseWithCache) ERC721TokenByTokenID(contract types.Address, block uint64, tokenId *big.Int) (*types.ERC721Token, error) {
 	return cachingDB.db.ERC721TokenByTokenID(contract, block, tokenId)
 }
 

@@ -3,6 +3,7 @@ package memory
 import (
 	"errors"
 	"math/big"
+	"sort"
 	"sync"
 
 	"quorumengineering/quorum-report/database"
@@ -22,10 +23,12 @@ type MemoryDB struct {
 	txDB                     map[types.Hash]*types.Transaction
 	lastPersistedBlockNumber uint64
 	// index data
-	txIndexDB      map[types.Address]*TxIndexer
-	eventIndexDB   map[types.Address][]*types.Event
-	storageIndexDB map[types.Address]*StorageIndexer
-	lastFiltered   map[types.Address]uint64
+	txIndexDB        map[types.Address]*TxIndexer
+	eventIndexDB     map[types.Address][]*types.Event
+	storageIndexDB   map[types.Address]*StorageIndexer
+	lastFiltered     map[types.Address]uint64
+	erc20BalancesDB  []ERC20TokenHolder
+	erc721BalancesDB []types.ERC721Token
 	// mutex lock
 	mux sync.RWMutex
 }
@@ -50,6 +53,14 @@ type TxIndexer struct {
 	contractCreationTx types.Hash
 	txsTo              []types.Hash
 	txsInternalTo      []types.Hash
+}
+
+type ERC20TokenHolder struct {
+	Contract    types.Address
+	Holder      types.Address
+	BlockNumber uint64
+	Amount      string
+	HeldUntil   *uint64
 }
 
 func NewTxIndexer() *TxIndexer {
@@ -327,7 +338,15 @@ func (db *MemoryDB) GetAllTransactionsToAddress(address types.Address, options *
 	if !db.addressIsRegistered(address) {
 		return nil, errors.New("address is not registered")
 	}
-	return db.txIndexDB[address].txsTo, nil
+	var txs []types.Hash
+	txIndex := len(db.txIndexDB[address].txsTo) - 1
+
+	// reverse the order to get descending order
+	for txIndex >= 0 {
+		txs = append(txs, db.txIndexDB[address].txsTo[txIndex])
+		txIndex--
+	}
+	return txs, nil
 }
 
 func (db *MemoryDB) GetTransactionsToAddressTotal(address types.Address, options *types.QueryOptions) (uint64, error) {
@@ -345,7 +364,16 @@ func (db *MemoryDB) GetAllTransactionsInternalToAddress(address types.Address, o
 	if !db.addressIsRegistered(address) {
 		return nil, errors.New("address is not registered")
 	}
-	return db.txIndexDB[address].txsInternalTo, nil
+	var txs []types.Hash
+	txIndex := len(db.txIndexDB[address].txsInternalTo) - 1
+
+	// reverse the order to get descending order
+	for txIndex >= 0 {
+		txs = append(txs, db.txIndexDB[address].txsInternalTo[txIndex])
+		txIndex--
+	}
+
+	return txs, nil
 }
 
 func (db *MemoryDB) GetTransactionsInternalToAddressTotal(address types.Address, options *types.QueryOptions) (uint64, error) {
@@ -363,7 +391,11 @@ func (db *MemoryDB) GetAllEventsFromAddress(address types.Address, options *type
 	if !db.addressIsRegistered(address) {
 		return nil, errors.New("address is not registered")
 	}
-	return db.eventIndexDB[address], nil
+	events := db.eventIndexDB[address]
+	sort.SliceStable(events, func(i, j int) bool {
+		return events[i].BlockNumber > events[j].BlockNumber
+	})
+	return events, nil
 }
 
 func (db *MemoryDB) GetEventsFromAddressTotal(address types.Address, options *types.QueryOptions) (uint64, error) {
@@ -375,12 +407,53 @@ func (db *MemoryDB) GetEventsFromAddressTotal(address types.Address, options *ty
 	return uint64(len(db.eventIndexDB[address])), nil
 }
 
-func (db *MemoryDB) GetStorageWithOptions(types.Address, *types.PageOptions) ([]*types.StorageResult, error) {
-	return nil, database.ErrNotImplemented
+func (db *MemoryDB) GetStorageWithOptions(address types.Address, options *types.PageOptions) ([]*types.StorageResult, error) {
+	db.mux.RLock()
+	defer db.mux.RUnlock()
+	if !db.addressIsRegistered(address) {
+		return nil, errors.New("address is not registered")
+	}
+	var convertedList []*types.StorageResult
+
+	fromBlockNum := options.BeginBlockNumber.Uint64()
+	endBlockNum := options.EndBlockNumber.Int64()
+
+	storageIndexer, ok := db.storageIndexDB[address]
+	if ok {
+		for blkNum, storageRoot := range storageIndexer.root {
+			if blkNum >= fromBlockNum && (blkNum <= uint64(endBlockNum) || endBlockNum == -1) {
+				convertedList = append(convertedList, &types.StorageResult{
+					Storage:     storageIndexer.storage[storageRoot],
+					StorageRoot: types.NewHash(storageRoot),
+					BlockNumber: blkNum,
+				})
+			}
+		}
+	}
+
+	sort.SliceStable(convertedList, func(i, j int) bool {
+		return convertedList[i].BlockNumber > convertedList[j].BlockNumber
+	})
+	return convertedList, nil
 }
 
-func (db *MemoryDB) GetStorageTotal(types.Address, *types.PageOptions) (uint64, error) {
-	return 0, database.ErrNotImplemented
+func (db *MemoryDB) GetStorageTotal(address types.Address, options *types.PageOptions) (uint64, error) {
+	db.mux.RLock()
+	defer db.mux.RUnlock()
+	if !db.addressIsRegistered(address) {
+		return 0, errors.New("address is not registered")
+	}
+	fromBlockNum := options.BeginBlockNumber.Uint64()
+	endBlockNum := options.EndBlockNumber.Int64()
+	toBlockNum := options.EndBlockNumber.Uint64()
+	var total uint64
+	blockNum := fromBlockNum
+	for v := range db.storageIndexDB[address].root {
+		if v >= fromBlockNum && (endBlockNum == -1 || blockNum <= toBlockNum) {
+			total++
+		}
+	}
+	return total, nil
 }
 
 func (db *MemoryDB) GetStorageRanges(contract types.Address, options *types.PageOptions) ([]types.RangeResult, error) {
@@ -535,34 +608,228 @@ func (db *MemoryDB) removeAllIndices(address types.Address) error {
 	return nil
 }
 
+func (db *MemoryDB) getERC20EntryAtBlock(contract types.Address, holder types.Address, block uint64) (*ERC20TokenHolder, error) {
+	db.mux.RLock()
+	defer db.mux.RUnlock()
+	var tmpItem *ERC20TokenHolder
+	found := false
+	for i, item := range db.erc20BalancesDB {
+		if item.BlockNumber <= block && item.Contract == contract && item.Holder == holder {
+			if !found {
+				tmpItem = &db.erc20BalancesDB[i]
+				found = true
+			} else {
+				if item.BlockNumber > tmpItem.BlockNumber {
+					tmpItem = &db.erc20BalancesDB[i]
+				}
+			}
+		}
+	}
+	if !found {
+		return nil, database.ErrNotFound
+	}
+	return tmpItem, nil
+}
+
 func (db *MemoryDB) RecordNewERC20Balance(contract types.Address, holder types.Address, block uint64, amount *big.Int) error {
+	existingTokenEntry, errExisting := db.getERC20EntryAtBlock(contract, holder, block-1)
+	db.mux.Lock()
+	defer db.mux.Unlock()
+	if errExisting != nil && errExisting != database.ErrNotFound {
+		return errExisting
+	}
+
+	//add new entry
+	tokenInfo := ERC20TokenHolder{
+		Contract:    contract,
+		Holder:      holder,
+		BlockNumber: block,
+		Amount:      amount.String(),
+	}
+	db.erc20BalancesDB = append(db.erc20BalancesDB, tokenInfo)
+	/////
+	if errExisting == database.ErrNotFound {
+		return nil
+	}
+	blk := block - 1
+	existingTokenEntry.HeldUntil = &blk
+
 	return nil
 }
 
 func (db *MemoryDB) GetERC20Balance(contract types.Address, holder types.Address, options *types.TokenQueryOptions) (map[uint64]*big.Int, error) {
-	return nil, database.ErrNotImplemented
+	db.mux.RLock()
+	defer db.mux.RUnlock()
+	balanceMap := make(map[uint64]*big.Int)
+	frmBlkNum := options.BeginBlockNumber.Uint64()
+	endBlkNum := options.EndBlockNumber.Int64()
+	var maxEntry ERC20TokenHolder
+	maxEntryFound := false
+	for _, b := range db.erc20BalancesDB {
+		if contract == b.Contract && holder == b.Holder {
+			if b.BlockNumber >= frmBlkNum && (b.BlockNumber <= uint64(endBlkNum) || endBlkNum == -1) {
+				tokAmt, success := new(big.Int).SetString(b.Amount, 10)
+				if !success {
+					return nil, errors.New("could not parse token value")
+				}
+				balanceMap[b.BlockNumber] = tokAmt
+			}
+			if _, ok := balanceMap[frmBlkNum]; !ok && b.BlockNumber < frmBlkNum {
+				if !maxEntryFound {
+					maxEntry = b
+					maxEntryFound = true
+				} else {
+					if maxEntry.BlockNumber < b.BlockNumber {
+						maxEntry = b
+					}
+				}
+			}
+		}
+	}
+
+	if _, ok := balanceMap[frmBlkNum]; !ok && maxEntryFound {
+		tokAmt, success := new(big.Int).SetString(maxEntry.Amount, 10)
+		if !success {
+			return nil, errors.New("could not parse token value")
+		}
+		balanceMap[frmBlkNum] = tokAmt
+	}
+
+	return balanceMap, nil
 }
 
 func (db *MemoryDB) GetAllTokenHolders(contract types.Address, block uint64, options *types.TokenQueryOptions) ([]types.Address, error) {
-	return nil, database.ErrNotImplemented
+	db.mux.RLock()
+	defer db.mux.RUnlock()
+	var holderMap = make(map[types.Address]bool)
+	for _, k := range db.erc20BalancesDB {
+		if k.Contract == contract && k.BlockNumber <= block && k.Holder != "0000000000000000000000000000000000000000" {
+			holderMap[k.Holder] = true
+		}
+	}
+	holderArr := make([]types.Address, 0, len(holderMap))
+	for holdr := range holderMap {
+		holderArr = append(holderArr, holdr)
+	}
+	return holderArr, nil
 }
 
 func (db *MemoryDB) RecordERC721Token(contract types.Address, holder types.Address, block uint64, tokenId *big.Int) error {
+	//find old entry
+	existingTokenEntry, errExisting := db.ERC721TokenByTokenID(contract, block-1, tokenId)
+	db.mux.Lock()
+	defer db.mux.Unlock()
+	if errExisting != nil && errExisting != database.ErrNotFound {
+		return errExisting
+	}
+
+	//add new entry
+	tokenHolderInfo :=
+		types.ERC721Token{
+			Contract:  contract,
+			Holder:    holder,
+			Token:     tokenId.String(),
+			HeldFrom:  block,
+			HeldUntil: nil,
+		}
+	db.erc721BalancesDB = append(db.erc721BalancesDB, tokenHolderInfo)
+	/////
+	if errExisting == database.ErrNotFound {
+		return nil
+	}
+
+	blk := block - 1
+	existingTokenEntry.HeldUntil = &blk
 	return nil
 }
 
-func (db *MemoryDB) ERC721TokenByTokenID(contract types.Address, block uint64, tokenId *big.Int) (types.ERC721Token, error) {
-	return types.ERC721Token{}, database.ErrNotImplemented
+func (db *MemoryDB) ERC721TokenByTokenID(contract types.Address, block uint64, tokenId *big.Int) (*types.ERC721Token, error) {
+	db.mux.RLock()
+	defer db.mux.RUnlock()
+	var tmpItem int
+	found := false
+	for i, item := range db.erc721BalancesDB {
+		if item.Contract == contract && item.HeldFrom <= block && item.Token == tokenId.String() {
+			if !found {
+				tmpItem = i
+				found = true
+			} else {
+				if item.HeldFrom > db.erc721BalancesDB[tmpItem].HeldFrom {
+					tmpItem = i
+				}
+			}
+
+		}
+	}
+	if !found {
+		return nil, database.ErrNotFound
+	}
+	return &db.erc721BalancesDB[tmpItem], nil
 }
 
 func (db *MemoryDB) ERC721TokensForAccountAtBlock(contract types.Address, holder types.Address, block uint64, options *types.TokenQueryOptions) ([]types.ERC721Token, error) {
-	return nil, database.ErrNotImplemented
+	return db.erc721TokensAtBlock(contract, &holder, block, options)
+}
+
+func (db *MemoryDB) erc721TokensAtBlock(contract types.Address, holder *types.Address, block uint64, options *types.TokenQueryOptions) ([]types.ERC721Token, error) {
+	db.mux.RLock()
+	defer db.mux.RUnlock()
+	startTokenId := big.NewInt(-1)
+	if options.After != "" {
+		parsed, success := new(big.Int).SetString(options.After, 10)
+		if !success {
+			return nil, errors.New(`could not parse "after" token ID`)
+		}
+		startTokenId = parsed
+	}
+	tokenId := new(big.Int).Add(startTokenId, big.NewInt(1))
+
+	var tmpItem types.ERC721Token
+	found := false
+	result := make([]types.ERC721Token, 0, 0)
+	for _, k := range db.erc721BalancesDB {
+		if k.Contract == contract && (holder == nil || *holder == k.Holder) && k.HeldFrom <= block {
+			ercTokenId, success := new(big.Int).SetString(k.Token, 10)
+			if !success {
+				return nil, errors.New(`could not parse "erc721" token ID`)
+			}
+			if ercTokenId.Cmp(tokenId) >= 0 {
+				if !found {
+					tmpItem = k
+					result = append(result, tmpItem)
+					found = true
+				} else {
+					if k.HeldFrom > tmpItem.HeldFrom {
+						tmpItem = k
+						result = append(result, tmpItem)
+					}
+				}
+			}
+
+		}
+
+	}
+
+	return result, nil
 }
 
 func (db *MemoryDB) AllERC721TokensAtBlock(contract types.Address, block uint64, options *types.TokenQueryOptions) ([]types.ERC721Token, error) {
-	return nil, database.ErrNotImplemented
+	return db.erc721TokensAtBlock(contract, nil, block, options)
 }
 
 func (db *MemoryDB) AllHoldersAtBlock(contract types.Address, block uint64, options *types.TokenQueryOptions) ([]types.Address, error) {
-	return nil, database.ErrNotImplemented
+	res, err := db.erc721TokensAtBlock(contract, nil, block, options)
+	if err != nil {
+		return nil, err
+	}
+
+	var hldrMap = make(map[types.Address]bool)
+	for _, k := range res {
+		hldrMap[k.Holder] = true
+	}
+	holders := make([]types.Address, 0, len(hldrMap))
+	for k := range hldrMap {
+		holders = append(holders, k)
+	}
+	return holders, nil
 }

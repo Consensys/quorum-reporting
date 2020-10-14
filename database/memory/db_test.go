@@ -110,6 +110,7 @@ func TestMemoryDB(t *testing.T) {
 			},
 		},
 	}
+
 	testTemplateName := "test template name"
 	testTemplateStorage := "test template storage"
 	// 1. Add an address and get it.
@@ -140,6 +141,9 @@ func TestMemoryDB(t *testing.T) {
 	testGetTransactionsInternalToAddressTotal(t, db, addr, 1)
 	testGetAllEventsByAddress(t, db, addr, 1)
 	testGetStorage(t, db, addr, 1, 2)
+	testGetStorageTotal(t, db, addr, &types.PageOptions{BeginBlockNumber: big.NewInt(0), EndBlockNumber: big.NewInt(1)}, 1)
+	testGetStorageTotal(t, db, addr, &types.PageOptions{BeginBlockNumber: big.NewInt(0), EndBlockNumber: big.NewInt(-1)}, 1)
+	testGetStorageWithOptions(t, db, addr, &types.PageOptions{BeginBlockNumber: big.NewInt(0), EndBlockNumber: big.NewInt(1)}, 1)
 	// 6. Delete address and check last filtered
 	testDeleteAddress(t, db, addr, false)
 	testGetLastFiltered(t, db, addr, 0)
@@ -358,6 +362,18 @@ func testGetStorage(t *testing.T, db database.Database, address types.Address, b
 	assert.EqualValues(t, types.NewHash(""), storageUnknown.StorageRoot)
 }
 
+func testGetStorageTotal(t *testing.T, db database.Database, address types.Address, options *types.PageOptions, expected uint64) {
+	res, err := db.GetStorageTotal(address, options)
+	assert.Nil(t, err)
+	assert.Equal(t, res, expected)
+}
+
+func testGetStorageWithOptions(t *testing.T, db database.Database, address types.Address, options *types.PageOptions, expected int) {
+	res, err := db.GetStorageWithOptions(address, options)
+	assert.Nil(t, err)
+	assert.Equal(t, len(res), expected)
+}
+
 func TestMemoryDB_ContractCreationTransactions(t *testing.T) {
 	db := NewMemoryDB()
 	_ = db.AddAddresses([]types.Address{
@@ -470,4 +486,195 @@ func TestMemoryDB_GetStorageRanges(t *testing.T) {
 		assert.Nil(t, err)
 		assert.Equal(t, test.expectedResult, res)
 	}
+}
+
+func TestMemorydb_erc20Balance(t *testing.T) {
+	db := NewMemoryDB()
+	contrAddr := types.NewAddress("0x1932c48b2bf8102ba33b4a6b545c32236e342f34")
+	contrAddr1 := types.NewAddress("0x1932c48b2bf8102ba33b4a6b545c32236e342f55")
+	holder0 := types.NewAddress("0xed9d02e382b34818e88b88a309c7fe71e65f419d")
+	holder1 := types.NewAddress("0xca843569e3427144cead5e4d5999a3d0ccf92b8e")
+	holder2 := types.NewAddress("0xca843569e3427144cead5e4d5999a3d0ccf92bac")
+	var balances = []ERC20TokenHolder{
+		{
+			Contract:    contrAddr,
+			Holder:      holder0,
+			BlockNumber: 1,
+			Amount:      "1000",
+		},
+		{
+			Contract:    contrAddr,
+			Holder:      holder0,
+			BlockNumber: 2,
+			Amount:      "900",
+		},
+		{
+			Contract:    contrAddr,
+			Holder:      holder1,
+			BlockNumber: 2,
+			Amount:      "100",
+		},
+		{
+			Contract:    contrAddr,
+			Holder:      holder1,
+			BlockNumber: 3,
+			Amount:      "150",
+		},
+		{
+			Contract:    contrAddr,
+			Holder:      holder0,
+			BlockNumber: 3,
+			Amount:      "850",
+		},
+		{
+			Contract:    contrAddr1,
+			Holder:      holder2,
+			BlockNumber: 4,
+			Amount:      "850",
+		},
+		{
+			Contract:    contrAddr,
+			Holder:      holder0,
+			BlockNumber: 7,
+			Amount:      "77",
+		},
+	}
+
+	for _, b := range balances {
+		amount, _ := new(big.Int).SetString(b.Amount, 10)
+		err := db.RecordNewERC20Balance(b.Contract, b.Holder, b.BlockNumber, amount)
+		assert.Nil(t, err)
+	}
+	assert.Equal(t, len(db.erc20BalancesDB), len(balances))
+	var result, err = db.GetERC20Balance(contrAddr, holder0, &types.TokenQueryOptions{BeginBlockNumber: big.NewInt(1), EndBlockNumber: big.NewInt(1)})
+	assert.Nil(t, err)
+	assert.Equal(t, len(result), 1)
+	assert.Equal(t, result[1], big.NewInt(1000))
+
+	result, err = db.GetERC20Balance(contrAddr, holder0, &types.TokenQueryOptions{BeginBlockNumber: big.NewInt(1), EndBlockNumber: big.NewInt(2)})
+	assert.Nil(t, err)
+	assert.Equal(t, len(result), 2)
+	assert.Equal(t, result[1], big.NewInt(1000))
+	assert.Equal(t, result[2], big.NewInt(900))
+
+	result, err = db.GetERC20Balance(contrAddr, holder1, &types.TokenQueryOptions{BeginBlockNumber: big.NewInt(2), EndBlockNumber: big.NewInt(2)})
+	assert.Nil(t, err)
+	assert.Equal(t, len(result), 1)
+	assert.Equal(t, result[2], big.NewInt(100))
+
+	result, err = db.GetERC20Balance(contrAddr, holder1, &types.TokenQueryOptions{BeginBlockNumber: big.NewInt(2), EndBlockNumber: big.NewInt(3)})
+	assert.Nil(t, err)
+	assert.Equal(t, len(result), 2)
+	assert.Equal(t, result[2], big.NewInt(100))
+	assert.Equal(t, result[3], big.NewInt(150))
+
+	holdrArr, err := db.GetAllTokenHolders(contrAddr, 1, &types.TokenQueryOptions{BeginBlockNumber: big.NewInt(1), EndBlockNumber: big.NewInt(1)})
+	assert.Nil(t, err)
+	assert.Equal(t, len(holdrArr), 1)
+	assert.Equal(t, holdrArr[0], holder0)
+
+	holdrArr, err = db.GetAllTokenHolders(contrAddr, 2, &types.TokenQueryOptions{BeginBlockNumber: big.NewInt(1), EndBlockNumber: big.NewInt(2)})
+	assert.Nil(t, err)
+	assert.Equal(t, len(holdrArr), 2)
+
+	holder0Found := false
+	holder1Found := false
+	for _, h := range holdrArr {
+		if h == holder0 {
+			holder0Found = true
+		} else if h == holder1 {
+			holder1Found = true
+		}
+	}
+	assert.Equal(t, holder0Found, true)
+	assert.Equal(t, holder1Found, true)
+
+	// balance before begin block
+	result, err = db.GetERC20Balance(contrAddr, holder0, &types.TokenQueryOptions{BeginBlockNumber: big.NewInt(5), EndBlockNumber: big.NewInt(5)})
+	assert.Nil(t, err)
+	assert.Equal(t, len(result), 1)
+	assert.Equal(t, result[5], big.NewInt(850))
+
+	result, err = db.GetERC20Balance(contrAddr, holder0, &types.TokenQueryOptions{BeginBlockNumber: big.NewInt(5), EndBlockNumber: big.NewInt(7)})
+	assert.Nil(t, err)
+	assert.Equal(t, len(result), 2)
+	assert.Equal(t, result[5], big.NewInt(850))
+	assert.Equal(t, result[7], big.NewInt(77))
+
+}
+
+func TestMemorydb_erc721Balance(t *testing.T) {
+	db := NewMemoryDB()
+	contrAddr := types.NewAddress("0x1932c48b2bf8102ba33b4a6b545c32236e342f34")
+	holder0 := types.NewAddress("0xed9d02e382b34818e88b88a309c7fe71e65f419d")
+	holder1 := types.NewAddress("0xca843569e3427144cead5e4d5999a3d0ccf92b8e")
+	holder2 := types.NewAddress("0xee843569e3427144cead5e4d5999a3d0ccf92bdc")
+	var balances = []types.ERC721Token{
+		{
+			Contract: contrAddr,
+			Holder:   holder0,
+			Token:    "1",
+			HeldFrom: 1,
+		},
+		{
+			Contract: contrAddr,
+			Holder:   holder1,
+			Token:    "2",
+			HeldFrom: 3,
+		},
+		{
+			Contract: contrAddr,
+			Holder:   holder2,
+			Token:    "3",
+			HeldFrom: 5,
+		},
+	}
+	for _, b := range balances {
+		tokenId, _ := new(big.Int).SetString(b.Token, 10)
+		err := db.RecordERC721Token(b.Contract, b.Holder, b.HeldFrom, tokenId)
+		assert.Nil(t, err)
+	}
+
+	token, err := db.ERC721TokenByTokenID(contrAddr, 1, big.NewInt(1))
+	assert.Nil(t, err)
+	assert.Equal(t, token.Holder, holder0)
+
+	token, err = db.ERC721TokenByTokenID(contrAddr, 3, big.NewInt(2))
+	assert.Nil(t, err)
+	assert.Equal(t, token.Holder, holder1)
+
+	tokenArr, err := db.ERC721TokensForAccountAtBlock(contrAddr, holder0, 2, &types.TokenQueryOptions{BeginBlockNumber: big.NewInt(1), EndBlockNumber: big.NewInt(1)})
+	assert.Nil(t, err)
+	assert.Equal(t, len(tokenArr), 1)
+	assert.Equal(t, tokenArr[0].Holder, holder0)
+	assert.Equal(t, tokenArr[0].Token, "1")
+	assert.Equal(t, tokenArr[0].HeldFrom, uint64(1))
+
+	tokenArr, err = db.AllERC721TokensAtBlock(contrAddr, 3, &types.TokenQueryOptions{BeginBlockNumber: big.NewInt(1), EndBlockNumber: big.NewInt(1)})
+	assert.Nil(t, err)
+	assert.Equal(t, len(tokenArr), 2)
+	assert.Equal(t, tokenArr[0].Holder, holder0)
+	assert.Equal(t, tokenArr[0].Token, "1")
+	assert.Equal(t, tokenArr[0].HeldFrom, uint64(1))
+
+	assert.Equal(t, tokenArr[1].Holder, holder1)
+	assert.Equal(t, tokenArr[1].Token, "2")
+	assert.Equal(t, tokenArr[1].HeldFrom, uint64(3))
+
+	holdrArr, err := db.AllHoldersAtBlock(contrAddr, 3, &types.TokenQueryOptions{BeginBlockNumber: big.NewInt(1), EndBlockNumber: big.NewInt(1)})
+	assert.Nil(t, err)
+	assert.Equal(t, len(holdrArr), 2)
+
+	holder0Found := false
+	holder1Found := false
+	for _, h := range holdrArr {
+		if h == holder0 {
+			holder0Found = true
+		} else if h == holder1 {
+			holder1Found = true
+		}
+	}
+	assert.Equal(t, holder0Found, true)
+	assert.Equal(t, holder1Found, true)
+
 }

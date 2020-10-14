@@ -116,9 +116,11 @@ func (es *ElasticsearchDB) GetERC20Balance(contract types.Address, holder types.
 		if !success {
 			return nil, errors.New("could not parse token value")
 		}
-		balanceMap[blockNumber] = tokenAmount
+
 		if blockNumber < options.BeginBlockNumber.Uint64() {
 			balanceMap[options.BeginBlockNumber.Uint64()] = tokenAmount
+		} else {
+			balanceMap[blockNumber] = tokenAmount
 		}
 	}
 
@@ -155,7 +157,10 @@ func (es *ElasticsearchDB) GetAllTokenHolders(contract types.Address, block uint
 
 	convertedResults := make([]types.Address, 0, len(aggResult.Buckets))
 	for _, result := range aggResult.Buckets {
-		convertedResults = append(convertedResults, types.NewAddress(result.Key.Holder))
+		holder := types.NewAddress(result.Key.Holder)
+		if holder != "0000000000000000000000000000000000000000" {
+			convertedResults = append(convertedResults, holder)
+		}
 	}
 	return convertedResults, nil
 }
@@ -222,7 +227,7 @@ func (es *ElasticsearchDB) RecordERC721Token(contract types.Address, holder type
 	return err
 }
 
-func (es *ElasticsearchDB) ERC721TokenByTokenID(contract types.Address, block uint64, tokenId *big.Int) (types.ERC721Token, error) {
+func (es *ElasticsearchDB) ERC721TokenByTokenID(contract types.Address, block uint64, tokenId *big.Int) (*types.ERC721Token, error) {
 	formattedQuery := fmt.Sprintf(QueryERC721TokenAtBlock(), contract.String(), tokenId.String(), block)
 
 	pageSize := 1
@@ -234,20 +239,20 @@ func (es *ElasticsearchDB) ERC721TokenByTokenID(contract types.Address, block ui
 
 	results, err := es.doSearchRequest(searchReq)
 	if err != nil {
-		return types.ERC721Token{}, err
+		return nil, err
 	}
 
 	if len(results.Hits.Hits) == 0 {
-		return types.ERC721Token{}, database.ErrNotFound
+		return nil, database.ErrNotFound
 	}
 
 	var tokenResult types.ERC721Token
 	if err = mapstructure.Decode(results.Hits.Hits[0].Source, &tokenResult); err != nil {
-		return types.ERC721Token{}, err
+		return nil, err
 	}
 	tokenResult.Contract = contract
 	tokenResult.Holder = types.NewAddress(string(tokenResult.Holder))
-	return tokenResult, nil
+	return &tokenResult, nil
 }
 
 func (es *ElasticsearchDB) ERC721TokensForAccountAtBlock(contract types.Address, holder types.Address, block uint64, options *types.TokenQueryOptions) ([]types.ERC721Token, error) {
