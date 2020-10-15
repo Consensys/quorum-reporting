@@ -4,7 +4,7 @@ import { DEFAULT_RPC_URL } from '../../client/rpcClient'
 const initialState = {
   rpcEndpoint: DEFAULT_RPC_URL,
   isConnected: false,
-  lastPersistedBlockNumber: '',
+  lastPersistedBlockNumber: undefined,
   rowsPerPage: 25,
   selectedContract: '',
   contracts: [],
