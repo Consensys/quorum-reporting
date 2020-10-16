@@ -87,7 +87,7 @@ export default function HeaderContainer() {
         if (isConnected) {
           console.error('Could not get latest block number, disconnecting.', e)
           dispatch(disconnectAction())
-          dispatch(updateBlockNumberAction(''))
+          dispatch(updateBlockNumberAction(undefined))
         }
       })
   }

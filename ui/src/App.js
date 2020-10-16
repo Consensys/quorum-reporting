@@ -23,7 +23,7 @@ const useStyles = makeStyles(() => ({
 function App() {
   const classes = useStyles()
   const ready = useSelector(
-    (state) => state.system.isConnected && state.system.lastPersistedBlockNumber,
+    (state) => state.system.isConnected && state.system.lastPersistedBlockNumber !== undefined,
   )
   return (
     <Router>
