@@ -181,7 +181,7 @@ func (cachingDB *DatabaseWithCache) ReadTransaction(hash types.Hash) (*types.Tra
 	return tx, nil
 }
 
-func (cachingDB *DatabaseWithCache) IndexBlocks(addresses []types.Address, blocks []*types.Block) error {
+func (cachingDB *DatabaseWithCache) IndexBlocks(addresses []types.Address, blocks []*types.BlockWithTransactions) error {
 	return cachingDB.db.IndexBlocks(addresses, blocks)
 }
 

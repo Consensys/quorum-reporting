@@ -55,8 +55,15 @@ var (
 		Hash:   types.NewHash("dummy"),
 		Number: 1,
 		Transactions: []types.Hash{
-			types.NewHash("0x1a6f4292bac138df9a7854a07c93fd14ca7de53265e8fe01b6c986f97d6c1ee7"), types.NewHash("0xbc77a72b3409ba3e098cb45bac1b7727b59dae9a05f37a0dbc61007949c8cede"), types.NewHash("0xb2d58900a820afddd1d926845e7655d445885524b9af1cc946b45949be74cc08"),
+			types.NewHash("0x1a6f4292bac138df9a7854a07c93fd14ca7de53265e8fe01b6c986f97d6c1ee7"),
+			types.NewHash("0xbc77a72b3409ba3e098cb45bac1b7727b59dae9a05f37a0dbc61007949c8cede"),
+			types.NewHash("0xb2d58900a820afddd1d926845e7655d445885524b9af1cc946b45949be74cc08"),
 		},
+	}
+	blockWithTransactions = &types.BlockWithTransactions{
+		Hash:         types.NewHash("dummy"),
+		Number:       1,
+		Transactions: []*types.Transaction{tx1, tx2, tx3},
 	}
 )
 
@@ -126,7 +133,7 @@ func TestMemoryDB(t *testing.T) {
 	// 5. Index block and check last filtered. Retrieve all transactions/ events.
 	testGetLastFiltered(t, db, addr, 0)
 	testIndexStorage(t, db, 1, rawStorage)
-	testIndexBlock(t, db, addr, block)
+	testIndexBlock(t, db, addr, blockWithTransactions)
 	testGetLastFiltered(t, db, addr, 1)
 	testGetAllTransactionsToAddress(t, db, addr, types.NewHash("0xb2d58900a820afddd1d926845e7655d445885524b9af1cc946b45949be74cc08"))
 	testGetTransactionsToAddressTotal(t, db, addr, 1)
@@ -271,11 +278,9 @@ func testReadTransaction(t *testing.T, db database.Database, hash types.Hash, ex
 	}
 }
 
-func testIndexBlock(t *testing.T, db database.Database, address types.Address, block *types.Block) {
-	err := db.IndexBlocks([]types.Address{address}, []*types.Block{block})
-	if err != nil {
-		t.Fatalf("expected no error, but got %v", err)
-	}
+func testIndexBlock(t *testing.T, db database.Database, address types.Address, block *types.BlockWithTransactions) {
+	err := db.IndexBlocks([]types.Address{address}, []*types.BlockWithTransactions{block})
+	assert.Nil(t, err)
 }
 
 func testIndexStorage(t *testing.T, db database.Database, blockNumber uint64, rawStorage map[types.Address]*types.AccountState) {

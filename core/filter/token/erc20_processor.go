@@ -24,17 +24,12 @@ func NewERC20Processor(database TokenFilterDatabase, client client.Client) *ERC2
 	return &ERC20Processor{db: database, client: client}
 }
 
-func (p *ERC20Processor) ProcessBlock(lastFilteredWithAbi map[types.Address]string, block *types.Block) error {
+func (p *ERC20Processor) ProcessBlock(lastFilteredWithAbi map[types.Address]string, block *types.BlockWithTransactions) error {
 	addressesWithChangedBalances := make(map[types.Address]map[types.Address]bool)
 	erc20Contracts := p.filterForErc20Contracts(lastFilteredWithAbi)
 
 	for _, tx := range block.Transactions {
-		transaction, err := p.db.ReadTransaction(tx)
-		if err != nil {
-			return err
-		}
-
-		thisTxTokenChanges := p.ChangedTokenHolders(erc20Contracts, transaction)
+		thisTxTokenChanges := p.ChangedTokenHolders(erc20Contracts, tx)
 		for contract, holders := range thisTxTokenChanges {
 			if addressesWithChangedBalances[contract] == nil {
 				addressesWithChangedBalances[contract] = holders

@@ -298,7 +298,7 @@ func (db *MemoryDB) IndexStorage(rawStorage map[types.Address]*types.AccountStat
 	return nil
 }
 
-func (db *MemoryDB) IndexBlocks(addresses []types.Address, blocks []*types.Block) error {
+func (db *MemoryDB) IndexBlocks(addresses []types.Address, blocks []*types.BlockWithTransactions) error {
 	for _, block := range blocks {
 		db.indexBlock(addresses, block)
 	}
@@ -555,7 +555,7 @@ func (db *MemoryDB) addressIsRegistered(address types.Address) bool {
 	return false
 }
 
-func (db *MemoryDB) indexBlock(addresses []types.Address, block *types.Block) error {
+func (db *MemoryDB) indexBlock(addresses []types.Address, block *types.BlockWithTransactions) error {
 	db.mux.Lock()
 	defer db.mux.Unlock()
 	// filter out registered and unfiltered address only
@@ -568,8 +568,8 @@ func (db *MemoryDB) indexBlock(addresses []types.Address, block *types.Block) er
 	}
 
 	// index transactions and events
-	for _, txHash := range block.Transactions {
-		db.indexTransaction(filteredAddresses, db.txDB[txHash])
+	for _, tx := range block.Transactions {
+		db.indexTransaction(filteredAddresses, db.txDB[tx.Hash])
 	}
 
 	for address := range filteredAddresses {

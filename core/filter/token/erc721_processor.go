@@ -23,16 +23,12 @@ func NewERC721Processor(database TokenFilterDatabase) *ERC721Processor {
 	return &ERC721Processor{db: database}
 }
 
-func (p *ERC721Processor) ProcessBlock(lastFilteredWithAbi map[types.Address]string, block *types.Block) error {
+func (p *ERC721Processor) ProcessBlock(lastFilteredWithAbi map[types.Address]string, block *types.BlockWithTransactions) error {
 	erc721Contracts := p.filterForErc721Contracts(lastFilteredWithAbi)
 
 	events := make([]*types.Event, 0)
 	for _, tx := range block.Transactions {
-		transaction, err := p.db.ReadTransaction(tx)
-		if err != nil {
-			return err
-		}
-		events = append(events, transaction.Events...)
+		events = append(events, tx.Events...)
 	}
 	erc721Events := p.filterForErc721Events(erc721Contracts, events)
 	mappedTokens := p.MapEventsToHolders(erc721Events)
