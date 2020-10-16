@@ -40,6 +40,10 @@ const useStyles = makeStyles((theme) => ({
     padding: 16,
     fontSize: 18,
   },
+  footer: {
+    display: 'table-caption',
+    textAlign: 'right !important',
+  }
 }))
 
 export default function PaginatedTableView({
@@ -85,6 +89,7 @@ export default function PaginatedTableView({
     setLastItemEachPage([])
   }
 
+  const multiPage = total !== list.length
   return (
     <Paper className={classes.container}>
       <div className={classes.titleContainer}>
@@ -102,10 +107,11 @@ export default function PaginatedTableView({
       {error && <Typography className={classes.errorRow}>{error}</Typography>}
       <TableContainer component={Paper}>
         <Table size="small" className={classes.table} aria-label="simple table">
+          {!multiPage && <caption className={classes.footer}>{total} results</caption> }
           <HeaderView />
           <TableBody>
             {list.map(ItemView)}
-            <TableRow key="pagination">
+            {multiPage && <TableRow key="pagination">
               <TablePagination
                 count={total}
                 rowsPerPage={rowsPerPage}
@@ -117,7 +123,7 @@ export default function PaginatedTableView({
                 onChangePage={handleChangePage}
                 onChangeRowsPerPage={handleChangeRowsPerPage}
               />
-            </TableRow>
+            </TableRow>}
           </TableBody>
         </Table>
       </TableContainer>

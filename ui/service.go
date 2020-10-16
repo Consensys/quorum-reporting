@@ -37,6 +37,12 @@ func (handler *UIHandler) Start() error {
 	// start a light weighted sample sample ui
 	router := gin.Default()
 	router.StaticFS("/", statikFS)
+	router.NoRoute(func(c *gin.Context) {
+		// React-router uses fake urls to handle deep links and routing in the ui. If the user goes
+		// directly to a non-root path it will 404. Instead, just silently serve them the root html
+		c.Request.URL.Path = "/"
+		router.HandleContext(c)
+	})
 
 	handler.srv = &http.Server{
 		Addr:    ":" + strconv.Itoa(handler.port),

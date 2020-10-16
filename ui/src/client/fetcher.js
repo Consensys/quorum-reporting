@@ -52,6 +52,12 @@ export function getContractCreationTx(address) {
 export function getToTxs(address, options) {
   return getAllTransactionsToAddress(address, options)
     .then((res) => {
+      if(!res.transactions) {
+        return {
+          data: [],
+          total: 0,
+        }
+      }
       return getTransactionsDetail(res.transactions)
         .then((txs) => {
           return {
@@ -65,6 +71,12 @@ export function getToTxs(address, options) {
 export function getInternalToTxs(address, options) {
   return getAllTransactionsInternalToAddress(address, options)
     .then((res) => {
+      if(!res.transactions) {
+        return {
+          data: [],
+          total: 0,
+        }
+      }
       return getTransactionsDetail(res.transactions)
         .then((txs) => {
           return {
@@ -119,7 +131,7 @@ export function getReportData(address, startBlockNumber, endBlockNumber, options
 }
 
 function calculateTotal(result, options) {
-  const lastPage = result.length < options.pageSize
+  const lastPage = result.length !== options.pageSize
   const currentTotal = options.pageSize * options.pageNumber + result.length
   // -1 means total unknown, set current total to disable next on last page
   const total = lastPage ? currentTotal : -1
@@ -158,7 +170,7 @@ export function getERC20Balance(address, holder, startBlockNumber, endBlockNumbe
           balance: value,
         }))
         .sort((one, two) => two.block - one.block)
-      const total = calculateTotal(res, options)
+      const total = calculateTotal(data, options)
       return {
         data,
         total,
