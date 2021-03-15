@@ -11,7 +11,7 @@ over its lifetime. It will also interpret and parse events that the contract emi
 ### Pre-requisites
 
 - Running Quorum
-    - Quorum must be a version that supports the dump accounts API method, which is currently merged but unreleased. Build Quorum from the master branch to get this feature.
+    - Quorum v20.10.0
     - Quorum needs to be run with GraphQL and websockets open, with `eth`, `admin` and `debug` RPC APIs available.
     - Quorum Reporting fetches a lot of historic data that is pruned by Quorum under default `full` gcmode. It is recommended to run Quorum in `archive` mode.
     - If connecting using a hostname, make sure Geth is started with the correct `graphql.vhosts` attribute suitable to your environment. For testing, `--graphql.vhosts '*'` is sufficient.
