@@ -77,14 +77,25 @@ func (sf *StorageFilter) IndexStorage(addresses []types.Address, startBlockNumbe
 func (sf *StorageFilter) StateFetchWorker() {
 	go func() {
 		defer sf.shutdownWg.Done()
+		var lastFilteredMap = make(map[types.Address]bool)
 		for {
 			select {
 			case <-sf.shutdownChannel:
 				log.Debug("Shutdown request received", "loc", "storage filter - state fetch worker")
 				return
 			case blockToPull := <-sf.incomingBlockChan:
+
 				log.Debug("Fetching contract storage", "block number", blockToPull.BlockNumber)
 				for _, address := range blockToPull.Addresses {
+					if lastFiltered, err := sf.db.GetLastFiltered(address); err != nil {
+						log.Error("getLastFiltered failed", "address", address, "err", err)
+					} else {
+						if lastFiltered > 0 {
+							lastFilteredMap[address] = true
+						} else {
+							lastFilteredMap[address] = false
+						}
+					}
 					changed, err := sf.didStorageRootChange(address, blockToPull.BlockNumber)
 					for err != nil {
 						changed, err = sf.didStorageRootChange(address, blockToPull.BlockNumber)
@@ -94,11 +105,11 @@ func (sf *StorageFilter) StateFetchWorker() {
 					}
 
 					log.Debug("Fetching contract storage", "address", address.String(), "block number", blockToPull.BlockNumber)
-					dumpAccount, err := client.DumpAddress(sf.quorumClient, address, blockToPull.BlockNumber)
+					dumpAccount, err := client.DumpAddress(sf.quorumClient, address, blockToPull.BlockNumber-1, blockToPull.BlockNumber, lastFilteredMap[address])
 					for err != nil {
 						log.Error("Unable to fetch contract state", "address", address.String(), "block number", blockToPull.BlockNumber, "err", err)
 						time.Sleep(time.Second) //TODO: make adaptive or block until websocket available
-						dumpAccount, err = client.DumpAddress(sf.quorumClient, address, blockToPull.BlockNumber)
+						dumpAccount, err = client.DumpAddress(sf.quorumClient, address, blockToPull.BlockNumber-1, blockToPull.BlockNumber, lastFilteredMap[address])
 					}
 					blockToPull.AccountState[address] = dumpAccount
 				}

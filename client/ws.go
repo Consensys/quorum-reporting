@@ -117,11 +117,11 @@ func (c *webSocketClient) subscribeChainHead(ch chan<- types.RawHeader) error {
 }
 
 // send rpc call
-func (c *webSocketClient) sendRPCMsg(ch chan<- *message, method string, args ...interface{}) error {
+func (c *webSocketClient) sendRPCMsg(ch chan<- *message, method string, args ...interface{}) (error, string) {
 	c.connMux.Lock()
 	defer c.connMux.Unlock()
 	if c.conn == nil {
-		return errors.New("no WebSocket connection")
+		return errors.New("no WebSocket connection"), ""
 	}
 
 	msg := &message{
@@ -133,7 +133,7 @@ func (c *webSocketClient) sendRPCMsg(ch chan<- *message, method string, args ...
 	if args != nil {
 		params, err := json.Marshal(args)
 		if err != nil {
-			return err
+			return err, msg.ID
 		}
 		msg.Params = params
 	}
@@ -146,9 +146,9 @@ func (c *webSocketClient) sendRPCMsg(ch chan<- *message, method string, args ...
 
 	if err := c.conn.WriteJSON(msg); err != nil {
 		log.Error("Write JSON RPC message error", "error", err, "msg", msg)
-		return err
+		return err, msg.ID
 	}
-	return nil
+	return nil, msg.ID
 }
 
 // listen and handle message

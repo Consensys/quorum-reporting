@@ -72,12 +72,13 @@ func (fs *FilterService) Start() error {
 					log.Warn("Fetching last persisted block number failed", "err", err)
 					continue
 				}
-				log.Debug("Last persisted block number found", "block number", current)
+				log.Debug("FilterService - Last persisted block number found", "block number", current)
 				lastFilteredAll, lastFiltered, err := fs.getLastFiltered(current)
 				if err != nil {
 					log.Warn("Fetching last filtered failed", "err", err)
 					continue
 				}
+				log.Debug("FilterService - check Indexing for registered addresses", "current", current, "lastFiltered", lastFiltered)
 				for current > lastFiltered {
 					//check if we are shutting down before next round
 					select {

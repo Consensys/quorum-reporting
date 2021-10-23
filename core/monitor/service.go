@@ -109,6 +109,7 @@ func (m *MonitorService) startWorker(stopChan <-chan struct{}) {
 		select {
 		case block := <-m.newBlockChan:
 			// Listen to new block channel and process if new block comes.
+			log.Debug("worker - new block received", "number", block.Number)
 			err := m.processBlock(block)
 			for err != nil {
 				log.Warn("Error processing block", "block number", block.Number, "err", err)
