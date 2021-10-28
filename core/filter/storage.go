@@ -87,7 +87,8 @@ func (sf *StorageFilter) StateFetchWorker() {
 
 				log.Debug("Fetching contract storage", "block number", blockToPull.BlockNumber)
 				for _, address := range blockToPull.Addresses {
-					if _, lastFilteredFound := lastFilteredMap[address]; !lastFilteredFound {
+					found, filtered := lastFilteredMap[address]
+					if !found || !filtered {
 						if lastFiltered, err := sf.db.GetLastFiltered(address); err != nil {
 							log.Error("getLastFiltered failed", "address", address, "err", err)
 						} else {
