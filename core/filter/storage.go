@@ -17,6 +17,7 @@ const (
 	FirstState   StateChange = iota // First state of contract (creation)
 	StateChanged                    // state changed
 	NoChange                        // no change in state
+	NotFound                        // not found
 )
 
 type StorageFilter struct {
@@ -100,7 +101,7 @@ func (sf *StorageFilter) StateFetchWorker() {
 						state, err = sf.didStorageRootChange(address, blockToPull.BlockNumber)
 					}
 					log.Debug("didStorageRootChange", "changed", state, "err", err)
-					if state == NoChange {
+					if state == NoChange || state == NotFound {
 						continue
 					}
 					changed := state == StateChanged
@@ -197,6 +198,12 @@ func (sf *StorageFilter) didStorageRootChange(contract types.Address, blockNum u
 
 	if err != nil {
 		return NoChange, err
+	}
+
+	// when storageRoot returns 'can't find state object' error storageRoot is empty and err is nil
+	// in this case we should treat it as state not found
+	if storageRootThisBlock == types.NewHash("") {
+		return NotFound, nil
 	}
 
 	storageRootPrevBlock, err := client.StorageRoot(sf.quorumClient, contract, blockNum-1)
