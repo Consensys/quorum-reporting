@@ -10,6 +10,16 @@ import (
 	"quorumengineering/quorum-report/types"
 )
 
+// enum to track state change between current block and previous block
+type StateChange int
+
+const (
+	FirstState   StateChange = iota // First state of contract (creation)
+	StateChanged                    // state changed
+	NoChange                        // no change in state
+	NotFound                        // not found
+)
+
 type StorageFilter struct {
 	db           FilterServiceDB
 	quorumClient client.Client
@@ -85,20 +95,23 @@ func (sf *StorageFilter) StateFetchWorker() {
 			case blockToPull := <-sf.incomingBlockChan:
 				log.Debug("Fetching contract storage", "block number", blockToPull.BlockNumber)
 				for _, address := range blockToPull.Addresses {
-					changed, err := sf.didStorageRootChange(address, blockToPull.BlockNumber)
+					state, err := sf.didStorageRootChange(address, blockToPull.BlockNumber)
 					for err != nil {
-						changed, err = sf.didStorageRootChange(address, blockToPull.BlockNumber)
+						log.Error("didStorageRootChange failed", "changed", state, "err", err)
+						state, err = sf.didStorageRootChange(address, blockToPull.BlockNumber)
 					}
-					if !changed {
+					log.Debug("didStorageRootChange", "changed", state, "err", err)
+					if state == NoChange || state == NotFound {
 						continue
 					}
+					changed := state == StateChanged
 
 					log.Debug("Fetching contract storage", "address", address.String(), "block number", blockToPull.BlockNumber)
-					dumpAccount, err := client.DumpAddress(sf.quorumClient, address, blockToPull.BlockNumber)
+					dumpAccount, err := client.DumpAddress(sf.quorumClient, address, blockToPull.BlockNumber-1, blockToPull.BlockNumber, changed)
 					for err != nil {
 						log.Error("Unable to fetch contract state", "address", address.String(), "block number", blockToPull.BlockNumber, "err", err)
 						time.Sleep(time.Second) //TODO: make adaptive or block until websocket available
-						dumpAccount, err = client.DumpAddress(sf.quorumClient, address, blockToPull.BlockNumber)
+						dumpAccount, err = client.DumpAddress(sf.quorumClient, address, blockToPull.BlockNumber-1, blockToPull.BlockNumber, changed)
 					}
 					blockToPull.AccountState[address] = dumpAccount
 				}
@@ -177,16 +190,35 @@ func (sf *StorageFilter) Stop() {
 	log.Info("Finished stopping storage filter")
 }
 
-func (sf *StorageFilter) didStorageRootChange(contract types.Address, blockNum uint64) (bool, error) {
+var gCount int = 0
+
+func (sf *StorageFilter) didStorageRootChange(contract types.Address, blockNum uint64) (StateChange, error) {
+	gCount++
 	storageRootThisBlock, err := client.StorageRoot(sf.quorumClient, contract, blockNum)
+
 	if err != nil {
-		return false, err
+		return NoChange, err
+	}
+
+	// when storageRoot returns 'can't find state object' error storageRoot is empty and err is nil
+	// in this case we should treat it as state not found
+	if storageRootThisBlock == types.NewHash("") {
+		return NotFound, nil
 	}
 
 	storageRootPrevBlock, err := client.StorageRoot(sf.quorumClient, contract, blockNum-1)
 	if err != nil {
-		return false, err
+		return NoChange, err
 	}
 
-	return storageRootPrevBlock != storageRootThisBlock, nil
+	// when storageRoot returns 'can't find state object' error storageRoot is empty and err is nil
+	// in this case we should treat it as FirstState so that we could get the full state instead of modified state
+	if storageRootPrevBlock == types.NewHash("") {
+		return FirstState, nil
+	}
+	changed := storageRootPrevBlock != storageRootThisBlock
+	if changed {
+		return StateChanged, nil
+	}
+	return NoChange, nil
 }

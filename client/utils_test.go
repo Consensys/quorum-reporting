@@ -79,7 +79,7 @@ func TestDumpAddress_WithError(t *testing.T) {
 	mockRPC := map[string]interface{}{}
 	stubClient := NewStubQuorumClient(nil, mockRPC)
 
-	dump, err := DumpAddress(stubClient, types.NewAddress("0x1349f3e1b8d71effb47b840594ff27da7e603d17"), 1)
+	dump, err := DumpAddress(stubClient, types.NewAddress("0x1349f3e1b8d71effb47b840594ff27da7e603d17"), 0, 1, false)
 	assert.EqualError(t, err, "not found")
 	assert.Nil(t, dump)
 }
@@ -93,7 +93,7 @@ func TestDumpAddress(t *testing.T) {
 	}
 	stubClient := NewStubQuorumClient(nil, mockRPC)
 
-	dump, err := DumpAddress(stubClient, types.NewAddress("0x1349f3e1b8d71effb47b840594ff27da7e603d17"), 1)
+	dump, err := DumpAddress(stubClient, types.NewAddress("0x1349f3e1b8d71effb47b840594ff27da7e603d17"), 0, 1, false)
 	assert.Nil(t, err)
 	assert.EqualValues(t, &types.AccountState{
 		Root:    types.NewHash("0xefe5cb8d23d632b5d2cdd9f0a151c4b1a84ccb7afa1c57331009aa922d5e4f36"),

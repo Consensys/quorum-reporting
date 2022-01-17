@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"reflect"
 	"sync"
 	"time"
@@ -63,6 +64,7 @@ func (qc *QuorumClient) SubscribeChainHead(ch chan<- types.RawHeader) error {
 
 // Execute customized graphql query.
 func (qc *QuorumClient) ExecuteGraphQLQuery(result interface{}, query string) error {
+	log.Debug("Execute graphQLQuery", query)
 	// Build a request from query.
 	req := graphql.NewRequest(query)
 	// Run it and capture the response.
@@ -72,18 +74,32 @@ func (qc *QuorumClient) ExecuteGraphQLQuery(result interface{}, query string) er
 // Execute customized rpc call.
 func (qc *QuorumClient) RPCCall(result interface{}, method string, args ...interface{}) error {
 	resultChan := make(chan *message, 1)
-	err := qc.wsClient.sendRPCMsg(resultChan, method, args...)
+	err, id := qc.wsClient.sendRPCMsg(resultChan, method, args...)
 	if err != nil {
 		return err
 	}
 
-	rpcCallTimeout := time.NewTicker(time.Second * 1)
+	//Set default timeout for RPC calls
+	defaultTimeout := 5 * time.Second
+
+	switch method {
+	case modifiedState:
+	case dumpAddress:
+		defaultTimeout = 5 * time.Minute
+		break
+	case traceTransaction:
+		defaultTimeout = 2 * time.Minute
+		break
+	}
+
+	rpcCallTimeout := time.NewTicker(defaultTimeout)
 	defer rpcCallTimeout.Stop()
 	select {
 	case response := <-resultChan:
 		if response == nil {
 			return errors.New("nil rpc response")
 		}
+		log.Debug("rpc call response received", "method", method, "id", id)
 		log.Debug("rpc call response", "response", string(response.Result))
 		if response.Error != nil {
 			return response.Error
@@ -94,7 +110,7 @@ func (qc *QuorumClient) RPCCall(result interface{}, method string, args ...inter
 		}
 		return nil
 	case <-rpcCallTimeout.C:
-		return errors.New("rpc call timeout")
+		return fmt.Errorf("rpc call %s with msg.ID=%s timed out", method, id)
 	}
 }
 

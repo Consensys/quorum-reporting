@@ -3,9 +3,11 @@ package rpc
 import (
 	"encoding/json"
 	"errors"
+	"math/big"
 	"net/http"
 	"quorumengineering/quorum-report/core/storageparsing"
 	"quorumengineering/quorum-report/database"
+	"quorumengineering/quorum-report/log"
 	"quorumengineering/quorum-report/types"
 )
 
@@ -242,6 +244,14 @@ func (r *RPCAPIs) GetStorageHistory(req *http.Request, args *AddressWithBlockRan
 	if args.Options == nil {
 		args.Options = &types.PageOptions{}
 	}
+	// save beginBlockNumber for filtering the final results
+	var beginBlockNumber uint64
+	if args.Options.BeginBlockNumber != nil {
+		beginBlockNumber = args.Options.BeginBlockNumber.Uint64()
+	}
+	// always set begin block number to 1 to enable building the full state incrementally upto endBlockNumber
+	args.Options.BeginBlockNumber = big.NewInt(1)
+
 	args.Options.SetDefaults()
 
 	rawAbi, err := r.db.GetStorageLayout(*args.Address)
@@ -251,37 +261,52 @@ func (r *RPCAPIs) GetStorageHistory(req *http.Request, args *AddressWithBlockRan
 	if rawAbi == "" {
 		return errors.New("no Storage Layout present to parse with")
 	}
+	log.Debug("GetStorageHistory", "raw storage layout", rawAbi)
 	var parsedAbi types.SolidityStorageDocument
 	if err = json.Unmarshal([]byte(rawAbi), &parsedAbi); err != nil {
 		return errors.New("unable to decode Storage Layout: " + err.Error())
 	}
 
 	total, err := r.db.GetStorageTotal(*args.Address, args.Options)
-
 	if err != nil {
 		return err
 	}
-
+	log.Debug("GetStorageHistory", "total states", total)
 	historicStates := []*types.ParsedState{}
 	results, err := r.db.GetStorageWithOptions(*args.Address, args.Options)
+	log.Debug("GetStorageHistory", "raw storage layout results", results)
 	if err != nil {
 		return err
 	}
-	for _, rawStorage := range results {
-
+	index := len(results) - 1
+	var incrStorage map[types.Hash]string
+	//iterate the results by blockNumber in ascending order to build state incrementally
+	//as results are sorted by blockNumber in descending order
+	for index >= 0 {
+		rawStorage := results[index]
 		if rawStorage == nil {
+			index -= 1
 			continue
 		}
-
-		historicStorage, err := storageparsing.ParseRawStorage(rawStorage.Storage, parsedAbi)
-		if err != nil {
-			return err
+		if incrStorage != nil {
+			appendMap(&incrStorage, &rawStorage.Storage)
+		} else {
+			incrStorage = rawStorage.Storage
 		}
-		historicStates = append(historicStates, &types.ParsedState{
-			BlockNumber:     rawStorage.BlockNumber,
-			HistoricStorage: historicStorage,
-		})
+		log.Debug("GetStorageHistory", "index", index, "blockNumber", rawStorage.BlockNumber, "incrMap", incrStorage)
+		if rawStorage.BlockNumber >= beginBlockNumber {
+			historicStorage, err := storageparsing.ParseRawStorage(incrStorage, parsedAbi)
+			if err != nil {
+				return err
+			}
+			historicStates = append(historicStates, &types.ParsedState{
+				BlockNumber:     rawStorage.BlockNumber,
+				HistoricStorage: historicStorage,
+			})
+		}
+		index -= 1
 	}
+	reverseParsedStateArray(&historicStates)
 	*reply = types.ReportingResponseTemplate{
 		Address:       *args.Address,
 		HistoricState: historicStates,
@@ -289,6 +314,22 @@ func (r *RPCAPIs) GetStorageHistory(req *http.Request, args *AddressWithBlockRan
 		Options:       args.Options,
 	}
 	return nil
+}
+
+func appendMap(srcMap *map[types.Hash]string, targetMap *map[types.Hash]string) {
+	for k, v := range *targetMap {
+		(*srcMap)[k] = v
+	}
+}
+
+func reverseParsedStateArray(stateArr *[]*types.ParsedState) {
+	p1 := 0
+	p2 := len(*stateArr) - 1
+	for p1 < p2 {
+		(*stateArr)[p1], (*stateArr)[p2] = (*stateArr)[p2], (*stateArr)[p1]
+		p1 += 1
+		p2 -= 1
+	}
 }
 
 func (r *RPCAPIs) AddAddress(req *http.Request, args *AddressWithOptionalBlock, reply *NullArgs) error {

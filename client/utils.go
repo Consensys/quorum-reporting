@@ -12,6 +12,7 @@ import (
 const (
 	ethCall          = "eth_call"
 	adminInfo        = "admin_nodeInfo"
+	modifiedState    = "debug_getModifiedState"
 	dumpAddress      = "debug_dumpAddress"
 	traceTransaction = "debug_traceTransaction"
 	getCode          = "eth_getCode"
@@ -23,10 +24,15 @@ const (
 	ethKey           = "eth"
 )
 
-func DumpAddress(c Client, address types.Address, blockNumber uint64) (*types.AccountState, error) {
-	log.Debug("Fetching account dump", "account", address.String(), "blocknumber", blockNumber)
+func DumpAddress(c Client, address types.Address, fromBlockNumber, toBlockNumber uint64, queryStateChange bool) (*types.AccountState, error) {
+	log.Debug("Fetching account dump", "account", address.String(), "fromBlocknumber", fromBlockNumber, "toBlocknumber", toBlockNumber)
 	dumpAccount := &types.RawAccountState{}
-	err := c.RPCCall(&dumpAccount, dumpAddress, address.String(), fmtBlockNum(blockNumber))
+	var err error
+	if queryStateChange {
+		err = c.RPCCall(&dumpAccount, modifiedState, address.String(), fmtBlockNum(fromBlockNumber), fmtBlockNum(toBlockNumber))
+	} else {
+		err = c.RPCCall(&dumpAccount, dumpAddress, address.String(), fmtBlockNum(toBlockNumber))
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -35,6 +41,7 @@ func DumpAddress(c Client, address types.Address, blockNumber uint64) (*types.Ac
 	for k, v := range dumpAccount.Storage {
 		converted[types.NewHash(k)] = v
 	}
+	log.Debug("dumpAddress", "modifiedState", queryStateChange, "from", fromBlockNumber, "to", toBlockNumber, "account", address.String(), "state", converted)
 	return &types.AccountState{Root: dumpAccount.Root, Storage: converted}, nil
 }
 
