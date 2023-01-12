@@ -45,7 +45,7 @@ func (tm *DefaultTransactionMonitor) fetchTransaction(block *types.Block, hash t
 
 	tx := &types.Transaction{
 		Hash:              hash,
-		Status:            txOrigin.Status == "0x1",
+		Status:            txOrigin.Status == 1,
 		BlockNumber:       block.Number,
 		BlockHash:         block.Hash,
 		Index:             txOrigin.Index,

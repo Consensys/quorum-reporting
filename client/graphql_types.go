@@ -18,7 +18,7 @@ type Block struct {
 
 type Transaction struct {
 	Hash              types.Hash
-	Status            string
+	Status            types.HexNumber
 	Index             uint64
 	Nonce             types.HexNumber
 	From              Address
