@@ -173,17 +173,28 @@ func (num HexNumber) MarshalJSON() ([]byte, error) {
 }
 
 func (num *HexNumber) UnmarshalJSON(input []byte) error {
+	// check for integer first
+	var unwrappedUint uint64 
 	var unwrapped string
-	if err := json.Unmarshal(input, &unwrapped); err != nil {
-		return err
+	if err:= json.Unmarshal(input,&unwrappedUint); err!=nil{
+		//check for string later
+		if err := json.Unmarshal(input, &unwrapped); err != nil {
+			return err
+		}
+		//String if fine
+		out, err := strconv.ParseUint(unwrapped, 0, 64)
+		if err != nil {
+			return err
+		}
+		// returning number from String
+		*num = HexNumber(out)
+		return nil
 	}
-	out, err := strconv.ParseUint(unwrapped, 0, 64)
-	if err != nil {
-		return err
-	}
-	*num = HexNumber(out)
+	// returning number from number
+	*num = HexNumber(unwrappedUint)
 	return nil
 }
+
 
 func (num *HexNumber) ToUint64() uint64 {
 	return uint64(*num)
